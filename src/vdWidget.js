@@ -102,6 +102,8 @@
 
         _update: function() {},
 
+        _destroy: function(domNode) {},
+
         init: function() {
             this._create();
             return this.element;
@@ -117,7 +119,9 @@
             return this.element;
         },
 
-        destroy: function(domNode) {},
+        destroy: function(domNode) {
+            this._destroy(domNode);
+        },
 
         get: function(attr) {
             return arguments.length === 0 ? this.attributes : this.attributes[attr];

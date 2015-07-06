@@ -26,6 +26,7 @@
   ],
   "dependencies": {
     "vdt.js": "*",
-    "underscore": "~1.8.3"
+    "underscore": "~1.8.3",
+    "jquery": "~2.1.4"
   }
 }
