@@ -1,12 +1,12 @@
 (function(factory) {
     if (typeof exports === 'object' && typeof module !== 'undefined') {
-        module.exports = factory(require('underscore'));
+        module.exports = factory(require('vdt.js'), require('underscore'));
     } else if (typeof define === 'function' && define.amd) {
-        define(['underscore'], factory);
+        define(['vdt.js', 'underscore'], factory);
     } else {
-        this.VdWidget = factory(_);
+        this.VdWidget = factory(Vdt, _);
     }
-})(function(_) {
+})(function(Vdt, _) {
     /**
      * inherit
      * @param Parent
