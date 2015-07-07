@@ -29,6 +29,7 @@ bower install vdwidget --save
 必须
 
 1. underscore
+2. vdt.js
 
 可选
 
