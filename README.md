@@ -296,7 +296,9 @@ VdWidget.mount(TableCard, $('body')[0]);
 ```
 
 上述方式，是通过在前端定义模板然后前端编译完成的继承，存在一个问题：`TableCard`组件每次更新都需要获取`card_template`字符串，然后重新编译。
+
 那可不可以在模板外编译好后，在模板中直接引用编译好的模板函数呢？答案是：可以。但是，模板是字符串，模板编译好后的函数定义在全局作用域下，并不能在模板中直接访问非全局的变量/函数。
+
 所以要么将编译后的函数定义成`window`下的对象，要么将模板函数通过绑定到`this`上注入，在模板中只能访问全局变量和`this`上的变量。
 
 对于注入`this`的方式，我们这样定义tableCard_template
@@ -387,8 +389,8 @@ var card = require('/demo/tpl/card.js');
 // 通过require.js加载模板
 require(['/demo/tpl/tableCard.js'], function(template) {
     // 继承Card组件
-    var TableCard = Card1.extend({
-        // 定义template指向编译好的模板函数
+    var TableCard = Card.extend({
+        // 定义template指向编译好的模板函数，不需要额外注入card模板
         template: template,
 
         click: function() {
@@ -399,4 +401,71 @@ require(['/demo/tpl/tableCard.js'], function(template) {
     VdWidget.mount(TableCard, $('body')[0]);
 });
 ```
+
+### 组件组合
+
+组件除了继承外，还可以组合。
+
+组合即在一个组件中调用另一个组件，包括初始化组件和组件直接通信。
+
+和继承一样，模板只能访问`window`和`this`上的属性和方法，所以在模板中调用另一个组件，也要保证该组件可以被访问到。
+
+#### 初始化
+
+对于注入`this`上，如下：
+
+```js
+// 继承VdWidget，并非Card
+var ComponentCard = VdWidget.extend({
+    template: '<div>{new this.Card({title: "component card"})}</div>',
+
+    _init: function() {
+        // 注入Card组件
+        this.Card = Card;
+        this._super();
+    }
+});
+```
+
+在模板中调用组件，就是new一个该组件实例，如下：
+
+```jsx
+<div>
+    {new this.Card({title: 'component card'})}
+</div>
+```
+
+#### 调用组件方法
+
+要调用组件提供的方法，其实只需要能访问到该组件就行，所以我们在初始化组件的时候，将它挂载到`widgets`对象下就可以了。
+
+```jsx
+<div>
+    {widgets.card = new this.Card({title: 'component card'})}
+</div>
+```
+
+这时可以`VdWidget`中访问Card组件提供的方法
+
+```js
+var ComponentCard = VdWidget.extend({
+    template: '<div>{widgets.card = new this.Card({title: "component card"})}<div ev-click={_.bind(this.click, this)}>Click Me</div></div>',
+
+    _init: function() {
+        // 注入Card组件
+        this.Card = Card;
+        this._super();
+    },
+
+    click: function() {
+        // 调用Card的click方法
+        this.widgets.card.click();
+        alert('You click me');
+    }
+});
+```
+
+#### 绑定自定义事件
+
+
 

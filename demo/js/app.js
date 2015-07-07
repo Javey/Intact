@@ -91,3 +91,34 @@ require(['/demo/tpl/tableCard.js'], function(template) {
 
     VdWidget.mount(TableCard, $('body')[0]);
 });
+
+/**
+ * 组合
+ */
+var ComponentCard = VdWidget.extend({
+    template: '<div>{new this.Card({title: "component card"})}</div>',
+
+    _init: function() {
+        this.Card = Card;
+        this._super();
+    }
+});
+
+VdWidget.mount(ComponentCard, $('body')[0]);
+
+var ComponentCard1 = VdWidget.extend({
+    template: '<div>{widgets.card = new this.Card({title: "component card"})}<div ev-click={_.bind(this.click, this)}>Click Me</div></div>',
+
+    _init: function() {
+        // 注入Card组件
+        this.Card = Card;
+        this._super();
+    },
+
+    click: function() {
+        // 调用Card的click方法
+        this.widgets.card.click();
+        alert('You click me');
+    }
+});
+VdWidget.mount(ComponentCard1, $('body')[0]);
