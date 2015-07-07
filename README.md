@@ -56,10 +56,13 @@ VdWidget.mount(Widget, $('body')[0]);
 创建一个widget分为以下几步
 
 1. 通过VdWidget.extend创建widget
+
     ```js
     var Widget = VdWidget.extend();
     ```
+
 2. 给widget提供默认数据，通过指定defaults字段
+
     ```js
     var Widget = VdWidget.extend({
         defaults: {
@@ -67,7 +70,9 @@ VdWidget.mount(Widget, $('body')[0]);
         }
     });
     ```
+
 3. 指定模板，模板可以是字符串，也可以是已经编译好的模板函数，参见`vdt.js`。模板函数，可以前端编译，也可以后端编译通过amd加载。模板语法为`JSX`，最后一个元素必须用html标签包起来。
+
     ```js
     var Widget = VdWidget.extend({
         defaults: {
@@ -77,7 +82,9 @@ VdWidget.mount(Widget, $('body')[0]);
         template: '<div ev-click={_.bind(this.change, this)}>{this.get("name")}</div>'
     });
     ```
+
 4. appendChild到指定的dom中，只有`root widget`才需要这么做
+
     ```js
     ...
 
