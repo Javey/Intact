@@ -152,11 +152,11 @@
             }
 
             if (!options.silent && changes.length) {
+                this.trigger('change', this);
+
                 for (var i = 0, l = changes.length; i < l; i++) {
                     this.trigger('change:' + changes[i], this, current[changes[i]]);
                 }
-
-                this.trigger('change', this);
             }
 
             return this;

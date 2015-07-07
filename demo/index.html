@@ -40,6 +40,16 @@
     </div>
 </script>
 
+<script type="text/vdt" id="event_template">
+    <div>
+        {widgets.card = new this.Card({title: 'component card'})
+            // 绑定事件
+            .on('change:title', _.bind(this.onChangeTitle, this))
+        }
+        <div ev-click={_.bind(this.click, this)}>Change Title</div>
+    </div>
+</script>
+
 <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
 <script type="text/javascript" src="../bower_components/underscore/underscore.js"></script>
 <script type="text/javascript" src="../bower_components/vdt.js/dist/vdt.js"></script>

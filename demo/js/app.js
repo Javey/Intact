@@ -122,3 +122,24 @@ var ComponentCard1 = VdWidget.extend({
     }
 });
 VdWidget.mount(ComponentCard1, $('body')[0]);
+
+
+var ComponentCard2 = VdWidget.extend({
+    template: $('#event_template').html(),
+
+    _init: function() {
+        // 注入Card组件
+        this.Card = Card;
+        this._super();
+    },
+
+    click: function() {
+        // 改变Card组件的title
+        this.widgets.card.set('title', 'The title has changed');
+    },
+
+    onChangeTitle: function(widget, title) {
+        alert('The title has changed to "' + title + '"');
+    }
+});
+VdWidget.mount(ComponentCard2, $('body')[0]);

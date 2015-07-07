@@ -467,5 +467,120 @@ var ComponentCard = VdWidget.extend({
 
 #### 绑定自定义事件
 
+因为组件的更新，都会重新执行一次模板函数，里面包含的其他组件都会被重新new一份，所以必须在模板中绑定事件，否则，将一直绑定到第一次初始化的组件上，导致组件更新后，事件失效。
 
+在模板中绑定事件，就是调用组件提供的`on`方法:
 
+```jsx
+<div>
+    {widgets.card = new this.Card({title: 'component card'})
+        // 绑定事件
+        .on('change:title', _.bind(this.onChangeTitle, this))
+    }
+    <div ev-click={_.bind(this.click, this)}>Change Title</div>
+</div>
+```
+
+```js
+var ComponentCard = VdWidget.extend({
+    template: ...,
+
+    _init: function() {
+        // 注入Card组件
+        this.Card = Card;
+        this._super();
+    },
+
+    click: function() {
+        // 改变Card组件的title
+        this.widgets.card.set('title', 'The title has changed');
+    },
+
+    onChangeTitle: function(widget, title) {
+        alert('The title has changed to "' + title + '"');
+    }
+});
+```
+
+#### 通过amd加载组件
+
+加载组件和加载模板原理一样，组件本身就是JS，我们可以通过`define`定义组件模块，和加载模板一样，在模板中加载组件，而不是通过注入的方式。
+
+## API
+
+### _init()
+
+初始化组件，在模板渲染之前执行，主要用于准备数据和组件/模板注入。此时没有渲染模板，也就没有dom，所以不能进行dom操作
+
+### _create()
+
+初始化组件，在模板渲染之后执行，可以在此进行dom初始化。该方法只会执行一次，组件初始化后的每次更新都不会在执行该函数，但`_init`会执行
+
+### _update()
+
+组件更新完成后执行，可在此做第三方组件的刷新
+
+### _destroy(domNode)
+
+组件销毁，回收资源
+
+* @param `domNode` 组件的dom对象
+
+### set(key, value, [options])
+
+设置数据，会触发相应的`change`事件
+
+* @param `key` {String|Object} 若为String类型，则表示需要设置的键名；Object则表示需要设置多个键值对
+* @param `value` {*} 若`key`为Object，则该变量表示`options`，否则表示需要设置的值
+* @param `options.silent = false` {Boolean} 是否静默更新，即改变数据是否触发UI更新
+* @return this
+
+### get([key])
+
+获取数据
+
+* @param `key` {String} 获取相应键名的值，若不传，则返回所有数据
+* @return {*}
+
+### on(event, callback)/off(event, callback)/trigger(event, [args]...)
+
+绑定，解绑，触发事件
+
+`callback(widget, newValue)`
+
+### _super([args])/_superApply()
+
+调用父级同名方法，两个函数只有传参方式不同，_superApply传入数组作为参数
+
+### element
+
+组件对应的dom对象，在`_init()`之后才存在
+
+### widgets
+
+通过组合方式初始化的组件，挂载到该对象下，可以通过`this.widgets[name]`引用
+
+### vdt
+
+通过`Vdt.js`处理后的对象，参考`Vdt.js`
+
+### rendered
+
+标识该组件是否已被渲染
+
+### extend([prototype])
+
+静态方法，继承某个组件
+
+* @param `prototype` {Object} 扩充原型链
+* @param `prototype.defaults` {Object} 组件默认数据
+* @param `prototype.template` {String|Function} Vdt模板字符串或模板函数
+* @return 组件子类
+
+### mount(widget, dom)
+
+静态方法，挂载某个组件到指定的dom下(appendChild)
+
+* @param `widget` {Object} 可以为VdWidget子类，或者实例化的对象
+* @param `dom` {DOM} 挂载位置
+* @return {Object} 实例化组件对象
