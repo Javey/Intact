@@ -5,16 +5,16 @@
 一个基于`virtual-dom`编写数据单向绑定web组件的js库，能够实现组件之间的组合、继承。
 如果你是`jQuery`深度开发者，不想去了解各种复杂的框架的使用方法，但又想写出高可维护的代码，`VdWidget`是你的一种选择。
 
-那为什么不直接使用`React.js`呢？原因很简单：我是一个`jQuery`深度开发着。
+那为什么不直接使用`React.js`呢？原因很简单：我是一位`jQuery`深度开发着。
 
 ## 动机
 
 我需要一个库/框架，能够实现以下两点：
 
-1. 数据绑定，单向或双向无所谓，只要能够实现数据更新后UI能够自动更新
+1. 数据绑定，能够实现数据更新后UI能够自动更新
 2. UI更新可控，我可以更新数据但阻止UI自动更新，另外我能知道什么时候UI更新完成，我可以在更新完成后，直接操作dom。
 
-感谢`React.js`及`virtual-dom`技术的实现，让一切变得可能。
+感谢`React.js`及`virtual-dom`，让一切变得可能。
 
 这个项目基于之前的一个项目`vdt.js`，那是一个纯前端模板工具，需要自己控制UI更新。这个工具对其进行了一层封装，使其可以简单地编写web组件。
 
@@ -26,10 +26,16 @@ bower install vdwidget --save
 
 ## 依赖
 
-1. underscore
-2. jquery
+必须
 
-再引入`vdWidget.js`之前，先加载这两个文件，或者通过`amd`加载
+1. underscore
+
+可选
+
+1. jquery
+2. require.js
+
+在引入`vdWidget.js`之前，先加载依赖文件，或者通过`amd`加载
 
 ## 示例
 
@@ -55,13 +61,13 @@ VdWidget.mount(Widget, $('body')[0]);
 
 创建一个widget分为以下几步
 
-1. 通过VdWidget.extend创建widget
+1. 通过`VdWidget.extend`创建widget
 
     ```js
     var Widget = VdWidget.extend();
     ```
 
-2. 给widget提供默认数据，通过指定defaults字段
+2. 给widget提供默认数据，通过指定`defaults`字段
 
     ```js
     var Widget = VdWidget.extend({
@@ -83,7 +89,7 @@ VdWidget.mount(Widget, $('body')[0]);
     });
     ```
 
-4. appendChild到指定的dom中，只有`root widget`才需要这么做
+4. 通过`VdWidget.mount` appendChild到指定的dom中，只有`root widget`才需要这么做
 
     ```js
     ...
@@ -93,7 +99,7 @@ VdWidget.mount(Widget, $('body')[0]);
 
 ### 模板
 
-模板写法参考`vdt.js`。在模板中`this`指向该widget实例，所以可以直接获取该widget的数据和调用相应的方法。
+模板写法参考`vdt.js`。在模板中`this`指向该widget实例，所以可以直接访问该widget的属性和方法。
 
 #### 获取数据
 
@@ -104,7 +110,7 @@ VdWidget.mount(Widget, $('body')[0]);
 
 #### 绑定事件
 
-通过`ev-event`的方式指定需要绑定的事件和相应方法。如果需要调用widget的方法，这需要通过bind绑定this
+通过`ev-event`的方式指定需要绑定的事件和相应方法。如果需要调用组件提供的方法，则需要通过`bind`绑定`this`
 
 ```jsx
 <div ev-click={_.bind(this.change, this)}></div>
@@ -181,7 +187,7 @@ var Widget = VdWidget.extend({
 
 #### _destroy(domNode)
 
-组件销毁时，将调用`_destroy`。该方法将销毁的`dom`对象作为参数传入。
+组件销毁时，将调用`_destroy`。该方法将待销毁的`dom`对象作为参数传入。
 
 ```js
 var Widget = VdWidget.extend({
@@ -200,7 +206,7 @@ var Widget = VdWidget.extend({
 
 除了`set`触发的事件，还有一个事件`rendered`，该事件会在组件渲染完成后触发，因为如果`_init`是异步的，则需要在改事件触发后，才能操作dom，进行`mount`。
 
-### 组件数据
+### 数据
 
 `VdWidget`并没有提供单独的`Model`层，而是将数据和UI绑定在一起，在`VdWidget`既可以操作数据，又可以操作dom。
 同`backbone`的数据操作方式，组件所需的默认数据通过`defaults`字段提供，与`backbone`不同的是，该字段可以被继承
@@ -215,7 +221,7 @@ var Widget = VdWidget.extend({
 1. 继承组件的方法
 2. 扩展vdt模板
 
-如上面所示，组件方法的继承通过`extend`静态方法实现。
+如上所示，组件方法的继承通过`extend`静态方法实现。
 
 ```js
 var Card = VdWidget.extend({
@@ -240,7 +246,7 @@ var TableCard = Card.extend({
 VdWidget.mount(TableCard, $('body')[0]);
 ```
 
-上例中，只是继承了`Card`的方法，如果需要扩展`template`，我们需要单独定义模板。模板可以定义成字符串，或者html的`<script type="text/vdt"></script>`中，
+上例中，只是继承了`Card`的方法，如果需要扩展`template`，我们需要单独定义模板。模板可以定义成字符串，html的`<script type="text/vdt"></script>`中，或者单独的模板文件。
 推荐的做法的是定义成单独的模板文件，在服务器端编译成`amd`方式的js文件，通过`require.js`等工具进行加载。
 
 需要注意的是，要使模板可以扩展，则需要编写可被扩展的模板，也就是需要中模板定义一些可被填充的坑。
@@ -258,6 +264,7 @@ VdWidget.mount(TableCard, $('body')[0]);
     // 需要将模板字符串变为函数，才能去填坑
     var card = Vdt.compile($('#card_template').html());
     <div>
+        // 调用模板函数
         {card.call(this, {
             // 填上children这个坑
             children: <table>
@@ -295,16 +302,17 @@ var TableCard = Card.extend({
 VdWidget.mount(TableCard, $('body')[0]);
 ```
 
-上述方式，是通过在前端定义模板然后前端编译完成的继承，存在一个问题：`TableCard`组件每次更新都需要获取`card_template`字符串，然后重新编译。
+上述方式，是通过在前端定义模板然后前端编译完成的，其存在一个问题：`TableCard`组件每次更新都需要获取`card_template`字符串，然后重新编译。
 
 那可不可以在模板外编译好后，在模板中直接引用编译好的模板函数呢？答案是：可以。但是，模板是字符串，模板编译好后的函数定义在全局作用域下，并不能在模板中直接访问非全局的变量/函数。
 
-所以要么将编译后的函数定义成`window`下的对象，要么将模板函数通过绑定到`this`上注入，在模板中只能访问全局变量和`this`上的变量。
+所以要么将编译后的函数定义成`window`下的对象，要么将模板函数通过绑定到`this`上注入。记住，在模板中只能访问`window`和`this`上的属性和方法。
 
-对于注入`this`的方式，我们这样定义tableCard_template
+对于注入`this`的方式，我们这样定义`tableCard_template`
 
 ```html
 <script type="text/vdt" id="tableCard_template">
+    // 这里不需要编card模板了，而是直接调用this.card
     <div>
         {this.card.call(this, {
             // 填上children这个坑
@@ -370,6 +378,7 @@ app.listen(9678);
 
 ```jsx
 // 文件: /demo/tpl/tableCard.vdt
+// 直接加载所需的依赖
 var card = require('/demo/tpl/card.js');
 <div>
     {card.call(this, {
@@ -383,10 +392,10 @@ var card = require('/demo/tpl/card.js');
 </div>
 ```
 
-定义继承Card组件的TableCard
+定义继承`Card`组件的`TableCard`
 
 ```js
-// 通过require.js加载模板
+// 通过require.js加载自己的模板，模板依赖的模板，通过模板自己去加载
 require(['/demo/tpl/tableCard.js'], function(template) {
     // 继承Card组件
     var TableCard = Card.extend({
@@ -406,13 +415,13 @@ require(['/demo/tpl/tableCard.js'], function(template) {
 
 组件除了继承外，还可以组合。
 
-组合即在一个组件中调用另一个组件，包括初始化组件和组件直接通信。
+组合即在一个组件中调用另一个组件，包括初始化组件和组件之间通信。
 
 和继承一样，模板只能访问`window`和`this`上的属性和方法，所以在模板中调用另一个组件，也要保证该组件可以被访问到。
 
 #### 初始化
 
-对于注入`this`上，如下：
+对于注入到`this`的方式，如下所示：
 
 ```js
 // 继承VdWidget，并非Card
@@ -427,7 +436,7 @@ var ComponentCard = VdWidget.extend({
 });
 ```
 
-在模板中调用组件，就是new一个该组件实例，如下：
+在模板中调用组件，就是`new`一个该组件实例，如下所示：
 
 ```jsx
 <div>
@@ -437,7 +446,7 @@ var ComponentCard = VdWidget.extend({
 
 #### 调用组件方法
 
-要调用组件提供的方法，其实只需要能访问到该组件就行，所以我们在初始化组件的时候，将它挂载到`widgets`对象下就可以了。
+要调用组件提供的方法，其实只要能够拿到该组件引用就行，所以我们在初始化组件的时候，将它挂载到`widgets`对象下。
 
 ```jsx
 <div>
@@ -445,7 +454,7 @@ var ComponentCard = VdWidget.extend({
 </div>
 ```
 
-这时可以`VdWidget`中访问Card组件提供的方法
+这时可以在`VdWidget`中，通过`this.widgets.card`访问`Card`组件提供的方法
 
 ```js
 var ComponentCard = VdWidget.extend({
@@ -504,7 +513,7 @@ var ComponentCard = VdWidget.extend({
 
 #### 通过amd加载组件
 
-加载组件和加载模板原理一样，组件本身就是JS，我们可以通过`define`定义组件模块，和加载模板一样，在模板中加载组件，而不是通过注入的方式。
+加载组件和加载模板原理一样，组件本身就是js，不想vdt模板需要编译成js。我们可以通过`define`定义组件模块，和加载模板一样，在模板中直接加载组件，而不是通过注入的方式。
 
 ## API
 
@@ -514,7 +523,7 @@ var ComponentCard = VdWidget.extend({
 
 ### _create()
 
-初始化组件，在模板渲染之后执行，可以在此进行dom初始化。该方法只会执行一次，组件初始化后的每次更新都不会在执行该函数，但`_init`会执行
+初始化组件，在模板渲染之后执行，可以在此进行dom初始化。该方法只会执行一次，组件初始化后的每次更新都不会再执行该函数，但`_init`会执行
 
 ### _update()
 
@@ -524,7 +533,7 @@ var ComponentCard = VdWidget.extend({
 
 组件销毁，回收资源
 
-* @param `domNode` 组件的dom对象
+* @param `domNode` 组件对应的dom对象
 
 ### set(key, value, [options])
 
@@ -532,8 +541,8 @@ var ComponentCard = VdWidget.extend({
 
 * @param `key` {String|Object} 若为String类型，则表示需要设置的键名；Object则表示需要设置多个键值对
 * @param `value` {*} 若`key`为Object，则该变量表示`options`，否则表示需要设置的值
-* @param `options.silent = false` {Boolean} 是否静默更新，即改变数据是否触发UI更新
-* @return this
+* @param `options.silent = false` {Boolean} 是否静默更新，即改变数据是否触发UI更新，若为`true`，则数据改变不会导致UI更新，直到下一次非静默更新时一起更新。
+* @return `this`
 
 ### get([key])
 
@@ -548,40 +557,40 @@ var ComponentCard = VdWidget.extend({
 
 `callback(widget, newValue)`
 
-### _super([args])/_superApply()
+### _super([arg]...)/_superApply([args])
 
 调用父级同名方法，两个函数只有传参方式不同，_superApply传入数组作为参数
 
 ### element
 
-组件对应的dom对象，在`_init()`之后才存在
+`{DOM}` 组件对应的dom对象，在`_init()`之后才存在
 
 ### widgets
 
-通过组合方式初始化的组件，挂载到该对象下，可以通过`this.widgets[name]`引用
+`{Object}` 通过组合方式初始化的组件，挂载到该对象下，可以通过`this.widgets[name]`引用
 
 ### vdt
 
-通过`Vdt.js`处理后的对象，参考`Vdt.js`
+`{Object}` 通过`Vdt.js`处理模板`template`后的对象，参考`Vdt.js`
 
 ### rendered
 
-标识该组件是否已被渲染
+`{Boolean}` 标识该组件是否已被渲染
 
 ### extend([prototype])
 
-静态方法，继承某个组件
+`Static` 静态方法，继承某个组件
 
 * @param `prototype` {Object} 扩充原型链
 * @param `prototype.defaults` {Object} 组件默认数据
-* @param `prototype.template` {String|Function} Vdt模板字符串或模板函数
+* @param `prototype.template` {String|Function} `Vdt`模板字符串或模板函数
 * @return 组件子类
 
 ### mount(widget, dom)
 
-静态方法，挂载某个组件到指定的dom下(appendChild)
+`Static` 静态方法，挂载某个组件到指定的dom下(appendChild)
 
-* @param `widget` {Object} 可以为VdWidget子类，或者实例化的对象
+* @param `widget` {Object} 可以为VdWidget子类，或者对应的实例化对象
 * @param `dom` {DOM} 挂载位置
 * @return {Object} 实例化组件对象
 
