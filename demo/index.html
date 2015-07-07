@@ -27,10 +27,24 @@
     </div>
 </script>
 
+<script type="text/vdt" id="tableCard_template_this">
+    <div>
+        {this.card.call(this, {
+            // 填上children这个坑
+            children: <table>
+                <tr>
+                    <td>tableCard</td>
+                </tr>
+            </table>
+        })}
+    </div>
+</script>
+
 <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
 <script type="text/javascript" src="../bower_components/underscore/underscore.js"></script>
 <script type="text/javascript" src="../bower_components/vdt.js/dist/vdt.js"></script>
 <script type="text/javascript" src="../src/vdWidget.js"></script>
+<script type="text/javascript" src="../bower_components/requirejs/require.js"></script>
 <script type="text/javascript" src="js/app.js"></script>
 </body>
 </html>

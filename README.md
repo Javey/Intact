@@ -259,6 +259,7 @@ VdWidget.mount(TableCard, $('body')[0]);
     var card = Vdt.compile($('#card_template').html());
     <div>
         {card.call(this, {
+            // 填上children这个坑
             children: <table>
                 <tr>
                     <td>tableCard</td>
@@ -294,5 +295,108 @@ var TableCard = Card.extend({
 VdWidget.mount(TableCard, $('body')[0]);
 ```
 
+上述方式，是通过在前端定义模板然后前端编译完成的继承，存在一个问题：`TableCard`组件每次更新都需要获取`card_template`字符串，然后重新编译。
+那可不可以在模板外编译好后，在模板中直接引用编译好的模板函数呢？答案是：可以。但是，模板是字符串，模板编译好后的函数定义在全局作用域下，并不能在模板中直接访问非全局的变量/函数。
+所以要么将编译后的函数定义成`window`下的对象，要么将模板函数通过绑定到`this`上注入，在模板中只能访问全局变量和`this`上的变量。
 
+对于注入`this`的方式，我们这样定义tableCard_template
+
+```html
+<script type="text/vdt" id="tableCard_template">
+    <div>
+        {this.card.call(this, {
+            // 填上children这个坑
+            children: <table>
+                <tr>
+                    <td>tableCard</td>
+                </tr>
+            </table>
+        })}
+    </div>
+</script>
+```
+
+```js
+// 继承Card组件
+var TableCard = Card.extend({
+    template: $('#tableCard_template').html(),
+
+    _init: function() {
+        // 注入card模板函数
+        this.card = Vdt.compile($('#card_template').html());
+        // 调用父类_init
+        this._super();
+    },
+
+    click: function() {
+        alert('click tableCard');
+    }
+});
+```
+
+可以看到前端编译模板，比较麻烦，而且有一定的性能损耗。在实际生产中，我们更多的是定义单独的vdt模板文件，然后编译成js，再通过amd工具，如：`require.js`，加载依赖的模板函数。
+这样可以使模板自己管理自己的依赖，而不需要在js中进行各种依赖注入。
+
+借助`express`或其他node server工具，可以快速搭建一个后端实时编译vdt的环境
+
+```js
+var Express = require('express'),
+    Vdt = require('vdt.js');
+
+var app = Express();
+
+app.use(Express.static(__dirname));
+
+// 实时编译vdt
+app.use(Vdt.middleware({
+    src:__dirname
+}));
+
+app.listen(9678);
+```
+
+定义模板vdt文件
+
+```jsx
+// 文件: /demo/tpl/card.vdt
+<div ev-click={_.bind(this.click, this)}>
+    {this.get('title')}
+    {/* 在这里挖个坑 */}
+    {typeof children === 'undefined' ? null : children}
+</div>
+```
+
+```jsx
+// 文件: /demo/tpl/tableCard.vdt
+var card = require('/demo/tpl/card.js');
+<div>
+    {card.call(this, {
+        // 填上children这个坑
+        children: <table>
+            <tr>
+                <td>tableCard which required by require.js</td>
+            </tr>
+        </table>
+    })}
+</div>
+```
+
+定义继承Card组件的TableCard
+
+```js
+// 通过require.js加载模板
+require(['/demo/tpl/tableCard.js'], function(template) {
+    // 继承Card组件
+    var TableCard = Card1.extend({
+        // 定义template指向编译好的模板函数
+        template: template,
+
+        click: function() {
+            alert('click tableCard which is required by require.js');
+        }
+    });
+
+    VdWidget.mount(TableCard, $('body')[0]);
+});
+```
 
