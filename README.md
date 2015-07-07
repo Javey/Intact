@@ -584,3 +584,7 @@ var ComponentCard = VdWidget.extend({
 * @param `widget` {Object} 可以为VdWidget子类，或者实例化的对象
 * @param `dom` {DOM} 挂载位置
 * @return {Object} 实例化组件对象
+
+## 许可
+
+MIT
