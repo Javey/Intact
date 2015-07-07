@@ -6,6 +6,27 @@
 </head>
 <body>
 
+<script type="text/vdt" id="card_template">
+    <div ev-click={_.bind(this.click, this)}>
+        {this.get('title')}
+        {/* 在这里挖个坑 */}
+        {typeof children === 'undefined' ? null : children}
+    </div>
+</script>
+
+<script type="text/vdt" id="tableCard_template">
+    var card = Vdt.compile($('#card_template').html());
+    <div>
+        {card.call(this, {
+            children: <table>
+                <tr>
+                    <td>tableCard</td>
+                </tr>
+            </table>
+        })}
+    </div>
+</script>
+
 <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
 <script type="text/javascript" src="../bower_components/underscore/underscore.js"></script>
 <script type="text/javascript" src="../bower_components/vdt.js/dist/vdt.js"></script>

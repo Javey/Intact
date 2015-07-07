@@ -3,7 +3,7 @@
 ## 简介
 
 一个基于`virtual-dom`编写数据单向绑定web组件的js库，能够实现组件之间的组合、继承。
-如果你是一个`jQuery`深度开发者，不想去了解各种复杂的框架的使用方法，但又想写出高可维护的代码，`VdWidget`是你的一种选择。
+如果你是`jQuery`深度开发者，不想去了解各种复杂的框架的使用方法，但又想写出高可维护的代码，`VdWidget`是你的一种选择。
 
 那为什么不直接使用`React.js`呢？原因很简单：我是一个`jQuery`深度开发着。
 
@@ -164,6 +164,135 @@ var Widget = VdWidget.extend({
 });
 ```
 
+#### _update
+
+每次调用`set`方法都会触发组件更新（`set(data, {silent: true})`除外），每次更新完成后，会调用`_update`方法，我们可以重载该方法去处理一些UI更新问题。
+如：`<select></select>`改变后，需要调用`bootstrap-select`的`refresh`方法
+
+```js
+var Widget = VdWidget.extend({
+    ...
+
+    _update: function() {
+        $(this.element).find('select.select-picker').selectpicker('refresh');
+    }
+});
+```
+
+#### _destroy(domNode)
+
+组件销毁时，将调用`_destroy`。该方法将销毁的`dom`对象作为参数传入。
+
+```js
+var Widget = VdWidget.extend({
+    ...
+
+    _destroy: function(domNode) {
+        $(domNode).find('select.select-picker').off();
+    }
+});
+```
+
+### 事件
+
+类似于`backbone`，所有调用`set`方法，导致数据改变的情况，都会触发相应的change事件`change:name`，另外还会触发一个`change`事件。
+`VdWidget`内部绑定了该`change`事件，会使UI自动更新。如果需要阻止更新，调用`set`时，可以传入`{silent: true}`作为最后一个参数。
+
+除了`set`触发的事件，还有一个事件`rendered`，该事件会在组件渲染完成后触发，因为如果`_init`是异步的，则需要在改事件触发后，才能操作dom，进行`mount`。
+
+### 组件数据
+
+`VdWidget`并没有提供单独的`Model`层，而是将数据和UI绑定在一起，在`VdWidget`既可以操作数据，又可以操作dom。
+同`backbone`的数据操作方式，组件所需的默认数据通过`defaults`字段提供，与`backbone`不同的是，该字段可以被继承
+
+1. 获取数据通过`get`
+2. 设置数据通过`set`
+
+### 组件继承
+
+要实现组件继承，一般都要分两步
+
+1. 继承组件的方法
+2. 扩展vdt模板
+
+如上面所示，组件方法的继承通过`extend`静态方法实现。
+
+```js
+var Card = VdWidget.extend({
+    defaults: {
+        title: 'card'
+    },
+
+    template: '<div ev-click={_.bind(this.click, this)}>{this.get("title")}</div>',
+
+    click: function() {
+        alert('click card');
+    }
+});
+
+// 继承Card组件
+var TableCard = Card.extend({
+    click: function() {
+        alert('click tableCard');
+    }
+});
+
+VdWidget.mount(TableCard, $('body')[0]);
+```
+
+上例中，只是继承了`Card`的方法，如果需要扩展`template`，我们需要单独定义模板。模板可以定义成字符串，或者html的`<script type="text/vdt"></script>`中，
+推荐的做法的是定义成单独的模板文件，在服务器端编译成`amd`方式的js文件，通过`require.js`等工具进行加载。
+
+需要注意的是，要使模板可以扩展，则需要编写可被扩展的模板，也就是需要中模板定义一些可被填充的坑。
+
+```html
+<script type="text/vdt" id="card_template">
+    <div ev-click={_.bind(this.click, this)}>
+        {this.get('title')}
+        {/* 在这里挖个坑 */}
+        {typeof children === 'undefined' ? null : children}
+    </div>
+</script>
+
+<script type="text/vdt" id="tableCard_template">
+    // 需要将模板字符串变为函数，才能去填坑
+    var card = Vdt.compile($('#card_template').html());
+    <div>
+        {card.call(this, {
+            children: <table>
+                <tr>
+                    <td>tableCard</td>
+                </tr>
+            </table>
+        })}
+    </div>
+</script>
+```
+
+```js
+var Card = VdWidget.extend({
+    defaults: {
+        title: 'card'
+    },
+
+    template: $('#card_template').html(),
+
+    click: function() {
+        alert('click card');
+    }
+});
+
+// 继承Card组件
+var TableCard = Card.extend({
+    template: $('#tableCard_template').html(),
+
+    click: function() {
+        alert('click tableCard');
+    }
+});
+
+VdWidget.mount(TableCard, $('body')[0]);
+```
 
 
 
