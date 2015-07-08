@@ -10,7 +10,7 @@ var Widget = VdWidget.extend({
     }
 });
 
-VdWidget.mount(Widget, $('body')[0]);
+VdWidget.mount(Widget, document.body);
 
 /**
  * 继承

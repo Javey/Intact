@@ -95,7 +95,7 @@ VdWidget.mount(Widget, $('body')[0]);
     ```js
     ...
 
-    VdWidget.mount(Widget, $('body')[0]);
+    VdWidget.mount(Widget, document.body);
     ```
 
 ### 模板
