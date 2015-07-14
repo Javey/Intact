@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "dependencies": {
     "underscore": "^1.8.3",
-    "vdt.js": "^0.2.4"
+    "vdt.js": "*"
   },
   "devDependencies": {
     "express": "^4.13.1"

@@ -10,42 +10,39 @@
     <div ev-click={_.bind(this.click, this)}>
         {this.get('title')}
         {/* 在这里挖个坑 */}
-        {typeof children === 'undefined' ? null : children}
+        <b:body />
     </div>
 </script>
 
 <script type="text/vdt" id="tableCard_template">
+    // 需要将模板字符串变为函数，才能去填坑
     var card = Vdt.compile($('#card_template').html());
-    <div>
-        {card.call(this, {
-            children: <table>
+    <t:card>
+        <b:body>
+            <table>
                 <tr>
                     <td>tableCard</td>
                 </tr>
             </table>
-        })}
-    </div>
+        </b:body>
+    </t:card>
 </script>
 
 <script type="text/vdt" id="tableCard_template_this">
-    <div>
-        {this.card.call(this, {
-            // 填上children这个坑
-            children: <table>
+    <t:card>
+        <b:body>
+            <table>
                 <tr>
                     <td>tableCard</td>
                 </tr>
             </table>
-        })}
-    </div>
+        </b:body>
+    </t:card>
 </script>
 
 <script type="text/vdt" id="event_template">
     <div>
-        {widgets.card = new this.Card({title: 'component card'})
-            // 绑定事件
-            .on('change:title', _.bind(this.onChangeTitle, this))
-        }
+        <Card title="component card" widget="card" ev-change:title={_.bind(this.onChangeTitle, this)} />
         <div ev-click={_.bind(this.click, this)}>Change Title</div>
     </div>
 </script>

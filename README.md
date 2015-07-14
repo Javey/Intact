@@ -252,29 +252,29 @@ VdWidget.mount(TableCard, $('body')[0]);
 
 需要注意的是，要使模板可以扩展，则需要编写可被扩展的模板，也就是需要中模板定义一些可被填充的坑。
 
+> 关于模板的继承可以参见[vdt.js#template-extend](https://github.com/Javey/vdt.js#template-extend)
+
 ```html
 <script type="text/vdt" id="card_template">
     <div ev-click={_.bind(this.click, this)}>
         {this.get('title')}
         {/* 在这里挖个坑 */}
-        {typeof children === 'undefined' ? null : children}
+        <b:body />
     </div>
 </script>
 
 <script type="text/vdt" id="tableCard_template">
     // 需要将模板字符串变为函数，才能去填坑
     var card = Vdt.compile($('#card_template').html());
-    <div>
-        // 调用模板函数
-        {card.call(this, {
-            // 填上children这个坑
-            children: <table>
+    <t:card>
+        <b:body>
+            <table>
                 <tr>
                     <td>tableCard</td>
                 </tr>
             </table>
-        })}
-    </div>
+        </b:body>
+    </t:card>
 </script>
 ```
 
@@ -314,16 +314,15 @@ VdWidget.mount(TableCard, $('body')[0]);
 ```html
 <script type="text/vdt" id="tableCard_template">
     // 这里不需要编card模板了，而是直接调用this.card
-    <div>
-        {this.card.call(this, {
-            // 填上children这个坑
-            children: <table>
+    <t:card>
+        <b:body>
+            <table>
                 <tr>
                     <td>tableCard</td>
                 </tr>
             </table>
-        })}
-    </div>
+        </b:body>
+    </t:card>
 </script>
 ```
 
@@ -373,7 +372,7 @@ app.listen(9678);
 <div ev-click={_.bind(this.click, this)}>
     {this.get('title')}
     {/* 在这里挖个坑 */}
-    {typeof children === 'undefined' ? null : children}
+    <b:body />
 </div>
 ```
 
@@ -381,16 +380,15 @@ app.listen(9678);
 // 文件: /demo/tpl/tableCard.vdt
 // 直接加载所需的依赖
 var card = require('/demo/tpl/card.js');
-<div>
-    {card.call(this, {
-        // 填上children这个坑
-        children: <table>
+<t:card>
+    <b:body>
+        <table>
             <tr>
                 <td>tableCard which required by require.js</td>
             </tr>
         </table>
-    })}
-</div>
+    </b:body>
+</t:card>
 ```
 
 定义继承`Card`组件的`TableCard`
@@ -422,12 +420,14 @@ require(['/demo/tpl/tableCard.js'], function(template) {
 
 #### 初始化
 
+__组件名称首字母大写__
+
 对于注入到`this`的方式，如下所示：
 
 ```js
 // 继承VdWidget，并非Card
 var ComponentCard = VdWidget.extend({
-    template: '<div>{new this.Card({title: "component card"})}</div>',
+    template: '<Card title="component card" />',
 
     _init: function() {
         // 注入Card组件
@@ -437,29 +437,25 @@ var ComponentCard = VdWidget.extend({
 });
 ```
 
-在模板中调用组件，就是`new`一个该组件实例，如下所示：
+在模板中调用组件，如下所示：
 
 ```jsx
-<div>
-    {new this.Card({title: 'component card'})}
-</div>
+<Card title="component card" />
 ```
 
 #### 调用组件方法
 
-要调用组件提供的方法，其实只要能够拿到该组件引用就行，所以我们在初始化组件的时候，将它挂载到`widgets`对象下。
+要调用组件提供的方法，其实只要能够拿到该组件引用就行，我们需要通过`widget`属性给他一个名字，它会挂载到`widgets`对象下。
 
 ```jsx
-<div>
-    {widgets.card = new this.Card({title: 'component card'})}
-</div>
+<Card title="component card" widget="card" />
 ```
 
 这时可以在`VdWidget`中，通过`this.widgets.card`访问`Card`组件提供的方法
 
 ```js
 var ComponentCard = VdWidget.extend({
-    template: '<div>{widgets.card = new this.Card({title: "component card"})}<div ev-click={_.bind(this.click, this)}>Click Me</div></div>',
+    template: '<div><Card title="component card" widget="card" /><div ev-click={_.bind(this.click, this)}>Click Me</div></div>',
 
     _init: function() {
         // 注入Card组件
@@ -477,16 +473,11 @@ var ComponentCard = VdWidget.extend({
 
 #### 绑定自定义事件
 
-因为组件的更新，都会重新执行一次模板函数，里面包含的其他组件都会被重新new一份，所以必须在模板中绑定事件，否则，将一直绑定到第一次初始化的组件上，导致组件更新后，事件失效。
-
-在模板中绑定事件，就是调用组件提供的`on`方法:
+和绑定dom事件一样，通过`ev-*`绑定组件自定义事件
 
 ```jsx
 <div>
-    {widgets.card = new this.Card({title: 'component card'})
-        // 绑定事件
-        .on('change:title', _.bind(this.onChangeTitle, this))
-    }
+    <Card title="component card" widget="card" ev-change:title={_.bind(this.onChangeTitle, this)} />
     <div ev-click={_.bind(this.click, this)}>Change Title</div>
 </div>
 ```
@@ -511,6 +502,36 @@ var ComponentCard = VdWidget.extend({
     }
 });
 ```
+
+#### 传入子元素children
+
+组件可以包含子元素，通过`this.get('children')`可以获取子元素
+
+假设Card组件模板如下定义：
+
+```jsx
+<div ev-click={_.bind(this.click, this)}>
+    {this.get('title')}
+    {* 获取子元素 *}
+    {this.get('children')}
+</div>
+```
+
+```jsx
+<Card title="children">
+    <div>children body</div>
+</Card>
+```
+
+#### 传入数据
+
+通过属性传入数据，如上所示，传入`title`。如果需要将所有数据传入下一个组件，则通过指定`arguments`属性来实现。
+
+```jsx
+// this.get()获取所有数据
+<Card arguments={this.get()} />
+```
+
 
 #### 通过amd加载组件
 

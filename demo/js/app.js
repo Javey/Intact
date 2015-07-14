@@ -96,7 +96,7 @@ require(['/demo/tpl/tableCard.js'], function(template) {
  * 组合
  */
 var ComponentCard = VdWidget.extend({
-    template: '<div>{new this.Card({title: "component card"})}</div>',
+    template: '<Card title="component card" />',
 
     _init: function() {
         this.Card = Card;
@@ -107,7 +107,7 @@ var ComponentCard = VdWidget.extend({
 VdWidget.mount(ComponentCard, $('body')[0]);
 
 var ComponentCard1 = VdWidget.extend({
-    template: '<div>{widgets.card = new this.Card({title: "component card"})}<div ev-click={_.bind(this.click, this)}>Click Me</div></div>',
+    template: '<div><Card title="component card" widget="card" /><div ev-click={_.bind(this.click, this)}>Click Me</div></div>',
 
     _init: function() {
         // 注入Card组件

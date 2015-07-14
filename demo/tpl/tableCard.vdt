@@ -1,12 +1,11 @@
 var card = require('/demo/tpl/card.js');
 
-<div>
-    {card.call(this, {
-        // 填上children这个坑
-        children: <table>
+<t:card>
+    <b:body>
+        <table>
             <tr>
                 <td>tableCard which required by require.js</td>
             </tr>
         </table>
-    })}
-</div>
+    </b:body>
+</t:card>

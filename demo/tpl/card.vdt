@@ -1,5 +1,5 @@
 <div ev-click={_.bind(this.click, this)}>
     {this.get('title')}
     {/* 在这里挖个坑 */}
-    {typeof children === 'undefined' ? null : children}
+    <b:body />
 </div>
