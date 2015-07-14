@@ -55,7 +55,7 @@
         return Child;
     };
 
-    var VdWidget = function(attributes) {
+    var VdWidget = function(attributes, /*for private*/contextWidgets) {
         var attrs = attributes || {};
         attrs = _.extend({
             children: null
@@ -71,6 +71,11 @@
 
         this.rendered = false;
 
+        this._contextWidgets = contextWidgets || {};
+        this._widget = this.attributes.widget;
+
+        this._constructor();
+
         var ret = this._init();
         // support promise
         if (ret && ret.then) {
@@ -84,6 +89,24 @@
         constructor: VdWidget,
 
         type: 'Widget',
+
+        _constructor: function() {
+            // 所有以'ev-'开头的属性，都转化为事件
+            var self = this;
+            _.each(this.attributes, function(value, key) {
+                if (key.substring(0, 3) === 'ev-' && _.isFunction(value)) {
+                    self.on(key.substring(3), value);
+                }
+            });
+            // 存在widget名称引用属性，则注入所处上下文的widgets中
+            if (this._widget) {
+                this._contextWidgets[this._widget] = this;
+            }
+            // 如果存在arguments属性，则将其拆开赋给attributes
+            if (this.attributes.arguments) {
+                _.extend(this.attributes, _.result(this.attributes, 'arguments'));
+            }
+        },
 
         _init: function() {},
 
@@ -120,6 +143,9 @@
         },
 
         destroy: function(domNode) {
+            if (this._widget) {
+                delete this._contextWidgets[this._widget];
+            }
             this._destroy(domNode);
         },
 
