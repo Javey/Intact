@@ -1,8 +1,8 @@
 (function(factory) {
     if (typeof exports === 'object' && typeof module !== 'undefined') {
-        module.exports = factory(require('vdt.js'), require('underscore'));
+        module.exports = factory(require('vdt'), require('underscore'));
     } else if (typeof define === 'function' && define.amd) {
-        define(['vdt.js', 'underscore'], factory);
+        define(['vdt', 'underscore'], factory);
     } else {
         this.VdWidget = factory(Vdt, _);
     }
