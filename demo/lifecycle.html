@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Hello</title>
+    <script type="text/javascript" src="https://rawgit.com/Javey/vdt.js/master/dist/vdt.js"></script>
+    <script type="text/javascript" src="https://rawgit.com/jashkenas/underscore/master/underscore.js"></script>
+    <script type="text/javascript" src="https://rawgit.com/Javey/VdWidget/master/src/vdWidget.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+    // emulate api
+    var api = {
+        getData: function() {
+            return new Promise(function(resolve, reject) {
+                setTimeout(function() {
+                    resolve({'name': 'Javey'});
+                }, 1000);
+            });
+        }
+    };
+
+    var Widget = VdWidget.extend({
+        defaults: {
+            name: ''
+        },
+
+        template: '<h1 ev-click={_.bind(this.change, this)}>Hello {this.get("name")}!</h1>',
+
+        _init: function() {
+            // return a promise
+            return api.getData().then(function(data) {
+                this.set('name', data.name);
+            }.bind(this));
+        },
+
+        _create: function() {
+            var text = document.createElement('div');
+            text.innerHTML = 'Created';
+            this.element.appendChild(text);
+        },
+
+        _update: function() {
+            var text = document.createElement('div');
+            text.innerHTML = 'Updated';
+            this.element.appendChild(text);
+        },
+
+        _destroy: function(dom) {
+            console.log('destroy');
+        },
+
+        change: function() {
+            this.set('name', 'everyone')
+        }
+    });
+
+    VdWidget.mount(Widget, document.body);
+</script>
+</body>
+</html>

@@ -26,6 +26,8 @@ bower install vdwidget --save
 
 ## 依赖
 
+[Hello VdWidget](http://plnkr.co/edit/UcxpLu?p=preview)
+
 必须
 
 1. underscore
@@ -40,20 +42,22 @@ bower install vdwidget --save
 
 ## 示例
 
+[Usage](http://plnkr.co/edit/e7Ik1y?p=preview)
+
 ```js
 var Widget = VdWidget.extend({
-    defaults: {
+      defaults: {
         name: 'Javey'
-    },
+      },
 
-    template: '<div ev-click={_.bind(this.change, this)}>{this.get("name")}</div>',
+      template: '<h1 ev-click={_.bind(this.change, this)}>Hello {this.get("name")}!</h1>',
 
-    change: function() {
-        this.set('name', 'Hello Javey!');
-    }
-});
+      change: function() {
+        this.set('name', 'everyone')
+      }
+    });
 
-VdWidget.mount(Widget, $('body')[0]);
+VdWidget.mount(Widget, document.body);
 ```
 
 ## 使用方法
@@ -86,7 +90,7 @@ VdWidget.mount(Widget, $('body')[0]);
             name: 'Javey'
         },
 
-        template: '<div ev-click={_.bind(this.change, this)}>{this.get("name")}</div>'
+        template: '<div ev-click={_.bind(this.change, this)}>Hello {this.get("name")}!/div>'
     });
     ```
 
@@ -130,6 +134,8 @@ ev-click={_.bind(this.change, this, 'Hi')}
 ```
 
 ### 组件生命周期
+
+[Lifecycle](http://plnkr.co/edit/Qqct3EZZ6a22ULMhBvhW?p=preview)
 
 #### _init
 
