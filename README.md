@@ -223,6 +223,8 @@ var Widget = VdWidget.extend({
 
 ### 组件继承
 
+[VdWidget Extend](http://plnkr.co/edit/Ucha5XyvWArRS8HcEKJc?p=preview)
+
 要实现组件继承，一般都要分两步
 
 1. 继承组件的方法
