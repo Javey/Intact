@@ -545,6 +545,20 @@ var ComponentCard = VdWidget.extend({
 
 加载组件和加载模板原理一样，组件本身就是js，不想vdt模板需要编译成js。我们可以通过`define`定义组件模块，和加载模板一样，在模板中直接加载组件，而不是通过注入的方式。
 
+### 动画
+
+VdWidget提供了两个组件用于实现css3动画，`AnimateGroup`&`Animate`，必须两个组件配合才能达到动画效果。`Animate`包含在`AnimateGroup`中。
+
+```jsx
+<AnimateGroup tagName="ul">
+    <Animate tagName="li" transition="fade" key="item1">item1</Animate>
+</AnimateGroup>
+```
+
+* `tagName`属性用于指定该组件渲染成什么标签，默认：div
+* `transition`属性用于指定动画class名。如：进入，fade-enter fade-enter-active；退出，fade-leave fade-leave-active。默认：animate
+* `key`属性必须指定，用于区别每一个dom，key值必须在当前`AnimateGroup`下唯一
+
 ## API
 
 ### _init()
