@@ -301,7 +301,6 @@
                 ret[index + _index] = child;
             }
         });
-        console.log(ret);
         return ret;
     }
 
