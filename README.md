@@ -547,17 +547,17 @@ var ComponentCard = VdWidget.extend({
 
 ### 动画
 
-VdWidget提供了两个组件用于实现css3动画，`AnimateGroup`&`Animate`，必须两个组件配合才能达到动画效果。`Animate`包含在`AnimateGroup`中。
+VdWidget提供了`Animate`组件用于实现css3动画，`Animate`必须相互嵌套，才能达到动画效果。
 
 ```jsx
-<AnimateGroup tagName="ul">
+<Animate tagName="ul">
     <Animate tagName="li" transition="fade" key="item1">item1</Animate>
-</AnimateGroup>
+</Animate>
 ```
 
 * `tagName`属性用于指定该组件渲染成什么标签，默认：div
 * `transition`属性用于指定动画class名。如：进入，fade-enter fade-enter-active；退出，fade-leave fade-leave-active。默认：animate
-* `key`属性必须指定，用于区别每一个dom，key值必须在当前`AnimateGroup`下唯一
+* `key`属性必须指定，用于区别每一个dom，key值必须在当前`Animate`下唯一
 
 ## API
 

@@ -76,9 +76,8 @@
 
         this._constructor();
 
-        // 注入两个组件，在模板中可以直接使用
+        // 注入组件，在模板中可以直接使用
         this.Animate = Animate;
-        this.AnimateGroup = AnimateGroup;
 
         var ret = this._init();
         // support promise
@@ -486,10 +485,11 @@
         }
     };
 
-    // AnimateGroup Widget for animation
-    var AnimateGroup = VdWidget.extend({
+    // Animate Widget for animation
+    var Animate = VdWidget.extend({
         defaults: {
-            tagName: 'div'
+            tagName: 'div',
+            transition: 'animate'
         },
 
         template: Vdt.compile('return h(this.get("tagName"), _.extend({}, this.get()), _.values(this.childrenMap))', {autoReturn: false}),
@@ -588,21 +588,7 @@
             this.widgets = {};
             this.element = this.vdt.update(this);
             this.pointer.vdt.tree = this.vdt.tree;
-        }
-    });
-
-    // Animate Widget for animation child of AnimateGroup
-    var Animate = VdWidget.extend({
-        defaults: {
-            tagName: 'div',
-            transition: 'animate'
         },
-
-        _init: function() {
-            this.key = this.get('key');
-        },
-
-        template: Vdt.compile('return h(this.get("tagName"), _.extend({}, this.get()), this.children)', {autoReturn: false}),
 
         enter: function(done) {
             var transition = this.get('transition'),
