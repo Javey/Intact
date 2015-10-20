@@ -4,7 +4,7 @@
     } else if (typeof define === 'function' && define.amd) {
         define(['vdt', 'underscore'], factory);
     } else {
-        this.VdWidget = factory(Vdt, _);
+        this.Intact = this.VdWidget = factory(Vdt, _);
     }
 })(function(Vdt, _) {
     /**
