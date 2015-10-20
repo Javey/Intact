@@ -1,7 +1,7 @@
 {
   "name": "VdWidget",
   "description": "A very lightweight data-binding library to create rich web application",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "dependencies": {
     "underscore": "^1.8.3",
     "vdt": "latest"
