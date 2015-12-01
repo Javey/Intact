@@ -1,5 +1,5 @@
 var Express = require('express'),
-    Vdt = require('vdt.js');
+    Vdt = require('vdt');
 
 var app = Express();
 

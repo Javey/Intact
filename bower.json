@@ -1,18 +1,20 @@
 {
-  "name": "VdWidget",
+  "name": "Intact",
   "version": "0.1.2",
-  "homepage": "https://github.com/Javey/VdWidget",
+  "homepage": "https://github.com/Javey/Intact",
   "authors": [
     "Javey <jiawei23716@sina.com>"
   ],
   "description": "A very lightweight data-binding library to create rich web application",
-  "main": "src/vdWidget.js",
+  "main": "src/intact.js",
   "keywords": [
     "template",
     "virtual-dom",
     "vdt",
     "vdt.js",
-    "vdwidget"
+    "vdwidget",
+    "intact",
+    "intact.js"
   ],
   "license": "MIT",
   "ignore": [

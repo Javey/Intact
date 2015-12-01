@@ -15,11 +15,17 @@
      */
     function inherit(Parent, prototype) {
         var Child = function() {
+            if (!(this instanceof Child)) {
+                return Parent.apply(Child, arguments);
+            }
             Parent.apply(this, arguments);
         };
 
         Child.prototype = _.create(Parent.prototype);
         _.each(prototype, function(proto, name) {
+            if (name === 'displayName') {
+                Child.displayName = proto;
+            }
             if (!_.isFunction(proto) || name === 'template') {
                 return Child.prototype[name] = proto;
             }
@@ -44,8 +50,8 @@
                     this._superApply = __superApply;
 
                     return returnValue;
-                }
-            })()
+                };
+            })();
         });
         Child.__super = Parent.prototype;
         Child.prototype.constructor = Child;
@@ -55,7 +61,37 @@
         return Child;
     }
 
-    var VdWidget = function(attributes, /*for private*/contextWidgets) {
+    /**
+     * 用于包装widget的thunk
+     * @param Widget
+     * @param attributes
+     * @param contextWidget
+     * @constructor
+     */
+    var Thunk = function(Widget, attributes, contextWidget) {
+        this.Widget = Widget;
+        this.attributes = attributes || {};
+        this.key = this.attributes.key;
+        this.contextWidget = contextWidget;
+    };
+    Thunk.prototype.type = 'Thunk';
+    Thunk.prototype.render = function(previous) {
+        if (!previous || previous.Widget !== this.Widget || previous.key !== this.key) {
+            this.widget = new this.Widget(this.attributes, this.contextWidget);
+        } else if (previous.Widget === this.Widget) {
+            this.widget = previous.widget;
+            // this.widget.prevAttributes = _.clone(previous.widget.attributes);
+            // this.widget.prevChildren = previous.widget.children;
+            _.extend(this.widget.attributes, this.attributes);
+            this.widget.children = this.attributes.children;
+        }
+        return this.widget;
+    };
+
+    var Intact = function(attributes, /*for private*/contextWidgets) {
+        if (!(this instanceof Intact)) {
+            return new Thunk(this, attributes, contextWidgets);
+        }
         var attrs = attributes || {};
         attrs = _.extend({
             children: null
@@ -74,6 +110,8 @@
         this._contextWidgets = contextWidgets || {};
         this._widget = this.attributes.widget || _.uniqueId('widget');
 
+        this.displayName = this.displayName;
+
         this._constructor();
 
         // 注入组件，在模板中可以直接使用
@@ -82,16 +120,17 @@
         var ret = this._init();
         // support promise
         if (ret && ret.then) {
-            ret.then(_.bind(this._render, this))
+            ret.then(_.bind(this._render, this));
         } else {
             this._render();
         }
     };
 
-    VdWidget.prototype = {
-        constructor: VdWidget,
+    Intact.prototype = {
+        constructor: Intact,
 
         type: 'Widget',
+        displayName: 'Widget',
 
         _constructor: function() {
             // 所有以'ev-'开头的属性，都转化为事件
@@ -114,14 +153,14 @@
         _init: function() {},
 
         _render: function() {
-            this.element = this.vdt.render(this);
+            //this.element = this.vdt.render(this);
 
             this.on('change', function() {
                 this.update();
             });
 
-            this.rendered = true;
-            this.trigger('rendered', this);
+            //this.rendered = true;
+            //this.trigger('rendered', this);
         },
 
         _create: function() {},
@@ -133,6 +172,9 @@
         _destroy: function(domNode) {},
 
         init: function() {
+            this.element = this.vdt.render(this);
+            this.rendered = true;
+            this.trigger('rendered', this);
             this._create();
             return this.element;
         },
@@ -252,26 +294,27 @@
      * @param prototype
      * @returns {Function}
      */
-    VdWidget.extend = function(prototype) {
+    Intact.extend = function(prototype) {
         _.defaults(prototype.defaults, this.prototype.defaults);
         return inherit(this, prototype);
     };
 
     /**
      * 挂载组件到dom中
-     * @param widget {VdWidget} VdWidget类或子类，也可以是实例化的对象
+     * @param widget {Intact} Intact类或子类，也可以是实例化的对象
      * @param node {Node} html节点
      */
-    VdWidget.mount = function(widget, node) {
-        if (widget.prototype && (widget.prototype instanceof VdWidget || widget === VdWidget)) {
+    Intact.mount = function(widget, node) {
+        if (widget.prototype && (widget.prototype instanceof Intact || widget === Intact)) {
             widget = new widget();
         }
         if (widget.rendered) {
-            node.appendChild(widget.init());
+            node.appendChild(widget.element);
         } else {
             widget.on('rendered', function() {
-                node.appendChild(widget.init());
+                node.appendChild(widget.element);
             });
+            widget.init();
         }
         return widget;
     };
@@ -288,12 +331,13 @@
             return children;
         }
         ret = ret || {};
-        //index = index || '0';
         index = index || '$0';
         _.each(children, function(child, _index) {
             _index = '$' + _index;
             if (child && child.type === 'Widget') {
                 ret[child.key] = child;
+            } else if (child && child.type === 'Thunk') {
+                ret[child.attributes.key] = child;
             } else if (_.isArray(child)) {
                 getChildMap(child, ret, index + _index);
             } else {
@@ -343,6 +387,10 @@
             if (nextKeysPending.hasOwnProperty(nextKey)) {
                 for (i = 0; i < nextKeysPending[nextKey].length; i++) {
                     var pendingNextKey = nextKeysPending[nextKey][i];
+                    var value = getValueForKey(pendingNextKey);
+                    // if (value && value.type === 'Thunk') {
+                        // childMapping[nextKeysPending[nextKey][i]] = value;
+                    // }
                     childMapping[nextKeysPending[nextKey][i]] = getValueForKey(
                         pendingNextKey
                     );
@@ -356,13 +404,14 @@
             childMapping[pendingKeys[i]] = getValueForKey(pendingKeys[i]);
         }
 
-        for (var key in prev) {
-            delete prev[key];
-        }
-        for (var key in childMapping) {
-            prev[key] = childMapping[key];
-        }
-        return prev;
+        // for (var key in prev) {
+            // delete prev[key];
+        // }
+        // for (var key in childMapping) {
+            // prev[key] = childMapping[key];
+        // }
+        // return prev;
+        return childMapping;
     }
 
     function addClass(element, className) {
@@ -454,6 +503,16 @@
         node.removeEventListener(eventName, eventListener, false);
     }
 
+    function cloneThunkWidget(thunk) {
+        if (thunk && thunk.type === 'Thunk') {
+            var widget = thunk.widget;
+            thunk.widget = thunk.vnode = new thunk.Widget(widget.prevAttributes || widget.attributes);
+            thunk.widget.children = widget.prevChildren || widget.children;
+            thunk.widget.init();
+        }
+        return thunk;
+    }
+
     var TransitionEvents = {
         on: function(node, eventListener) {
             if (endEvents.length === 0) {
@@ -486,7 +545,9 @@
     };
 
     // Animate Widget for animation
-    var Animate = VdWidget.extend({
+    var Animate = Intact.extend({
+        displayName: 'Animate',
+
         defaults: {
             tagName: 'div',
             transition: 'animate'
@@ -510,11 +571,16 @@
         _beforeUpdate: function(prevWidget) {
             if (!prevWidget) return;
 
-            var nextMap = this.childrenMap,
-                prevMap = _.extend({}, prevWidget.childrenMap);
-            this.currentKeys = prevWidget.currentKeys;
-            this.pointer = _.extend(prevWidget.pointer, this.pointer);
-            this.childrenMap = mergeChildren(prevWidget.childrenMap, nextMap);
+            //this._init();
+
+            //var nextMap = getChildMap(this.children),//.childrenMap,
+            //    //prevMap = _.extend({}, prevWidget.childrenMap);
+            //    prevMap = getChildMap(_.map(this.prevChildren, cloneThunkWidget));
+            var nextMap = getChildMap(this.children);//this.childrenMap,
+                prevMap = prevWidget.childrenMap;
+            // this.currentKeys = prevWidget.currentKeys;
+            // this.pointer = _.extend(prevWidget.pointer, this.pointer);
+            this.childrenMap = mergeChildren(prevMap, nextMap);
 
             _.each(nextMap, function(value, key) {
                 if (nextMap[key] && !prevMap.hasOwnProperty(key) && !this.currentKeys[key]) {
@@ -542,43 +608,47 @@
         },
 
         performEnter: function(key) {
-            var widget = this.childrenMap[key];
+            var widget = this.childrenMap[key].widget;
             this.currentKeys[key] = true;
-            if (widget.enter) {
+            if (widget && widget.enter) {
                 widget.enter(_.bind(this._doneEntering, this, key));
             } else {
-                this._doneEntering(key);
+                this._doneEntering(key, true);
             }
         },
 
         performLeave: function(key) {
-            var widget = this.childrenMap[key];
+            var widget = this.childrenMap[key].widget;
             this.currentKeys[key] = true;
-            if (widget.leave) {
+            if (widget && widget.leave) {
                 widget.leave(_.bind(this._doneLeaving, this, key));
             } else {
-                this._doneLeaving(key);
+                this._doneLeaving(key, true);
             }
         },
 
-        _doneEntering: function(key) {
+        _doneEntering: function(key, direct) {
             delete this.currentKeys[key];
-            this.prevWidget.vdt.tree = this.pointer.vdt.tree;
-            var map = getChildMap(this.pointer.children);
+            // this.prevWidget.vdt.tree = this.pointer.vdt.tree;
+            if (direct) return;
+            // var map = getChildMap(this.pointer.children);
+            var map = getChildMap(this.children);
             if (!map[key]) {
                 this.performLeave(key);
             }
         },
 
-        _doneLeaving: function(key) {
+        _doneLeaving: function(key, direct) {
             delete this.currentKeys[key];
-            var map = getChildMap(this.pointer.children);
-            if (map && map[key]) {
+            // var map = getChildMap(this.pointer.children);
+            var map = getChildMap(this.children);
+            if (!direct && map && map[key]) {
                 this.performEnter(key);
             } else {
                 delete this.childrenMap[key];
-                this.prevWidget.vdt.tree = this.pointer.vdt.tree;
-                this.animateUpdate(this.prevWidget, this.prevWidget.element);
+                // this.prevWidget.vdt.tree = this.pointer.vdt.tree;
+                this.vdt.update()
+                // this.animateUpdate(this.prevWidget, this.prevWidget.element);
             }
         },
 
@@ -620,5 +690,5 @@
         }
     });
 
-    return VdWidget;
+    return Intact;
 });

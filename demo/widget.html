@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <script type="text/javascript" src="../bower_components/underscore/underscore.js"></script>
+    <script type="text/javascript" src="../bower_components/vdt/dist/vdt.js"></script>
+    <script type="text/javascript" src="../src/intact.js"></script>
+</head>
+<body>
+<div id="example"></div>
+<script type="text/javascript">
+    var SubComponent = Intact.extend({
+        defaults: {
+            num: 0
+        },
+
+        displayName: 'SubComponent',
+
+        template: '<div ev-click={this.change.bind(this)}>num: {this.get("num")} count:{this.get("count")}</div>',
+
+        change: function() {
+            this.set({
+                'num': this.get('num') + 1,
+                'count': this.get('count') + 1
+            });
+            this.test = this.test ? this.test + 1 : 1;
+            console.log(this.test);
+        }
+    });
+
+    var SubComponentOther = Intact.extend({
+        defaults: {
+            num: 1
+        },
+        template: '<div>{this.get("num")}</div>',
+        displayName: 'SubComponentOther'
+    });
+
+    var MyComponent = Intact.extend({
+        defaults: {
+            a: 0
+        },
+
+        displayName: 'MyComponent',
+
+        template: '<div>' +
+            '<div ev-click={this.change.bind(this)}>{this.get("a")}</div>' +
+            '{this.get("a") !== 10 ? <SubComponent count={this.get("a")} ev-change:count={this.changeCount.bind(this)} /> : <SubComponentOther />}' +
+        '</div>',
+
+        change: function() {
+            this.set('a', this.get('a') + 1);
+        },
+
+        changeCount: function(widget, value) {
+            this.set('a', value);
+        }
+    });
+
+    VdWidget.mount(MyComponent, document.getElementById('example'));
+</script>
+</body>
+</html>
