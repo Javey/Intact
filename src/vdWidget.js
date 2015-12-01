@@ -15,6 +15,9 @@
      */
     function inherit(Parent, prototype) {
         var Child = function() {
+            if (!(this instanceof Child)) {
+                return Parent.apply(Child, arguments);
+            }
             Parent.apply(this, arguments);
         };
 
@@ -55,7 +58,36 @@
         return Child;
     }
 
+	/**
+     * 用于包装widget的thunk
+     * @param Widget
+     * @param attributes
+     * @param contextWidget
+     * @constructor
+     */
+    var Thunk = function(Widget, attributes, contextWidget) {
+        this.Widget = Widget;
+        this.attributes = attributes || {};
+        this.key = this.attributes.key;
+        this.contextWidget = contextWidget;
+    };
+    Thunk.prototype.type = 'Thunk';
+    Thunk.prototype.render = function(previous) {
+        if (!previous || previous.Widget !== this.Widget || previous.key !== this.key) {
+            this.widget = new this.Widget(this.attributes, this.contextWidget);
+        } else if (previous.Widget === this.Widget) {
+            this.widget = previous.widget;
+            this.widget.children = this.attributes.children;
+            delete this.attributes.children;
+            _.extend(this.widget.attributes, this.attributes);
+        }
+        return this.widget;
+    };
+
     var VdWidget = function(attributes, /*for private*/contextWidgets) {
+        if (!(this instanceof VdWidget)) {
+            return new Thunk(this, attributes, contextWidgets);
+        }
         var attrs = attributes || {};
         attrs = _.extend({
             children: null
