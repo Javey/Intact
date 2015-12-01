@@ -10,3 +10,4 @@ app.use(Vdt.middleware({
 }));
 
 app.listen(9678);
+console.log('app listen on 9678')

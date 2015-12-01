@@ -80,10 +80,9 @@
             this.widget = new this.Widget(this.attributes, this.contextWidget);
         } else if (previous.Widget === this.Widget) {
             this.widget = previous.widget;
-            // this.widget.prevAttributes = _.clone(previous.widget.attributes);
-            // this.widget.prevChildren = previous.widget.children;
-            _.extend(this.widget.attributes, this.attributes);
             this.widget.children = this.attributes.children;
+            delete this.attributes.children;
+            _.extend(this.widget.attributes, this.attributes);
         }
         return this.widget;
     };
@@ -105,6 +104,7 @@
 
         this.widgets = {};
 
+        this.inited = false;
         this.rendered = false;
 
         this._contextWidgets = contextWidgets || {};
@@ -113,24 +113,12 @@
         this.displayName = this.displayName;
 
         this._constructor();
-
-        // 注入组件，在模板中可以直接使用
-        this.Animate = Animate;
-
-        var ret = this._init();
-        // support promise
-        if (ret && ret.then) {
-            ret.then(_.bind(this._render, this));
-        } else {
-            this._render();
-        }
     };
 
     Intact.prototype = {
         constructor: Intact,
 
         type: 'Widget',
-        displayName: 'Widget',
 
         _constructor: function() {
             // 所有以'ev-'开头的属性，都转化为事件
@@ -148,20 +136,24 @@
             if (this.attributes.arguments) {
                 _.extend(this.attributes, _.result(this.attributes, 'arguments'));
             }
+
+            // 注入组件，在模板中可以直接使用
+            this.Animate = Animate;
+
+            var ret = this._init();
+            // support promise
+            function inited() {
+                self.inited = true;
+                self.trigger('inited', self);
+            }
+            if (ret && ret.then) {
+                ret.then(inited);
+            } else {
+                inited();
+            }
         },
 
         _init: function() {},
-
-        _render: function() {
-            //this.element = this.vdt.render(this);
-
-            this.on('change', function() {
-                this.update();
-            });
-
-            //this.rendered = true;
-            //this.trigger('rendered', this);
-        },
 
         _create: function() {},
 
@@ -173,6 +165,7 @@
 
         init: function() {
             this.element = this.vdt.render(this);
+            this.off('change', this.update).on('change', this.update);
             this.rendered = true;
             this.trigger('rendered', this);
             this._create();
@@ -310,11 +303,12 @@
         }
         if (widget.rendered) {
             node.appendChild(widget.element);
+        } else if (widget.inited) {
+            node.appendChild(widget.init()); 
         } else {
-            widget.on('rendered', function() {
-                node.appendChild(widget.element);
+            widget.on('inited', function() {
+                node.appendChild(widget.init());
             });
-            widget.init();
         }
         return widget;
     };
@@ -388,9 +382,6 @@
                 for (i = 0; i < nextKeysPending[nextKey].length; i++) {
                     var pendingNextKey = nextKeysPending[nextKey][i];
                     var value = getValueForKey(pendingNextKey);
-                    // if (value && value.type === 'Thunk') {
-                        // childMapping[nextKeysPending[nextKey][i]] = value;
-                    // }
                     childMapping[nextKeysPending[nextKey][i]] = getValueForKey(
                         pendingNextKey
                     );
@@ -404,13 +395,6 @@
             childMapping[pendingKeys[i]] = getValueForKey(pendingKeys[i]);
         }
 
-        // for (var key in prev) {
-            // delete prev[key];
-        // }
-        // for (var key in childMapping) {
-            // prev[key] = childMapping[key];
-        // }
-        // return prev;
         return childMapping;
     }
 
@@ -503,16 +487,6 @@
         node.removeEventListener(eventName, eventListener, false);
     }
 
-    function cloneThunkWidget(thunk) {
-        if (thunk && thunk.type === 'Thunk') {
-            var widget = thunk.widget;
-            thunk.widget = thunk.vnode = new thunk.Widget(widget.prevAttributes || widget.attributes);
-            thunk.widget.children = widget.prevChildren || widget.children;
-            thunk.widget.init();
-        }
-        return thunk;
-    }
-
     var TransitionEvents = {
         on: function(node, eventListener) {
             if (endEvents.length === 0) {
@@ -559,10 +533,6 @@
             this._ = _;
             this.key = this.get('key');
             this.childrenMap = getChildMap(this.children);
-            this.pointer = {
-                children: this.children,
-                vdt: this.vdt
-            };
             this.currentKeys = {};
             this.keysToEnter = [];
             this.keysToLeave = [];
@@ -571,15 +541,8 @@
         _beforeUpdate: function(prevWidget) {
             if (!prevWidget) return;
 
-            //this._init();
-
-            //var nextMap = getChildMap(this.children),//.childrenMap,
-            //    //prevMap = _.extend({}, prevWidget.childrenMap);
-            //    prevMap = getChildMap(_.map(this.prevChildren, cloneThunkWidget));
-            var nextMap = getChildMap(this.children);//this.childrenMap,
+            var nextMap = getChildMap(this.children);
                 prevMap = prevWidget.childrenMap;
-            // this.currentKeys = prevWidget.currentKeys;
-            // this.pointer = _.extend(prevWidget.pointer, this.pointer);
             this.childrenMap = mergeChildren(prevMap, nextMap);
 
             _.each(nextMap, function(value, key) {
@@ -613,7 +576,7 @@
             if (widget && widget.enter) {
                 widget.enter(_.bind(this._doneEntering, this, key));
             } else {
-                this._doneEntering(key, true);
+                this._doneEntering(key);
             }
         },
 
@@ -623,41 +586,27 @@
             if (widget && widget.leave) {
                 widget.leave(_.bind(this._doneLeaving, this, key));
             } else {
-                this._doneLeaving(key, true);
+                this._doneLeaving(key);
             }
         },
 
-        _doneEntering: function(key, direct) {
+        _doneEntering: function(key) {
             delete this.currentKeys[key];
-            // this.prevWidget.vdt.tree = this.pointer.vdt.tree;
-            if (direct) return;
-            // var map = getChildMap(this.pointer.children);
             var map = getChildMap(this.children);
             if (!map[key]) {
                 this.performLeave(key);
             }
         },
 
-        _doneLeaving: function(key, direct) {
+        _doneLeaving: function(key) {
             delete this.currentKeys[key];
-            // var map = getChildMap(this.pointer.children);
             var map = getChildMap(this.children);
-            if (!direct && map && map[key]) {
+            if (map && map[key]) {
                 this.performEnter(key);
             } else {
                 delete this.childrenMap[key];
-                // this.prevWidget.vdt.tree = this.pointer.vdt.tree;
-                this.vdt.update()
-                // this.animateUpdate(this.prevWidget, this.prevWidget.element);
+                this.vdt.update();
             }
-        },
-
-        animateUpdate: function(prevWidget, domNode) {
-            this.vdt.node = domNode;
-            this.vdt.tree = prevWidget.vdt.tree;
-            this.widgets = {};
-            this.element = this.vdt.update(this);
-            this.pointer.vdt.tree = this.vdt.tree;
         },
 
         enter: function(done) {
