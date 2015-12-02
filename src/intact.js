@@ -140,6 +140,9 @@
             // 注入组件，在模板中可以直接使用
             this.Animate = Animate;
 
+            // change事件，自动更新
+            this.on('change', this.update);
+
             var ret = this._init();
             // support promise
             function inited() {
@@ -165,7 +168,6 @@
 
         init: function() {
             this.element = this.vdt.render(this);
-            this.off('change', this.update).on('change', this.update);
             this.rendered = true;
             this.trigger('rendered', this);
             this._create();
@@ -173,6 +175,7 @@
         },
 
         update: function(prevWidget, domNode) {
+            if (!this.vdt.node && (!prevWidget || !prevWidget.vdt.node)) return;
             this._beforeUpdate(prevWidget, domNode);
             if (prevWidget && domNode) {
                 this.vdt.node = domNode;
@@ -181,6 +184,7 @@
             this.prevWidget = prevWidget;
             this.widgets = {};
             this.element = this.vdt.update(this);
+            this.rendered = true;
             this._update(prevWidget, domNode);
             return this.element;
         },
@@ -328,10 +332,10 @@
         index = index || '$0';
         _.each(children, function(child, _index) {
             _index = '$' + _index;
-            if (child && child.type === 'Widget') {
-                ret[child.key] = child;
-            } else if (child && child.type === 'Thunk') {
-                ret[child.attributes.key] = child;
+            if (child && (child.type === 'Widget' || child.type === 'Thunk')) {
+                ret[child.key || _index] = child;
+            //} else if (child && child.type === 'Thunk') {
+            //    ret[child.key] = child;
             } else if (_.isArray(child)) {
                 getChildMap(child, ret, index + _index);
             } else {
