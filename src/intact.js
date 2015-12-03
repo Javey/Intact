@@ -141,7 +141,7 @@
             this.Animate = Animate;
 
             // change事件，自动更新
-            this.on('change', this.update);
+            this.on('change', function() { self.update(); });
 
             var ret = this._init();
             // support promise
@@ -229,11 +229,15 @@
                 current[attr] = val;
             }
 
-            if (!options.silent && changes.length) {
-                this.trigger('change', this);
+            if (changes.length) {
+                options.change && options.change.call(this);
+                !options.silent && this.trigger('change', this);
 
+                var eventName;
                 for (var i = 0, l = changes.length; i < l; i++) {
-                    this.trigger('change:' + changes[i], this, current[changes[i]]);
+                    eventName = 'change:' + changes[i];
+                    options[eventName] && options[eventName].call(this, current[changes[i]]);
+                    !options.silent && this.trigger(eventName, this, current[changes[i]]);
                 }
             }
 
