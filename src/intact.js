@@ -135,6 +135,7 @@
             // 如果存在arguments属性，则将其拆开赋给attributes
             if (this.attributes.arguments) {
                 _.extend(this.attributes, _.result(this.attributes, 'arguments'));
+                delete this.attributes.arguments;
             }
 
             // 注入组件，在模板中可以直接使用
