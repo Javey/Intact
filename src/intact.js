@@ -23,6 +23,9 @@
 
         Child.prototype = _.create(Parent.prototype);
         _.each(prototype, function(proto, name) {
+            if (name === 'displayName') {
+                Child.displayName = proto;
+            }
             if (!_.isFunction(proto) || name === 'template') {
                 return Child.prototype[name] = proto;
             }
@@ -47,8 +50,8 @@
                     this._superApply = __superApply;
 
                     return returnValue;
-                }
-            })()
+                };
+            })();
         });
         Child.__super = Parent.prototype;
         Child.prototype.constructor = Child;
@@ -58,7 +61,7 @@
         return Child;
     }
 
-	/**
+    /**
      * 用于包装widget的thunk
      * @param Widget
      * @param attributes
@@ -84,8 +87,8 @@
         return this.widget;
     };
 
-    var VdWidget = function(attributes, /*for private*/contextWidgets) {
-        if (!(this instanceof VdWidget)) {
+    var Intact = function(attributes, /*for private*/contextWidgets) {
+        if (!(this instanceof Intact)) {
             return new Thunk(this, attributes, contextWidgets);
         }
         var attrs = attributes || {};
@@ -101,27 +104,19 @@
 
         this.widgets = {};
 
+        this.inited = false;
         this.rendered = false;
 
         this._contextWidgets = contextWidgets || {};
         this._widget = this.attributes.widget || _.uniqueId('widget');
 
+        this.displayName = this.displayName;
+
         this._constructor();
-
-        // 注入组件，在模板中可以直接使用
-        this.Animate = Animate;
-
-        var ret = this._init();
-        // support promise
-        if (ret && ret.then) {
-            ret.then(_.bind(this._render, this))
-        } else {
-            this._render();
-        }
     };
 
-    VdWidget.prototype = {
-        constructor: VdWidget,
+    Intact.prototype = {
+        constructor: Intact,
 
         type: 'Widget',
 
@@ -140,21 +135,29 @@
             // 如果存在arguments属性，则将其拆开赋给attributes
             if (this.attributes.arguments) {
                 _.extend(this.attributes, _.result(this.attributes, 'arguments'));
+                delete this.attributes.arguments;
+            }
+
+            // 注入组件，在模板中可以直接使用
+            this.Animate = Animate;
+
+            // change事件，自动更新
+            this.on('change', function() { self.update(); });
+
+            var ret = this._init();
+            // support promise
+            function inited() {
+                self.inited = true;
+                self.trigger('inited', self);
+            }
+            if (ret && ret.then) {
+                ret.then(inited);
+            } else {
+                inited();
             }
         },
 
         _init: function() {},
-
-        _render: function() {
-            this.element = this.vdt.render(this);
-
-            this.on('change', function() {
-                this.update();
-            });
-
-            this.rendered = true;
-            this.trigger('rendered', this);
-        },
 
         _create: function() {},
 
@@ -165,11 +168,15 @@
         _destroy: function(domNode) {},
 
         init: function() {
+            this.element = this.vdt.render(this);
+            this.rendered = true;
+            this.trigger('rendered', this);
             this._create();
             return this.element;
         },
 
         update: function(prevWidget, domNode) {
+            if (!this.vdt.node && (!prevWidget || !prevWidget.vdt.node)) return;
             this._beforeUpdate(prevWidget, domNode);
             if (prevWidget && domNode) {
                 this.vdt.node = domNode;
@@ -178,6 +185,7 @@
             this.prevWidget = prevWidget;
             this.widgets = {};
             this.element = this.vdt.update(this);
+            this.rendered = true;
             this._update(prevWidget, domNode);
             return this.element;
         },
@@ -222,11 +230,15 @@
                 current[attr] = val;
             }
 
-            if (!options.silent && changes.length) {
-                this.trigger('change', this);
+            if (changes.length) {
+                options.change && options.change.call(this);
+                !options.silent && this.trigger('change', this);
 
+                var eventName;
                 for (var i = 0, l = changes.length; i < l; i++) {
-                    this.trigger('change:' + changes[i], this, current[changes[i]]);
+                    eventName = 'change:' + changes[i];
+                    options[eventName] && options[eventName].call(this, current[changes[i]]);
+                    !options.silent && this.trigger(eventName, this, current[changes[i]]);
                 }
             }
 
@@ -284,24 +296,26 @@
      * @param prototype
      * @returns {Function}
      */
-    VdWidget.extend = function(prototype) {
+    Intact.extend = function(prototype) {
         _.defaults(prototype.defaults, this.prototype.defaults);
         return inherit(this, prototype);
     };
 
     /**
      * 挂载组件到dom中
-     * @param widget {VdWidget} VdWidget类或子类，也可以是实例化的对象
+     * @param widget {Intact} Intact类或子类，也可以是实例化的对象
      * @param node {Node} html节点
      */
-    VdWidget.mount = function(widget, node) {
-        if (widget.prototype && (widget.prototype instanceof VdWidget || widget === VdWidget)) {
+    Intact.mount = function(widget, node) {
+        if (widget.prototype && (widget.prototype instanceof Intact || widget === Intact)) {
             widget = new widget();
         }
         if (widget.rendered) {
-            node.appendChild(widget.init());
+            node.appendChild(widget.element);
+        } else if (widget.inited) {
+            node.appendChild(widget.init()); 
         } else {
-            widget.on('rendered', function() {
+            widget.on('inited', function() {
                 node.appendChild(widget.init());
             });
         }
@@ -320,12 +334,13 @@
             return children;
         }
         ret = ret || {};
-        //index = index || '0';
         index = index || '$0';
         _.each(children, function(child, _index) {
             _index = '$' + _index;
-            if (child && child.type === 'Widget') {
-                ret[child.key] = child;
+            if (child && (child.type === 'Widget' || child.type === 'Thunk')) {
+                ret[child.key || _index] = child;
+            //} else if (child && child.type === 'Thunk') {
+            //    ret[child.key] = child;
             } else if (_.isArray(child)) {
                 getChildMap(child, ret, index + _index);
             } else {
@@ -375,6 +390,7 @@
             if (nextKeysPending.hasOwnProperty(nextKey)) {
                 for (i = 0; i < nextKeysPending[nextKey].length; i++) {
                     var pendingNextKey = nextKeysPending[nextKey][i];
+                    var value = getValueForKey(pendingNextKey);
                     childMapping[nextKeysPending[nextKey][i]] = getValueForKey(
                         pendingNextKey
                     );
@@ -388,13 +404,7 @@
             childMapping[pendingKeys[i]] = getValueForKey(pendingKeys[i]);
         }
 
-        for (var key in prev) {
-            delete prev[key];
-        }
-        for (var key in childMapping) {
-            prev[key] = childMapping[key];
-        }
-        return prev;
+        return childMapping;
     }
 
     function addClass(element, className) {
@@ -518,7 +528,9 @@
     };
 
     // Animate Widget for animation
-    var Animate = VdWidget.extend({
+    var Animate = Intact.extend({
+        displayName: 'Animate',
+
         defaults: {
             tagName: 'div',
             transition: 'animate'
@@ -530,10 +542,6 @@
             this._ = _;
             this.key = this.get('key');
             this.childrenMap = getChildMap(this.children);
-            this.pointer = {
-                children: this.children,
-                vdt: this.vdt
-            };
             this.currentKeys = {};
             this.keysToEnter = [];
             this.keysToLeave = [];
@@ -542,11 +550,9 @@
         _beforeUpdate: function(prevWidget) {
             if (!prevWidget) return;
 
-            var nextMap = this.childrenMap,
-                prevMap = _.extend({}, prevWidget.childrenMap);
-            this.currentKeys = prevWidget.currentKeys;
-            this.pointer = _.extend(prevWidget.pointer, this.pointer);
-            this.childrenMap = mergeChildren(prevWidget.childrenMap, nextMap);
+            var nextMap = getChildMap(this.children);
+                prevMap = prevWidget.childrenMap;
+            this.childrenMap = mergeChildren(prevMap, nextMap);
 
             _.each(nextMap, function(value, key) {
                 if (nextMap[key] && !prevMap.hasOwnProperty(key) && !this.currentKeys[key]) {
@@ -574,9 +580,9 @@
         },
 
         performEnter: function(key) {
-            var widget = this.childrenMap[key];
+            var widget = this.childrenMap[key].widget;
             this.currentKeys[key] = true;
-            if (widget.enter) {
+            if (widget && widget.enter) {
                 widget.enter(_.bind(this._doneEntering, this, key));
             } else {
                 this._doneEntering(key);
@@ -584,9 +590,9 @@
         },
 
         performLeave: function(key) {
-            var widget = this.childrenMap[key];
+            var widget = this.childrenMap[key].widget;
             this.currentKeys[key] = true;
-            if (widget.leave) {
+            if (widget && widget.leave) {
                 widget.leave(_.bind(this._doneLeaving, this, key));
             } else {
                 this._doneLeaving(key);
@@ -595,8 +601,7 @@
 
         _doneEntering: function(key) {
             delete this.currentKeys[key];
-            this.prevWidget.vdt.tree = this.pointer.vdt.tree;
-            var map = getChildMap(this.pointer.children);
+            var map = getChildMap(this.children);
             if (!map[key]) {
                 this.performLeave(key);
             }
@@ -604,22 +609,13 @@
 
         _doneLeaving: function(key) {
             delete this.currentKeys[key];
-            var map = getChildMap(this.pointer.children);
+            var map = getChildMap(this.children);
             if (map && map[key]) {
                 this.performEnter(key);
             } else {
                 delete this.childrenMap[key];
-                this.prevWidget.vdt.tree = this.pointer.vdt.tree;
-                this.animateUpdate(this.prevWidget, this.prevWidget.element);
+                this.vdt.update();
             }
-        },
-
-        animateUpdate: function(prevWidget, domNode) {
-            this.vdt.node = domNode;
-            this.vdt.tree = prevWidget.vdt.tree;
-            this.widgets = {};
-            this.element = this.vdt.update(this);
-            this.pointer.vdt.tree = this.vdt.tree;
         },
 
         enter: function(done) {
@@ -652,5 +648,5 @@
         }
     });
 
-    return VdWidget;
+    return Intact;
 });

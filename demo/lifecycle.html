@@ -5,7 +5,7 @@
     <title>Hello</title>
     <script type="text/javascript" src="https://rawgit.com/Javey/vdt.js/master/dist/vdt.js"></script>
     <script type="text/javascript" src="https://rawgit.com/jashkenas/underscore/master/underscore.js"></script>
-    <script type="text/javascript" src="https://rawgit.com/Javey/VdWidget/master/src/vdWidget.js"></script>
+    <script type="text/javascript" src="https://rawgit.com/Javey/Intact/master/src/intact.js"></script>
 </head>
 <body>
 <script type="text/javascript">
@@ -20,7 +20,7 @@
         }
     };
 
-    var Widget = VdWidget.extend({
+    var Widget = Intact.extend({
         defaults: {
             name: ''
         },
@@ -55,7 +55,7 @@
         }
     });
 
-    VdWidget.mount(Widget, document.body);
+    Intact.mount(Widget, document.body);
 </script>
 </body>
 </html>

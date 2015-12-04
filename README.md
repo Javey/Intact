@@ -1,9 +1,9 @@
-# VdWidget
+# Intact
 
 ## 简介
 
 一个基于`virtual-dom`编写数据单向绑定web组件的js库，能够实现组件之间的组合、继承。
-如果你是`jQuery`深度开发者，不想去了解各种复杂的框架的使用方法，但又想写出高可维护的代码，`VdWidget`是你的一种选择。
+如果你是`jQuery`深度开发者，不想去了解各种复杂的框架的使用方法，但又想写出高可维护的代码，`Intact`是你的一种选择。
 
 那为什么不直接使用`React.js`呢？原因很简单：我是一位`jQuery`深度开发着。
 
@@ -21,12 +21,12 @@
 ## 安装
 
 ```
-bower install vdwidget --save
+bower install intact --save
 ```
 
 ## 依赖
 
-[Hello VdWidget](http://plnkr.co/edit/UcxpLu?p=preview)
+[Hello Intact](http://plnkr.co/edit/UcxpLu?p=preview)
 
 必须
 
@@ -38,14 +38,14 @@ bower install vdwidget --save
 1. jquery
 2. require.js
 
-在引入`vdWidget.js`之前，先加载依赖文件，或者通过`amd`加载
+在引入`intact.js`之前，先加载依赖文件，或者通过`amd`加载
 
 ## 示例
 
 [Usage](http://plnkr.co/edit/e7Ik1y?p=preview)
 
 ```js
-var Widget = VdWidget.extend({
+var Widget = Intact.extend({
       defaults: {
         name: 'Javey'
       },
@@ -57,7 +57,7 @@ var Widget = VdWidget.extend({
       }
     });
 
-VdWidget.mount(Widget, document.body);
+Intact.mount(Widget, document.body);
 ```
 
 ## 使用方法
@@ -66,16 +66,16 @@ VdWidget.mount(Widget, document.body);
 
 创建一个widget分为以下几步
 
-1. 通过`VdWidget.extend`创建widget
+1. 通过`Intact.extend`创建widget
 
     ```js
-    var Widget = VdWidget.extend();
+    var Widget = Intact.extend();
     ```
 
 2. 给widget提供默认数据，通过指定`defaults`字段
 
     ```js
-    var Widget = VdWidget.extend({
+    var Widget = Intact.extend({
         defaults: {
             name: 'Javey'
         }
@@ -85,7 +85,7 @@ VdWidget.mount(Widget, document.body);
 3. 指定模板，模板可以是字符串，也可以是已经编译好的模板函数，参见`vdt.js`。模板函数，可以前端编译，也可以后端编译通过amd加载。模板语法为`JSX`，最后一个元素必须用html标签包起来。
 
     ```js
-    var Widget = VdWidget.extend({
+    var Widget = Intact.extend({
         defaults: {
             name: 'Javey'
         },
@@ -94,12 +94,12 @@ VdWidget.mount(Widget, document.body);
     });
     ```
 
-4. 通过`VdWidget.mount` appendChild到指定的dom中，只有`root widget`才需要这么做
+4. 通过`Intact.mount` appendChild到指定的dom中，只有`root widget`才需要这么做
 
     ```js
     ...
 
-    VdWidget.mount(Widget, document.body);
+    Intact.mount(Widget, document.body);
     ```
 
 ### 模板
@@ -142,7 +142,7 @@ ev-click={_.bind(this.change, this, 'Hi')}
 组件初始化，这个时候dom还没渲染，不能在该方法中进行dom操作，一般在此阶段准备数据。如果是异步准备数据，例如：ajax方式，则需要返回一个promise。
 
 ```js
-var Widget = VdWidget.extend({
+var Widget = Intact.extend({
     ...
 
     _init: function() {
@@ -160,7 +160,7 @@ var Widget = VdWidget.extend({
 组件初始化，这个时候dom已经渲染完成，可以直接操作dom，如：初始化date-picker等第三方组件，绑定第三方非标准事件等。
 
 ```js
-var Widget = VdWidget.extend({
+var Widget = Intact.extend({
     ...
 
     _create: function() {
@@ -183,7 +183,7 @@ var Widget = VdWidget.extend({
 如：`<select></select>`改变后，需要调用`bootstrap-select`的`refresh`方法
 
 ```js
-var Widget = VdWidget.extend({
+var Widget = Intact.extend({
     ...
 
     _update: function() {
@@ -197,7 +197,7 @@ var Widget = VdWidget.extend({
 组件销毁时，将调用`_destroy`。该方法将待销毁的`dom`对象作为参数传入。
 
 ```js
-var Widget = VdWidget.extend({
+var Widget = Intact.extend({
     ...
 
     _destroy: function(domNode) {
@@ -209,13 +209,13 @@ var Widget = VdWidget.extend({
 ### 事件
 
 类似于`backbone`，所有调用`set`方法，导致数据改变的情况，都会触发相应的change事件`change:name`，另外还会触发一个`change`事件。
-`VdWidget`内部绑定了该`change`事件，会使UI自动更新。如果需要阻止更新，调用`set`时，可以传入`{silent: true}`作为最后一个参数。
+`Intact`内部绑定了该`change`事件，会使UI自动更新。如果需要阻止更新，调用`set`时，可以传入`{silent: true}`作为最后一个参数。
 
 除了`set`触发的事件，还有一个事件`rendered`，该事件会在组件渲染完成后触发，因为如果`_init`是异步的，则需要在改事件触发后，才能操作dom，进行`mount`。
 
 ### 数据
 
-`VdWidget`并没有提供单独的`Model`层，而是将数据和UI绑定在一起，在`VdWidget`既可以操作数据，又可以操作dom。
+`Intact`并没有提供单独的`Model`层，而是将数据和UI绑定在一起，在`Intact`既可以操作数据，又可以操作dom。
 同`backbone`的数据操作方式，组件所需的默认数据通过`defaults`字段提供，与`backbone`不同的是，该字段可以被继承
 
 1. 获取数据通过`get`
@@ -223,7 +223,7 @@ var Widget = VdWidget.extend({
 
 ### 组件继承
 
-[VdWidget Extend](http://plnkr.co/edit/Ucha5XyvWArRS8HcEKJc?p=preview)
+[Intact Extend](http://plnkr.co/edit/Ucha5XyvWArRS8HcEKJc?p=preview)
 
 要实现组件继承，一般都要分两步
 
@@ -233,7 +233,7 @@ var Widget = VdWidget.extend({
 如上所示，组件方法的继承通过`extend`静态方法实现。
 
 ```js
-var Card = VdWidget.extend({
+var Card = Intact.extend({
     defaults: {
         title: 'card'
     },
@@ -252,7 +252,7 @@ var TableCard = Card.extend({
     }
 });
 
-VdWidget.mount(TableCard, $('body')[0]);
+Intact.mount(TableCard, $('body')[0]);
 ```
 
 上例中，只是继承了`Card`的方法，如果需要扩展`template`，我们需要单独定义模板。模板可以定义成字符串，html的`<script type="text/vdt"></script>`中，或者单独的模板文件。
@@ -287,7 +287,7 @@ VdWidget.mount(TableCard, $('body')[0]);
 ```
 
 ```js
-var Card = VdWidget.extend({
+var Card = Intact.extend({
     defaults: {
         title: 'card'
     },
@@ -308,7 +308,7 @@ var TableCard = Card.extend({
     }
 });
 
-VdWidget.mount(TableCard, $('body')[0]);
+Intact.mount(TableCard, $('body')[0]);
 ```
 
 上述方式，是通过在前端定义模板然后前端编译完成的，其存在一个问题：`TableCard`组件每次更新都需要获取`card_template`字符串，然后重新编译。
@@ -414,7 +414,7 @@ require(['/demo/tpl/tableCard.js'], function(template) {
         }
     });
 
-    VdWidget.mount(TableCard, $('body')[0]);
+    Intact.mount(TableCard, $('body')[0]);
 });
 ```
 
@@ -433,8 +433,8 @@ __组件名称首字母大写__
 对于注入到`this`的方式，如下所示：
 
 ```js
-// 继承VdWidget，并非Card
-var ComponentCard = VdWidget.extend({
+// 继承Intact，并非Card
+var ComponentCard = Intact.extend({
     template: '<Card title="component card" />',
 
     _init: function() {
@@ -459,10 +459,10 @@ var ComponentCard = VdWidget.extend({
 <Card title="component card" widget="card" />
 ```
 
-这时可以在`VdWidget`中，通过`this.widgets.card`访问`Card`组件提供的方法
+这时可以在`Intact`中，通过`this.widgets.card`访问`Card`组件提供的方法
 
 ```js
-var ComponentCard = VdWidget.extend({
+var ComponentCard = Intact.extend({
     template: '<div><Card title="component card" widget="card" /><div ev-click={_.bind(this.click, this)}>Click Me</div></div>',
 
     _init: function() {
@@ -491,7 +491,7 @@ var ComponentCard = VdWidget.extend({
 ```
 
 ```js
-var ComponentCard = VdWidget.extend({
+var ComponentCard = Intact.extend({
     template: ...,
 
     _init: function() {
@@ -547,7 +547,7 @@ var ComponentCard = VdWidget.extend({
 
 ### 动画
 
-VdWidget提供了`Animate`组件用于实现css3动画，`Animate`必须相互嵌套，才能达到动画效果。
+Intact提供了`Animate`组件用于实现css3动画，`Animate`必须相互嵌套，才能达到动画效果。
 
 ```jsx
 <Animate tagName="ul">
@@ -634,7 +634,7 @@ VdWidget提供了`Animate`组件用于实现css3动画，`Animate`必须相互�
 
 `Static` 静态方法，挂载某个组件到指定的dom下(appendChild)
 
-* @param `widget` {Object} 可以为VdWidget子类，或者对应的实例化对象
+* @param `widget` {Object} 可以为Intact子类，或者对应的实例化对象
 * @param `dom` {DOM} 挂载位置
 * @return {Object} 实例化组件对象
 

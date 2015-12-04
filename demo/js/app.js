@@ -1,4 +1,4 @@
-var Widget = VdWidget.extend({
+var Widget = Intact.extend({
     defaults: {
         name: 'Javey'
     },
@@ -10,13 +10,13 @@ var Widget = VdWidget.extend({
     }
 });
 
-VdWidget.mount(Widget, document.body);
+Intact.mount(Widget, document.body);
 
 /**
  * 继承
  */
 
-var Card = VdWidget.extend({
+var Card = Intact.extend({
     defaults: {
         title: 'card'
     },
@@ -35,9 +35,9 @@ var TableCard = Card.extend({
     }
 });
 
-VdWidget.mount(TableCard, $('body')[0]);
+Intact.mount(TableCard, $('body')[0]);
 
-var Card1 = VdWidget.extend({
+var Card1 = Intact.extend({
     defaults: {
         title: 'card'
     },
@@ -58,7 +58,7 @@ var TableCard1 = Card1.extend({
     }
 });
 
-VdWidget.mount(TableCard1, $('body')[0]);
+Intact.mount(TableCard1, $('body')[0]);
 
 // 继承Card组件
 var TableCardThis = Card1.extend({
@@ -76,7 +76,7 @@ var TableCardThis = Card1.extend({
     }
 });
 
-VdWidget.mount(TableCardThis, $('body')[0]);
+Intact.mount(TableCardThis, $('body')[0]);
 
 // 通过require.js加载模板
 require(['/demo/tpl/tableCard.js'], function(template) {
@@ -89,13 +89,13 @@ require(['/demo/tpl/tableCard.js'], function(template) {
         }
     });
 
-    VdWidget.mount(TableCard, $('body')[0]);
+    Intact.mount(TableCard, $('body')[0]);
 });
 
 /**
  * 组合
  */
-var ComponentCard = VdWidget.extend({
+var ComponentCard = Intact.extend({
     template: '<Card title="component card" />',
 
     _init: function() {
@@ -104,9 +104,9 @@ var ComponentCard = VdWidget.extend({
     }
 });
 
-VdWidget.mount(ComponentCard, $('body')[0]);
+Intact.mount(ComponentCard, $('body')[0]);
 
-var ComponentCard1 = VdWidget.extend({
+var ComponentCard1 = Intact.extend({
     template: '<div><Card title="component card" widget="card" /><div ev-click={_.bind(this.click, this)}>Click Me</div></div>',
 
     _init: function() {
@@ -121,10 +121,10 @@ var ComponentCard1 = VdWidget.extend({
         alert('You click me');
     }
 });
-VdWidget.mount(ComponentCard1, $('body')[0]);
+Intact.mount(ComponentCard1, $('body')[0]);
 
 
-var ComponentCard2 = VdWidget.extend({
+var ComponentCard2 = Intact.extend({
     template: $('#event_template').html(),
 
     _init: function() {
@@ -142,4 +142,4 @@ var ComponentCard2 = VdWidget.extend({
         alert('The title has changed to "' + title + '"');
     }
 });
-VdWidget.mount(ComponentCard2, $('body')[0]);
+Intact.mount(ComponentCard2, $('body')[0]);

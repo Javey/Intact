@@ -1,10 +1,13 @@
 {
-  "name": "VdWidget",
+  "name": "intact",
   "description": "A very lightweight data-binding library to create rich web application",
-  "version": "0.1.2",
+  "version": "1.0.2",
+  "scripts": {
+    "publish": "node publish.js"
+  },
   "dependencies": {
     "underscore": "^1.8.3",
-    "vdt": "latest"
+    "vdt": "^0.4.0"
   },
   "devDependencies": {
     "express": "^4.13.1"
