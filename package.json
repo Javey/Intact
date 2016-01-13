@@ -3,11 +3,14 @@
   "description": "A very lightweight data-binding library to create rich web application",
   "version": "1.0.2",
   "scripts": {
-    "publish": "node publish.js"
+    "release": "npm run release-patch",
+    "release-patch": "git checkout master && bower version patch && git push origin master --tags",
+    "release-minor": "git checkout master && bower version minor && git push origin master --tags",
+    "release-major": "git checkout master && bower version major && git push origin master --tags"
   },
   "dependencies": {
     "underscore": "^1.8.3",
-    "vdt": "^0.4.0"
+    "vdt": "^0.6.2"
   },
   "devDependencies": {
     "express": "^4.13.1"
