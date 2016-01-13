@@ -27,8 +27,8 @@
     "benchmark"
   ],
   "dependencies": {
-    "vdt": "~0.4.0",
-    "underscore": "~1.8.3"
+    "vdt": "^0.6.2",
+    "underscore": "^1.8.3"
   },
   "devDependencies": {
     "jquery": "~2.1.4",
