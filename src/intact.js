@@ -110,6 +110,7 @@
         this._contextWidgets = contextWidgets || {};
         this._widget = this.attributes.widget || _.uniqueId('widget');
 
+        // for debug
         this.displayName = this.displayName;
 
         this._constructor();
@@ -638,6 +639,7 @@
                 element = this.element;
 
             addClass(element, transition +'-leave');
+            element.offsetWidth = element.offsetWidth;
             addClass(element, transition + '-leave-active');
             TransitionEvents.one(element, function(e) {
                 e.stopPropagation();
