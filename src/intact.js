@@ -184,7 +184,6 @@
                 this.vdt.tree = prevWidget.vdt.tree;
             }
             this.prevWidget = prevWidget;
-            this.widgets = {};
             this.element = this.vdt.update(this);
             this.rendered = true;
             this._update(prevWidget, domNode);
