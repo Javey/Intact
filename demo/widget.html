@@ -25,7 +25,7 @@
                 'count': this.get('count') + 1
             });
             this.test = this.test ? this.test + 1 : 1;
-            console.log(this.test);
+//            console.log(this.test);
         }
     });
 
@@ -44,7 +44,7 @@
 
         displayName: 'MyComponent',
 
-        template: '<div>' +
+        template: '<div ev-mousenter={ function() {console.log(1)} }>' +
             '<div ev-click={this.change.bind(this)}>{this.get("a")}</div>' +
             '{this.get("a") !== 10 ? <SubComponent count={this.get("a")} ev-change:count={this.changeCount.bind(this)} /> : <SubComponentOther />}' +
         '</div>',

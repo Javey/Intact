@@ -82,7 +82,7 @@
             this.widget = previous.widget;
             this.widget.children = this.attributes.children;
             delete this.attributes.children;
-            _.extend(this.widget.attributes, this.attributes);
+            this.widget.set(this.attributes, {global: false});
         }
         return this.widget;
     };
@@ -217,7 +217,10 @@
                 (attrs = {})[key] = val;
             }
 
-            options || (options = {});
+            options = _.extend({
+                silent: false,
+                global: true
+            }, options);
 
             var current = this.attributes,
                 changes = [];
@@ -231,15 +234,15 @@
             }
 
             if (changes.length) {
-                options.change && options.change.call(this);
-                !options.silent && this.trigger('change', this);
-
                 var eventName;
                 for (var i = 0, l = changes.length; i < l; i++) {
                     eventName = 'change:' + changes[i];
                     options[eventName] && options[eventName].call(this, current[changes[i]]);
                     !options.silent && this.trigger(eventName, this, current[changes[i]]);
                 }
+
+                options.change && options.change.call(this);
+                !options.silent && options.global && this.trigger('change', this);
             }
 
             return this;
