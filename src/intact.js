@@ -641,14 +641,14 @@
                 element = this.element;
 
             addClass(element, transition +'-leave');
-            element.offsetWidth = element.offsetWidth;
-            addClass(element, transition + '-leave-active');
             TransitionEvents.one(element, function(e) {
                 e.stopPropagation();
                 removeClass(element, transition + '-leave');
                 removeClass(element, transition + '-leave-active');
                 done();
             });
+            element.offsetWidth = element.offsetWidth;
+            addClass(element, transition + '-leave-active');
         }
     });
 
