@@ -27,7 +27,7 @@
     "benchmark"
   ],
   "dependencies": {
-    "vdt": "^0.6.2",
+    "vdt": "^0.8.0",
     "underscore": "^1.8.3"
   },
   "devDependencies": {
