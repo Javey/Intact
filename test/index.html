@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Unit Test</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="mocha.css"/>
+</head>
+<body>
+<div id="mocha"></div>
+
+<script src="mocha.js"></script>
+<script src="should.js"></script>
+<script src="../node_modules/sinon/pkg/sinon.js"></script>
+<script src="../bower_components//vdt/dist/vdt.js"></script>
+<script src="../bower_components/jquery/dist/jquery.js"></script>
+<script src="../bower_components/underscore/underscore.js"></script>
+<script src="../src/intact.js"></script>
+<script src="../bower_components/requirejs/require.js"></script>
+<script>mocha.setup('bdd')</script>
+<script src="simpleTest.js"></script>
+<script src="componentTest.js"></script>
+<script>
+    if (window.mochaPhantomJS) {
+        mochaPhantomJS.run();
+    } else {
+        mocha.run();
+    }
+</script>
+</body>
+</html>

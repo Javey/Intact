@@ -99,9 +99,14 @@
         if (!(this instanceof Intact)) {
             return new Thunk(this, attributes, contextWidgets);
         }
+
+        if (!this.template) {
+            throw new Error('Can not instantiate when this.template does not exist.');
+        }
+
         var attrs = attributes || {};
         attrs = _.extend({
-            children: null
+            children: undefined 
         }, _.result(this, 'defaults'), attrs);
 
         this._events = {};
@@ -207,8 +212,8 @@
             });
         },
 
-        init: function() {
-            this.element = this.vdt.render(this);
+        init: function(isUpdate/* for private */) {
+            !isUpdate && (this.element = this.vdt.render(this));
             this.rendered = true;
             this._hasCalledInit = true;
             this.trigger('rendered', this);
@@ -226,10 +231,7 @@
             this.prevWidget = prevWidget;
             this.element = this.vdt.update(this);
             if (!this._hasCalledInit) {
-                this.rendered = true;
-                this._hasCalledInit = true;
-                this.trigger('rendered', this);
-                this._create();
+                this.init(true);
             }
             this._update(prevWidget, domNode);
             return this.element;
@@ -295,6 +297,7 @@
                 }
 
                 options.change && options.change.call(this);
+                !options.silent && this.trigger('beforeChange', this);
                 !options.silent && options.global && this.trigger('change', this);
             }
 
@@ -353,6 +356,7 @@
      * @returns {Function}
      */
     Intact.extend = function(prototype) {
+        prototype || (prototype = {});
         _.defaults(prototype.defaults, this.prototype.defaults);
         return inherit(this, prototype);
     };

@@ -13,6 +13,9 @@
     "vdt": "^0.6.2"
   },
   "devDependencies": {
-    "express": "^4.13.1"
+    "express": "^4.13.1",
+    "mocha": "^2.4.5",
+    "mocha-phantomjs": "^4.0.2",
+    "sinon": "^1.17.3"
   }
 }
