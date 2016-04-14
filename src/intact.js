@@ -164,6 +164,8 @@
             this.on('change', function() { 
                 if (++this._updateCount === 1) {
                     handleUpdate.call(this);
+                } else if (this._updateCount > 10) {
+                    throw new Error('Too many recursive update.');
                 }
             });
 

@@ -67,7 +67,6 @@ describe('Component Test', function() {
                 this.A = A;
             }
         });
-        var html = '<span><a>3</a></span>';
         var c = new C();
 
         c.init();
@@ -108,5 +107,98 @@ describe('Component Test', function() {
 
         destroyAFn.called.should.be.false;
         destroyBFn.called.should.be.false;
+    });
+
+    it('update when updating', function() {
+        var A = Intact.extend({
+            defaults: {
+                a: 1
+            },
+
+            displayName: 'A',
+
+            _init: function() {
+                this.B = B;
+            },
+
+            _create: function() {
+                this.widgets.b.should.be.instanceOf(B);
+            },
+
+            _update: function() {
+                this.widgets.b.should.be.instanceOf(B);
+            },
+
+            template: '<div><B a={this.get("a")} ev-change:a={this.changeData.bind(this)}/><B widget="b" /></div>',
+
+            changeData: function() {
+                this.set('a', 3);
+            }
+        });
+        var B = Intact.extend({
+            defaults: {
+                a: 1
+            },
+
+            displayName: 'B',
+
+            template: '<b>{this.get("a")}</b>'
+        });
+
+        var a = new A();
+        a.init();
+        a.element.outerHTML.should.be.eql('<div><b>1</b><b>1</b></div>');
+
+        a.set('a', 2);
+        a.widgets.b.should.be.instanceOf(B);
+    });
+
+    it('should remove events', function() {
+        var changeData = sinon.spy();
+        var A = Intact.extend({
+            template: '<B a={this.get("a")} ev-change:a={this.get("a") === 1 ? this.changeData.bind(this) : undefined} />',
+            changeData: changeData,
+            _init: function() {
+                this.B = B;
+            }
+        });
+        var B = Intact.extend({
+            template: '<b></b>'
+        });
+        var a = new A();
+        a.init();
+
+        a.set('a', 1);
+        changeData.calledOnce.should.be.true;
+        a.set('a', 2);
+        changeData.calledOnce.should.be.true;
+        a.set('a', 1);
+        changeData.calledTwice.should.be.true;
+    });
+
+    it('with promise', function(done) {
+        var A = Intact.extend({
+            template: '<a>{this.get("a")}</a>',
+            _init: function() {
+                var self = this,
+                    def = $.Deferred();
+                setTimeout(function() {
+                    self.set('a', 1);
+                    def.resolve();
+                });
+                return def.promise();
+            }
+        });
+        var a = new A();
+        a.inited.should.be.false;
+        a.rendered.should.be.false;
+        a._hasCalledInit.should.be.false;
+
+        var inited = sinon.spy(function() {
+            a.init().outerHTML.should.be.eql('<a>1</a>');
+            done();
+        });
+
+        a.on('inited', inited);
     });
 });
