@@ -240,7 +240,10 @@
         },
 
         destroy: function(domNode) {
-            delete this._contextWidgets[this._widget];
+            // 如果只是移动了一个组件，会先执行创建，再销毁，所以需要判断父组件引用的是不是自己
+            if (this._contextWidgets[this._widget] === this) {
+                delete this._contextWidgets[this._widget];
+            }
             this.off();
             function destroy(children) {
                 _.each(children, function(child) {
