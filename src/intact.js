@@ -279,7 +279,8 @@
 
             options = _.extend({
                 silent: false,
-                global: true
+                global: true,
+                async: false
             }, options);
 
             var current = this.attributes,
@@ -302,8 +303,19 @@
                 }
 
                 options.change && options.change.call(this);
-                !options.silent && this.trigger('beforeChange', this);
-                !options.silent && options.global && this.trigger('change', this);
+                if (!options.silent) {
+                    this.trigger('beforeChange', this);
+                    if (options.global) {
+                        clearTimeout(this._asyncUpdate);
+                        if (options.async) {
+                            this._asyncUpdate = setTimeout(_.bind(function() {
+                                this.trigger('change', this);
+                            }, this));
+                        } else {
+                            this.trigger('change', this);
+                        }
+                    }
+                }
             }
 
             return this;
