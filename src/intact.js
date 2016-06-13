@@ -704,7 +704,7 @@
 
             addClass(element, transition + '-enter');
             TransitionEvents.one(element, function(e) {
-                e.stopPropagation();
+                e && e.stopPropagation();
                 removeClass(element, transition + '-enter');
                 removeClass(element, transition + '-enter-active');
                 done();
@@ -719,7 +719,7 @@
 
             addClass(element, transition +'-leave');
             TransitionEvents.one(element, function(e) {
-                e.stopPropagation();
+                e && e.stopPropagation();
                 removeClass(element, transition + '-leave');
                 removeClass(element, transition + '-leave-active');
                 done();
