@@ -26,10 +26,6 @@
     "package.json",
     "benchmark"
   ],
-  "dependencies": {
-    "vdt": "^0.8.0",
-    "underscore": "^1.8.3"
-  },
   "devDependencies": {
     "jquery": "~2.1.4",
     "requirejs": "~2.1.22"

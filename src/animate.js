@@ -58,7 +58,7 @@ export default Intact.extend({
         let widget = this.childrenMap[key].widget;
         this.currentKeys[key] = true;
         if (widget && widget.enter) {
-            widget.enter(bind(this._doneEntering, this, key));
+            widget.enter(() => this._doneEntering(key));
         } else {
             this._doneEntering(key);
         }
@@ -68,7 +68,7 @@ export default Intact.extend({
         let widget = this.childrenMap[key].widget;
         this.currentKeys[key] = true;
         if (widget && widget.leave) {
-            widget.leave(bind(this._doneLeaving, this, key));
+            widget.leave(() => this._doneLeaving(key));
         } else {
             this._doneLeaving(key);
         }

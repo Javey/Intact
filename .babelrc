@@ -1,4 +1,4 @@
 { 
-    "plugins": ["lodash"],
+    "plugins": ["transform-decorators"],
     "presets": ["es2015"]
 }

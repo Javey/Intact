@@ -26,7 +26,7 @@
             name: ''
         },
 
-        template: '<h1 ev-click={_.bind(this.change, this)}>Hello {this.get("name")}!</h1>',
+        template: '<h1 ev-click={this.change.bind(this)}>Hello {this.get("name")}!</h1>',
 
         _init: function() {
             // return a promise

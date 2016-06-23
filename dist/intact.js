@@ -489,7 +489,7 @@ function Delegator(opts) {
 Delegator.allocateHandle = DOMDelegator.allocateHandle;
 Delegator.transformHandle = DOMDelegator.transformHandle;
 
-},{"./dom-delegator.js":4,"cuid":2,"global/document":11,"individual":13}],6:[function(require,module,exports){
+},{"./dom-delegator.js":4,"cuid":2,"global/document":11,"individual":12}],6:[function(require,module,exports){
 var inherits = require("inherits")
 
 var ALL_PROPS = [
@@ -569,7 +569,7 @@ function KeyEvent(ev) {
 
 inherits(KeyEvent, ProxyEvent)
 
-},{"inherits":14}],7:[function(require,module,exports){
+},{"inherits":13}],7:[function(require,module,exports){
 var EvStore = require("ev-store")
 
 module.exports = removeEvent
@@ -680,25 +680,6 @@ if (typeof document !== 'undefined') {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"min-document":58}],12:[function(require,module,exports){
 (function (global){
-var topLevel = typeof global !== 'undefined' ? global :
-    typeof window !== 'undefined' ? window : {}
-var minDoc = require('min-documentx');
-
-if (typeof document !== 'undefined') {
-    module.exports = document;
-} else {
-    var doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'];
-
-    if (!doccy) {
-        doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'] = minDoc;
-    }
-
-    module.exports = doccy;
-}
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-documentx":58}],13:[function(require,module,exports){
-(function (global){
 var root = typeof window !== 'undefined' ?
     window : typeof global !== 'undefined' ?
     global : {};
@@ -719,7 +700,7 @@ function Individual(key, value) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],14:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -744,875 +725,29 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],15:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
 
 module.exports = function isObject(x) {
 	return typeof x === "object" && x !== null;
 };
 
-},{}],16:[function(require,module,exports){
-module.exports = require('./lib/index');
-
-},{"./lib/index":20}],17:[function(require,module,exports){
-/**
- * @fileoverview parse jsx to ast
- * @author javey
- * @date 15-4-22
- */
-
-var Utils = require('./utils'),
-    Type = Utils.Type,
-    TypeName = Utils.TypeName;
-
-var elementNameRegexp = /^<\w+:?\s*[\w\/>]/;
-
-function isJSXIdentifierPart(ch) {
-    return (ch === 58) || (ch === 95) || (ch === 45) ||  // : and _ (underscore) and -
-        (ch >= 65 && ch <= 90) ||         // A..Z
-        (ch >= 97 && ch <= 122) ||        // a..z
-        (ch >= 48 && ch <= 57);         // 0..9
-}
-
-var Parser = function() {
-    this.source = '';
-    this.index = 0;
-    this.length = 0;
-};
-
-Parser.prototype = {
-    constructor: Parser,
-
-    parse: function(source, options) {
-        this.source = Utils.trimRight(source);
-        this.index = 0;
-        this.line = 1;
-        this.column = 1;
-        this.length = this.source.length;
-
-        this.options = Utils.extend({
-            delimiters: Utils.getDelimiters()
-        }, options);
-
-        return this._parseTemplate();
-    },
-
-    _parseTemplate: function() {
-        var elements = [],
-            braces = {count: 0};
-        while (this.index < this.length && braces.count >= 0) {
-            elements.push(this._advance(braces));
-        }
-
-        return elements;
-    },
-
-    _advance: function(braces) {
-        var ch = this._char();
-        if (ch !== '<') {
-            return this._scanJS(braces);
-        } else {
-            return this._scanJSX();
-        }
-    },
-
-    _scanJS: function(braces) {
-        var start = this.index,
-            Delimiters = this.options.delimiters;
-
-        while (this.index < this.length) {
-            var ch = this._char();
-            if (ch === '\'' || ch === '"') {
-                // skip element(<div>) in quotes
-                this._scanStringLiteral();
-            } else if (this._isElementStart()) {
-                break;
-            } else {
-                if (this._isExpect(Delimiters[0])) {
-                    braces.count++;
-                } else if (this._isExpect(Delimiters[1])) {
-                    braces.count--;
-                    if (braces.count < 0) {
-                        this._updateIndex();
-                        break;
-                    }
-                } else if (ch === '\n') {
-                    this._updateLine();
-                }
-                this._updateIndex();
-            }
-        }
-
-        return this._type(Type.JS, {value: this.source.slice(start, braces.count < 0 ? this.index - 1 : this.index)});
-    },
-
-    _scanStringLiteral: function() {
-        var quote = this._char(),
-            start = this.index,
-            str = '';
-        this._updateIndex();
-        
-
-        while (this.index < this.length) {
-            var ch = this._char();
-            this._updateIndex();
-
-            if (ch === quote) {
-                quote = '';
-                break;
-            } else if (ch === '\\') {
-                str += this._char(this._updateIndex());
-            } else {
-                str += ch;
-            }
-        }
-        if (quote !== '') {
-            this._error('Unclosed quote');
-        }
-
-        return this._type(Type.StringLiteral, {value: this.source.slice(start, this.index)});
-    },
-
-    _scanJSX: function() {
-        return this._parseJSXElement();
-    },
-
-    _scanJSXText: function(stopChars) {
-        var start = this.index,
-            l = stopChars.length,
-            i;
-        loop:
-        while (this.index < this.length) {
-            if (this._charCode() === 10) {
-                this._updateLine();
-            }
-            for (i = 0; i < l; i++) {
-                if (typeof stopChars[i] === 'function' && stopChars[i].call(this) || this._isExpect(stopChars[i])) {
-                    break loop;
-                }
-            }
-            this._updateIndex();
-        }
-
-        return this._type(Type.JSXText, {value: this.source.slice(start, this.index)});
-    },
-
-    _scanJSXStringLiteral: function() {
-        var quote = this._char();
-        if (quote !== '\'' && quote !== '"') {
-            this._error('String literal must starts with a qoute');
-        }
-        this._updateIndex();
-        var token = this._scanJSXText([quote]);
-        this._updateIndex();
-        return token;
-    },
-
-    _parseJSXElement: function() {
-        this._expect('<');
-        var start = this.index,
-            ret = {},
-            flag = this._charCode();
-        if (flag >= 65 && flag <= 90/* upper case */) {
-            // is a widget
-            this._type(Type.JSXWidget, ret);
-        } else if (this._isExpect('!--')) {
-            // is html comment
-            return this._parseJSXComment();
-        } else if (this._charCode(this.index + 1) === 58/* : */){
-            // is a directive
-            start += 2;
-            switch (flag) {
-                case 116: // t
-                    this._type(Type.JSXVdt, ret);
-                    break;
-                case 98: // b
-                    this._type(Type.JSXBlock, ret);
-                    break;
-                default:
-                    this._error('Unknown directive ' + String.fromCharCode(flag) + ':');
-            }
-            this._updateIndex(2);
-        } else {
-            // is an element
-            this._type(Type.JSXElement, ret);
-        }
-
-        while (this.index < this.length) {
-            if (!isJSXIdentifierPart(this._charCode())) {
-                break;
-            }
-            this._updateIndex();
-        }
-
-        ret.value = this.source.slice(start, this.index);
-
-        return this._parseAttributeAndChildren(ret);
-    },
-
-    _parseAttributeAndChildren: function(ret) {
-        Utils.extend(ret, {
-            attributes: this._parseJSXAttribute(),
-            children: []
-        });
-
-        if (ret.type === Type.JSXElement && Utils.isSelfClosingTag(ret.value)) {
-            // self closing tag
-            if (this._char() === '/') {
-                this._updateIndex();
-            }
-            this._expect('>');
-        } else if (this._char() === '/') {
-            // unknown self closing tag
-            this._updateIndex();
-            this._expect('>');
-        } else {
-            this._expect('>');
-            ret.children = this._parseJSXChildren();
-        }
-
-        return ret;
-    },
-
-    _parseJSXAttribute: function() {
-        var ret = [];
-        while (this.index < this.length) {
-            this._skipWhitespace();
-            if (this._char() === '/' || this._char() === '>') {
-                break;
-            } else {
-                var attr = this._parseJSXAttributeName();
-                if (this._char() === '=') {
-                    this._updateIndex();
-                    attr.value = this._parseJSXAttributeValue();
-                }
-                ret.push(attr);
-            }
-        }
-
-        return ret;
-    },
-
-    _parseJSXAttributeName: function() {
-        var start = this.index;
-        if (!isJSXIdentifierPart(this._charCode())) {
-            this._error('Unexpected identifier ' + this._char());
-        }
-        while (this.index < this.length) {
-            var ch = this._charCode();
-            if (!isJSXIdentifierPart(ch)) {
-                break;
-            }
-            this._updateIndex();
-        }
-
-        return this._type(Type.JSXAttribute, {name: this.source.slice(start, this.index)});
-    },
-
-    _parseJSXAttributeValue: function() {
-        var value,
-            Delimiters = this.options.delimiters;
-        if (this._isExpect(Delimiters[0])) {
-            value = this._parseJSXExpressionContainer();
-        } else {
-            value = this._scanJSXStringLiteral();
-        }
-        return value;
-    },
-
-    _parseJSXExpressionContainer: function() {
-        var expression,
-            Delimiters = this.options.delimiters;
-        this._expect(Delimiters[0]);
-        if (this._isExpect(Delimiters[1])) {
-            expression = this._parseJSXEmptyExpression();
-        } else {
-            expression = this._parseExpression();
-        }
-        this._expect(Delimiters[1]);
-
-        return this._type(Type.JSXExpressionContainer, {value: expression});
-    },
-
-    _parseJSXEmptyExpression: function() {
-        return this._type(Type.JSXEmptyExpression, {value: null});
-    },
-
-    _parseExpression: function() {
-        var ret = this._parseTemplate();
-        this._updateIndex(-1);
-        return ret;
-    },
-
-    _parseJSXChildren: function() {
-        var children = [];
-        while (this.index < this.length) {
-            if (this._char(this.index) === '<' && this._char(this.index + 1) === '/') {
-                break;
-            }
-            children.push(this._parseJSXChild());
-        }
-        this._parseJSXClosingElement();
-        return children;
-    },
-
-    _parseJSXChild: function() {
-        var token,
-            Delimiters = this.options.delimiters;
-        if (this._isExpect(Delimiters[0])) {
-            token = this._parseJSXExpressionContainer();
-        } else if (this._isElementStart()) {
-            token = this._parseJSXElement();
-        } else {
-            token = this._scanJSXText([function() {
-                return this._isExpect('</') || this._isElementStart();
-            }, Delimiters[0]]);
-        }
-
-        return token;
-    },
-
-    _parseJSXClosingElement: function() {
-        this._expect('</');
-
-        while (this.index < this.length) {
-            if (!isJSXIdentifierPart(this._charCode())) {
-                break;
-            }
-            this._updateIndex();;
-        }
-
-        this._skipWhitespace();
-        this._expect('>');
-    },
-
-    _parseJSXComment: function() {
-        this._expect('!--');
-        var start = this.index;
-        while (this.index < this.length) {
-            if (this._isExpect('-->')) {
-                break;
-            } else if (this._charCode() === 10) {
-                this._updateLine();
-            }
-            this._updateIndex();
-        }
-        var ret = this._type(Type.JSXComment, {value: this.source.slice(start, this.index)});
-        this._expect('-->');
-
-        return ret;
-    },
-
-    _char: function(index) {
-        arguments.length === 0 && (index = this.index);
-        return this.source.charAt(index);
-    },
-
-    _charCode: function(index) {
-         arguments.length === 0 && (index = this.index);
-         return this.source.charCodeAt(index);
-    },
-
-    _skipWhitespace: function() {
-        while (this.index < this.length) {
-            var code = this._charCode();
-            if (!Utils.isWhiteSpace(code)) {
-                break;
-            } else if (code === 10) {
-                // is \n
-                this._updateLine();
-            }
-            this._updateIndex();
-        }
-    },
-
-    _expect: function(str) {
-        if (!this._isExpect(str)) {
-            this._error('expect string ' + str);
-        }
-        this.index += str.length;
-    },
-
-    _isExpect: function(str) {
-        return this.source.slice(this.index, this.index + str.length) === str;
-    },
-
-    _isElementStart: function() {
-        return this._char() === '<' && (this._isExpect('<!--') || elementNameRegexp.test(this.source.slice(this.index)));
-    },
-
-    _type: function(type, ret) {
-        ret || (ret = {});
-        ret.type = type;
-        ret.typeName = TypeName[type];
-        return ret;
-    },
-
-    _updateLine: function() {
-        this.line++;
-        this.column = 0;
-    },
-
-    _updateIndex: function(value) {
-        value === undefined && (value = 1);
-        var index = this.index;
-        this.index = this.index + value;
-        this.column = this.column + value;
-        return index;
-    },
-
-    _error: function(msg) {
-        throw new Error(
-            msg + ' At: {line: ' + this.line + ', column: ' + this.column +
-            '} Near: "' + this.source.slice(this.index - 10, this.index + 20) + '"'
-        );
-    }
-};
-
-module.exports = Parser;
-
-},{"./utils":19}],18:[function(require,module,exports){
-/**
- * @fileoverview stringify ast of jsx to js
- * @author javey
- * @date 15-4-22
- */
-
-var Utils = require('./utils'),
-    Type = Utils.Type,
-    TypeName = Utils.TypeName,
-
-    attrMap = (function() {
-        var map = {
-            'class': 'className',
-            'for': 'htmlFor'
-        };
-        return function(name) {
-            return map[name] || name;
-        };
-    })();
-
-var Stringifier = function() {};
-
-Stringifier.prototype = {
-    constructor: Stringifier,
-
-    stringify: function(ast, autoReturn) {
-        if (arguments.length === 1) {
-            autoReturn = true;
-        }
-        this.autoReturn = !!autoReturn;
-        this.enterStringExpression = false;
-        return this._visitJSXExpressionContainer(ast, true);
-    },
-
-    _visitJSXExpressionContainer: function(ast, isRoot) {
-        var str = '', length = ast.length;
-        Utils.each(ast, function(element, i) {
-            // if is root, add `return` keyword
-            if (this.autoReturn && isRoot && i === length - 1) {
-                str += 'return ' + this._visit(element, isRoot);
-            } else {
-                str += this._visit(element, isRoot);
-            }
-        }, this);
-
-        return str;
-    },
-
-    _visit: function(element, isRoot) {
-        element = element || {};
-        switch (element.type) {
-            case Type.JS:
-                return this._visitJS(element);
-            case Type.JSXElement:
-                return this._visitJSX(element);
-            case Type.JSXText:
-                return this._visitJSXText(element);
-            case Type.JSXExpressionContainer:
-                return this._visitJSXExpressionContainer(element.value);
-            case Type.JSXWidget:
-                return this._visitJSXWidget(element);
-            case Type.JSXBlock:
-                return this._visitJSXBlock(element);
-            case Type.JSXVdt:
-                return this._visitJSXVdt(element, isRoot);
-            case Type.JSXComment:
-                return this._visitJSXComment(element);
-            default:
-                return 'null';
-        }
-    },
-
-    _visitJS: function(element) {
-        return this.enterStringExpression ? '(' + element.value + ')' : element.value;
-    },
-
-    _visitJSX: function(element) {
-        if (element.value === 'script' || element.value === 'style') {
-            if (element.children.length) {
-                element.attributes.push({
-                    type: Type.JSXAttribute,
-                    typeName: TypeName[Type.JSXAttribute],
-                    name: 'innerHTML',
-                    value: {
-                        type: Type.JS,
-                        typeName: TypeName[Type.JS],
-                        value: this._visitJSXChildrenAsString(element.children)
-                    }
-                });
-                element.children = [];
-            }
-        }
-        var str = "h('" + element.value + "'," + this._visitJSXAttribute(element.attributes) + ", ";
-
-        return str + this._visitJSXChildren(element.children) + ')';
-    },
-
-    _visitJSXChildren: function(children) {
-        var ret = [];
-        Utils.each(children, function(child) {
-            ret.push(this._visit(child));
-        }, this);
-
-        return '[' + ret.join(', ') + ']';
-    },
-
-    _visitJSXChildrenAsString: function(children) {
-        var ret = [];
-        this.enterStringExpression = true;
-        Utils.each(children, function(child) {
-            ret.push(this._visit(child));
-        }, this);
-        this.enterStringExpression = false;
-        return ret.join('+');
-    },
-
-    _visitJSXAttribute: function(attributes) {
-        var ret = [];
-        Utils.each(attributes, function(attr) {
-            ret.push("'" + attrMap(attr.name) + "': " + (Utils.isArray(attr.value) ? this._visitJSXChildren(attr.value) : this._visit(attr.value)));
-        }, this);
-
-        return ret.length ? '{' + ret.join(', ') + '}' : 'null';
-    },
-
-    _visitJSXText: function(element) {
-        return "'" + element.value.replace(/[\r\n]/g, '\\n').replace(/([\'\"])/g, '\\$1') + "'";
-    },
-
-    _visitJSXWidget: function(element) {
-        element.attributes.push({name: 'children', value: element.children});
-        return element.value + '(' + this._visitJSXAttribute(element.attributes) + ', widgets)';
-    },
-
-    _visitJSXBlock: function(element, isAncestor) {
-        arguments.length === 1 && (isAncestor = true);
-
-        return '(_blocks.' + element.value + ' = function(parent) {return ' + this._visitJSXChildren(element.children) + ';}) && (__blocks.' + element.value + ' = function(parent) {\n' +
-            'var self = this;\n' +
-            'return blocks.' + element.value + ' ? blocks.' + element.value + '.call(this, function() {\n' +
-                'return _blocks.' + element.value + '.call(self, parent);\n' +
-            '}) : _blocks.' + element.value + '.call(this, parent);\n' +
-        '})' + (isAncestor ? ' && __blocks.' + element.value + '.call(this)' : '');
-    },
-
-    _visitJSXVdt: function(element, isRoot) {
-        var ret = ['(function(blocks) {',
-                'var _blocks = {}, __blocks = extend({}, blocks), _obj = ' + this._visitJSXAttribute(element.attributes) + ' || {};',
-                'if (_obj.hasOwnProperty("arguments")) { _obj = extend({}, _obj.arguments === null ? obj : _obj.arguments, _obj); delete _obj.arguments; }',
-                'return ' + element.value + '.call(this, _obj, _Vdt, '
-            ].join('\n'),
-            blocks = [];
-
-        Utils.each(element.children, function(child) {
-            if (child.type === Type.JSXBlock) {
-                blocks.push(this._visitJSXBlock(child, false))
-            }
-        }, this);
-
-        ret += (blocks.length ? blocks.join(' && ') + ' && __blocks)' : '__blocks)') + ('}).call(this, ') + (isRoot ? 'blocks)' : '{})');
-
-        return ret;
-    },
-
-    _visitJSXComment: function(element) {
-        return 'h.c(' + this._visitJSXText(element) + ')';
-    }
-};
-
-module.exports = Stringifier;
-
-},{"./utils":19}],19:[function(require,module,exports){
-/**
- * @fileoverview utility methods
- * @author javey
- * @date 15-4-22
- */
-
-var i = 0,
-    Type = {
-        JS: i++,
-        JSXText: i++,
-        JSXElement: i++,
-        JSXExpressionContainer: i++,
-        JSXAttribute: i++,
-        JSXEmptyExpression: i++,
-
-        JSXWidget: i++,
-        JSXVdt: i++,
-        JSXBlock: i++,
-        JSXComment: i++
-    },
-    TypeName = [],
-
-    SelfClosingTags = {
-        'area': true,
-        'base': true,
-        'br': true,
-        'col': true,
-        'embed': true,
-        'hr': true,
-        'img': true,
-        'input': true,
-        'keygen': true,
-        'link': true,
-        'menuitem': true,
-        'meta': true,
-        'param': true,
-        'source': true,
-        'track': true,
-        'wbr': true
-    },
-
-    Delimiters = ['{', '}'];
-
-var hasOwn = Object.prototype.hasOwnProperty;
-
-(function() {
-    for (var type in Type) {
-        if (hasOwn.call(Type, type)) {
-            TypeName[Type[type]] = type;
-        }
-    }
-})();
-
-var Utils = {
-    each: function(collection, iterate, thisArgs) {
-        for (var i = 0, l = collection.length; i < l; i++) {
-            var item = collection[i];
-            iterate.call(thisArgs, item, i);
-        }
-    },
-
-    isWhiteSpace: function(charCode) {
-        return ((charCode <= 160 && (charCode >= 9 && charCode <= 13) || charCode == 32 || charCode == 160) || charCode == 5760 || charCode == 6158 ||
-        (charCode >= 8192 && (charCode <= 8202 || charCode == 8232 || charCode == 8233 || charCode == 8239 || charCode == 8287 || charCode == 12288 || charCode == 65279)));
-    },
-
-    trimRight: function(str) {
-        var index = str.length;
-
-        while (index-- && Utils.isWhiteSpace(str.charCodeAt(index))) {}
-
-        return str.slice(0, index + 1);
-    },
-
-    Type: Type,
-    TypeName: TypeName,
-
-    setDelimiters: function(delimiters) {
-        if (!Utils.isArray(delimiters)) {
-            throw new Error('The parameter must be an array like ["{{", "}}"]');
-        }
-        Delimiters = delimiters;
-    },
-
-    getDelimiters: function() {
-        return Delimiters;
-    },
-
-    isSelfClosingTag: function(tag) {
-        return SelfClosingTags[tag];
-    },
-
-    extend: function(dest, source) {
-        var length = arguments.length;
-        if (length > 1) {
-            for (var i = 1; i < length; i++) {
-                source = arguments[i];
-                if (source) {
-                    for (var key in source) {
-                        if (hasOwn.call(source, key)) {
-                            dest[key] = source[key];
-                        }
-                    }
-                }
-            }
-        }
-        return dest;
-    },
-
-    isArray: Array.isArray || function(arr) {
-        return Object.prototype.toString.call(arr) === '[object Array]';
-    },
-
-    noop: function() {},
-
-    require: (function() {
-        var isNode = new Function("try { return this === global; } catch (e) { return false; }"); 
-        if (isNode()) {
-            return require('./compile');
-        } else {
-            // use amd require
-        }
-    })(),
-
-    noRequire: function() {
-        throw new Error('Vdt depends RequireJs to require file over http.');
-    }
-};
-
-module.exports = Utils;
-
-},{"./compile":20}],20:[function(require,module,exports){
-var parser = new (require('./parser')),
-    stringifier = new (require('./stringifier')),
-    virtualDom = require('virtual-domx'),
-    utils = require('./utils');
-
-var Vdt = function(source, options) {
-    var vdt = {
-        render: function(data) {
-            vdt.renderTree.apply(vdt, arguments); 
-            vdt.node = virtualDom.create(vdt.tree);
-            return vdt.node;
-        },
-
-        renderTree: function(data) {
-            if (arguments.length) {
-                vdt.data = data;
-            }
-            vdt.data.vdt = vdt;
-            vdt.tree = vdt.template.call(vdt.data, vdt.data, Vdt);
-            return vdt.tree;
-        },
-
-        renderString: function(data) {
-            var node = vdt.render.apply(vdt, arguments);
-            return node.outerHTML || node.toString();
-        },
-
-        update: function(data) {
-            var oldTree = vdt.tree;
-            vdt.renderTree.apply(vdt, arguments);
-            vdt.patches = virtualDom.diff(oldTree, vdt.tree);
-            vdt.node = virtualDom.patch(vdt.node, vdt.patches);
-            return vdt.node;
-        },
-
-        /**
-         * Restore the data, so you can modify it directly.
-         */
-        data: {},
-        tree: {},
-        patches: {},
-        node: null,
-        template: compile(source, options),
-
-        getTree: function() {
-            return vdt.tree;
-        },
-
-        setTree: function(tree) {
-            vdt.tree = tree;
-        },
-
-        getNode: function() {
-            return vdt.node;
-        },
-
-        setNode: function(node) {
-            vdt.node = node;
-        }
-    };
-
-    // reference cycle vdt
-    vdt.data.vdt = vdt;
-
-    return vdt;
-};
-
-function compile(source, options) {
-    var templateFn;
-
-    // backward compatibility v0.2.2
-    if (options === true || options === false) {
-        options = {autoReturn: options};
-    }
-
-    options = utils.extend({
-        autoReturn: true,
-        onlySource: false,
-        delimiters: utils.getDelimiters()
-    }, options);
-
-    switch (typeof source) {
-        case 'string':
-            var ast = parser.parse(source, {delimiters: options.delimiters}),
-                hscript = stringifier.stringify(ast, options.autoReturn);
-
-            hscript = [
-                '_Vdt || (_Vdt = Vdt);',
-                'obj || (obj = {});',
-                'blocks || (blocks = {});',
-                'var h = _Vdt.virtualDom.h, widgets = this.widgets || (this.widgets = {}), _blocks = {}, __blocks = {},',
-                    'extend = _Vdt.utils.extend;',
-                'obj.require = _Vdt.utils.require || (typeof require === "undefined" ? _Vdt.utils.noRequire : require);',
-                'var self; if (obj.type === "Widget") { self = this; } else { obj.get = function(name) { return obj[name]; }; self = obj; }',
-                'with (obj) {',
-                    hscript,
-                '}'
-            ].join('\n');
-            templateFn = options.onlySource ? utils.noop : new Function('obj', '_Vdt', 'blocks', hscript);
-            templateFn.source = 'function(obj, _Vdt, blocks) {\n' + hscript + '\n}';
-            break;
-        case 'function':
-            templateFn = source;
-            break;
-        default:
-            throw new Error('Expect a string or function');
-    }
-
-    return templateFn;
-}
-
-Vdt.parser = parser;
-Vdt.stringifier = stringifier;
-Vdt.virtualDom = virtualDom;
-Vdt.compile = compile;
-Vdt.utils = utils;
-Vdt.setDelimiters = utils.setDelimiters;
-Vdt.getDelimiters = utils.getDelimiters;
-
-module.exports = Vdt;
-
-},{"./parser":17,"./stringifier":18,"./utils":19,"virtual-domx":24}],21:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 var createElement = require("./vdom/create-element.js")
 
 module.exports = createElement
 
-},{"./vdom/create-element.js":27}],22:[function(require,module,exports){
+},{"./vdom/create-element.js":22}],16:[function(require,module,exports){
 var diff = require("./vtree/diff.js")
 
 module.exports = diff
 
-},{"./vtree/diff.js":49}],23:[function(require,module,exports){
+},{"./vtree/diff.js":44}],17:[function(require,module,exports){
 var h = require("./virtual-hyperscript/index.js")
 
 module.exports = h
 
-},{"./virtual-hyperscript/index.js":34}],24:[function(require,module,exports){
+},{"./virtual-hyperscript/index.js":29}],18:[function(require,module,exports){
 var diff = require("./diff.js")
 var patch = require("./patch.js")
 var h = require("./h.js")
@@ -1629,12 +764,31 @@ module.exports = {
     VText: VText
 }
 
-},{"./create-element.js":21,"./diff.js":22,"./h.js":23,"./patch.js":25,"./vnode/vnode.js":45,"./vnode/vtext.js":47}],25:[function(require,module,exports){
+},{"./create-element.js":15,"./diff.js":16,"./h.js":17,"./patch.js":20,"./vnode/vnode.js":40,"./vnode/vtext.js":42}],19:[function(require,module,exports){
+(function (global){
+var topLevel = typeof global !== 'undefined' ? global :
+    typeof window !== 'undefined' ? window : {}
+var minDoc = require('min-documentx');
+
+if (typeof document !== 'undefined') {
+    module.exports = document;
+} else {
+    var doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'];
+
+    if (!doccy) {
+        doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'] = minDoc;
+    }
+
+    module.exports = doccy;
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"min-documentx":58}],20:[function(require,module,exports){
 var patch = require("./vdom/patch.js")
 
 module.exports = patch
 
-},{"./vdom/patch.js":30}],26:[function(require,module,exports){
+},{"./vdom/patch.js":25}],21:[function(require,module,exports){
 var isObject = require("is-object")
 var isHook = require("../vnode/is-vhook.js")
 
@@ -1737,7 +891,7 @@ function getPrototype(value) {
     }
 }
 
-},{"../vnode/is-vhook.js":39,"is-object":15}],27:[function(require,module,exports){
+},{"../vnode/is-vhook.js":34,"is-object":14}],22:[function(require,module,exports){
 var document = require("globalx/document")
 
 var applyProperties = require("./apply-properties")
@@ -1793,7 +947,7 @@ function createElement(vnode, opts) {
     return node
 }
 
-},{"../vnode/handle-thunk.js":36,"../vnode/is-vcomment.js":38,"../vnode/is-vnode.js":40,"../vnode/is-vtext.js":41,"../vnode/is-widget.js":42,"./apply-properties":26,"globalx/document":12}],28:[function(require,module,exports){
+},{"../vnode/handle-thunk.js":31,"../vnode/is-vcomment.js":33,"../vnode/is-vnode.js":35,"../vnode/is-vtext.js":36,"../vnode/is-widget.js":37,"./apply-properties":21,"globalx/document":19}],23:[function(require,module,exports){
 // Maps a virtual DOM tree onto a real DOM tree in an efficient manner.
 // We don't want to read all of the DOM nodes in the tree so we use
 // the in-order tree indexing to eliminate recursion down certain branches.
@@ -1880,7 +1034,7 @@ function ascending(a, b) {
     return a > b ? 1 : -1
 }
 
-},{}],29:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 var applyProperties = require("./apply-properties")
 
 var isWidget = require("../vnode/is-widget.js")
@@ -2055,7 +1209,7 @@ function replaceRoot(oldRoot, newRoot) {
     return newRoot;
 }
 
-},{"../vnode/is-widget.js":42,"../vnode/vpatch.js":46,"./apply-properties":26,"./update-widget":31}],30:[function(require,module,exports){
+},{"../vnode/is-widget.js":37,"../vnode/vpatch.js":41,"./apply-properties":21,"./update-widget":26}],25:[function(require,module,exports){
 var document = require("globalx/document")
 var isArray = require("x-is-array")
 
@@ -2137,7 +1291,7 @@ function patchIndices(patches) {
     return indices
 }
 
-},{"./create-element":27,"./dom-index":28,"./patch-op":29,"globalx/document":12,"x-is-array":52}],31:[function(require,module,exports){
+},{"./create-element":22,"./dom-index":23,"./patch-op":24,"globalx/document":19,"x-is-array":52}],26:[function(require,module,exports){
 var isWidget = require("../vnode/is-widget.js")
 
 module.exports = updateWidget
@@ -2156,7 +1310,7 @@ function updateWidget(a, b) {
     return false
 }
 
-},{"../vnode/is-widget.js":42}],32:[function(require,module,exports){
+},{"../vnode/is-widget.js":37}],27:[function(require,module,exports){
 'use strict';
 
 var EvStore = require('ev-store');
@@ -2190,7 +1344,7 @@ EvHook.prototype.unhook = function(node, propertyName) {
     es[propName] = undefined;
 };
 
-},{"dom-delegator":5,"ev-store":8}],33:[function(require,module,exports){
+},{"dom-delegator":5,"ev-store":8}],28:[function(require,module,exports){
 'use strict';
 
 module.exports = SoftSetHook;
@@ -2209,7 +1363,7 @@ SoftSetHook.prototype.hook = function (node, propertyName) {
     }
 };
 
-},{}],34:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 'use strict';
 
 var isArray = require('x-is-array');
@@ -2354,7 +1508,7 @@ function errorString(obj) {
     }
 }
 
-},{"../vnode/is-thunk":37,"../vnode/is-vcomment":38,"../vnode/is-vhook":39,"../vnode/is-vnode":40,"../vnode/is-vtext":41,"../vnode/is-widget":42,"../vnode/vcomment.js":43,"../vnode/vnode.js":45,"../vnode/vtext.js":47,"./hooks/ev-hook.js":32,"./hooks/soft-set-hook.js":33,"./parse-tag.js":35,"x-is-array":52}],35:[function(require,module,exports){
+},{"../vnode/is-thunk":32,"../vnode/is-vcomment":33,"../vnode/is-vhook":34,"../vnode/is-vnode":35,"../vnode/is-vtext":36,"../vnode/is-widget":37,"../vnode/vcomment.js":38,"../vnode/vnode.js":40,"../vnode/vtext.js":42,"./hooks/ev-hook.js":27,"./hooks/soft-set-hook.js":28,"./parse-tag.js":30,"x-is-array":52}],30:[function(require,module,exports){
 'use strict';
 
 var split = require('browser-split');
@@ -2410,7 +1564,7 @@ function parseTag(tag, props) {
     return props.namespace ? tagName : tagName.toUpperCase();
 }
 
-},{"browser-split":1}],36:[function(require,module,exports){
+},{"browser-split":1}],31:[function(require,module,exports){
 var isVNode = require("./is-vnode")
 var isVText = require("./is-vtext")
 var isWidget = require("./is-widget")
@@ -2452,14 +1606,14 @@ function renderThunk(thunk, previous) {
     return renderedThunk
 }
 
-},{"./is-thunk":37,"./is-vnode":40,"./is-vtext":41,"./is-widget":42}],37:[function(require,module,exports){
+},{"./is-thunk":32,"./is-vnode":35,"./is-vtext":36,"./is-widget":37}],32:[function(require,module,exports){
 module.exports = isThunk
 
 function isThunk(t) {
     return t && t.type === "Thunk"
 }
 
-},{}],38:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = isVirtualComment
@@ -2468,7 +1622,7 @@ function isVirtualComment(x) {
     return x && x.type === "VirtualComment" && x.version === version 
 }
 
-},{"./version":44}],39:[function(require,module,exports){
+},{"./version":39}],34:[function(require,module,exports){
 module.exports = isHook
 
 function isHook(hook) {
@@ -2477,7 +1631,7 @@ function isHook(hook) {
        typeof hook.unhook === "function" && !hook.hasOwnProperty("unhook"))
 }
 
-},{}],40:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = isVirtualNode
@@ -2486,7 +1640,7 @@ function isVirtualNode(x) {
     return x && x.type === "VirtualNode" && x.version === version
 }
 
-},{"./version":44}],41:[function(require,module,exports){
+},{"./version":39}],36:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = isVirtualText
@@ -2495,14 +1649,14 @@ function isVirtualText(x) {
     return x && x.type === "VirtualText" && x.version === version
 }
 
-},{"./version":44}],42:[function(require,module,exports){
+},{"./version":39}],37:[function(require,module,exports){
 module.exports = isWidget
 
 function isWidget(w) {
     return w && w.type === "Widget"
 }
 
-},{}],43:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = VirtualComment
@@ -2514,10 +1668,10 @@ function VirtualComment(comment) {
 VirtualComment.prototype.version = version
 VirtualComment.prototype.type = "VirtualComment"
 
-},{"./version":44}],44:[function(require,module,exports){
+},{"./version":39}],39:[function(require,module,exports){
 module.exports = "2"
 
-},{}],45:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 var version = require("./version")
 var isVNode = require("./is-vnode")
 var isWidget = require("./is-widget")
@@ -2591,7 +1745,7 @@ function VirtualNode(tagName, properties, children, key, namespace) {
 VirtualNode.prototype.version = version
 VirtualNode.prototype.type = "VirtualNode"
 
-},{"./is-thunk":37,"./is-vhook":39,"./is-vnode":40,"./is-widget":42,"./version":44}],46:[function(require,module,exports){
+},{"./is-thunk":32,"./is-vhook":34,"./is-vnode":35,"./is-widget":37,"./version":39}],41:[function(require,module,exports){
 var version = require("./version")
 
 VirtualPatch.NONE = 0
@@ -2616,7 +1770,7 @@ function VirtualPatch(type, vNode, patch) {
 VirtualPatch.prototype.version = version
 VirtualPatch.prototype.type = "VirtualPatch"
 
-},{"./version":44}],47:[function(require,module,exports){
+},{"./version":39}],42:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = VirtualText
@@ -2628,7 +1782,7 @@ function VirtualText(text) {
 VirtualText.prototype.version = version
 VirtualText.prototype.type = "VirtualText"
 
-},{"./version":44}],48:[function(require,module,exports){
+},{"./version":39}],43:[function(require,module,exports){
 var isObject = require("is-object")
 var isHook = require("../vnode/is-vhook")
 
@@ -2688,7 +1842,7 @@ function getPrototype(value) {
   }
 }
 
-},{"../vnode/is-vhook":39,"is-object":15}],49:[function(require,module,exports){
+},{"../vnode/is-vhook":34,"is-object":14}],44:[function(require,module,exports){
 var isArray = require("x-is-array")
 
 var VPatch = require("../vnode/vpatch")
@@ -3124,7 +2278,853 @@ function appendPatch(apply, patch) {
     }
 }
 
-},{"../vnode/handle-thunk":36,"../vnode/is-thunk":37,"../vnode/is-vcomment":38,"../vnode/is-vnode":40,"../vnode/is-vtext":41,"../vnode/is-widget":42,"../vnode/vpatch":46,"./diff-props":48,"x-is-array":52}],50:[function(require,module,exports){
+},{"../vnode/handle-thunk":31,"../vnode/is-thunk":32,"../vnode/is-vcomment":33,"../vnode/is-vnode":35,"../vnode/is-vtext":36,"../vnode/is-widget":37,"../vnode/vpatch":41,"./diff-props":43,"x-is-array":52}],45:[function(require,module,exports){
+module.exports = require('./lib/index');
+
+},{"./lib/index":49}],46:[function(require,module,exports){
+/**
+ * @fileoverview parse jsx to ast
+ * @author javey
+ * @date 15-4-22
+ */
+
+var Utils = require('./utils'),
+    Type = Utils.Type,
+    TypeName = Utils.TypeName;
+
+var elementNameRegexp = /^<\w+:?\s*[\w\/>]/;
+
+function isJSXIdentifierPart(ch) {
+    return (ch === 58) || (ch === 95) || (ch === 45) ||  // : and _ (underscore) and -
+        (ch >= 65 && ch <= 90) ||         // A..Z
+        (ch >= 97 && ch <= 122) ||        // a..z
+        (ch >= 48 && ch <= 57);         // 0..9
+}
+
+var Parser = function() {
+    this.source = '';
+    this.index = 0;
+    this.length = 0;
+};
+
+Parser.prototype = {
+    constructor: Parser,
+
+    parse: function(source, options) {
+        this.source = Utils.trimRight(source);
+        this.index = 0;
+        this.line = 1;
+        this.column = 1;
+        this.length = this.source.length;
+
+        this.options = Utils.extend({
+            delimiters: Utils.getDelimiters()
+        }, options);
+
+        return this._parseTemplate();
+    },
+
+    _parseTemplate: function() {
+        var elements = [],
+            braces = {count: 0};
+        while (this.index < this.length && braces.count >= 0) {
+            elements.push(this._advance(braces));
+        }
+
+        return elements;
+    },
+
+    _advance: function(braces) {
+        var ch = this._char();
+        if (ch !== '<') {
+            return this._scanJS(braces);
+        } else {
+            return this._scanJSX();
+        }
+    },
+
+    _scanJS: function(braces) {
+        var start = this.index,
+            Delimiters = this.options.delimiters;
+
+        while (this.index < this.length) {
+            var ch = this._char();
+            if (ch === '\'' || ch === '"') {
+                // skip element(<div>) in quotes
+                this._scanStringLiteral();
+            } else if (this._isElementStart()) {
+                break;
+            } else {
+                if (this._isExpect(Delimiters[0])) {
+                    braces.count++;
+                } else if (this._isExpect(Delimiters[1])) {
+                    braces.count--;
+                    if (braces.count < 0) {
+                        this._updateIndex();
+                        break;
+                    }
+                } else if (ch === '\n') {
+                    this._updateLine();
+                }
+                this._updateIndex();
+            }
+        }
+
+        return this._type(Type.JS, {value: this.source.slice(start, braces.count < 0 ? this.index - 1 : this.index)});
+    },
+
+    _scanStringLiteral: function() {
+        var quote = this._char(),
+            start = this.index,
+            str = '';
+        this._updateIndex();
+        
+
+        while (this.index < this.length) {
+            var ch = this._char();
+            this._updateIndex();
+
+            if (ch === quote) {
+                quote = '';
+                break;
+            } else if (ch === '\\') {
+                str += this._char(this._updateIndex());
+            } else {
+                str += ch;
+            }
+        }
+        if (quote !== '') {
+            this._error('Unclosed quote');
+        }
+
+        return this._type(Type.StringLiteral, {value: this.source.slice(start, this.index)});
+    },
+
+    _scanJSX: function() {
+        return this._parseJSXElement();
+    },
+
+    _scanJSXText: function(stopChars) {
+        var start = this.index,
+            l = stopChars.length,
+            i;
+        loop:
+        while (this.index < this.length) {
+            if (this._charCode() === 10) {
+                this._updateLine();
+            }
+            for (i = 0; i < l; i++) {
+                if (typeof stopChars[i] === 'function' && stopChars[i].call(this) || this._isExpect(stopChars[i])) {
+                    break loop;
+                }
+            }
+            this._updateIndex();
+        }
+
+        return this._type(Type.JSXText, {value: this.source.slice(start, this.index)});
+    },
+
+    _scanJSXStringLiteral: function() {
+        var quote = this._char();
+        if (quote !== '\'' && quote !== '"') {
+            this._error('String literal must starts with a qoute');
+        }
+        this._updateIndex();
+        var token = this._scanJSXText([quote]);
+        this._updateIndex();
+        return token;
+    },
+
+    _parseJSXElement: function() {
+        this._expect('<');
+        var start = this.index,
+            ret = {},
+            flag = this._charCode();
+        if (flag >= 65 && flag <= 90/* upper case */) {
+            // is a widget
+            this._type(Type.JSXWidget, ret);
+        } else if (this._isExpect('!--')) {
+            // is html comment
+            return this._parseJSXComment();
+        } else if (this._charCode(this.index + 1) === 58/* : */){
+            // is a directive
+            start += 2;
+            switch (flag) {
+                case 116: // t
+                    this._type(Type.JSXVdt, ret);
+                    break;
+                case 98: // b
+                    this._type(Type.JSXBlock, ret);
+                    break;
+                default:
+                    this._error('Unknown directive ' + String.fromCharCode(flag) + ':');
+            }
+            this._updateIndex(2);
+        } else {
+            // is an element
+            this._type(Type.JSXElement, ret);
+        }
+
+        while (this.index < this.length) {
+            if (!isJSXIdentifierPart(this._charCode())) {
+                break;
+            }
+            this._updateIndex();
+        }
+
+        ret.value = this.source.slice(start, this.index);
+
+        return this._parseAttributeAndChildren(ret);
+    },
+
+    _parseAttributeAndChildren: function(ret) {
+        Utils.extend(ret, {
+            attributes: this._parseJSXAttribute(),
+            children: []
+        });
+
+        if (ret.type === Type.JSXElement && Utils.isSelfClosingTag(ret.value)) {
+            // self closing tag
+            if (this._char() === '/') {
+                this._updateIndex();
+            }
+            this._expect('>');
+        } else if (this._char() === '/') {
+            // unknown self closing tag
+            this._updateIndex();
+            this._expect('>');
+        } else {
+            this._expect('>');
+            ret.children = this._parseJSXChildren();
+        }
+
+        return ret;
+    },
+
+    _parseJSXAttribute: function() {
+        var ret = [];
+        while (this.index < this.length) {
+            this._skipWhitespace();
+            if (this._char() === '/' || this._char() === '>') {
+                break;
+            } else {
+                var attr = this._parseJSXAttributeName();
+                if (this._char() === '=') {
+                    this._updateIndex();
+                    attr.value = this._parseJSXAttributeValue();
+                }
+                ret.push(attr);
+            }
+        }
+
+        return ret;
+    },
+
+    _parseJSXAttributeName: function() {
+        var start = this.index;
+        if (!isJSXIdentifierPart(this._charCode())) {
+            this._error('Unexpected identifier ' + this._char());
+        }
+        while (this.index < this.length) {
+            var ch = this._charCode();
+            if (!isJSXIdentifierPart(ch)) {
+                break;
+            }
+            this._updateIndex();
+        }
+
+        return this._type(Type.JSXAttribute, {name: this.source.slice(start, this.index)});
+    },
+
+    _parseJSXAttributeValue: function() {
+        var value,
+            Delimiters = this.options.delimiters;
+        if (this._isExpect(Delimiters[0])) {
+            value = this._parseJSXExpressionContainer();
+        } else {
+            value = this._scanJSXStringLiteral();
+        }
+        return value;
+    },
+
+    _parseJSXExpressionContainer: function() {
+        var expression,
+            Delimiters = this.options.delimiters;
+        this._expect(Delimiters[0]);
+        if (this._isExpect(Delimiters[1])) {
+            expression = this._parseJSXEmptyExpression();
+        } else {
+            expression = this._parseExpression();
+        }
+        this._expect(Delimiters[1]);
+
+        return this._type(Type.JSXExpressionContainer, {value: expression});
+    },
+
+    _parseJSXEmptyExpression: function() {
+        return this._type(Type.JSXEmptyExpression, {value: null});
+    },
+
+    _parseExpression: function() {
+        var ret = this._parseTemplate();
+        this._updateIndex(-1);
+        return ret;
+    },
+
+    _parseJSXChildren: function() {
+        var children = [];
+        while (this.index < this.length) {
+            if (this._char(this.index) === '<' && this._char(this.index + 1) === '/') {
+                break;
+            }
+            children.push(this._parseJSXChild());
+        }
+        this._parseJSXClosingElement();
+        return children;
+    },
+
+    _parseJSXChild: function() {
+        var token,
+            Delimiters = this.options.delimiters;
+        if (this._isExpect(Delimiters[0])) {
+            token = this._parseJSXExpressionContainer();
+        } else if (this._isElementStart()) {
+            token = this._parseJSXElement();
+        } else {
+            token = this._scanJSXText([function() {
+                return this._isExpect('</') || this._isElementStart();
+            }, Delimiters[0]]);
+        }
+
+        return token;
+    },
+
+    _parseJSXClosingElement: function() {
+        this._expect('</');
+
+        while (this.index < this.length) {
+            if (!isJSXIdentifierPart(this._charCode())) {
+                break;
+            }
+            this._updateIndex();;
+        }
+
+        this._skipWhitespace();
+        this._expect('>');
+    },
+
+    _parseJSXComment: function() {
+        this._expect('!--');
+        var start = this.index;
+        while (this.index < this.length) {
+            if (this._isExpect('-->')) {
+                break;
+            } else if (this._charCode() === 10) {
+                this._updateLine();
+            }
+            this._updateIndex();
+        }
+        var ret = this._type(Type.JSXComment, {value: this.source.slice(start, this.index)});
+        this._expect('-->');
+
+        return ret;
+    },
+
+    _char: function(index) {
+        arguments.length === 0 && (index = this.index);
+        return this.source.charAt(index);
+    },
+
+    _charCode: function(index) {
+         arguments.length === 0 && (index = this.index);
+         return this.source.charCodeAt(index);
+    },
+
+    _skipWhitespace: function() {
+        while (this.index < this.length) {
+            var code = this._charCode();
+            if (!Utils.isWhiteSpace(code)) {
+                break;
+            } else if (code === 10) {
+                // is \n
+                this._updateLine();
+            }
+            this._updateIndex();
+        }
+    },
+
+    _expect: function(str) {
+        if (!this._isExpect(str)) {
+            this._error('expect string ' + str);
+        }
+        this.index += str.length;
+    },
+
+    _isExpect: function(str) {
+        return this.source.slice(this.index, this.index + str.length) === str;
+    },
+
+    _isElementStart: function() {
+        return this._char() === '<' && (this._isExpect('<!--') || elementNameRegexp.test(this.source.slice(this.index)));
+    },
+
+    _type: function(type, ret) {
+        ret || (ret = {});
+        ret.type = type;
+        ret.typeName = TypeName[type];
+        return ret;
+    },
+
+    _updateLine: function() {
+        this.line++;
+        this.column = 0;
+    },
+
+    _updateIndex: function(value) {
+        value === undefined && (value = 1);
+        var index = this.index;
+        this.index = this.index + value;
+        this.column = this.column + value;
+        return index;
+    },
+
+    _error: function(msg) {
+        throw new Error(
+            msg + ' At: {line: ' + this.line + ', column: ' + this.column +
+            '} Near: "' + this.source.slice(this.index - 10, this.index + 20) + '"'
+        );
+    }
+};
+
+module.exports = Parser;
+
+},{"./utils":48}],47:[function(require,module,exports){
+/**
+ * @fileoverview stringify ast of jsx to js
+ * @author javey
+ * @date 15-4-22
+ */
+
+var Utils = require('./utils'),
+    Type = Utils.Type,
+    TypeName = Utils.TypeName,
+
+    attrMap = (function() {
+        var map = {
+            'class': 'className',
+            'for': 'htmlFor'
+        };
+        return function(name) {
+            return map[name] || name;
+        };
+    })();
+
+var Stringifier = function() {};
+
+Stringifier.prototype = {
+    constructor: Stringifier,
+
+    stringify: function(ast, autoReturn) {
+        if (arguments.length === 1) {
+            autoReturn = true;
+        }
+        this.autoReturn = !!autoReturn;
+        this.enterStringExpression = false;
+        return this._visitJSXExpressionContainer(ast, true);
+    },
+
+    _visitJSXExpressionContainer: function(ast, isRoot) {
+        var str = '', length = ast.length;
+        Utils.each(ast, function(element, i) {
+            // if is root, add `return` keyword
+            if (this.autoReturn && isRoot && i === length - 1) {
+                str += 'return ' + this._visit(element, isRoot);
+            } else {
+                str += this._visit(element, isRoot);
+            }
+        }, this);
+
+        return str;
+    },
+
+    _visit: function(element, isRoot) {
+        element = element || {};
+        switch (element.type) {
+            case Type.JS:
+                return this._visitJS(element);
+            case Type.JSXElement:
+                return this._visitJSX(element);
+            case Type.JSXText:
+                return this._visitJSXText(element);
+            case Type.JSXExpressionContainer:
+                return this._visitJSXExpressionContainer(element.value);
+            case Type.JSXWidget:
+                return this._visitJSXWidget(element);
+            case Type.JSXBlock:
+                return this._visitJSXBlock(element);
+            case Type.JSXVdt:
+                return this._visitJSXVdt(element, isRoot);
+            case Type.JSXComment:
+                return this._visitJSXComment(element);
+            default:
+                return 'null';
+        }
+    },
+
+    _visitJS: function(element) {
+        return this.enterStringExpression ? '(' + element.value + ')' : element.value;
+    },
+
+    _visitJSX: function(element) {
+        if (element.value === 'script' || element.value === 'style') {
+            if (element.children.length) {
+                element.attributes.push({
+                    type: Type.JSXAttribute,
+                    typeName: TypeName[Type.JSXAttribute],
+                    name: 'innerHTML',
+                    value: {
+                        type: Type.JS,
+                        typeName: TypeName[Type.JS],
+                        value: this._visitJSXChildrenAsString(element.children)
+                    }
+                });
+                element.children = [];
+            }
+        }
+        var str = "h('" + element.value + "'," + this._visitJSXAttribute(element.attributes) + ", ";
+
+        return str + this._visitJSXChildren(element.children) + ')';
+    },
+
+    _visitJSXChildren: function(children) {
+        var ret = [];
+        Utils.each(children, function(child) {
+            ret.push(this._visit(child));
+        }, this);
+
+        return '[' + ret.join(', ') + ']';
+    },
+
+    _visitJSXChildrenAsString: function(children) {
+        var ret = [];
+        this.enterStringExpression = true;
+        Utils.each(children, function(child) {
+            ret.push(this._visit(child));
+        }, this);
+        this.enterStringExpression = false;
+        return ret.join('+');
+    },
+
+    _visitJSXAttribute: function(attributes) {
+        var ret = [];
+        Utils.each(attributes, function(attr) {
+            ret.push("'" + attrMap(attr.name) + "': " + (Utils.isArray(attr.value) ? this._visitJSXChildren(attr.value) : this._visit(attr.value)));
+        }, this);
+
+        return ret.length ? '{' + ret.join(', ') + '}' : 'null';
+    },
+
+    _visitJSXText: function(element) {
+        return "'" + element.value.replace(/[\r\n]/g, '\\n').replace(/([\'\"])/g, '\\$1') + "'";
+    },
+
+    _visitJSXWidget: function(element) {
+        element.attributes.push({name: 'children', value: element.children});
+        return element.value + '(' + this._visitJSXAttribute(element.attributes) + ', widgets)';
+    },
+
+    _visitJSXBlock: function(element, isAncestor) {
+        arguments.length === 1 && (isAncestor = true);
+
+        return '(_blocks.' + element.value + ' = function(parent) {return ' + this._visitJSXChildren(element.children) + ';}) && (__blocks.' + element.value + ' = function(parent) {\n' +
+            'var self = this;\n' +
+            'return blocks.' + element.value + ' ? blocks.' + element.value + '.call(this, function() {\n' +
+                'return _blocks.' + element.value + '.call(self, parent);\n' +
+            '}) : _blocks.' + element.value + '.call(this, parent);\n' +
+        '})' + (isAncestor ? ' && __blocks.' + element.value + '.call(this)' : '');
+    },
+
+    _visitJSXVdt: function(element, isRoot) {
+        var ret = ['(function(blocks) {',
+                'var _blocks = {}, __blocks = extend({}, blocks), _obj = ' + this._visitJSXAttribute(element.attributes) + ' || {};',
+                'if (_obj.hasOwnProperty("arguments")) { _obj = extend({}, _obj.arguments === null ? obj : _obj.arguments, _obj); delete _obj.arguments; }',
+                'return ' + element.value + '.call(this, _obj, _Vdt, '
+            ].join('\n'),
+            blocks = [];
+
+        Utils.each(element.children, function(child) {
+            if (child.type === Type.JSXBlock) {
+                blocks.push(this._visitJSXBlock(child, false))
+            }
+        }, this);
+
+        ret += (blocks.length ? blocks.join(' && ') + ' && __blocks)' : '__blocks)') + ('}).call(this, ') + (isRoot ? 'blocks)' : '{})');
+
+        return ret;
+    },
+
+    _visitJSXComment: function(element) {
+        return 'h.c(' + this._visitJSXText(element) + ')';
+    }
+};
+
+module.exports = Stringifier;
+
+},{"./utils":48}],48:[function(require,module,exports){
+/**
+ * @fileoverview utility methods
+ * @author javey
+ * @date 15-4-22
+ */
+
+var i = 0,
+    Type = {
+        JS: i++,
+        JSXText: i++,
+        JSXElement: i++,
+        JSXExpressionContainer: i++,
+        JSXAttribute: i++,
+        JSXEmptyExpression: i++,
+
+        JSXWidget: i++,
+        JSXVdt: i++,
+        JSXBlock: i++,
+        JSXComment: i++
+    },
+    TypeName = [],
+
+    SelfClosingTags = {
+        'area': true,
+        'base': true,
+        'br': true,
+        'col': true,
+        'embed': true,
+        'hr': true,
+        'img': true,
+        'input': true,
+        'keygen': true,
+        'link': true,
+        'menuitem': true,
+        'meta': true,
+        'param': true,
+        'source': true,
+        'track': true,
+        'wbr': true
+    },
+
+    Delimiters = ['{', '}'];
+
+var hasOwn = Object.prototype.hasOwnProperty;
+
+(function() {
+    for (var type in Type) {
+        if (hasOwn.call(Type, type)) {
+            TypeName[Type[type]] = type;
+        }
+    }
+})();
+
+var Utils = {
+    each: function(collection, iterate, thisArgs) {
+        for (var i = 0, l = collection.length; i < l; i++) {
+            var item = collection[i];
+            iterate.call(thisArgs, item, i);
+        }
+    },
+
+    isWhiteSpace: function(charCode) {
+        return ((charCode <= 160 && (charCode >= 9 && charCode <= 13) || charCode == 32 || charCode == 160) || charCode == 5760 || charCode == 6158 ||
+        (charCode >= 8192 && (charCode <= 8202 || charCode == 8232 || charCode == 8233 || charCode == 8239 || charCode == 8287 || charCode == 12288 || charCode == 65279)));
+    },
+
+    trimRight: function(str) {
+        var index = str.length;
+
+        while (index-- && Utils.isWhiteSpace(str.charCodeAt(index))) {}
+
+        return str.slice(0, index + 1);
+    },
+
+    Type: Type,
+    TypeName: TypeName,
+
+    setDelimiters: function(delimiters) {
+        if (!Utils.isArray(delimiters)) {
+            throw new Error('The parameter must be an array like ["{{", "}}"]');
+        }
+        Delimiters = delimiters;
+    },
+
+    getDelimiters: function() {
+        return Delimiters;
+    },
+
+    isSelfClosingTag: function(tag) {
+        return SelfClosingTags[tag];
+    },
+
+    extend: function(dest, source) {
+        var length = arguments.length;
+        if (length > 1) {
+            for (var i = 1; i < length; i++) {
+                source = arguments[i];
+                if (source) {
+                    for (var key in source) {
+                        if (hasOwn.call(source, key)) {
+                            dest[key] = source[key];
+                        }
+                    }
+                }
+            }
+        }
+        return dest;
+    },
+
+    isArray: Array.isArray || function(arr) {
+        return Object.prototype.toString.call(arr) === '[object Array]';
+    },
+
+    noop: function() {},
+
+    require: (function() {
+        var isNode = new Function("try { return this === global; } catch (e) { return false; }"); 
+        if (isNode()) {
+            return require('./compile');
+        } else {
+            // use amd require
+        }
+    })(),
+
+    noRequire: function() {
+        throw new Error('Vdt depends RequireJs to require file over http.');
+    }
+};
+
+module.exports = Utils;
+
+},{"./compile":49}],49:[function(require,module,exports){
+var parser = new (require('./parser')),
+    stringifier = new (require('./stringifier')),
+    virtualDom = require('virtual-domx'),
+    utils = require('./utils');
+
+var Vdt = function(source, options) {
+    var vdt = {
+        render: function(data) {
+            vdt.renderTree.apply(vdt, arguments); 
+            vdt.node = virtualDom.create(vdt.tree);
+            return vdt.node;
+        },
+
+        renderTree: function(data) {
+            if (arguments.length) {
+                vdt.data = data;
+            }
+            vdt.data.vdt = vdt;
+            vdt.tree = vdt.template.call(vdt.data, vdt.data, Vdt);
+            return vdt.tree;
+        },
+
+        renderString: function(data) {
+            var node = vdt.render.apply(vdt, arguments);
+            return node.outerHTML || node.toString();
+        },
+
+        update: function(data) {
+            var oldTree = vdt.tree;
+            vdt.renderTree.apply(vdt, arguments);
+            vdt.patches = virtualDom.diff(oldTree, vdt.tree);
+            vdt.node = virtualDom.patch(vdt.node, vdt.patches);
+            return vdt.node;
+        },
+
+        /**
+         * Restore the data, so you can modify it directly.
+         */
+        data: {},
+        tree: {},
+        patches: {},
+        node: null,
+        template: compile(source, options),
+
+        getTree: function() {
+            return vdt.tree;
+        },
+
+        setTree: function(tree) {
+            vdt.tree = tree;
+        },
+
+        getNode: function() {
+            return vdt.node;
+        },
+
+        setNode: function(node) {
+            vdt.node = node;
+        }
+    };
+
+    // reference cycle vdt
+    vdt.data.vdt = vdt;
+
+    return vdt;
+};
+
+function compile(source, options) {
+    var templateFn;
+
+    // backward compatibility v0.2.2
+    if (options === true || options === false) {
+        options = {autoReturn: options};
+    }
+
+    options = utils.extend({
+        autoReturn: true,
+        onlySource: false,
+        delimiters: utils.getDelimiters()
+    }, options);
+
+    switch (typeof source) {
+        case 'string':
+            var ast = parser.parse(source, {delimiters: options.delimiters}),
+                hscript = stringifier.stringify(ast, options.autoReturn);
+
+            hscript = [
+                '_Vdt || (_Vdt = Vdt);',
+                'obj || (obj = {});',
+                'blocks || (blocks = {});',
+                'var h = _Vdt.virtualDom.h, widgets = this.widgets || (this.widgets = {}), _blocks = {}, __blocks = {},',
+                    'extend = _Vdt.utils.extend;',
+                'obj.require = _Vdt.utils.require || (typeof require === "undefined" ? _Vdt.utils.noRequire : require);',
+                'var self; if (obj.type === "Widget") { self = this; } else { obj.get = function(name) { return obj[name]; }; self = obj; }',
+                'with (obj) {',
+                    hscript,
+                '}'
+            ].join('\n');
+            templateFn = options.onlySource ? utils.noop : new Function('obj', '_Vdt', 'blocks', hscript);
+            templateFn.source = 'function(obj, _Vdt, blocks) {\n' + hscript + '\n}';
+            break;
+        case 'function':
+            templateFn = source;
+            break;
+        default:
+            throw new Error('Expect a string or function');
+    }
+
+    return templateFn;
+}
+
+Vdt.parser = parser;
+Vdt.stringifier = stringifier;
+Vdt.virtualDom = virtualDom;
+Vdt.compile = compile;
+Vdt.utils = utils;
+Vdt.setDelimiters = utils.setDelimiters;
+Vdt.getDelimiters = utils.getDelimiters;
+
+module.exports = Vdt;
+
+},{"./parser":46,"./stringifier":47,"./utils":48,"virtual-domx":18}],50:[function(require,module,exports){
 var hiddenStore = require('./hidden-store.js');
 
 module.exports = createStore;
@@ -3242,19 +3242,27 @@ exports.default = _intact2.default.extend({
         (0, _utils.each)(keysToLeave, this.performLeave, this);
     },
     performEnter: function performEnter(key) {
+        var _this = this;
+
         var widget = this.childrenMap[key].widget;
         this.currentKeys[key] = true;
         if (widget && widget.enter) {
-            widget.enter((0, _utils.bind)(this._doneEntering, this, key));
+            widget.enter(function () {
+                return _this._doneEntering(key);
+            });
         } else {
             this._doneEntering(key);
         }
     },
     performLeave: function performLeave(key) {
+        var _this2 = this;
+
         var widget = this.childrenMap[key].widget;
         this.currentKeys[key] = true;
         if (widget && widget.leave) {
-            widget.leave((0, _utils.bind)(this._doneLeaving, this, key));
+            widget.leave(function () {
+                return _this2._doneLeaving(key);
+            });
         } else {
             this._doneLeaving(key);
         }
@@ -3505,13 +3513,12 @@ var TransitionEvents = {
     }
 };
 
-},{"./intact":55,"./utils":57,"vdt":16}],54:[function(require,module,exports){
+},{"./intact":55,"./utils":57,"vdt":45}],54:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Intact = undefined;
 
 var _animate = require('./animate');
 
@@ -3524,7 +3531,9 @@ var _intact2 = _interopRequireDefault(_intact);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 _intact2.default.prototype.Animate = _animate2.default;
-exports.Intact = _intact2.default;
+exports.default = _intact2.default;
+
+module.exports = exports['default'];
 
 },{"./animate":53,"./intact":55}],55:[function(require,module,exports){
 'use strict';
@@ -3586,7 +3595,7 @@ var Intact = function () {
         this._hasCalledInit = false;
 
         this._contextWidgets = contextWidgets;
-        this._widget = this.attributes.widget || _.uniqueId('widget');
+        this._widget = this.attributes.widget || (0, _utils.uniqueId)('widget');
 
         // for debug
         this.displayName = this.displayName;
@@ -3625,7 +3634,7 @@ var Intact = function () {
         // support promise
         var inited = function inited() {
             _this.inited = true;
-            _this.trigger('inited', self);
+            _this.trigger('inited', _this);
         };
         if (ret && ret.then) {
             ret.then(inited);
@@ -3881,53 +3890,47 @@ var Intact = function () {
 
             return this;
         }
-
-        /**
-         * @brief 继承某个组件
-         *
-         * @param prototype
-         */
-
-    }], [{
-        key: 'extend',
-        value: function extend() {
-            var prototype = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-            prototype.defaults = (0, _utils.extend)({}, this.prototype.defaults, prototype.defaults);
-            return (0, _utils.inherit)(this, prototype);
-        }
-
-        /**
-         * 挂载组件到dom中
-         * @param widget {Intact} Intact类或子类，也可以是实例化的对象
-         * @param node {Node} html节点
-         */
-
-    }, {
-        key: 'mount',
-        value: function mount(widget, node) {
-            if (widget.prototype && (widget.prototype instanceof Intact || widget === Intact)) {
-                widget = new widget();
-            }
-            if (widget.rendered) {
-                node.appendChild(widget.element);
-            } else if (widget.inited) {
-                node.appendChild(widget.init());
-            } else {
-                widget.on('inited', function () {
-                    return node.appendChild(widget.init());
-                });
-            }
-            return widget;
-        }
     }]);
 
     return Intact;
 }();
+/**
+ * @brief 继承某个组件
+ *
+ * @param prototype
+ */
+
 
 exports.default = Intact;
+Intact.extend = function () {
+    var prototype = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
-},{"./thunk":56,"./utils":57,"vdt":16}],56:[function(require,module,exports){
+    prototype.defaults = (0, _utils.extend)({}, this.prototype.defaults, prototype.defaults);
+    return (0, _utils.inherit)(this, prototype);
+};
+
+/**
+ * 挂载组件到dom中
+ * @param widget {Intact} Intact类或子类，也可以是实例化的对象
+ * @param node {Node} html节点
+ */
+Intact.mount = function (widget, node) {
+    if (widget.prototype && (widget.prototype instanceof Intact || widget === Intact)) {
+        widget = new widget();
+    }
+    if (widget.rendered) {
+        node.appendChild(widget.element);
+    } else if (widget.inited) {
+        node.appendChild(widget.init());
+    } else {
+        widget.on('inited', function () {
+            return node.appendChild(widget.init());
+        });
+    }
+    return widget;
+};
+
+},{"./thunk":56,"./utils":57,"vdt":45}],56:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -4008,6 +4011,8 @@ exports.isFunction = isFunction;
 exports.isObject = isObject;
 exports.result = result;
 exports.bind = bind;
+exports.isEqual = isEqual;
+exports.uniqueId = uniqueId;
 
 var _vdt = require('vdt');
 
@@ -4025,27 +4030,23 @@ var isArray = exports.isArray = _vdt2.default.utils.isArray;
  * @returns {Function}
  */
 function inherit(Parent, prototype) {
-    var _this = this;
-
     var Child = function Child() {
         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
         }
 
-        if (!(_this instanceof Child || _this.prototype instanceof Child)) {
+        if (!(this instanceof Child || this.prototype instanceof Child)) {
             return Parent.apply(Child, args);
         }
-        return Parent.apply(_this, args);
+        return Parent.apply(this, args);
     };
 
     Child.prototype = create(Parent.prototype);
     each(prototype, function (proto, name) {
-        var _this2 = this;
-
         if (name === 'displayName') {
-            Child.displayName = proto;
+            return Child.displayName = proto;
         }
-        if (isFunction(proto) || name === 'template') {
+        if (!isFunction(proto) || name === 'template') {
             return Child.prototype[name] = proto;
         }
         Child.prototype[name] = function () {
@@ -4054,27 +4055,27 @@ function inherit(Parent, prototype) {
                     args[_key2] = arguments[_key2];
                 }
 
-                return Parent.prototype[name].apply(_this2, args);
+                return Parent.prototype[name].apply(this, args);
             },
                 _superApply = function _superApply(args) {
-                return Parent.prototype[name].apply(_this2, args);
+                return Parent.prototype[name].apply(this, args);
             };
             return function () {
+                var __super = this._super,
+                    __superApply = this._superApply,
+                    returnValue = void 0;
+
+                this._super = _super;
+                this._superApply = _superApply;
+
                 for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
                     args[_key3] = arguments[_key3];
                 }
 
-                var __super = _this2._super,
-                    __superApply = _this2._superApply,
-                    returnValue = void 0;
+                returnValue = proto.apply(this, args);
 
-                _this2._super = _super;
-                _this2._superApply = _superApply;
-
-                returnValue = proto.apply(_this2, args);
-
-                _this2._super = __super;
-                _this2._superApply = __superApply;
+                this._super = __super;
+                this._superApply = __superApply;
 
                 return returnValue;
             };
@@ -4158,7 +4159,17 @@ function bind(func, context) {
     return bound;
 }
 
-},{"vdt":16}],58:[function(require,module,exports){
+function isEqual(a, b) {
+    return a == b;
+}
+
+var idCounter = 0;
+function uniqueId(prefix) {
+    var id = ++idCounter + '';
+    return prefix ? prefix + id : id;
+}
+
+},{"vdt":45}],58:[function(require,module,exports){
 
 },{}]},{},[54])(54)
 });

@@ -10,7 +10,7 @@ export let isArray = Vdt.utils.isArray;
  * @returns {Function}
  */
 export function inherit(Parent, prototype) {
-    let Child = (...args) => {
+    let Child = function(...args) {
         if (!(this instanceof Child || this.prototype instanceof Child)) {
             return Parent.apply(Child, args);
         }
@@ -20,15 +20,19 @@ export function inherit(Parent, prototype) {
     Child.prototype = create(Parent.prototype);
     each(prototype, function(proto, name) {
         if (name === 'displayName') {
-            Child.displayName = proto;
+            return Child.displayName = proto;
         }
-        if (isFunction(proto) || name === 'template') {
+        if (!isFunction(proto) || name === 'template') {
             return Child.prototype[name] = proto;
         }
         Child.prototype[name] = (() => {
-            let _super = (...args) => Parent.prototype[name].apply(this, args),
-                _superApply = (args) => Parent.prototype[name].apply(this, args);
-            return (...args) => {
+            let _super = function(...args) {
+                    return Parent.prototype[name].apply(this, args);
+                }, 
+                _superApply = function(args) {
+                    return Parent.prototype[name].apply(this, args);
+                };
+            return function(...args) {
                 let __super = this._super,
                     __superApply = this._superApply,
                     returnValue;
@@ -113,4 +117,14 @@ export function bind(func, context, ...args) {
         return executeBound(func, bound, context, this, [...args, ...args1]);
     };
     return bound;
+}
+
+export function isEqual(a, b) {
+    return a == b;
+}
+
+let idCounter = 0;
+export function uniqueId(prefix) {
+    let id = ++idCounter + '';
+    return prefix ? prefix + id : id;
 }

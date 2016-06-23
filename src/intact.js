@@ -1,4 +1,4 @@
-import {inherit, extend, result, each, isFunction, isEqual} from './utils';
+import {inherit, extend, result, each, isFunction, isEqual, uniqueId} from './utils';
 import Thunk from './thunk';
 import Vdt from 'vdt';
 
@@ -30,7 +30,7 @@ export default class Intact {
         this._hasCalledInit = false;
 
         this._contextWidgets = contextWidgets;
-        this._widget = this.attributes.widget || _.uniqueId('widget');
+        this._widget = this.attributes.widget || uniqueId('widget');
 
         // for debug
         this.displayName = this.displayName;
@@ -69,7 +69,7 @@ export default class Intact {
         // support promise
         let inited = () => {
             this.inited = true;
-            this.trigger('inited', self);
+            this.trigger('inited', this);
         };
         if (ret && ret.then) {
             ret.then(inited);
@@ -257,33 +257,32 @@ export default class Intact {
 
         return this;
     }
-
-    /**
-     * @brief 继承某个组件
-     *
-     * @param prototype
-     */
-    static extend(prototype = {}) {
-        prototype.defaults = extend({}, this.prototype.defaults, prototype.defaults);
-        return inherit(this, prototype);
-    }
-
-    /**
-     * 挂载组件到dom中
-     * @param widget {Intact} Intact类或子类，也可以是实例化的对象
-     * @param node {Node} html节点
-     */
-    static mount(widget, node) {
-        if (widget.prototype && (widget.prototype instanceof Intact || widget === Intact)) {
-            widget = new widget();
-        }
-        if (widget.rendered) {
-            node.appendChild(widget.element);
-        } else if (widget.inited) {
-            node.appendChild(widget.init()); 
-        } else {
-            widget.on('inited', () => node.appendChild(widget.init()));
-        }
-        return widget;
-    }
 }
+/**
+ * @brief 继承某个组件
+ *
+ * @param prototype
+ */
+Intact.extend = function(prototype = {}) {
+    prototype.defaults = extend({}, this.prototype.defaults, prototype.defaults);
+    return inherit(this, prototype);
+};
+
+/**
+ * 挂载组件到dom中
+ * @param widget {Intact} Intact类或子类，也可以是实例化的对象
+ * @param node {Node} html节点
+ */
+Intact.mount = function(widget, node) {
+    if (widget.prototype && (widget.prototype instanceof Intact || widget === Intact)) {
+        widget = new widget();
+    }
+    if (widget.rendered) {
+        node.appendChild(widget.element);
+    } else if (widget.inited) {
+        node.appendChild(widget.init()); 
+    } else {
+        widget.on('inited', () => node.appendChild(widget.init()));
+    }
+    return widget;
+};
