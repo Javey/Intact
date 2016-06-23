@@ -62,7 +62,9 @@ function inherit(Parent, prototype) {
                     args[_key3] = arguments[_key3];
                 }
 
-                let__super = _this2._super, __superApply = _this2._superApply, returnValue;
+                var __super = _this2._super,
+                    __superApply = _this2._superApply,
+                    returnValue = void 0;
 
                 _this2._super = _super;
                 _this2._superApply = _superApply;

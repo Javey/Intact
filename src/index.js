@@ -1,7 +1,6 @@
-import {inherit} from './utils';
+import {inherit, extend, result, each, isFunction, isEqual} from './utils';
 import Thunk from './thunk';
 import Vdt from 'vdt';
-import {result, each, isFunction, isEqual} from 'lodash/fp';
 
 export default class Intact {
     constructor(attrs = {}, contextWidgets = {}) {
@@ -13,7 +12,7 @@ export default class Intact {
             throw new Error('Can not instantiate when this.template does not exist.');
         }
 
-        attrs = Object.assign({
+        attrs = extend({
             children: undefined 
         }, result(this, 'defaults'), attrs);
 
@@ -45,7 +44,7 @@ export default class Intact {
 
         // 如果存在arguments属性，则将其拆开赋给attributes
         if (this.attributes.arguments) {
-            Object.assign(this.attributes, result(this.attributes, 'arguments'));
+            extend(this.attributes, result(this.attributes, 'arguments'));
             delete this.attributes.arguments;
         }
 
@@ -74,7 +73,7 @@ export default class Intact {
         let inited = () => {
             this.inited = true;
             this.trigger('inited', self);
-        }
+        };
         if (ret && ret.then) {
             ret.then(inited);
         } else {
@@ -175,7 +174,7 @@ export default class Intact {
             (attrs = {})[key] = val;
         }
 
-        options = Object.assign({
+        options = extend({
             silent: false,
             global: true,
             async: false

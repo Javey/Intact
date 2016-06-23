@@ -1,4 +1,7 @@
-import {each, isFunction} from 'lodash/fp';
+import Vdt from 'vdt';
+
+export let extend = Vdt.utils.extend; 
+export let isArray = Vdt.utils.isArray;
 
 /**
  * inherit
@@ -14,7 +17,7 @@ export function inherit(Parent, prototype) {
         return Parent.apply(this, args);
     };
 
-    Child.prototype = Object.create(Parent.prototype);
+    Child.prototype = create(Parent.prototype);
     each(prototype, function(proto, name) {
         if (name === 'displayName') {
             Child.displayName = proto;
@@ -26,7 +29,7 @@ export function inherit(Parent, prototype) {
             let _super = (...args) => Parent.prototype[name].apply(this, args),
                 _superApply = (args) => Parent.prototype[name].apply(this, args);
             return (...args) => {
-                let__super = this._super,
+                let __super = this._super,
                     __superApply = this._superApply,
                     returnValue;
 
@@ -45,7 +48,50 @@ export function inherit(Parent, prototype) {
     Child.__super = Parent.prototype;
     Child.prototype.constructor = Child;
 
-    Object.assign(Child, Parent);
+    extend(Child, Parent);
 
     return Child;
+}
+
+let nativeCreate = Object.create;
+export function create(object) {
+    if (nativeCreate) {
+        return nativeCreate(object);
+    } else {
+        let fn = () => {};
+        fn.prototype = object;
+        return new fn();
+    }
+}
+
+let hasOwn = Object.prototype.hasOwnProperty;
+export function each(obj, iter) {
+    if (isArray(obj)) {
+        for (let i = 0, l = obj.length; i < l; i++) {
+            iter(obj[i], i, obj);
+        } 
+    } else if (isObject(obj)) {
+        for (let key in obj) {
+            if (hasOwn.call(obj, key)) {
+                iter(obj[key], key, obj);
+            }
+        }
+    }
+}
+
+export function isFunction(obj) {
+    return typeof obj === 'function';
+}
+
+export function isObject(obj) {
+    let type = typeof obj;
+    return type === 'function' || type === 'object' && !!obj; 
+}
+
+export function result(obj, property, fallback) {
+    let value = obj == null ? undefined : obj[property];
+    if (value === undefined) {
+        value = fallback;
+    }
+    return isFunction(value) ? value.call(obj) : value;
 }

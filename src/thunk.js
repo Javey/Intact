@@ -1,4 +1,4 @@
-import {result} from 'lodash/fp';
+import {result, extend} from './utils';
 
 export default class Thunk {
     constructor(Widget, attributes, contextWidget) {
@@ -24,7 +24,7 @@ export default class Thunk {
 
             // 如果存在arguments属性，则将其拆开赋给attributes
             if (this.attributes.arguments) {
-                Object.assign(this.attributes, result(this.attributes, 'arguments'));
+                extend(this.attributes, result(this.attributes, 'arguments'));
                 delete this.attributes.arguments;
             }
 
