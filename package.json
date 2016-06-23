@@ -8,12 +8,13 @@
     "release-patch": "git checkout master && bower version patch && git push origin master --tags",
     "release-minor": "git checkout master && bower version minor && git push origin master --tags",
     "release-major": "git checkout master && bower version major && git push origin master --tags",
-    "build": "babel src -d dist"
+    "build": "browserify src/index.js -t babelify -o dist/intact.js -s Intact"
   },
   "dependencies": {
     "underscore": "^1.8.3",
     "vdt": "^0.8.8"
   },
+  "main": "src/index",
   "devDependencies": {
     "babel-cli": "^6.10.1",
     "babel-plugin-lodash": "^3.2.0",

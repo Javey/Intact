@@ -65,15 +65,15 @@ export function create(object) {
 }
 
 let hasOwn = Object.prototype.hasOwnProperty;
-export function each(obj, iter) {
+export function each(obj, iter, thisArg) {
     if (isArray(obj)) {
         for (let i = 0, l = obj.length; i < l; i++) {
-            iter(obj[i], i, obj);
+            iter.call(thisArg, obj[i], i, obj);
         } 
     } else if (isObject(obj)) {
         for (let key in obj) {
             if (hasOwn.call(obj, key)) {
-                iter(obj[key], key, obj);
+                iter.call(thisArg, obj[key], key, obj);
             }
         }
     }
@@ -94,4 +94,23 @@ export function result(obj, property, fallback) {
         value = fallback;
     }
     return isFunction(value) ? value.call(obj) : value;
+}
+
+let executeBound = (sourceFunc, boundFunc, context, callingContext, args) => {
+    if (!(callingContext instanceof boundFunc)) return sourceFunc.apply(context, args);
+    let self = create(sourceFunc.prototype);
+    let result = sourceFunc.apply(self, args);
+    if (isObject(result)) return result;
+    return self;
+};
+let nativeBind = Function.prototype.bind;
+export function bind(func, context, ...args) {
+    if (nativeBind && func.bind === nativeBind) {
+        return nativeBind.call(func, context, ...args);
+    }
+    if (!isFunction(func)) throw new TypeError('Bind must be called on a function');
+    let bound = function(...args1) {
+        return executeBound(func, bound, context, this, [...args, ...args1]);
+    };
+    return bound;
 }
