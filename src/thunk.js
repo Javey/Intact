@@ -1,16 +1,16 @@
 import {result, extend} from './utils';
 
-export default class Thunk {
-    constructor(Widget, attributes, contextWidget) {
-        this.Widget = Widget;
-        this.attributes = attributes || {};
-        this.key = this.attributes.key;
-        this.contextWidget = contextWidget;
-    }
+let Thunk = function(Widget, attributes, contextWidget) {
+    this.Widget = Widget;
+    this.attributes = attributes || {};
+    this.key = this.attributes.key;
+    this.contextWidget = contextWidget;
+};
 
-    get type() {
-        return 'Thunk';
-    }
+Thunk.prototype = {
+    constructor: Thunk,
+
+    type: 'Thunk',
 
     render(previous) {
         if (!previous || previous.Widget !== this.Widget || previous.key !== this.key) {
@@ -18,7 +18,7 @@ export default class Thunk {
         } else if (previous.Widget === this.Widget) {
             if (!previous.widget) throw new Error('Don\'t update when updating.');
 
-            var widget = this.widget = previous.widget;
+            let widget = this.widget = previous.widget;
             widget.children = this.attributes.children;
             delete this.attributes.children;
 
@@ -39,4 +39,6 @@ export default class Thunk {
 
         return this.widget;
     }
-}
+};
+
+export default Thunk;

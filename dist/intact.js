@@ -489,7 +489,7 @@ function Delegator(opts) {
 Delegator.allocateHandle = DOMDelegator.allocateHandle;
 Delegator.transformHandle = DOMDelegator.transformHandle;
 
-},{"./dom-delegator.js":4,"cuid":2,"global/document":11,"individual":12}],6:[function(require,module,exports){
+},{"./dom-delegator.js":4,"cuid":2,"global/document":11,"individual":13}],6:[function(require,module,exports){
 var inherits = require("inherits")
 
 var ALL_PROPS = [
@@ -569,7 +569,7 @@ function KeyEvent(ev) {
 
 inherits(KeyEvent, ProxyEvent)
 
-},{"inherits":13}],7:[function(require,module,exports){
+},{"inherits":14}],7:[function(require,module,exports){
 var EvStore = require("ev-store")
 
 module.exports = removeEvent
@@ -680,6 +680,25 @@ if (typeof document !== 'undefined') {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"min-document":58}],12:[function(require,module,exports){
 (function (global){
+var topLevel = typeof global !== 'undefined' ? global :
+    typeof window !== 'undefined' ? window : {}
+var minDoc = require('min-documentx');
+
+if (typeof document !== 'undefined') {
+    module.exports = document;
+} else {
+    var doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'];
+
+    if (!doccy) {
+        doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'] = minDoc;
+    }
+
+    module.exports = doccy;
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"min-documentx":58}],13:[function(require,module,exports){
+(function (global){
 var root = typeof window !== 'undefined' ?
     window : typeof global !== 'undefined' ?
     global : {};
@@ -700,7 +719,7 @@ function Individual(key, value) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -725,29 +744,875 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 "use strict";
 
 module.exports = function isObject(x) {
 	return typeof x === "object" && x !== null;
 };
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
+module.exports = require('./lib/index');
+
+},{"./lib/index":20}],17:[function(require,module,exports){
+/**
+ * @fileoverview parse jsx to ast
+ * @author javey
+ * @date 15-4-22
+ */
+
+var Utils = require('./utils'),
+    Type = Utils.Type,
+    TypeName = Utils.TypeName;
+
+var elementNameRegexp = /^<\w+:?\s*[\w\/>]/;
+
+function isJSXIdentifierPart(ch) {
+    return (ch === 58) || (ch === 95) || (ch === 45) ||  // : and _ (underscore) and -
+        (ch >= 65 && ch <= 90) ||         // A..Z
+        (ch >= 97 && ch <= 122) ||        // a..z
+        (ch >= 48 && ch <= 57);         // 0..9
+}
+
+var Parser = function() {
+    this.source = '';
+    this.index = 0;
+    this.length = 0;
+};
+
+Parser.prototype = {
+    constructor: Parser,
+
+    parse: function(source, options) {
+        this.source = Utils.trimRight(source);
+        this.index = 0;
+        this.line = 1;
+        this.column = 1;
+        this.length = this.source.length;
+
+        this.options = Utils.extend({
+            delimiters: Utils.getDelimiters()
+        }, options);
+
+        return this._parseTemplate();
+    },
+
+    _parseTemplate: function() {
+        var elements = [],
+            braces = {count: 0};
+        while (this.index < this.length && braces.count >= 0) {
+            elements.push(this._advance(braces));
+        }
+
+        return elements;
+    },
+
+    _advance: function(braces) {
+        var ch = this._char();
+        if (ch !== '<') {
+            return this._scanJS(braces);
+        } else {
+            return this._scanJSX();
+        }
+    },
+
+    _scanJS: function(braces) {
+        var start = this.index,
+            Delimiters = this.options.delimiters;
+
+        while (this.index < this.length) {
+            var ch = this._char();
+            if (ch === '\'' || ch === '"') {
+                // skip element(<div>) in quotes
+                this._scanStringLiteral();
+            } else if (this._isElementStart()) {
+                break;
+            } else {
+                if (this._isExpect(Delimiters[0])) {
+                    braces.count++;
+                } else if (this._isExpect(Delimiters[1])) {
+                    braces.count--;
+                    if (braces.count < 0) {
+                        this._updateIndex();
+                        break;
+                    }
+                } else if (ch === '\n') {
+                    this._updateLine();
+                }
+                this._updateIndex();
+            }
+        }
+
+        return this._type(Type.JS, {value: this.source.slice(start, braces.count < 0 ? this.index - 1 : this.index)});
+    },
+
+    _scanStringLiteral: function() {
+        var quote = this._char(),
+            start = this.index,
+            str = '';
+        this._updateIndex();
+        
+
+        while (this.index < this.length) {
+            var ch = this._char();
+            this._updateIndex();
+
+            if (ch === quote) {
+                quote = '';
+                break;
+            } else if (ch === '\\') {
+                str += this._char(this._updateIndex());
+            } else {
+                str += ch;
+            }
+        }
+        if (quote !== '') {
+            this._error('Unclosed quote');
+        }
+
+        return this._type(Type.StringLiteral, {value: this.source.slice(start, this.index)});
+    },
+
+    _scanJSX: function() {
+        return this._parseJSXElement();
+    },
+
+    _scanJSXText: function(stopChars) {
+        var start = this.index,
+            l = stopChars.length,
+            i;
+        loop:
+        while (this.index < this.length) {
+            if (this._charCode() === 10) {
+                this._updateLine();
+            }
+            for (i = 0; i < l; i++) {
+                if (typeof stopChars[i] === 'function' && stopChars[i].call(this) || this._isExpect(stopChars[i])) {
+                    break loop;
+                }
+            }
+            this._updateIndex();
+        }
+
+        return this._type(Type.JSXText, {value: this.source.slice(start, this.index)});
+    },
+
+    _scanJSXStringLiteral: function() {
+        var quote = this._char();
+        if (quote !== '\'' && quote !== '"') {
+            this._error('String literal must starts with a qoute');
+        }
+        this._updateIndex();
+        var token = this._scanJSXText([quote]);
+        this._updateIndex();
+        return token;
+    },
+
+    _parseJSXElement: function() {
+        this._expect('<');
+        var start = this.index,
+            ret = {},
+            flag = this._charCode();
+        if (flag >= 65 && flag <= 90/* upper case */) {
+            // is a widget
+            this._type(Type.JSXWidget, ret);
+        } else if (this._isExpect('!--')) {
+            // is html comment
+            return this._parseJSXComment();
+        } else if (this._charCode(this.index + 1) === 58/* : */){
+            // is a directive
+            start += 2;
+            switch (flag) {
+                case 116: // t
+                    this._type(Type.JSXVdt, ret);
+                    break;
+                case 98: // b
+                    this._type(Type.JSXBlock, ret);
+                    break;
+                default:
+                    this._error('Unknown directive ' + String.fromCharCode(flag) + ':');
+            }
+            this._updateIndex(2);
+        } else {
+            // is an element
+            this._type(Type.JSXElement, ret);
+        }
+
+        while (this.index < this.length) {
+            if (!isJSXIdentifierPart(this._charCode())) {
+                break;
+            }
+            this._updateIndex();
+        }
+
+        ret.value = this.source.slice(start, this.index);
+
+        return this._parseAttributeAndChildren(ret);
+    },
+
+    _parseAttributeAndChildren: function(ret) {
+        Utils.extend(ret, {
+            attributes: this._parseJSXAttribute(),
+            children: []
+        });
+
+        if (ret.type === Type.JSXElement && Utils.isSelfClosingTag(ret.value)) {
+            // self closing tag
+            if (this._char() === '/') {
+                this._updateIndex();
+            }
+            this._expect('>');
+        } else if (this._char() === '/') {
+            // unknown self closing tag
+            this._updateIndex();
+            this._expect('>');
+        } else {
+            this._expect('>');
+            ret.children = this._parseJSXChildren();
+        }
+
+        return ret;
+    },
+
+    _parseJSXAttribute: function() {
+        var ret = [];
+        while (this.index < this.length) {
+            this._skipWhitespace();
+            if (this._char() === '/' || this._char() === '>') {
+                break;
+            } else {
+                var attr = this._parseJSXAttributeName();
+                if (this._char() === '=') {
+                    this._updateIndex();
+                    attr.value = this._parseJSXAttributeValue();
+                }
+                ret.push(attr);
+            }
+        }
+
+        return ret;
+    },
+
+    _parseJSXAttributeName: function() {
+        var start = this.index;
+        if (!isJSXIdentifierPart(this._charCode())) {
+            this._error('Unexpected identifier ' + this._char());
+        }
+        while (this.index < this.length) {
+            var ch = this._charCode();
+            if (!isJSXIdentifierPart(ch)) {
+                break;
+            }
+            this._updateIndex();
+        }
+
+        return this._type(Type.JSXAttribute, {name: this.source.slice(start, this.index)});
+    },
+
+    _parseJSXAttributeValue: function() {
+        var value,
+            Delimiters = this.options.delimiters;
+        if (this._isExpect(Delimiters[0])) {
+            value = this._parseJSXExpressionContainer();
+        } else {
+            value = this._scanJSXStringLiteral();
+        }
+        return value;
+    },
+
+    _parseJSXExpressionContainer: function() {
+        var expression,
+            Delimiters = this.options.delimiters;
+        this._expect(Delimiters[0]);
+        if (this._isExpect(Delimiters[1])) {
+            expression = this._parseJSXEmptyExpression();
+        } else {
+            expression = this._parseExpression();
+        }
+        this._expect(Delimiters[1]);
+
+        return this._type(Type.JSXExpressionContainer, {value: expression});
+    },
+
+    _parseJSXEmptyExpression: function() {
+        return this._type(Type.JSXEmptyExpression, {value: null});
+    },
+
+    _parseExpression: function() {
+        var ret = this._parseTemplate();
+        this._updateIndex(-1);
+        return ret;
+    },
+
+    _parseJSXChildren: function() {
+        var children = [];
+        while (this.index < this.length) {
+            if (this._char(this.index) === '<' && this._char(this.index + 1) === '/') {
+                break;
+            }
+            children.push(this._parseJSXChild());
+        }
+        this._parseJSXClosingElement();
+        return children;
+    },
+
+    _parseJSXChild: function() {
+        var token,
+            Delimiters = this.options.delimiters;
+        if (this._isExpect(Delimiters[0])) {
+            token = this._parseJSXExpressionContainer();
+        } else if (this._isElementStart()) {
+            token = this._parseJSXElement();
+        } else {
+            token = this._scanJSXText([function() {
+                return this._isExpect('</') || this._isElementStart();
+            }, Delimiters[0]]);
+        }
+
+        return token;
+    },
+
+    _parseJSXClosingElement: function() {
+        this._expect('</');
+
+        while (this.index < this.length) {
+            if (!isJSXIdentifierPart(this._charCode())) {
+                break;
+            }
+            this._updateIndex();;
+        }
+
+        this._skipWhitespace();
+        this._expect('>');
+    },
+
+    _parseJSXComment: function() {
+        this._expect('!--');
+        var start = this.index;
+        while (this.index < this.length) {
+            if (this._isExpect('-->')) {
+                break;
+            } else if (this._charCode() === 10) {
+                this._updateLine();
+            }
+            this._updateIndex();
+        }
+        var ret = this._type(Type.JSXComment, {value: this.source.slice(start, this.index)});
+        this._expect('-->');
+
+        return ret;
+    },
+
+    _char: function(index) {
+        arguments.length === 0 && (index = this.index);
+        return this.source.charAt(index);
+    },
+
+    _charCode: function(index) {
+         arguments.length === 0 && (index = this.index);
+         return this.source.charCodeAt(index);
+    },
+
+    _skipWhitespace: function() {
+        while (this.index < this.length) {
+            var code = this._charCode();
+            if (!Utils.isWhiteSpace(code)) {
+                break;
+            } else if (code === 10) {
+                // is \n
+                this._updateLine();
+            }
+            this._updateIndex();
+        }
+    },
+
+    _expect: function(str) {
+        if (!this._isExpect(str)) {
+            this._error('expect string ' + str);
+        }
+        this.index += str.length;
+    },
+
+    _isExpect: function(str) {
+        return this.source.slice(this.index, this.index + str.length) === str;
+    },
+
+    _isElementStart: function() {
+        return this._char() === '<' && (this._isExpect('<!--') || elementNameRegexp.test(this.source.slice(this.index)));
+    },
+
+    _type: function(type, ret) {
+        ret || (ret = {});
+        ret.type = type;
+        ret.typeName = TypeName[type];
+        return ret;
+    },
+
+    _updateLine: function() {
+        this.line++;
+        this.column = 0;
+    },
+
+    _updateIndex: function(value) {
+        value === undefined && (value = 1);
+        var index = this.index;
+        this.index = this.index + value;
+        this.column = this.column + value;
+        return index;
+    },
+
+    _error: function(msg) {
+        throw new Error(
+            msg + ' At: {line: ' + this.line + ', column: ' + this.column +
+            '} Near: "' + this.source.slice(this.index - 10, this.index + 20) + '"'
+        );
+    }
+};
+
+module.exports = Parser;
+
+},{"./utils":19}],18:[function(require,module,exports){
+/**
+ * @fileoverview stringify ast of jsx to js
+ * @author javey
+ * @date 15-4-22
+ */
+
+var Utils = require('./utils'),
+    Type = Utils.Type,
+    TypeName = Utils.TypeName,
+
+    attrMap = (function() {
+        var map = {
+            'class': 'className',
+            'for': 'htmlFor'
+        };
+        return function(name) {
+            return map[name] || name;
+        };
+    })();
+
+var Stringifier = function() {};
+
+Stringifier.prototype = {
+    constructor: Stringifier,
+
+    stringify: function(ast, autoReturn) {
+        if (arguments.length === 1) {
+            autoReturn = true;
+        }
+        this.autoReturn = !!autoReturn;
+        this.enterStringExpression = false;
+        return this._visitJSXExpressionContainer(ast, true);
+    },
+
+    _visitJSXExpressionContainer: function(ast, isRoot) {
+        var str = '', length = ast.length;
+        Utils.each(ast, function(element, i) {
+            // if is root, add `return` keyword
+            if (this.autoReturn && isRoot && i === length - 1) {
+                str += 'return ' + this._visit(element, isRoot);
+            } else {
+                str += this._visit(element, isRoot);
+            }
+        }, this);
+
+        return str;
+    },
+
+    _visit: function(element, isRoot) {
+        element = element || {};
+        switch (element.type) {
+            case Type.JS:
+                return this._visitJS(element);
+            case Type.JSXElement:
+                return this._visitJSX(element);
+            case Type.JSXText:
+                return this._visitJSXText(element);
+            case Type.JSXExpressionContainer:
+                return this._visitJSXExpressionContainer(element.value);
+            case Type.JSXWidget:
+                return this._visitJSXWidget(element);
+            case Type.JSXBlock:
+                return this._visitJSXBlock(element);
+            case Type.JSXVdt:
+                return this._visitJSXVdt(element, isRoot);
+            case Type.JSXComment:
+                return this._visitJSXComment(element);
+            default:
+                return 'null';
+        }
+    },
+
+    _visitJS: function(element) {
+        return this.enterStringExpression ? '(' + element.value + ')' : element.value;
+    },
+
+    _visitJSX: function(element) {
+        if (element.value === 'script' || element.value === 'style') {
+            if (element.children.length) {
+                element.attributes.push({
+                    type: Type.JSXAttribute,
+                    typeName: TypeName[Type.JSXAttribute],
+                    name: 'innerHTML',
+                    value: {
+                        type: Type.JS,
+                        typeName: TypeName[Type.JS],
+                        value: this._visitJSXChildrenAsString(element.children)
+                    }
+                });
+                element.children = [];
+            }
+        }
+        var str = "h('" + element.value + "'," + this._visitJSXAttribute(element.attributes) + ", ";
+
+        return str + this._visitJSXChildren(element.children) + ')';
+    },
+
+    _visitJSXChildren: function(children) {
+        var ret = [];
+        Utils.each(children, function(child) {
+            ret.push(this._visit(child));
+        }, this);
+
+        return '[' + ret.join(', ') + ']';
+    },
+
+    _visitJSXChildrenAsString: function(children) {
+        var ret = [];
+        this.enterStringExpression = true;
+        Utils.each(children, function(child) {
+            ret.push(this._visit(child));
+        }, this);
+        this.enterStringExpression = false;
+        return ret.join('+');
+    },
+
+    _visitJSXAttribute: function(attributes) {
+        var ret = [];
+        Utils.each(attributes, function(attr) {
+            ret.push("'" + attrMap(attr.name) + "': " + (Utils.isArray(attr.value) ? this._visitJSXChildren(attr.value) : this._visit(attr.value)));
+        }, this);
+
+        return ret.length ? '{' + ret.join(', ') + '}' : 'null';
+    },
+
+    _visitJSXText: function(element) {
+        return "'" + element.value.replace(/[\r\n]/g, '\\n').replace(/([\'\"])/g, '\\$1') + "'";
+    },
+
+    _visitJSXWidget: function(element) {
+        element.attributes.push({name: 'children', value: element.children});
+        return element.value + '(' + this._visitJSXAttribute(element.attributes) + ', widgets)';
+    },
+
+    _visitJSXBlock: function(element, isAncestor) {
+        arguments.length === 1 && (isAncestor = true);
+
+        return '(_blocks.' + element.value + ' = function(parent) {return ' + this._visitJSXChildren(element.children) + ';}) && (__blocks.' + element.value + ' = function(parent) {\n' +
+            'var self = this;\n' +
+            'return blocks.' + element.value + ' ? blocks.' + element.value + '.call(this, function() {\n' +
+                'return _blocks.' + element.value + '.call(self, parent);\n' +
+            '}) : _blocks.' + element.value + '.call(this, parent);\n' +
+        '})' + (isAncestor ? ' && __blocks.' + element.value + '.call(this)' : '');
+    },
+
+    _visitJSXVdt: function(element, isRoot) {
+        var ret = ['(function(blocks) {',
+                'var _blocks = {}, __blocks = extend({}, blocks), _obj = ' + this._visitJSXAttribute(element.attributes) + ' || {};',
+                'if (_obj.hasOwnProperty("arguments")) { _obj = extend({}, _obj.arguments === null ? obj : _obj.arguments, _obj); delete _obj.arguments; }',
+                'return ' + element.value + '.call(this, _obj, _Vdt, '
+            ].join('\n'),
+            blocks = [];
+
+        Utils.each(element.children, function(child) {
+            if (child.type === Type.JSXBlock) {
+                blocks.push(this._visitJSXBlock(child, false))
+            }
+        }, this);
+
+        ret += (blocks.length ? blocks.join(' && ') + ' && __blocks)' : '__blocks)') + ('}).call(this, ') + (isRoot ? 'blocks)' : '{})');
+
+        return ret;
+    },
+
+    _visitJSXComment: function(element) {
+        return 'h.c(' + this._visitJSXText(element) + ')';
+    }
+};
+
+module.exports = Stringifier;
+
+},{"./utils":19}],19:[function(require,module,exports){
+/**
+ * @fileoverview utility methods
+ * @author javey
+ * @date 15-4-22
+ */
+
+var i = 0,
+    Type = {
+        JS: i++,
+        JSXText: i++,
+        JSXElement: i++,
+        JSXExpressionContainer: i++,
+        JSXAttribute: i++,
+        JSXEmptyExpression: i++,
+
+        JSXWidget: i++,
+        JSXVdt: i++,
+        JSXBlock: i++,
+        JSXComment: i++
+    },
+    TypeName = [],
+
+    SelfClosingTags = {
+        'area': true,
+        'base': true,
+        'br': true,
+        'col': true,
+        'embed': true,
+        'hr': true,
+        'img': true,
+        'input': true,
+        'keygen': true,
+        'link': true,
+        'menuitem': true,
+        'meta': true,
+        'param': true,
+        'source': true,
+        'track': true,
+        'wbr': true
+    },
+
+    Delimiters = ['{', '}'];
+
+var hasOwn = Object.prototype.hasOwnProperty;
+
+(function() {
+    for (var type in Type) {
+        if (hasOwn.call(Type, type)) {
+            TypeName[Type[type]] = type;
+        }
+    }
+})();
+
+var Utils = {
+    each: function(collection, iterate, thisArgs) {
+        for (var i = 0, l = collection.length; i < l; i++) {
+            var item = collection[i];
+            iterate.call(thisArgs, item, i);
+        }
+    },
+
+    isWhiteSpace: function(charCode) {
+        return ((charCode <= 160 && (charCode >= 9 && charCode <= 13) || charCode == 32 || charCode == 160) || charCode == 5760 || charCode == 6158 ||
+        (charCode >= 8192 && (charCode <= 8202 || charCode == 8232 || charCode == 8233 || charCode == 8239 || charCode == 8287 || charCode == 12288 || charCode == 65279)));
+    },
+
+    trimRight: function(str) {
+        var index = str.length;
+
+        while (index-- && Utils.isWhiteSpace(str.charCodeAt(index))) {}
+
+        return str.slice(0, index + 1);
+    },
+
+    Type: Type,
+    TypeName: TypeName,
+
+    setDelimiters: function(delimiters) {
+        if (!Utils.isArray(delimiters)) {
+            throw new Error('The parameter must be an array like ["{{", "}}"]');
+        }
+        Delimiters = delimiters;
+    },
+
+    getDelimiters: function() {
+        return Delimiters;
+    },
+
+    isSelfClosingTag: function(tag) {
+        return SelfClosingTags[tag];
+    },
+
+    extend: function(dest, source) {
+        var length = arguments.length;
+        if (length > 1) {
+            for (var i = 1; i < length; i++) {
+                source = arguments[i];
+                if (source) {
+                    for (var key in source) {
+                        if (hasOwn.call(source, key)) {
+                            dest[key] = source[key];
+                        }
+                    }
+                }
+            }
+        }
+        return dest;
+    },
+
+    isArray: Array.isArray || function(arr) {
+        return Object.prototype.toString.call(arr) === '[object Array]';
+    },
+
+    noop: function() {},
+
+    require: (function() {
+        var isNode = new Function("try { return this === global; } catch (e) { return false; }"); 
+        if (isNode()) {
+            return require('./compile');
+        } else {
+            // use amd require
+        }
+    })(),
+
+    noRequire: function() {
+        throw new Error('Vdt depends RequireJs to require file over http.');
+    }
+};
+
+module.exports = Utils;
+
+},{"./compile":20}],20:[function(require,module,exports){
+var parser = new (require('./parser')),
+    stringifier = new (require('./stringifier')),
+    virtualDom = require('virtual-domx'),
+    utils = require('./utils');
+
+var Vdt = function(source, options) {
+    var vdt = {
+        render: function(data) {
+            vdt.renderTree.apply(vdt, arguments); 
+            vdt.node = virtualDom.create(vdt.tree);
+            return vdt.node;
+        },
+
+        renderTree: function(data) {
+            if (arguments.length) {
+                vdt.data = data;
+            }
+            vdt.data.vdt = vdt;
+            vdt.tree = vdt.template.call(vdt.data, vdt.data, Vdt);
+            return vdt.tree;
+        },
+
+        renderString: function(data) {
+            var node = vdt.render.apply(vdt, arguments);
+            return node.outerHTML || node.toString();
+        },
+
+        update: function(data) {
+            var oldTree = vdt.tree;
+            vdt.renderTree.apply(vdt, arguments);
+            vdt.patches = virtualDom.diff(oldTree, vdt.tree);
+            vdt.node = virtualDom.patch(vdt.node, vdt.patches);
+            return vdt.node;
+        },
+
+        /**
+         * Restore the data, so you can modify it directly.
+         */
+        data: {},
+        tree: {},
+        patches: {},
+        node: null,
+        template: compile(source, options),
+
+        getTree: function() {
+            return vdt.tree;
+        },
+
+        setTree: function(tree) {
+            vdt.tree = tree;
+        },
+
+        getNode: function() {
+            return vdt.node;
+        },
+
+        setNode: function(node) {
+            vdt.node = node;
+        }
+    };
+
+    // reference cycle vdt
+    vdt.data.vdt = vdt;
+
+    return vdt;
+};
+
+function compile(source, options) {
+    var templateFn;
+
+    // backward compatibility v0.2.2
+    if (options === true || options === false) {
+        options = {autoReturn: options};
+    }
+
+    options = utils.extend({
+        autoReturn: true,
+        onlySource: false,
+        delimiters: utils.getDelimiters()
+    }, options);
+
+    switch (typeof source) {
+        case 'string':
+            var ast = parser.parse(source, {delimiters: options.delimiters}),
+                hscript = stringifier.stringify(ast, options.autoReturn);
+
+            hscript = [
+                '_Vdt || (_Vdt = Vdt);',
+                'obj || (obj = {});',
+                'blocks || (blocks = {});',
+                'var h = _Vdt.virtualDom.h, widgets = this.widgets || (this.widgets = {}), _blocks = {}, __blocks = {},',
+                    'extend = _Vdt.utils.extend;',
+                'obj.require = _Vdt.utils.require || (typeof require === "undefined" ? _Vdt.utils.noRequire : require);',
+                'var self; if (obj.type === "Widget") { self = this; } else { obj.get = function(name) { return obj[name]; }; self = obj; }',
+                'with (obj) {',
+                    hscript,
+                '}'
+            ].join('\n');
+            templateFn = options.onlySource ? utils.noop : new Function('obj', '_Vdt', 'blocks', hscript);
+            templateFn.source = 'function(obj, _Vdt, blocks) {\n' + hscript + '\n}';
+            break;
+        case 'function':
+            templateFn = source;
+            break;
+        default:
+            throw new Error('Expect a string or function');
+    }
+
+    return templateFn;
+}
+
+Vdt.parser = parser;
+Vdt.stringifier = stringifier;
+Vdt.virtualDom = virtualDom;
+Vdt.compile = compile;
+Vdt.utils = utils;
+Vdt.setDelimiters = utils.setDelimiters;
+Vdt.getDelimiters = utils.getDelimiters;
+
+module.exports = Vdt;
+
+},{"./parser":17,"./stringifier":18,"./utils":19,"virtual-domx":24}],21:[function(require,module,exports){
 var createElement = require("./vdom/create-element.js")
 
 module.exports = createElement
 
-},{"./vdom/create-element.js":22}],16:[function(require,module,exports){
+},{"./vdom/create-element.js":27}],22:[function(require,module,exports){
 var diff = require("./vtree/diff.js")
 
 module.exports = diff
 
-},{"./vtree/diff.js":44}],17:[function(require,module,exports){
+},{"./vtree/diff.js":49}],23:[function(require,module,exports){
 var h = require("./virtual-hyperscript/index.js")
 
 module.exports = h
 
-},{"./virtual-hyperscript/index.js":29}],18:[function(require,module,exports){
+},{"./virtual-hyperscript/index.js":34}],24:[function(require,module,exports){
 var diff = require("./diff.js")
 var patch = require("./patch.js")
 var h = require("./h.js")
@@ -764,31 +1629,12 @@ module.exports = {
     VText: VText
 }
 
-},{"./create-element.js":15,"./diff.js":16,"./h.js":17,"./patch.js":20,"./vnode/vnode.js":40,"./vnode/vtext.js":42}],19:[function(require,module,exports){
-(function (global){
-var topLevel = typeof global !== 'undefined' ? global :
-    typeof window !== 'undefined' ? window : {}
-var minDoc = require('min-documentx');
-
-if (typeof document !== 'undefined') {
-    module.exports = document;
-} else {
-    var doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'];
-
-    if (!doccy) {
-        doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'] = minDoc;
-    }
-
-    module.exports = doccy;
-}
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-documentx":58}],20:[function(require,module,exports){
+},{"./create-element.js":21,"./diff.js":22,"./h.js":23,"./patch.js":25,"./vnode/vnode.js":45,"./vnode/vtext.js":47}],25:[function(require,module,exports){
 var patch = require("./vdom/patch.js")
 
 module.exports = patch
 
-},{"./vdom/patch.js":25}],21:[function(require,module,exports){
+},{"./vdom/patch.js":30}],26:[function(require,module,exports){
 var isObject = require("is-object")
 var isHook = require("../vnode/is-vhook.js")
 
@@ -891,7 +1737,7 @@ function getPrototype(value) {
     }
 }
 
-},{"../vnode/is-vhook.js":34,"is-object":14}],22:[function(require,module,exports){
+},{"../vnode/is-vhook.js":39,"is-object":15}],27:[function(require,module,exports){
 var document = require("globalx/document")
 
 var applyProperties = require("./apply-properties")
@@ -947,7 +1793,7 @@ function createElement(vnode, opts) {
     return node
 }
 
-},{"../vnode/handle-thunk.js":31,"../vnode/is-vcomment.js":33,"../vnode/is-vnode.js":35,"../vnode/is-vtext.js":36,"../vnode/is-widget.js":37,"./apply-properties":21,"globalx/document":19}],23:[function(require,module,exports){
+},{"../vnode/handle-thunk.js":36,"../vnode/is-vcomment.js":38,"../vnode/is-vnode.js":40,"../vnode/is-vtext.js":41,"../vnode/is-widget.js":42,"./apply-properties":26,"globalx/document":12}],28:[function(require,module,exports){
 // Maps a virtual DOM tree onto a real DOM tree in an efficient manner.
 // We don't want to read all of the DOM nodes in the tree so we use
 // the in-order tree indexing to eliminate recursion down certain branches.
@@ -1034,7 +1880,7 @@ function ascending(a, b) {
     return a > b ? 1 : -1
 }
 
-},{}],24:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 var applyProperties = require("./apply-properties")
 
 var isWidget = require("../vnode/is-widget.js")
@@ -1209,7 +2055,7 @@ function replaceRoot(oldRoot, newRoot) {
     return newRoot;
 }
 
-},{"../vnode/is-widget.js":37,"../vnode/vpatch.js":41,"./apply-properties":21,"./update-widget":26}],25:[function(require,module,exports){
+},{"../vnode/is-widget.js":42,"../vnode/vpatch.js":46,"./apply-properties":26,"./update-widget":31}],30:[function(require,module,exports){
 var document = require("globalx/document")
 var isArray = require("x-is-array")
 
@@ -1291,7 +2137,7 @@ function patchIndices(patches) {
     return indices
 }
 
-},{"./create-element":22,"./dom-index":23,"./patch-op":24,"globalx/document":19,"x-is-array":52}],26:[function(require,module,exports){
+},{"./create-element":27,"./dom-index":28,"./patch-op":29,"globalx/document":12,"x-is-array":52}],31:[function(require,module,exports){
 var isWidget = require("../vnode/is-widget.js")
 
 module.exports = updateWidget
@@ -1310,7 +2156,7 @@ function updateWidget(a, b) {
     return false
 }
 
-},{"../vnode/is-widget.js":37}],27:[function(require,module,exports){
+},{"../vnode/is-widget.js":42}],32:[function(require,module,exports){
 'use strict';
 
 var EvStore = require('ev-store');
@@ -1344,7 +2190,7 @@ EvHook.prototype.unhook = function(node, propertyName) {
     es[propName] = undefined;
 };
 
-},{"dom-delegator":5,"ev-store":8}],28:[function(require,module,exports){
+},{"dom-delegator":5,"ev-store":8}],33:[function(require,module,exports){
 'use strict';
 
 module.exports = SoftSetHook;
@@ -1363,7 +2209,7 @@ SoftSetHook.prototype.hook = function (node, propertyName) {
     }
 };
 
-},{}],29:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 'use strict';
 
 var isArray = require('x-is-array');
@@ -1508,7 +2354,7 @@ function errorString(obj) {
     }
 }
 
-},{"../vnode/is-thunk":32,"../vnode/is-vcomment":33,"../vnode/is-vhook":34,"../vnode/is-vnode":35,"../vnode/is-vtext":36,"../vnode/is-widget":37,"../vnode/vcomment.js":38,"../vnode/vnode.js":40,"../vnode/vtext.js":42,"./hooks/ev-hook.js":27,"./hooks/soft-set-hook.js":28,"./parse-tag.js":30,"x-is-array":52}],30:[function(require,module,exports){
+},{"../vnode/is-thunk":37,"../vnode/is-vcomment":38,"../vnode/is-vhook":39,"../vnode/is-vnode":40,"../vnode/is-vtext":41,"../vnode/is-widget":42,"../vnode/vcomment.js":43,"../vnode/vnode.js":45,"../vnode/vtext.js":47,"./hooks/ev-hook.js":32,"./hooks/soft-set-hook.js":33,"./parse-tag.js":35,"x-is-array":52}],35:[function(require,module,exports){
 'use strict';
 
 var split = require('browser-split');
@@ -1564,7 +2410,7 @@ function parseTag(tag, props) {
     return props.namespace ? tagName : tagName.toUpperCase();
 }
 
-},{"browser-split":1}],31:[function(require,module,exports){
+},{"browser-split":1}],36:[function(require,module,exports){
 var isVNode = require("./is-vnode")
 var isVText = require("./is-vtext")
 var isWidget = require("./is-widget")
@@ -1606,14 +2452,14 @@ function renderThunk(thunk, previous) {
     return renderedThunk
 }
 
-},{"./is-thunk":32,"./is-vnode":35,"./is-vtext":36,"./is-widget":37}],32:[function(require,module,exports){
+},{"./is-thunk":37,"./is-vnode":40,"./is-vtext":41,"./is-widget":42}],37:[function(require,module,exports){
 module.exports = isThunk
 
 function isThunk(t) {
     return t && t.type === "Thunk"
 }
 
-},{}],33:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = isVirtualComment
@@ -1622,7 +2468,7 @@ function isVirtualComment(x) {
     return x && x.type === "VirtualComment" && x.version === version 
 }
 
-},{"./version":39}],34:[function(require,module,exports){
+},{"./version":44}],39:[function(require,module,exports){
 module.exports = isHook
 
 function isHook(hook) {
@@ -1631,7 +2477,7 @@ function isHook(hook) {
        typeof hook.unhook === "function" && !hook.hasOwnProperty("unhook"))
 }
 
-},{}],35:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = isVirtualNode
@@ -1640,7 +2486,7 @@ function isVirtualNode(x) {
     return x && x.type === "VirtualNode" && x.version === version
 }
 
-},{"./version":39}],36:[function(require,module,exports){
+},{"./version":44}],41:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = isVirtualText
@@ -1649,14 +2495,14 @@ function isVirtualText(x) {
     return x && x.type === "VirtualText" && x.version === version
 }
 
-},{"./version":39}],37:[function(require,module,exports){
+},{"./version":44}],42:[function(require,module,exports){
 module.exports = isWidget
 
 function isWidget(w) {
     return w && w.type === "Widget"
 }
 
-},{}],38:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = VirtualComment
@@ -1668,10 +2514,10 @@ function VirtualComment(comment) {
 VirtualComment.prototype.version = version
 VirtualComment.prototype.type = "VirtualComment"
 
-},{"./version":39}],39:[function(require,module,exports){
+},{"./version":44}],44:[function(require,module,exports){
 module.exports = "2"
 
-},{}],40:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 var version = require("./version")
 var isVNode = require("./is-vnode")
 var isWidget = require("./is-widget")
@@ -1745,7 +2591,7 @@ function VirtualNode(tagName, properties, children, key, namespace) {
 VirtualNode.prototype.version = version
 VirtualNode.prototype.type = "VirtualNode"
 
-},{"./is-thunk":32,"./is-vhook":34,"./is-vnode":35,"./is-widget":37,"./version":39}],41:[function(require,module,exports){
+},{"./is-thunk":37,"./is-vhook":39,"./is-vnode":40,"./is-widget":42,"./version":44}],46:[function(require,module,exports){
 var version = require("./version")
 
 VirtualPatch.NONE = 0
@@ -1770,7 +2616,7 @@ function VirtualPatch(type, vNode, patch) {
 VirtualPatch.prototype.version = version
 VirtualPatch.prototype.type = "VirtualPatch"
 
-},{"./version":39}],42:[function(require,module,exports){
+},{"./version":44}],47:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = VirtualText
@@ -1782,7 +2628,7 @@ function VirtualText(text) {
 VirtualText.prototype.version = version
 VirtualText.prototype.type = "VirtualText"
 
-},{"./version":39}],43:[function(require,module,exports){
+},{"./version":44}],48:[function(require,module,exports){
 var isObject = require("is-object")
 var isHook = require("../vnode/is-vhook")
 
@@ -1842,7 +2688,7 @@ function getPrototype(value) {
   }
 }
 
-},{"../vnode/is-vhook":34,"is-object":14}],44:[function(require,module,exports){
+},{"../vnode/is-vhook":39,"is-object":15}],49:[function(require,module,exports){
 var isArray = require("x-is-array")
 
 var VPatch = require("../vnode/vpatch")
@@ -2278,853 +3124,7 @@ function appendPatch(apply, patch) {
     }
 }
 
-},{"../vnode/handle-thunk":31,"../vnode/is-thunk":32,"../vnode/is-vcomment":33,"../vnode/is-vnode":35,"../vnode/is-vtext":36,"../vnode/is-widget":37,"../vnode/vpatch":41,"./diff-props":43,"x-is-array":52}],45:[function(require,module,exports){
-module.exports = require('./lib/index');
-
-},{"./lib/index":49}],46:[function(require,module,exports){
-/**
- * @fileoverview parse jsx to ast
- * @author javey
- * @date 15-4-22
- */
-
-var Utils = require('./utils'),
-    Type = Utils.Type,
-    TypeName = Utils.TypeName;
-
-var elementNameRegexp = /^<\w+:?\s*[\w\/>]/;
-
-function isJSXIdentifierPart(ch) {
-    return (ch === 58) || (ch === 95) || (ch === 45) ||  // : and _ (underscore) and -
-        (ch >= 65 && ch <= 90) ||         // A..Z
-        (ch >= 97 && ch <= 122) ||        // a..z
-        (ch >= 48 && ch <= 57);         // 0..9
-}
-
-var Parser = function() {
-    this.source = '';
-    this.index = 0;
-    this.length = 0;
-};
-
-Parser.prototype = {
-    constructor: Parser,
-
-    parse: function(source, options) {
-        this.source = Utils.trimRight(source);
-        this.index = 0;
-        this.line = 1;
-        this.column = 1;
-        this.length = this.source.length;
-
-        this.options = Utils.extend({
-            delimiters: Utils.getDelimiters()
-        }, options);
-
-        return this._parseTemplate();
-    },
-
-    _parseTemplate: function() {
-        var elements = [],
-            braces = {count: 0};
-        while (this.index < this.length && braces.count >= 0) {
-            elements.push(this._advance(braces));
-        }
-
-        return elements;
-    },
-
-    _advance: function(braces) {
-        var ch = this._char();
-        if (ch !== '<') {
-            return this._scanJS(braces);
-        } else {
-            return this._scanJSX();
-        }
-    },
-
-    _scanJS: function(braces) {
-        var start = this.index,
-            Delimiters = this.options.delimiters;
-
-        while (this.index < this.length) {
-            var ch = this._char();
-            if (ch === '\'' || ch === '"') {
-                // skip element(<div>) in quotes
-                this._scanStringLiteral();
-            } else if (this._isElementStart()) {
-                break;
-            } else {
-                if (this._isExpect(Delimiters[0])) {
-                    braces.count++;
-                } else if (this._isExpect(Delimiters[1])) {
-                    braces.count--;
-                    if (braces.count < 0) {
-                        this._updateIndex();
-                        break;
-                    }
-                } else if (ch === '\n') {
-                    this._updateLine();
-                }
-                this._updateIndex();
-            }
-        }
-
-        return this._type(Type.JS, {value: this.source.slice(start, braces.count < 0 ? this.index - 1 : this.index)});
-    },
-
-    _scanStringLiteral: function() {
-        var quote = this._char(),
-            start = this.index,
-            str = '';
-        this._updateIndex();
-        
-
-        while (this.index < this.length) {
-            var ch = this._char();
-            this._updateIndex();
-
-            if (ch === quote) {
-                quote = '';
-                break;
-            } else if (ch === '\\') {
-                str += this._char(this._updateIndex());
-            } else {
-                str += ch;
-            }
-        }
-        if (quote !== '') {
-            this._error('Unclosed quote');
-        }
-
-        return this._type(Type.StringLiteral, {value: this.source.slice(start, this.index)});
-    },
-
-    _scanJSX: function() {
-        return this._parseJSXElement();
-    },
-
-    _scanJSXText: function(stopChars) {
-        var start = this.index,
-            l = stopChars.length,
-            i;
-        loop:
-        while (this.index < this.length) {
-            if (this._charCode() === 10) {
-                this._updateLine();
-            }
-            for (i = 0; i < l; i++) {
-                if (typeof stopChars[i] === 'function' && stopChars[i].call(this) || this._isExpect(stopChars[i])) {
-                    break loop;
-                }
-            }
-            this._updateIndex();
-        }
-
-        return this._type(Type.JSXText, {value: this.source.slice(start, this.index)});
-    },
-
-    _scanJSXStringLiteral: function() {
-        var quote = this._char();
-        if (quote !== '\'' && quote !== '"') {
-            this._error('String literal must starts with a qoute');
-        }
-        this._updateIndex();
-        var token = this._scanJSXText([quote]);
-        this._updateIndex();
-        return token;
-    },
-
-    _parseJSXElement: function() {
-        this._expect('<');
-        var start = this.index,
-            ret = {},
-            flag = this._charCode();
-        if (flag >= 65 && flag <= 90/* upper case */) {
-            // is a widget
-            this._type(Type.JSXWidget, ret);
-        } else if (this._isExpect('!--')) {
-            // is html comment
-            return this._parseJSXComment();
-        } else if (this._charCode(this.index + 1) === 58/* : */){
-            // is a directive
-            start += 2;
-            switch (flag) {
-                case 116: // t
-                    this._type(Type.JSXVdt, ret);
-                    break;
-                case 98: // b
-                    this._type(Type.JSXBlock, ret);
-                    break;
-                default:
-                    this._error('Unknown directive ' + String.fromCharCode(flag) + ':');
-            }
-            this._updateIndex(2);
-        } else {
-            // is an element
-            this._type(Type.JSXElement, ret);
-        }
-
-        while (this.index < this.length) {
-            if (!isJSXIdentifierPart(this._charCode())) {
-                break;
-            }
-            this._updateIndex();
-        }
-
-        ret.value = this.source.slice(start, this.index);
-
-        return this._parseAttributeAndChildren(ret);
-    },
-
-    _parseAttributeAndChildren: function(ret) {
-        Utils.extend(ret, {
-            attributes: this._parseJSXAttribute(),
-            children: []
-        });
-
-        if (ret.type === Type.JSXElement && Utils.isSelfClosingTag(ret.value)) {
-            // self closing tag
-            if (this._char() === '/') {
-                this._updateIndex();
-            }
-            this._expect('>');
-        } else if (this._char() === '/') {
-            // unknown self closing tag
-            this._updateIndex();
-            this._expect('>');
-        } else {
-            this._expect('>');
-            ret.children = this._parseJSXChildren();
-        }
-
-        return ret;
-    },
-
-    _parseJSXAttribute: function() {
-        var ret = [];
-        while (this.index < this.length) {
-            this._skipWhitespace();
-            if (this._char() === '/' || this._char() === '>') {
-                break;
-            } else {
-                var attr = this._parseJSXAttributeName();
-                if (this._char() === '=') {
-                    this._updateIndex();
-                    attr.value = this._parseJSXAttributeValue();
-                }
-                ret.push(attr);
-            }
-        }
-
-        return ret;
-    },
-
-    _parseJSXAttributeName: function() {
-        var start = this.index;
-        if (!isJSXIdentifierPart(this._charCode())) {
-            this._error('Unexpected identifier ' + this._char());
-        }
-        while (this.index < this.length) {
-            var ch = this._charCode();
-            if (!isJSXIdentifierPart(ch)) {
-                break;
-            }
-            this._updateIndex();
-        }
-
-        return this._type(Type.JSXAttribute, {name: this.source.slice(start, this.index)});
-    },
-
-    _parseJSXAttributeValue: function() {
-        var value,
-            Delimiters = this.options.delimiters;
-        if (this._isExpect(Delimiters[0])) {
-            value = this._parseJSXExpressionContainer();
-        } else {
-            value = this._scanJSXStringLiteral();
-        }
-        return value;
-    },
-
-    _parseJSXExpressionContainer: function() {
-        var expression,
-            Delimiters = this.options.delimiters;
-        this._expect(Delimiters[0]);
-        if (this._isExpect(Delimiters[1])) {
-            expression = this._parseJSXEmptyExpression();
-        } else {
-            expression = this._parseExpression();
-        }
-        this._expect(Delimiters[1]);
-
-        return this._type(Type.JSXExpressionContainer, {value: expression});
-    },
-
-    _parseJSXEmptyExpression: function() {
-        return this._type(Type.JSXEmptyExpression, {value: null});
-    },
-
-    _parseExpression: function() {
-        var ret = this._parseTemplate();
-        this._updateIndex(-1);
-        return ret;
-    },
-
-    _parseJSXChildren: function() {
-        var children = [];
-        while (this.index < this.length) {
-            if (this._char(this.index) === '<' && this._char(this.index + 1) === '/') {
-                break;
-            }
-            children.push(this._parseJSXChild());
-        }
-        this._parseJSXClosingElement();
-        return children;
-    },
-
-    _parseJSXChild: function() {
-        var token,
-            Delimiters = this.options.delimiters;
-        if (this._isExpect(Delimiters[0])) {
-            token = this._parseJSXExpressionContainer();
-        } else if (this._isElementStart()) {
-            token = this._parseJSXElement();
-        } else {
-            token = this._scanJSXText([function() {
-                return this._isExpect('</') || this._isElementStart();
-            }, Delimiters[0]]);
-        }
-
-        return token;
-    },
-
-    _parseJSXClosingElement: function() {
-        this._expect('</');
-
-        while (this.index < this.length) {
-            if (!isJSXIdentifierPart(this._charCode())) {
-                break;
-            }
-            this._updateIndex();;
-        }
-
-        this._skipWhitespace();
-        this._expect('>');
-    },
-
-    _parseJSXComment: function() {
-        this._expect('!--');
-        var start = this.index;
-        while (this.index < this.length) {
-            if (this._isExpect('-->')) {
-                break;
-            } else if (this._charCode() === 10) {
-                this._updateLine();
-            }
-            this._updateIndex();
-        }
-        var ret = this._type(Type.JSXComment, {value: this.source.slice(start, this.index)});
-        this._expect('-->');
-
-        return ret;
-    },
-
-    _char: function(index) {
-        arguments.length === 0 && (index = this.index);
-        return this.source.charAt(index);
-    },
-
-    _charCode: function(index) {
-         arguments.length === 0 && (index = this.index);
-         return this.source.charCodeAt(index);
-    },
-
-    _skipWhitespace: function() {
-        while (this.index < this.length) {
-            var code = this._charCode();
-            if (!Utils.isWhiteSpace(code)) {
-                break;
-            } else if (code === 10) {
-                // is \n
-                this._updateLine();
-            }
-            this._updateIndex();
-        }
-    },
-
-    _expect: function(str) {
-        if (!this._isExpect(str)) {
-            this._error('expect string ' + str);
-        }
-        this.index += str.length;
-    },
-
-    _isExpect: function(str) {
-        return this.source.slice(this.index, this.index + str.length) === str;
-    },
-
-    _isElementStart: function() {
-        return this._char() === '<' && (this._isExpect('<!--') || elementNameRegexp.test(this.source.slice(this.index)));
-    },
-
-    _type: function(type, ret) {
-        ret || (ret = {});
-        ret.type = type;
-        ret.typeName = TypeName[type];
-        return ret;
-    },
-
-    _updateLine: function() {
-        this.line++;
-        this.column = 0;
-    },
-
-    _updateIndex: function(value) {
-        value === undefined && (value = 1);
-        var index = this.index;
-        this.index = this.index + value;
-        this.column = this.column + value;
-        return index;
-    },
-
-    _error: function(msg) {
-        throw new Error(
-            msg + ' At: {line: ' + this.line + ', column: ' + this.column +
-            '} Near: "' + this.source.slice(this.index - 10, this.index + 20) + '"'
-        );
-    }
-};
-
-module.exports = Parser;
-
-},{"./utils":48}],47:[function(require,module,exports){
-/**
- * @fileoverview stringify ast of jsx to js
- * @author javey
- * @date 15-4-22
- */
-
-var Utils = require('./utils'),
-    Type = Utils.Type,
-    TypeName = Utils.TypeName,
-
-    attrMap = (function() {
-        var map = {
-            'class': 'className',
-            'for': 'htmlFor'
-        };
-        return function(name) {
-            return map[name] || name;
-        };
-    })();
-
-var Stringifier = function() {};
-
-Stringifier.prototype = {
-    constructor: Stringifier,
-
-    stringify: function(ast, autoReturn) {
-        if (arguments.length === 1) {
-            autoReturn = true;
-        }
-        this.autoReturn = !!autoReturn;
-        this.enterStringExpression = false;
-        return this._visitJSXExpressionContainer(ast, true);
-    },
-
-    _visitJSXExpressionContainer: function(ast, isRoot) {
-        var str = '', length = ast.length;
-        Utils.each(ast, function(element, i) {
-            // if is root, add `return` keyword
-            if (this.autoReturn && isRoot && i === length - 1) {
-                str += 'return ' + this._visit(element, isRoot);
-            } else {
-                str += this._visit(element, isRoot);
-            }
-        }, this);
-
-        return str;
-    },
-
-    _visit: function(element, isRoot) {
-        element = element || {};
-        switch (element.type) {
-            case Type.JS:
-                return this._visitJS(element);
-            case Type.JSXElement:
-                return this._visitJSX(element);
-            case Type.JSXText:
-                return this._visitJSXText(element);
-            case Type.JSXExpressionContainer:
-                return this._visitJSXExpressionContainer(element.value);
-            case Type.JSXWidget:
-                return this._visitJSXWidget(element);
-            case Type.JSXBlock:
-                return this._visitJSXBlock(element);
-            case Type.JSXVdt:
-                return this._visitJSXVdt(element, isRoot);
-            case Type.JSXComment:
-                return this._visitJSXComment(element);
-            default:
-                return 'null';
-        }
-    },
-
-    _visitJS: function(element) {
-        return this.enterStringExpression ? '(' + element.value + ')' : element.value;
-    },
-
-    _visitJSX: function(element) {
-        if (element.value === 'script' || element.value === 'style') {
-            if (element.children.length) {
-                element.attributes.push({
-                    type: Type.JSXAttribute,
-                    typeName: TypeName[Type.JSXAttribute],
-                    name: 'innerHTML',
-                    value: {
-                        type: Type.JS,
-                        typeName: TypeName[Type.JS],
-                        value: this._visitJSXChildrenAsString(element.children)
-                    }
-                });
-                element.children = [];
-            }
-        }
-        var str = "h('" + element.value + "'," + this._visitJSXAttribute(element.attributes) + ", ";
-
-        return str + this._visitJSXChildren(element.children) + ')';
-    },
-
-    _visitJSXChildren: function(children) {
-        var ret = [];
-        Utils.each(children, function(child) {
-            ret.push(this._visit(child));
-        }, this);
-
-        return '[' + ret.join(', ') + ']';
-    },
-
-    _visitJSXChildrenAsString: function(children) {
-        var ret = [];
-        this.enterStringExpression = true;
-        Utils.each(children, function(child) {
-            ret.push(this._visit(child));
-        }, this);
-        this.enterStringExpression = false;
-        return ret.join('+');
-    },
-
-    _visitJSXAttribute: function(attributes) {
-        var ret = [];
-        Utils.each(attributes, function(attr) {
-            ret.push("'" + attrMap(attr.name) + "': " + (Utils.isArray(attr.value) ? this._visitJSXChildren(attr.value) : this._visit(attr.value)));
-        }, this);
-
-        return ret.length ? '{' + ret.join(', ') + '}' : 'null';
-    },
-
-    _visitJSXText: function(element) {
-        return "'" + element.value.replace(/[\r\n]/g, '\\n').replace(/([\'\"])/g, '\\$1') + "'";
-    },
-
-    _visitJSXWidget: function(element) {
-        element.attributes.push({name: 'children', value: element.children});
-        return element.value + '(' + this._visitJSXAttribute(element.attributes) + ', widgets)';
-    },
-
-    _visitJSXBlock: function(element, isAncestor) {
-        arguments.length === 1 && (isAncestor = true);
-
-        return '(_blocks.' + element.value + ' = function(parent) {return ' + this._visitJSXChildren(element.children) + ';}) && (__blocks.' + element.value + ' = function(parent) {\n' +
-            'var self = this;\n' +
-            'return blocks.' + element.value + ' ? blocks.' + element.value + '.call(this, function() {\n' +
-                'return _blocks.' + element.value + '.call(self, parent);\n' +
-            '}) : _blocks.' + element.value + '.call(this, parent);\n' +
-        '})' + (isAncestor ? ' && __blocks.' + element.value + '.call(this)' : '');
-    },
-
-    _visitJSXVdt: function(element, isRoot) {
-        var ret = ['(function(blocks) {',
-                'var _blocks = {}, __blocks = extend({}, blocks), _obj = ' + this._visitJSXAttribute(element.attributes) + ' || {};',
-                'if (_obj.hasOwnProperty("arguments")) { _obj = extend({}, _obj.arguments === null ? obj : _obj.arguments, _obj); delete _obj.arguments; }',
-                'return ' + element.value + '.call(this, _obj, _Vdt, '
-            ].join('\n'),
-            blocks = [];
-
-        Utils.each(element.children, function(child) {
-            if (child.type === Type.JSXBlock) {
-                blocks.push(this._visitJSXBlock(child, false))
-            }
-        }, this);
-
-        ret += (blocks.length ? blocks.join(' && ') + ' && __blocks)' : '__blocks)') + ('}).call(this, ') + (isRoot ? 'blocks)' : '{})');
-
-        return ret;
-    },
-
-    _visitJSXComment: function(element) {
-        return 'h.c(' + this._visitJSXText(element) + ')';
-    }
-};
-
-module.exports = Stringifier;
-
-},{"./utils":48}],48:[function(require,module,exports){
-/**
- * @fileoverview utility methods
- * @author javey
- * @date 15-4-22
- */
-
-var i = 0,
-    Type = {
-        JS: i++,
-        JSXText: i++,
-        JSXElement: i++,
-        JSXExpressionContainer: i++,
-        JSXAttribute: i++,
-        JSXEmptyExpression: i++,
-
-        JSXWidget: i++,
-        JSXVdt: i++,
-        JSXBlock: i++,
-        JSXComment: i++
-    },
-    TypeName = [],
-
-    SelfClosingTags = {
-        'area': true,
-        'base': true,
-        'br': true,
-        'col': true,
-        'embed': true,
-        'hr': true,
-        'img': true,
-        'input': true,
-        'keygen': true,
-        'link': true,
-        'menuitem': true,
-        'meta': true,
-        'param': true,
-        'source': true,
-        'track': true,
-        'wbr': true
-    },
-
-    Delimiters = ['{', '}'];
-
-var hasOwn = Object.prototype.hasOwnProperty;
-
-(function() {
-    for (var type in Type) {
-        if (hasOwn.call(Type, type)) {
-            TypeName[Type[type]] = type;
-        }
-    }
-})();
-
-var Utils = {
-    each: function(collection, iterate, thisArgs) {
-        for (var i = 0, l = collection.length; i < l; i++) {
-            var item = collection[i];
-            iterate.call(thisArgs, item, i);
-        }
-    },
-
-    isWhiteSpace: function(charCode) {
-        return ((charCode <= 160 && (charCode >= 9 && charCode <= 13) || charCode == 32 || charCode == 160) || charCode == 5760 || charCode == 6158 ||
-        (charCode >= 8192 && (charCode <= 8202 || charCode == 8232 || charCode == 8233 || charCode == 8239 || charCode == 8287 || charCode == 12288 || charCode == 65279)));
-    },
-
-    trimRight: function(str) {
-        var index = str.length;
-
-        while (index-- && Utils.isWhiteSpace(str.charCodeAt(index))) {}
-
-        return str.slice(0, index + 1);
-    },
-
-    Type: Type,
-    TypeName: TypeName,
-
-    setDelimiters: function(delimiters) {
-        if (!Utils.isArray(delimiters)) {
-            throw new Error('The parameter must be an array like ["{{", "}}"]');
-        }
-        Delimiters = delimiters;
-    },
-
-    getDelimiters: function() {
-        return Delimiters;
-    },
-
-    isSelfClosingTag: function(tag) {
-        return SelfClosingTags[tag];
-    },
-
-    extend: function(dest, source) {
-        var length = arguments.length;
-        if (length > 1) {
-            for (var i = 1; i < length; i++) {
-                source = arguments[i];
-                if (source) {
-                    for (var key in source) {
-                        if (hasOwn.call(source, key)) {
-                            dest[key] = source[key];
-                        }
-                    }
-                }
-            }
-        }
-        return dest;
-    },
-
-    isArray: Array.isArray || function(arr) {
-        return Object.prototype.toString.call(arr) === '[object Array]';
-    },
-
-    noop: function() {},
-
-    require: (function() {
-        var isNode = new Function("try { return this === global; } catch (e) { return false; }"); 
-        if (isNode()) {
-            return require('./compile');
-        } else {
-            // use amd require
-        }
-    })(),
-
-    noRequire: function() {
-        throw new Error('Vdt depends RequireJs to require file over http.');
-    }
-};
-
-module.exports = Utils;
-
-},{"./compile":49}],49:[function(require,module,exports){
-var parser = new (require('./parser')),
-    stringifier = new (require('./stringifier')),
-    virtualDom = require('virtual-domx'),
-    utils = require('./utils');
-
-var Vdt = function(source, options) {
-    var vdt = {
-        render: function(data) {
-            vdt.renderTree.apply(vdt, arguments); 
-            vdt.node = virtualDom.create(vdt.tree);
-            return vdt.node;
-        },
-
-        renderTree: function(data) {
-            if (arguments.length) {
-                vdt.data = data;
-            }
-            vdt.data.vdt = vdt;
-            vdt.tree = vdt.template.call(vdt.data, vdt.data, Vdt);
-            return vdt.tree;
-        },
-
-        renderString: function(data) {
-            var node = vdt.render.apply(vdt, arguments);
-            return node.outerHTML || node.toString();
-        },
-
-        update: function(data) {
-            var oldTree = vdt.tree;
-            vdt.renderTree.apply(vdt, arguments);
-            vdt.patches = virtualDom.diff(oldTree, vdt.tree);
-            vdt.node = virtualDom.patch(vdt.node, vdt.patches);
-            return vdt.node;
-        },
-
-        /**
-         * Restore the data, so you can modify it directly.
-         */
-        data: {},
-        tree: {},
-        patches: {},
-        node: null,
-        template: compile(source, options),
-
-        getTree: function() {
-            return vdt.tree;
-        },
-
-        setTree: function(tree) {
-            vdt.tree = tree;
-        },
-
-        getNode: function() {
-            return vdt.node;
-        },
-
-        setNode: function(node) {
-            vdt.node = node;
-        }
-    };
-
-    // reference cycle vdt
-    vdt.data.vdt = vdt;
-
-    return vdt;
-};
-
-function compile(source, options) {
-    var templateFn;
-
-    // backward compatibility v0.2.2
-    if (options === true || options === false) {
-        options = {autoReturn: options};
-    }
-
-    options = utils.extend({
-        autoReturn: true,
-        onlySource: false,
-        delimiters: utils.getDelimiters()
-    }, options);
-
-    switch (typeof source) {
-        case 'string':
-            var ast = parser.parse(source, {delimiters: options.delimiters}),
-                hscript = stringifier.stringify(ast, options.autoReturn);
-
-            hscript = [
-                '_Vdt || (_Vdt = Vdt);',
-                'obj || (obj = {});',
-                'blocks || (blocks = {});',
-                'var h = _Vdt.virtualDom.h, widgets = this.widgets || (this.widgets = {}), _blocks = {}, __blocks = {},',
-                    'extend = _Vdt.utils.extend;',
-                'obj.require = _Vdt.utils.require || (typeof require === "undefined" ? _Vdt.utils.noRequire : require);',
-                'var self; if (obj.type === "Widget") { self = this; } else { obj.get = function(name) { return obj[name]; }; self = obj; }',
-                'with (obj) {',
-                    hscript,
-                '}'
-            ].join('\n');
-            templateFn = options.onlySource ? utils.noop : new Function('obj', '_Vdt', 'blocks', hscript);
-            templateFn.source = 'function(obj, _Vdt, blocks) {\n' + hscript + '\n}';
-            break;
-        case 'function':
-            templateFn = source;
-            break;
-        default:
-            throw new Error('Expect a string or function');
-    }
-
-    return templateFn;
-}
-
-Vdt.parser = parser;
-Vdt.stringifier = stringifier;
-Vdt.virtualDom = virtualDom;
-Vdt.compile = compile;
-Vdt.utils = utils;
-Vdt.setDelimiters = utils.setDelimiters;
-Vdt.getDelimiters = utils.getDelimiters;
-
-module.exports = Vdt;
-
-},{"./parser":46,"./stringifier":47,"./utils":48,"virtual-domx":18}],50:[function(require,module,exports){
+},{"../vnode/handle-thunk":36,"../vnode/is-thunk":37,"../vnode/is-vcomment":38,"../vnode/is-vnode":40,"../vnode/is-vtext":41,"../vnode/is-widget":42,"../vnode/vpatch":46,"./diff-props":48,"x-is-array":52}],50:[function(require,module,exports){
 var hiddenStore = require('./hidden-store.js');
 
 module.exports = createStore;
@@ -3513,12 +3513,13 @@ var TransitionEvents = {
     }
 };
 
-},{"./intact":55,"./utils":57,"vdt":45}],54:[function(require,module,exports){
+},{"./intact":55,"./utils":57,"vdt":16}],54:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.Vdt = undefined;
 
 var _animate = require('./animate');
 
@@ -3528,14 +3529,21 @@ var _intact = require('./intact');
 
 var _intact2 = _interopRequireDefault(_intact);
 
+var _vdt = require('vdt');
+
+var _vdt2 = _interopRequireDefault(_vdt);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 _intact2.default.prototype.Animate = _animate2.default;
 exports.default = _intact2.default;
+exports.Vdt = _vdt2.default;
+
 
 module.exports = exports['default'];
+module.exports.Vdt = exports.Vdt;
 
-},{"./animate":53,"./intact":55}],55:[function(require,module,exports){
+},{"./animate":53,"./intact":55,"vdt":16}],55:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -3543,8 +3551,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _utils = require('./utils');
 
@@ -3558,350 +3564,315 @@ var _vdt2 = _interopRequireDefault(_vdt);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+var Intact = function Intact() {
+    var _this = this;
 
-var Intact = function () {
-    function Intact() {
-        var _this = this;
+    var attrs = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+    var contextWidgets = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
-        var attrs = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-        var contextWidgets = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-        _classCallCheck(this, Intact);
-
-        if (!(this instanceof Intact)) {
-            return new _thunk2.default(this, attributes, contextWidgets);
-        }
-
-        if (!this.template) {
-            throw new Error('Can not instantiate when this.template does not exist.');
-        }
-
-        attrs = (0, _utils.extend)({
-            children: undefined
-        }, (0, _utils.result)(this, 'defaults'), attrs);
-
-        this._events = {};
-        this.attributes = {};
-
-        this.vdt = (0, _vdt2.default)(this.template);
-        this.set(attrs, { silent: true });
-        this.key = attrs.key;
-
-        this.widgets = {};
-
-        this.inited = false;
-        this.rendered = false;
-        this._hasCalledInit = false;
-
-        this._contextWidgets = contextWidgets;
-        this._widget = this.attributes.widget || (0, _utils.uniqueId)('widget');
-
-        // for debug
-        this.displayName = this.displayName;
-
-        this.addEvents();
-
-        this.children = this.get('children');
-        delete this.attributes.children;
-        // 存在widget名称引用属性，则注入所处上下文的widgets中
-        this._contextWidgets[this._widget] = this;
-
-        // 如果存在arguments属性，则将其拆开赋给attributes
-        if (this.attributes.arguments) {
-            (0, _utils.extend)(this.attributes, (0, _utils.result)(this.attributes, 'arguments'));
-            delete this.attributes.arguments;
-        }
-
-        // change事件，自动更新，当一个更新操作正在进行中，下一个更新操作必须等其完成
-        this._updateCount = 0;
-        var handleUpdate = function handleUpdate() {
-            if (_this._updateCount > 0) {
-                _this.update();
-                _this._updateCount--;
-                handleUpdate.call(_this);
-            }
-        };
-        this.on('change', function () {
-            if (++this._updateCount === 1) {
-                handleUpdate();
-            } else if (this._updateCount > 10) {
-                throw new Error('Too many recursive update.');
-            }
-        });
-
-        var ret = this._init();
-        // support promise
-        var inited = function inited() {
-            _this.inited = true;
-            _this.trigger('inited', _this);
-        };
-        if (ret && ret.then) {
-            ret.then(inited);
-        } else {
-            inited();
-        }
+    if (!(this instanceof Intact)) {
+        return new _thunk2.default(this, attrs, contextWidgets);
     }
 
-    _createClass(Intact, [{
-        key: '_init',
-        value: function _init() {}
-    }, {
-        key: '_create',
-        value: function _create() {}
-    }, {
-        key: '_beforeUpdate',
-        value: function _beforeUpdate(prevWidget, domNode) {}
-    }, {
-        key: '_update',
-        value: function _update(prevWidget, domNode) {}
-    }, {
-        key: '_destroy',
-        value: function _destroy(domNode) {}
-    }, {
-        key: 'removeEvents',
-        value: function removeEvents() {
-            var _this2 = this;
+    if (!this.template) {
+        throw new Error('Can not instantiate when this.template does not exist.');
+    }
 
-            // 解绑所有事件
-            (0, _utils.each)(this.attributes, function (value, key) {
-                if (key.substring(0, 3) === 'ev-' && (0, _utils.isFunction)(value)) {
-                    _this2.off(key.substring(3), value);
-                    delete _this2.attributes[key];
+    attrs = (0, _utils.extend)({
+        children: undefined
+    }, (0, _utils.result)(this, 'defaults'), attrs);
+
+    this._events = {};
+    this.attributes = {};
+
+    this.vdt = (0, _vdt2.default)(this.template);
+    this.set(attrs, { silent: true });
+    this.key = attrs.key;
+
+    this.widgets = {};
+
+    this.inited = false;
+    this.rendered = false;
+    this._hasCalledInit = false;
+
+    this._contextWidgets = contextWidgets;
+    this._widget = this.attributes.widget || (0, _utils.uniqueId)('widget');
+
+    // for debug
+    this.displayName = this.displayName;
+
+    this.addEvents();
+
+    this.children = this.get('children');
+    delete this.attributes.children;
+    // 存在widget名称引用属性，则注入所处上下文的widgets中
+    this._contextWidgets[this._widget] = this;
+
+    // 如果存在arguments属性，则将其拆开赋给attributes
+    if (this.attributes.arguments) {
+        (0, _utils.extend)(this.attributes, (0, _utils.result)(this.attributes, 'arguments'));
+        delete this.attributes.arguments;
+    }
+
+    // change事件，自动更新，当一个更新操作正在进行中，下一个更新操作必须等其完成
+    this._updateCount = 0;
+    var handleUpdate = function handleUpdate() {
+        if (_this._updateCount > 0) {
+            _this.update();
+            _this._updateCount--;
+            handleUpdate.call(_this);
+        }
+    };
+    this.on('change', function () {
+        if (++this._updateCount === 1) {
+            handleUpdate();
+        } else if (this._updateCount > 10) {
+            throw new Error('Too many recursive update.');
+        }
+    });
+
+    var ret = this._init();
+    // support promise
+    var inited = function inited() {
+        _this.inited = true;
+        _this.trigger('inited', _this);
+    };
+    if (ret && ret.then) {
+        ret.then(inited);
+    } else {
+        inited();
+    }
+};
+
+Intact.prototype = {
+    constructor: Intact,
+
+    type: 'Widget',
+
+    _init: function _init() {},
+    _create: function _create() {},
+    _beforeUpdate: function _beforeUpdate(prevWidget, domNode) {},
+    _update: function _update(prevWidget, domNode) {},
+    _destroy: function _destroy(domNode) {},
+    removeEvents: function removeEvents() {
+        var _this2 = this;
+
+        // 解绑所有事件
+        (0, _utils.each)(this.attributes, function (value, key) {
+            if (key.substring(0, 3) === 'ev-' && (0, _utils.isFunction)(value)) {
+                _this2.off(key.substring(3), value);
+                delete _this2.attributes[key];
+            }
+        });
+    },
+    addEvents: function addEvents(attrs) {
+        var _this3 = this;
+
+        // 所有以'ev-'开头的属性，都转化为事件
+        attrs || (attrs = this.attributes);
+        (0, _utils.each)(attrs, function (value, key) {
+            if (key.substring(0, 3) === 'ev-' && (0, _utils.isFunction)(value)) {
+                _this3.on(key.substring(3), value);
+            }
+        });
+    },
+    init: function init(isUpdate /* for private */) {
+        !isUpdate && (this.element = this.vdt.render(this));
+        this.rendered = true;
+        this._hasCalledInit = true;
+        this.trigger('rendered', this);
+        this._create();
+        return this.element;
+    },
+    update: function update(prevWidget, domNode) {
+        if (!this.vdt.node && (!prevWidget || !prevWidget.vdt.node)) return;
+        this._beforeUpdate(prevWidget, domNode);
+        if (prevWidget && domNode) {
+            this.vdt.node = domNode;
+            this.vdt.tree = prevWidget.vdt.tree;
+        }
+        this.prevWidget = prevWidget;
+        this.element = this.vdt.update(this);
+        if (!this._hasCalledInit) {
+            this.init(true);
+        }
+        this._update(prevWidget, domNode);
+        return this.element;
+    },
+    destroy: function destroy(domNode) {
+        // 如果只是移动了一个组件，会先执行创建，再销毁，所以需要判断父组件引用的是不是自己
+        if (this._contextWidgets[this._widget] === this) {
+            delete this._contextWidgets[this._widget];
+        }
+        this.off();
+        function destroy(children) {
+            (0, _utils.each)(children, function (child) {
+                if (child.hasThunks) {
+                    destroy(child.children);
+                } else if (child.type === 'Thunk') {
+                    child.widget.destroy();
                 }
             });
         }
-    }, {
-        key: 'addEvents',
-        value: function addEvents(attrs) {
-            var _this3 = this;
+        destroy([this.vdt.tree]);
+        this._destroy(domNode);
+    },
+    get: function get(attr) {
+        // @deprecated for v0.0.1 compatibility, use this.children instead of
+        if (attr === 'children') {
+            return this.attributes.children || this.children;
+        }
+        return arguments.length === 0 ? this.attributes : this.attributes[attr];
+    },
+    set: function set(key, val, options) {
+        var _this4 = this;
 
-            // 所有以'ev-'开头的属性，都转化为事件
-            attrs || (attrs = this.attributes);
-            (0, _utils.each)(attrs, function (value, key) {
-                if (key.substring(0, 3) === 'ev-' && (0, _utils.isFunction)(value)) {
-                    _this3.on(key.substring(3), value);
+        if (key == null) return this;
+
+        var attrs = void 0;
+        if ((typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object') {
+            attrs = key;
+            options = val;
+        } else {
+            (attrs = {})[key] = val;
+        }
+
+        options = (0, _utils.extend)({
+            silent: false,
+            global: true,
+            async: false
+        }, options);
+
+        var current = this.attributes,
+            changes = [];
+
+        for (var attr in attrs) {
+            val = attrs[attr];
+            if (!(0, _utils.isEqual)(current[attr], val)) {
+                changes.push(attr);
+            }
+            current[attr] = val;
+        }
+
+        if (changes.length) {
+            var eventName = void 0;
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
+
+            try {
+                for (var _iterator = changes[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                    var _attr = _step.value;
+
+                    eventName = 'change:' + _attr;
+                    options[eventName] && options[eventName].call(this, current[_attr]);
+                    !options.silent && this.trigger(eventName, this, current[_attr]);
                 }
-            });
-        }
-    }, {
-        key: 'init',
-        value: function init(isUpdate /* for private */) {
-            !isUpdate && (this.element = this.vdt.render(this));
-            this.rendered = true;
-            this._hasCalledInit = true;
-            this.trigger('rendered', this);
-            this._create();
-            return this.element;
-        }
-    }, {
-        key: 'update',
-        value: function update(prevWidget, domNode) {
-            if (!this.vdt.node && (!prevWidget || !prevWidget.vdt.node)) return;
-            this._beforeUpdate(prevWidget, domNode);
-            if (prevWidget && domNode) {
-                this.vdt.node = domNode;
-                this.vdt.tree = prevWidget.vdt.tree;
-            }
-            this.prevWidget = prevWidget;
-            this.element = this.vdt.update(this);
-            if (!this._hasCalledInit) {
-                this.init(true);
-            }
-            this._update(prevWidget, domNode);
-            return this.element;
-        }
-    }, {
-        key: 'destroy',
-        value: function destroy(domNode) {
-            // 如果只是移动了一个组件，会先执行创建，再销毁，所以需要判断父组件引用的是不是自己
-            if (this._contextWidgets[this._widget] === this) {
-                delete this._contextWidgets[this._widget];
-            }
-            this.off();
-            function destroy(children) {
-                (0, _utils.each)(children, function (child) {
-                    if (child.hasThunks) {
-                        destroy(child.children);
-                    } else if (child.type === 'Thunk') {
-                        child.widget.destroy();
-                    }
-                });
-            }
-            destroy([this.vdt.tree]);
-            this._destroy(domNode);
-        }
-    }, {
-        key: 'get',
-        value: function get(attr) {
-            // @deprecated for v0.0.1 compatibility, use this.children instead of
-            if (attr === 'children') {
-                return this.attributes.children || this.children;
-            }
-            return arguments.length === 0 ? this.attributes : this.attributes[attr];
-        }
-    }, {
-        key: 'set',
-        value: function set(key, val, options) {
-            var _this4 = this;
-
-            if (key == null) return this;
-
-            var attrs = void 0;
-            if ((typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object') {
-                attrs = key;
-                options = val;
-            } else {
-                (attrs = {})[key] = val;
-            }
-
-            options = (0, _utils.extend)({
-                silent: false,
-                global: true,
-                async: false
-            }, options);
-
-            var current = this.attributes,
-                changes = [];
-
-            for (var attr in attrs) {
-                val = attrs[attr];
-                if (!(0, _utils.isEqual)(current[attr], val)) {
-                    changes.push(attr);
-                }
-                current[attr] = val;
-            }
-
-            if (changes.length) {
-                var eventName = void 0;
-                var _iteratorNormalCompletion = true;
-                var _didIteratorError = false;
-                var _iteratorError = undefined;
-
+            } catch (err) {
+                _didIteratorError = true;
+                _iteratorError = err;
+            } finally {
                 try {
-                    for (var _iterator = changes[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                        var _attr = _step.value;
-
-                        eventName = 'change:' + _attr;
-                        options[eventName] && options[eventName].call(this, current[_attr]);
-                        !options.silent && this.trigger(eventName, this, current[_attr]);
+                    if (!_iteratorNormalCompletion && _iterator.return) {
+                        _iterator.return();
                     }
-                } catch (err) {
-                    _didIteratorError = true;
-                    _iteratorError = err;
                 } finally {
-                    try {
-                        if (!_iteratorNormalCompletion && _iterator.return) {
-                            _iterator.return();
-                        }
-                    } finally {
-                        if (_didIteratorError) {
-                            throw _iteratorError;
-                        }
-                    }
-                }
-
-                options.change && options.change.call(this);
-                if (!options.silent) {
-                    this.trigger('beforeChange', this);
-                    if (options.global) {
-                        clearTimeout(this._asyncUpdate);
-                        if (options.async) {
-                            this._asyncUpdate = setTimeout(function () {
-                                _this4.trigger('change', _this4);
-                            });
-                        } else {
-                            this.trigger('change', this);
-                        }
+                    if (_didIteratorError) {
+                        throw _iteratorError;
                     }
                 }
             }
 
-            return this;
-        }
-    }, {
-        key: 'on',
-        value: function on(name, callback) {
-            (this._events[name] || (this._events[name] = [])).push(callback);
-
-            return this;
-        }
-    }, {
-        key: 'off',
-        value: function off(name, callback) {
-            if (!arguments.length) {
-                this._events = {};
-                return this;
-            }
-
-            var callbacks = this._events[name];
-            if (!callbacks) return this;
-
-            if (arguments.length === 1) {
-                delete this._events[name];
-                return this;
-            }
-
-            for (var cb, i = 0; i < callbacks.length; i++) {
-                cb = callbacks[i];
-                if (cb === callback) {
-                    callbacks.splice(i, 1);
-                    i--;
+            options.change && options.change.call(this);
+            if (!options.silent) {
+                this.trigger('beforeChange', this);
+                if (options.global) {
+                    clearTimeout(this._asyncUpdate);
+                    if (options.async) {
+                        this._asyncUpdate = setTimeout(function () {
+                            _this4.trigger('change', _this4);
+                        });
+                    } else {
+                        this.trigger('change', this);
+                    }
                 }
             }
+        }
 
+        return this;
+    },
+    on: function on(name, callback) {
+        (this._events[name] || (this._events[name] = [])).push(callback);
+
+        return this;
+    },
+    off: function off(name, callback) {
+        if (!arguments.length) {
+            this._events = {};
             return this;
         }
-    }, {
-        key: 'trigger',
-        value: function trigger(name) {
-            var callbacks = this._events[name];
 
-            if (callbacks) {
-                for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-                    args[_key - 1] = arguments[_key];
+        var callbacks = this._events[name];
+        if (!callbacks) return this;
+
+        if (arguments.length === 1) {
+            delete this._events[name];
+            return this;
+        }
+
+        for (var cb, i = 0; i < callbacks.length; i++) {
+            cb = callbacks[i];
+            if (cb === callback) {
+                callbacks.splice(i, 1);
+                i--;
+            }
+        }
+
+        return this;
+    },
+    trigger: function trigger(name) {
+        var callbacks = this._events[name];
+
+        if (callbacks) {
+            for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+                args[_key - 1] = arguments[_key];
+            }
+
+            var _iteratorNormalCompletion2 = true;
+            var _didIteratorError2 = false;
+            var _iteratorError2 = undefined;
+
+            try {
+                for (var _iterator2 = callbacks[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                    var callback = _step2.value;
+
+                    callback.apply(this, args);
                 }
-
-                var _iteratorNormalCompletion2 = true;
-                var _didIteratorError2 = false;
-                var _iteratorError2 = undefined;
-
+            } catch (err) {
+                _didIteratorError2 = true;
+                _iteratorError2 = err;
+            } finally {
                 try {
-                    for (var _iterator2 = callbacks[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                        var callback = _step2.value;
-
-                        callback.apply(this, args);
+                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                        _iterator2.return();
                     }
-                } catch (err) {
-                    _didIteratorError2 = true;
-                    _iteratorError2 = err;
                 } finally {
-                    try {
-                        if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                            _iterator2.return();
-                        }
-                    } finally {
-                        if (_didIteratorError2) {
-                            throw _iteratorError2;
-                        }
+                    if (_didIteratorError2) {
+                        throw _iteratorError2;
                     }
                 }
             }
-
-            return this;
         }
-    }]);
 
-    return Intact;
-}();
+        return this;
+    }
+};
+
 /**
  * @brief 继承某个组件
  *
  * @param prototype
  */
-
-
-exports.default = Intact;
 Intact.extend = function () {
     var prototype = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
@@ -3930,67 +3901,57 @@ Intact.mount = function (widget, node) {
     return widget;
 };
 
-},{"./thunk":56,"./utils":57,"vdt":45}],56:[function(require,module,exports){
+exports.default = Intact;
+
+},{"./thunk":56,"./utils":57,"vdt":16}],56:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
 var _utils = require('./utils');
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+var Thunk = function Thunk(Widget, attributes, contextWidget) {
+    this.Widget = Widget;
+    this.attributes = attributes || {};
+    this.key = this.attributes.key;
+    this.contextWidget = contextWidget;
+};
 
-var Thunk = function () {
-    function Thunk(Widget, attributes, contextWidget) {
-        _classCallCheck(this, Thunk);
+Thunk.prototype = {
+    constructor: Thunk,
 
-        this.Widget = Widget;
-        this.attributes = attributes || {};
-        this.key = this.attributes.key;
-        this.contextWidget = contextWidget;
-    }
+    type: 'Thunk',
 
-    _createClass(Thunk, [{
-        key: 'render',
-        value: function render(previous) {
-            if (!previous || previous.Widget !== this.Widget || previous.key !== this.key) {
-                this.widget = new this.Widget(this.attributes, this.contextWidget);
-            } else if (previous.Widget === this.Widget) {
-                if (!previous.widget) throw new Error('Don\'t update when updating.');
+    render: function render(previous) {
+        if (!previous || previous.Widget !== this.Widget || previous.key !== this.key) {
+            this.widget = new this.Widget(this.attributes, this.contextWidget);
+        } else if (previous.Widget === this.Widget) {
+            if (!previous.widget) throw new Error('Don\'t update when updating.');
 
-                var widget = this.widget = previous.widget;
-                widget.children = this.attributes.children;
-                delete this.attributes.children;
+            var widget = this.widget = previous.widget;
+            widget.children = this.attributes.children;
+            delete this.attributes.children;
 
-                // 如果存在arguments属性，则将其拆开赋给attributes
-                if (this.attributes.arguments) {
-                    (0, _utils.extend)(this.attributes, (0, _utils.result)(this.attributes, 'arguments'));
-                    delete this.attributes.arguments;
-                }
-
-                widget.removeEvents();
-                widget.addEvents(this.attributes);
-                widget.set(this.attributes, { global: false });
-
-                // 当一个组件，用同一个组件的另一个实例，去更新自己，由于子组件都相同
-                // 所以子组件不会新建，也就写入不了新实例的widgets引用中，这里强制设置一遍
-                this.contextWidget[this.widget._widget] = this.widget;
+            // 如果存在arguments属性，则将其拆开赋给attributes
+            if (this.attributes.arguments) {
+                (0, _utils.extend)(this.attributes, (0, _utils.result)(this.attributes, 'arguments'));
+                delete this.attributes.arguments;
             }
 
-            return this.widget;
-        }
-    }, {
-        key: 'type',
-        get: function get() {
-            return 'Thunk';
-        }
-    }]);
+            widget.removeEvents();
+            widget.addEvents(this.attributes);
+            widget.set(this.attributes, { global: false });
 
-    return Thunk;
-}();
+            // 当一个组件，用同一个组件的另一个实例，去更新自己，由于子组件都相同
+            // 所以子组件不会新建，也就写入不了新实例的widgets引用中，这里强制设置一遍
+            this.contextWidget[this.widget._widget] = this.widget;
+        }
+
+        return this.widget;
+    }
+};
 
 exports.default = Thunk;
 
@@ -4035,7 +3996,7 @@ function inherit(Parent, prototype) {
             args[_key] = arguments[_key];
         }
 
-        if (!(this instanceof Child || this.prototype instanceof Child)) {
+        if (!this || !(this instanceof Child || this.prototype instanceof Child)) {
             return Parent.apply(Child, args);
         }
         return Parent.apply(this, args);
@@ -4169,7 +4130,7 @@ function uniqueId(prefix) {
     return prefix ? prefix + id : id;
 }
 
-},{"vdt":45}],58:[function(require,module,exports){
+},{"vdt":16}],58:[function(require,module,exports){
 
 },{}]},{},[54])(54)
 });

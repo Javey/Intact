@@ -2,91 +2,95 @@ import {inherit, extend, result, each, isFunction, isEqual, uniqueId} from './ut
 import Thunk from './thunk';
 import Vdt from 'vdt';
 
-export default class Intact {
-    constructor(attrs = {}, contextWidgets = {}) {
-        if (!(this instanceof Intact)) {
-            return new Thunk(this, attributes, contextWidgets);
-        }
-
-        if (!this.template) {
-            throw new Error('Can not instantiate when this.template does not exist.');
-        }
-
-        attrs = extend({
-            children: undefined 
-        }, result(this, 'defaults'), attrs);
-
-        this._events = {};
-        this.attributes = {};
-
-        this.vdt = Vdt(this.template);
-        this.set(attrs, {silent: true});
-        this.key = attrs.key;
-
-        this.widgets = {};
-
-        this.inited = false;
-        this.rendered = false;
-        this._hasCalledInit = false;
-
-        this._contextWidgets = contextWidgets;
-        this._widget = this.attributes.widget || uniqueId('widget');
-
-        // for debug
-        this.displayName = this.displayName;
-
-        this.addEvents(); 
-
-        this.children = this.get('children');
-        delete this.attributes.children;
-        // 存在widget名称引用属性，则注入所处上下文的widgets中
-        this._contextWidgets[this._widget] = this;
-
-        // 如果存在arguments属性，则将其拆开赋给attributes
-        if (this.attributes.arguments) {
-            extend(this.attributes, result(this.attributes, 'arguments'));
-            delete this.attributes.arguments;
-        }
-
-        // change事件，自动更新，当一个更新操作正在进行中，下一个更新操作必须等其完成
-        this._updateCount = 0;
-        let handleUpdate = () => {
-            if (this._updateCount > 0) {
-                this.update();
-                this._updateCount--;
-                handleUpdate.call(this);
-            }
-        };
-        this.on('change', function() { 
-            if (++this._updateCount === 1) {
-                handleUpdate();
-            } else if (this._updateCount > 10) {
-                throw new Error('Too many recursive update.');
-            }
-        });
-
-        let ret = this._init();
-        // support promise
-        let inited = () => {
-            this.inited = true;
-            this.trigger('inited', this);
-        };
-        if (ret && ret.then) {
-            ret.then(inited);
-        } else {
-            inited();
-        }
+let Intact = function(attrs = {}, contextWidgets = {}) {
+    if (!(this instanceof Intact)) {
+        return new Thunk(this, attrs, contextWidgets);
     }
 
-    _init() {}
+    if (!this.template) {
+        throw new Error('Can not instantiate when this.template does not exist.');
+    }
 
-    _create() {}
+    attrs = extend({
+        children: undefined 
+    }, result(this, 'defaults'), attrs);
 
-    _beforeUpdate(prevWidget, domNode) {}
+    this._events = {};
+    this.attributes = {};
 
-    _update(prevWidget, domNode) {}
+    this.vdt = Vdt(this.template);
+    this.set(attrs, {silent: true});
+    this.key = attrs.key;
 
-    _destroy(domNode) {}
+    this.widgets = {};
+
+    this.inited = false;
+    this.rendered = false;
+    this._hasCalledInit = false;
+
+    this._contextWidgets = contextWidgets;
+    this._widget = this.attributes.widget || uniqueId('widget');
+
+    // for debug
+    this.displayName = this.displayName;
+
+    this.addEvents(); 
+
+    this.children = this.get('children');
+    delete this.attributes.children;
+    // 存在widget名称引用属性，则注入所处上下文的widgets中
+    this._contextWidgets[this._widget] = this;
+
+    // 如果存在arguments属性，则将其拆开赋给attributes
+    if (this.attributes.arguments) {
+        extend(this.attributes, result(this.attributes, 'arguments'));
+        delete this.attributes.arguments;
+    }
+
+    // change事件，自动更新，当一个更新操作正在进行中，下一个更新操作必须等其完成
+    this._updateCount = 0;
+    let handleUpdate = () => {
+        if (this._updateCount > 0) {
+            this.update();
+            this._updateCount--;
+            handleUpdate.call(this);
+        }
+    };
+    this.on('change', function() { 
+        if (++this._updateCount === 1) {
+            handleUpdate();
+        } else if (this._updateCount > 10) {
+            throw new Error('Too many recursive update.');
+        }
+    });
+
+    let ret = this._init();
+    // support promise
+    let inited = () => {
+        this.inited = true;
+        this.trigger('inited', this);
+    };
+    if (ret && ret.then) {
+        ret.then(inited);
+    } else {
+        inited();
+    }
+};
+
+Intact.prototype = {
+    constructor: Intact,
+
+    type: 'Widget',
+
+    _init() {},
+
+    _create() {},
+
+    _beforeUpdate(prevWidget, domNode) {},
+
+    _update(prevWidget, domNode) {},
+
+    _destroy(domNode) {},
 
     removeEvents() {
         // 解绑所有事件
@@ -96,7 +100,7 @@ export default class Intact {
                 delete this.attributes[key];
             }
         });
-    }
+    },
 
     addEvents(attrs) {
         // 所有以'ev-'开头的属性，都转化为事件
@@ -106,7 +110,7 @@ export default class Intact {
                 this.on(key.substring(3), value);
             }
         });
-    }
+    },
 
     init(isUpdate/* for private */) {
         !isUpdate && (this.element = this.vdt.render(this));
@@ -115,7 +119,7 @@ export default class Intact {
         this.trigger('rendered', this);
         this._create();
         return this.element;
-    }
+    },
 
     update(prevWidget, domNode) {
         if (!this.vdt.node && (!prevWidget || !prevWidget.vdt.node)) return;
@@ -131,7 +135,7 @@ export default class Intact {
         }
         this._update(prevWidget, domNode);
         return this.element;
-    }
+    },
 
     destroy(domNode) {
         // 如果只是移动了一个组件，会先执行创建，再销毁，所以需要判断父组件引用的是不是自己
@@ -150,7 +154,7 @@ export default class Intact {
         }
         destroy([this.vdt.tree]);
         this._destroy(domNode);
-    }
+    },
 
     get(attr) {
         // @deprecated for v0.0.1 compatibility, use this.children instead of
@@ -158,7 +162,7 @@ export default class Intact {
             return this.attributes.children || this.children;
         }
         return arguments.length === 0 ? this.attributes : this.attributes[attr];
-    }
+    },
 
     set(key, val, options) {
         if (key == null) return this;
@@ -213,13 +217,13 @@ export default class Intact {
         }
 
         return this;
-    }
+    },
 
     on(name, callback) {
         (this._events[name] || (this._events[name] = [])).push(callback);
 
         return this;
-    }
+    },
 
     off(name, callback) {
         if (!arguments.length) {
@@ -244,7 +248,7 @@ export default class Intact {
         }
 
         return this;
-    }
+    },
 
     trigger(name, ...args) {
         let callbacks = this._events[name];
@@ -257,7 +261,8 @@ export default class Intact {
 
         return this;
     }
-}
+};
+
 /**
  * @brief 继承某个组件
  *
@@ -286,3 +291,5 @@ Intact.mount = function(widget, node) {
     }
     return widget;
 };
+
+export default Intact;

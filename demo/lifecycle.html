@@ -26,7 +26,7 @@
             name: ''
         },
 
-        template: '<h1 ev-click={this.change.bind(this)}>Hello {this.get("name")}!</h1>',
+        template: 'console.log(self.get("name"));<h1 ev-click={this.change.bind(this)}>Hello {this.get("name")}!</h1>',
 
         _init: function() {
             // return a promise
@@ -56,7 +56,7 @@
         }
     });
 
-    Intact.mount(Widget, document.body);
+    var widget = Intact.mount(Widget, document.body);
 </script>
 </body>
 </html>

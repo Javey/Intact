@@ -11,7 +11,7 @@ export let isArray = Vdt.utils.isArray;
  */
 export function inherit(Parent, prototype) {
     let Child = function(...args) {
-        if (!(this instanceof Child || this.prototype instanceof Child)) {
+        if (!this || !(this instanceof Child || this.prototype instanceof Child)) {
             return Parent.apply(Child, args);
         }
         return Parent.apply(this, args);
