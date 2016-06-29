@@ -33,17 +33,18 @@ export function inherit(Parent, prototype) {
                     return Parent.prototype[name].apply(this, args);
                 };
             return function(...args) {
-                let __super = this._super,
-                    __superApply = this._superApply,
+                let self = this || {},
+                    __super = self._super,
+                    __superApply = self._superApply,
                     returnValue;
 
-                this._super = _super;
-                this._superApply = _superApply;
+                self._super = _super;
+                self._superApply = _superApply;
 
                 returnValue = proto.apply(this, args);
 
-                this._super = __super;
-                this._superApply = __superApply;
+                self._super = __super;
+                self._superApply = __superApply;
 
                 return returnValue;
             };
