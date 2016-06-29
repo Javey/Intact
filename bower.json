@@ -24,7 +24,8 @@
     "test",
     "tests",
     "package.json",
-    "benchmark"
+    "benchmark",
+    "demo"
   ],
   "devDependencies": {
     "jquery": "~2.1.4",
