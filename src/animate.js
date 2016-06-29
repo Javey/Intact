@@ -25,7 +25,7 @@ export default Intact.extend({
     _beforeUpdate(prevWidget) {
         if (!prevWidget) return;
 
-        let nextMap = getChildMap(this.children);
+        let nextMap = getChildMap(this.children),
             prevMap = prevWidget.childrenMap;
         this.childrenMap = mergeChildren(prevMap, nextMap);
 
@@ -104,7 +104,7 @@ export default Intact.extend({
             removeClass(element, `${transition}-enter-active`);
             done();
         });
-        element.offsetWidth = element.offsetWidth;
+        element.offsetWidth;
         addClass(element, `${transition}-enter-active`);
     },
 
@@ -119,7 +119,7 @@ export default Intact.extend({
             removeClass(element, `${transition}-leave-active`);
             done();
         });
-        element.offsetWidth = element.offsetWidth;
+        element.offsetWidth;
         addClass(element, `${transition}-leave-active`);
     }
 });

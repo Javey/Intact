@@ -3214,8 +3214,8 @@ exports.default = _intact2.default.extend({
     _beforeUpdate: function _beforeUpdate(prevWidget) {
         if (!prevWidget) return;
 
-        var nextMap = getChildMap(this.children);
-        prevMap = prevWidget.childrenMap;
+        var nextMap = getChildMap(this.children),
+            prevMap = prevWidget.childrenMap;
         this.childrenMap = mergeChildren(prevMap, nextMap);
 
         (0, _utils.each)(nextMap, function (value, key) {
@@ -3295,7 +3295,7 @@ exports.default = _intact2.default.extend({
             removeClass(element, transition + '-enter-active');
             done();
         });
-        element.offsetWidth = element.offsetWidth;
+        element.offsetWidth;
         addClass(element, transition + '-enter-active');
     },
     leave: function leave(done) {
@@ -3309,7 +3309,7 @@ exports.default = _intact2.default.extend({
             removeClass(element, transition + '-leave-active');
             done();
         });
-        element.offsetWidth = element.offsetWidth;
+        element.offsetWidth;
         addClass(element, transition + '-leave-active');
     }
 });
