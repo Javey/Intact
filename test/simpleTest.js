@@ -24,7 +24,6 @@ describe('Simple Test', function() {
 
                 template: '<div>{this.get("a")}</div>'
             });
-            console.dir(Component);
             SubComponent = Component.extend({
                 defaults: {
                     a: 2,

@@ -3536,6 +3536,7 @@ var _vdt2 = _interopRequireDefault(_vdt);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 _intact2.default.prototype.Animate = _animate2.default;
+
 exports.default = _intact2.default;
 exports.Vdt = _vdt2.default;
 
@@ -3756,31 +3757,11 @@ Intact.prototype = {
 
         if (changes.length) {
             var eventName = void 0;
-            var _iteratorNormalCompletion = true;
-            var _didIteratorError = false;
-            var _iteratorError = undefined;
-
-            try {
-                for (var _iterator = changes[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                    var _attr = _step.value;
-
-                    eventName = 'change:' + _attr;
-                    options[eventName] && options[eventName].call(this, current[_attr]);
-                    !options.silent && this.trigger(eventName, this, current[_attr]);
-                }
-            } catch (err) {
-                _didIteratorError = true;
-                _iteratorError = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion && _iterator.return) {
-                        _iterator.return();
-                    }
-                } finally {
-                    if (_didIteratorError) {
-                        throw _iteratorError;
-                    }
-                }
+            for (var i = 0, l = changes.length; i < l; i++) {
+                var _attr = changes[i];
+                eventName = 'change:' + _attr;
+                options[eventName] && options[eventName].call(this, current[_attr]);
+                !options.silent && this.trigger(eventName, this, current[_attr]);
             }
 
             options.change && options.change.call(this);
@@ -3838,29 +3819,8 @@ Intact.prototype = {
                 args[_key - 1] = arguments[_key];
             }
 
-            var _iteratorNormalCompletion2 = true;
-            var _didIteratorError2 = false;
-            var _iteratorError2 = undefined;
-
-            try {
-                for (var _iterator2 = callbacks[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                    var callback = _step2.value;
-
-                    callback.apply(this, args);
-                }
-            } catch (err) {
-                _didIteratorError2 = true;
-                _iteratorError2 = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                        _iterator2.return();
-                    }
-                } finally {
-                    if (_didIteratorError2) {
-                        throw _iteratorError2;
-                    }
-                }
+            for (var i = 0, l = callbacks.length; i < l; i++) {
+                callbacks[i].apply(this, args);
             }
         }
 

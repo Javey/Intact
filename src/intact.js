@@ -194,7 +194,8 @@ Intact.prototype = {
 
         if (changes.length) {
             let eventName;
-            for (let attr of changes) {
+            for (let i = 0, l = changes.length; i < l; i++) {
+                let attr = changes[i];
                 eventName = `change:${attr}`;
                 options[eventName] && options[eventName].call(this, current[attr]);
                 !options.silent && this.trigger(eventName, this, current[attr]);
@@ -254,8 +255,8 @@ Intact.prototype = {
         let callbacks = this._events[name];
 
         if (callbacks) {
-            for (let callback of callbacks) {
-                callback.apply(this, args);
+            for (let i = 0, l = callbacks.length; i < l; i++) {
+                callbacks[i].apply(this, args);
             }
         }
 
