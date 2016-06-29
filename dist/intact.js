@@ -3982,12 +3982,13 @@ function inherit(Parent, prototype) {
                 return Parent.prototype[name].apply(this, args);
             };
             return function () {
-                var __super = this._super,
-                    __superApply = this._superApply,
+                var self = this || {},
+                    __super = self._super,
+                    __superApply = self._superApply,
                     returnValue = void 0;
 
-                this._super = _super;
-                this._superApply = _superApply;
+                self._super = _super;
+                self._superApply = _superApply;
 
                 for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
                     args[_key3] = arguments[_key3];
@@ -3995,8 +3996,8 @@ function inherit(Parent, prototype) {
 
                 returnValue = proto.apply(this, args);
 
-                this._super = __super;
-                this._superApply = __superApply;
+                self._super = __super;
+                self._superApply = __superApply;
 
                 return returnValue;
             };
