@@ -11,10 +11,10 @@
     "build": "browserify src/index.js -t babelify -o dist/intact.js -s Intact"
   },
   "dependencies": {
-    "vdt": "^0.8.10"
   },
   "main": "src/index",
   "devDependencies": {
+    "vdt": "^0.8.10",
     "babel-cli": "^6.10.1",
     "babel-plugin-transform-decorators": "^6.8.0",
     "babel-polyfill": "^6.9.1",
