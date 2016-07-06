@@ -3,13 +3,13 @@ describe('Component Test', function() {
         defaults: {
             a: 1
         },
-        template: '<a>{this.get("a")}</a>'
+        template: '<a>{self.get("a")}</a>'
     });
     var B = Intact.extend({
         defaults: {
             b: 1
         },
-        template: '<b><A widget="a"/>{this.get("b")}</b>',
+        template: '<b><A widget="a"/>{self.get("b")}</b>',
         _init: function() {
             this.A = A;
         }
@@ -41,7 +41,7 @@ describe('Component Test', function() {
             defaults: {
                 c: 3
             },
-            template: '<span><A a={this.get("c")} /></span>',
+            template: '<span><A a={self.get("c")} /></span>',
             _init: function() {
                 this.A = A;
             }
@@ -51,7 +51,7 @@ describe('Component Test', function() {
         c.init();
         c.element.outerHTML.should.be.eql(html);
 
-        C.prototype.template = '<span><A arguments={{a: this.get("c")}} /></span>';
+        C.prototype.template = '<span><A arguments={{a: self.get("c")}} /></span>';
         c = new C();
         c.init();
         c.element.outerHTML.should.be.eql(html);
@@ -62,7 +62,7 @@ describe('Component Test', function() {
             defaults: {
                 c: 3
             },
-            template: '<span><A widget="a" a={this.get("c")} /></span>',
+            template: '<span><A widget="a" a={self.get("c")} /></span>',
             _init: function() {
                 this.A = A;
             }
@@ -84,7 +84,7 @@ describe('Component Test', function() {
             defaults: {
                 component: undefined
             },
-            template: '<div>{this.get("component")}</div>'
+            template: '<div>{self.get("component")}</div>'
         });
         var c = new C(),
             a = new A(),
@@ -129,7 +129,7 @@ describe('Component Test', function() {
                 this.widgets.b.should.be.instanceOf(B);
             },
 
-            template: '<div><B a={this.get("a")} ev-change:a={this.changeData.bind(this)}/><B widget="b" /></div>',
+            template: '<div><B a={self.get("a")} ev-change:a={self.changeData.bind(self)}/><B widget="b" /></div>',
 
             changeData: function() {
                 this.set('a', 3);
@@ -142,7 +142,7 @@ describe('Component Test', function() {
 
             displayName: 'B',
 
-            template: '<b>{this.get("a")}</b>'
+            template: '<b>{self.get("a")}</b>'
         });
 
         var a = new A();
@@ -156,7 +156,7 @@ describe('Component Test', function() {
     it('should remove events', function() {
         var changeData = sinon.spy();
         var A = Intact.extend({
-            template: '<B a={this.get("a")} ev-change:a={this.get("a") === 1 ? this.changeData.bind(this) : undefined} />',
+            template: '<B a={self.get("a")} ev-change:a={self.get("a") === 1 ? self.changeData.bind(self) : undefined} />',
             changeData: changeData,
             _init: function() {
                 this.B = B;
@@ -178,7 +178,7 @@ describe('Component Test', function() {
 
     it('with promise', function(done) {
         var A = Intact.extend({
-            template: '<a>{this.get("a")}</a>',
+            template: '<a>{self.get("a")}</a>',
             _init: function() {
                 var self = this,
                     def = $.Deferred();

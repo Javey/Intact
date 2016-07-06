@@ -3,6 +3,7 @@ import Intact from './intact';
 import Vdt from 'vdt';
 
 Intact.prototype.Animate = Animate;
+Intact.Animate = Animate;
 
 export default Intact;
 export {Vdt};

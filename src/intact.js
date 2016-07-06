@@ -22,7 +22,7 @@ let Intact = function(attrs = {}, contextWidgets = {}) {
     this.set(attrs, {silent: true});
     this.key = attrs.key;
 
-    this.widgets = {};
+    this.widgets = this.vdt.widgets;
 
     this.inited = false;
     this.rendered = false;

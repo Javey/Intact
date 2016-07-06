@@ -1,224 +1,936 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Intact = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-/*!
- * Cross-Browser Split 1.1.1
- * Copyright 2007-2012 Steven Levithan <stevenlevithan.com>
- * Available under the MIT License
- * ECMAScript compliant, uniform cross-browser split method
- */
+'use strict';
 
-/**
- * Splits a string into an array of strings using a regex or string separator. Matches of the
- * separator are not included in the result array. However, if `separator` is a regex that contains
- * capturing groups, backreferences are spliced into the result each time `separator` is matched.
- * Fixes browser bugs compared to the native `String.prototype.split` and can be used reliably
- * cross-browser.
- * @param {String} str String to split.
- * @param {RegExp|String} separator Regex or string to use for separating the string.
- * @param {Number} [limit] Maximum number of items to include in the result array.
- * @returns {Array} Array of substrings.
- * @example
- *
- * // Basic use
- * split('a b c d', ' ');
- * // -> ['a', 'b', 'c', 'd']
- *
- * // With limit
- * split('a b c d', ' ', 2);
- * // -> ['a', 'b']
- *
- * // Backreferences in result array
- * split('..word1 word2..', /([a-z]+)(\d+)/i);
- * // -> ['..', 'word', '1', ' ', 'word', '2', '..']
- */
-module.exports = (function split(undef) {
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 
-  var nativeSplit = String.prototype.split,
-    compliantExecNpcg = /()??/.exec("")[1] === undef,
-    // NPCG: nonparticipating capturing group
-    self;
+var _utils = require('./utils');
 
-  self = function(str, separator, limit) {
-    // If `separator` is not a regex, use `nativeSplit`
-    if (Object.prototype.toString.call(separator) !== "[object RegExp]") {
-      return nativeSplit.call(str, separator, limit);
-    }
-    var output = [],
-      flags = (separator.ignoreCase ? "i" : "") + (separator.multiline ? "m" : "") + (separator.extended ? "x" : "") + // Proposed for ES6
-      (separator.sticky ? "y" : ""),
-      // Firefox 3+
-      lastLastIndex = 0,
-      // Make `global` and avoid `lastIndex` issues by working with a copy
-      separator = new RegExp(separator.source, flags + "g"),
-      separator2, match, lastIndex, lastLength;
-    str += ""; // Type-convert
-    if (!compliantExecNpcg) {
-      // Doesn't need flags gy, but they don't hurt
-      separator2 = new RegExp("^" + separator.source + "$(?!\\s)", flags);
-    }
-    /* Values for `limit`, per the spec:
-     * If undefined: 4294967295 // Math.pow(2, 32) - 1
-     * If 0, Infinity, or NaN: 0
-     * If positive number: limit = Math.floor(limit); if (limit > 4294967295) limit -= 4294967296;
-     * If negative number: 4294967296 - Math.floor(Math.abs(limit))
-     * If other: Type-convert, then use the above rules
-     */
-    limit = limit === undef ? -1 >>> 0 : // Math.pow(2, 32) - 1
-    limit >>> 0; // ToUint32(limit)
-    while (match = separator.exec(str)) {
-      // `separator.lastIndex` is not reliable cross-browser
-      lastIndex = match.index + match[0].length;
-      if (lastIndex > lastLastIndex) {
-        output.push(str.slice(lastLastIndex, match.index));
-        // Fix browsers whose `exec` methods don't consistently return `undefined` for
-        // nonparticipating capturing groups
-        if (!compliantExecNpcg && match.length > 1) {
-          match[0].replace(separator2, function() {
-            for (var i = 1; i < arguments.length - 2; i++) {
-              if (arguments[i] === undef) {
-                match[i] = undef;
-              }
+var _intact = require('./intact');
+
+var _intact2 = _interopRequireDefault(_intact);
+
+var _vdt = require('vdt');
+
+var _vdt2 = _interopRequireDefault(_vdt);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// Animate Widget for animation
+exports.default = _intact2.default.extend({
+    displayName: 'Animate',
+
+    defaults: {
+        tagName: 'div',
+        transition: 'animate'
+    },
+
+    template: _vdt2.default.compile('return h(self.get("tagName"), self.extend({}, self.get()), self.values(self.childrenMap))', { autoReturn: false, noWith: true }),
+
+    _init: function _init() {
+        this.key = this.get('key');
+        this.childrenMap = getChildMap(this.children);
+        this.currentKeys = {};
+        this.keysToEnter = [];
+        this.keysToLeave = [];
+    },
+
+
+    extend: _utils.extend,
+    values: _utils.values,
+
+    _beforeUpdate: function _beforeUpdate(prevWidget) {
+        if (!prevWidget) return;
+
+        var nextMap = getChildMap(this.children),
+            prevMap = prevWidget.childrenMap;
+        this.childrenMap = mergeChildren(prevMap, nextMap);
+
+        (0, _utils.each)(nextMap, function (value, key) {
+            if (nextMap[key] && !prevMap.hasOwnProperty(key) && !this.currentKeys[key]) {
+                this.keysToEnter.push(key);
             }
-          });
-        }
-        if (match.length > 1 && match.index < str.length) {
-          Array.prototype.push.apply(output, match.slice(1));
-        }
-        lastLength = match[0].length;
-        lastLastIndex = lastIndex;
-        if (output.length >= limit) {
-          break;
-        }
-      }
-      if (separator.lastIndex === match.index) {
-        separator.lastIndex++; // Avoid an infinite loop
-      }
-    }
-    if (lastLastIndex === str.length) {
-      if (lastLength || !separator.test("")) {
-        output.push("");
-      }
-    } else {
-      output.push(str.slice(lastLastIndex));
-    }
-    return output.length > limit ? output.slice(0, limit) : output;
-  };
+        }, this);
 
-  return self;
-})();
+        (0, _utils.each)(prevMap, function (value, key) {
+            if (prevMap[key] && !nextMap.hasOwnProperty(key) && !this.currentKeys[key]) {
+                this.keysToLeave.push(key);
+            }
+        }, this);
+    },
+    _update: function _update(prevWidget) {
+        if (!prevWidget) return;
 
-},{}],2:[function(require,module,exports){
+        var keysToEnter = this.keysToEnter;
+        this.keysToEnter = [];
+        (0, _utils.each)(keysToEnter, this.performEnter, this);
+
+        var keysToLeave = this.keysToLeave;
+        this.keysToLeave = [];
+        (0, _utils.each)(keysToLeave, this.performLeave, this);
+    },
+    performEnter: function performEnter(key) {
+        var _this = this;
+
+        var widget = this.childrenMap[key].widget;
+        this.currentKeys[key] = true;
+        if (widget && widget.enter) {
+            widget.enter(function () {
+                return _this._doneEntering(key);
+            });
+        } else {
+            this._doneEntering(key);
+        }
+    },
+    performLeave: function performLeave(key) {
+        var _this2 = this;
+
+        var widget = this.childrenMap[key].widget;
+        this.currentKeys[key] = true;
+        if (widget && widget.leave) {
+            widget.leave(function () {
+                return _this2._doneLeaving(key);
+            });
+        } else {
+            this._doneLeaving(key);
+        }
+    },
+    _doneEntering: function _doneEntering(key) {
+        delete this.currentKeys[key];
+        var map = getChildMap(this.children);
+        if (!map[key]) {
+            this.performLeave(key);
+        }
+    },
+    _doneLeaving: function _doneLeaving(key) {
+        delete this.currentKeys[key];
+        var map = getChildMap(this.children);
+        if (map && map[key]) {
+            this.performEnter(key);
+        } else {
+            delete this.childrenMap[key];
+            this.vdt.update();
+        }
+    },
+    enter: function enter(done) {
+        var transition = this.get('transition'),
+            element = this.element;
+
+        addClass(element, transition + '-enter');
+        TransitionEvents.one(element, function (e) {
+            e && e.stopPropagation();
+            removeClass(element, transition + '-enter');
+            removeClass(element, transition + '-enter-active');
+            done();
+        });
+        element.offsetWidth;
+        addClass(element, transition + '-enter-active');
+    },
+    leave: function leave(done) {
+        var transition = this.get('transition'),
+            element = this.element;
+
+        addClass(element, transition + '-leave');
+        TransitionEvents.one(element, function (e) {
+            e && e.stopPropagation();
+            removeClass(element, transition + '-leave');
+            removeClass(element, transition + '-leave-active');
+            done();
+        });
+        element.offsetWidth;
+        addClass(element, transition + '-leave-active');
+    }
+});
+
 /**
- * cuid.js
- * Collision-resistant UID generator for browsers and node.
- * Sequential for fast db lookups and recency sorting.
- * Safe for element IDs and server-side lookups.
- *
- * Extracted from CLCTR
- *
- * Copyright (c) Eric Elliott 2012
- * MIT License
+ * 将子元素数组转为map
+ * @param children
+ * @param ret
+ * @param index
+ * @returns {*}
  */
 
-/*global window, navigator, document, require, process, module */
-(function (app) {
-  'use strict';
-  var namespace = 'cuid',
-    c = 0,
-    blockSize = 4,
-    base = 36,
-    discreteValues = Math.pow(base, blockSize),
+function getChildMap(children, ret, index) {
+    if (!children) {
+        return children;
+    }
+    ret = ret || {};
+    index = index || '$0';
+    (0, _utils.each)(children, function (child, _index) {
+        _index = '$' + _index;
+        if (child && (child.type === 'Widget' || child.type === 'Thunk')) {
+            ret[child.key || _index] = child;
+        } else if ((0, _utils.isArray)(child)) {
+            getChildMap(child, ret, '' + index + _index);
+        } else {
+            ret['' + index + _index] = child;
+        }
+    });
+    return ret;
+}
 
-    pad = function pad(num, size) {
-      var s = "000000000" + num;
-      return s.substr(s.length-size);
+/**
+ * 合并两个子元素map
+ * @param prev
+ * @param next
+ * @returns {*|{}}
+ */
+function mergeChildren(prev, next) {
+    prev = prev || {};
+    next = next || {};
+
+    function getValueForKey(key) {
+        if (next.hasOwnProperty(key)) {
+            return next[key];
+        } else {
+            return prev[key];
+        }
+    }
+
+    // For each key of `next`, the list of keys to insert before that key in
+    // the combined list
+    var nextKeysPending = {};
+
+    var pendingKeys = [];
+    for (var prevKey in prev) {
+        if (next.hasOwnProperty(prevKey)) {
+            if (pendingKeys.length) {
+                nextKeysPending[prevKey] = pendingKeys;
+                pendingKeys = [];
+            }
+        } else {
+            pendingKeys.push(prevKey);
+        }
+    }
+
+    var childMapping = {};
+    for (var nextKey in next) {
+        if (nextKeysPending.hasOwnProperty(nextKey)) {
+            for (var i = 0; i < nextKeysPending[nextKey].length; i++) {
+                var pendingNextKey = nextKeysPending[nextKey][i];
+                var value = getValueForKey(pendingNextKey);
+                childMapping[nextKeysPending[nextKey][i]] = getValueForKey(pendingNextKey);
+            }
+        }
+        childMapping[nextKey] = getValueForKey(nextKey);
+    }
+
+    // Finally, add the keys which didn't appear before any key in `next`
+    for (var _i = 0; _i < pendingKeys.length; _i++) {
+        childMapping[pendingKeys[_i]] = getValueForKey(pendingKeys[_i]);
+    }
+
+    return childMapping;
+}
+
+function addClass(element, className) {
+    if (className) {
+        if (element.classList) {
+            element.classList.add(className);
+        } else if (!hasClass(element, className)) {
+            element.className += ' ' + className;
+        }
+    }
+    return element;
+}
+
+function hasClass(element, className) {
+    if (element.classList) {
+        return !!className && element.className.contains(className);
+    }
+    return (' ' + element.className + ' ').indexOf(' ' + className + ' ') > -1;
+}
+
+function removeClass(element, className) {
+    if (className) {
+        if (element.classList) {
+            element.classList.remove(className);
+        } else if (hasClass(element, className)) {
+            element.className = element.className.replace(new RegExp('(^|\\s)' + className + '(?:\\s|$)', 'g'), '$1').replace(/\s+/g, ' ') // multiple spaces to one
+            .replace(/^\s*|\s*$/g, ''); // trim the ends
+        }
+    }
+}
+
+var EVENT_NAME_MAP = {
+    transitionend: {
+        'transition': 'transitionend',
+        'WebkitTransition': 'webkitTransitionEnd',
+        'MozTransition': 'mozTransitionEnd',
+        'OTransition': 'oTransitionEnd',
+        'msTransition': 'MSTransitionEnd'
     },
 
-    randomBlock = function randomBlock() {
-      return pad((Math.random() *
-            discreteValues << 0)
-            .toString(base), blockSize);
+    animationend: {
+        'animation': 'animationend',
+        'WebkitAnimation': 'webkitAnimationEnd',
+        'MozAnimation': 'mozAnimationEnd',
+        'OAnimation': 'oAnimationEnd',
+        'msAnimation': 'MSAnimationEnd'
+    }
+};
+
+var endEvents = [];
+
+function detectEvents() {
+    var testEl = document.createElement('div');
+    var style = testEl.style;
+
+    // On some platforms, in particular some releases of Android 4.x,
+    // the un-prefixed "animation" and "transition" properties are defined on the
+    // style object but the events that fire will still be prefixed, so we need
+    // to check if the un-prefixed events are useable, and if not remove them
+    // from the map
+    if (!('AnimationEvent' in window)) {
+        delete EVENT_NAME_MAP.animationend.animation;
+    }
+
+    if (!('TransitionEvent' in window)) {
+        delete EVENT_NAME_MAP.transitionend.transition;
+    }
+
+    for (var baseEventName in EVENT_NAME_MAP) {
+        var baseEvents = EVENT_NAME_MAP[baseEventName];
+        for (var styleName in baseEvents) {
+            if (styleName in style) {
+                endEvents.push(baseEvents[styleName]);
+                break;
+            }
+        }
+    }
+}
+
+detectEvents();
+
+function addEventListener(node, eventName, eventListener) {
+    node.addEventListener(eventName, eventListener, false);
+}
+
+function removeEventListener(node, eventName, eventListener) {
+    node.removeEventListener(eventName, eventListener, false);
+}
+
+var TransitionEvents = {
+    on: function on(node, eventListener) {
+        if (endEvents.length === 0) {
+            // If CSS transitions are not supported, trigger an "end animation"
+            // event immediately.
+            window.setTimeout(eventListener, 0);
+            return;
+        }
+        endEvents.forEach(function (endEvent) {
+            addEventListener(node, endEvent, eventListener);
+        });
     },
 
-    safeCounter = function () {
-      c = (c < discreteValues) ? c : 0;
-      c++; // this is not subliminal
-      return c - 1;
+    off: function off(node, eventListener) {
+        if (endEvents.length === 0) {
+            return;
+        }
+        endEvents.forEach(function (endEvent) {
+            removeEventListener(node, endEvent, eventListener);
+        });
     },
 
-    api = function cuid() {
-      // Starting with a lowercase letter makes
-      // it HTML element ID friendly.
-      var letter = 'c', // hard-coded allows for sequential access
+    one: function one(node, eventListener) {
+        var listener = function listener() {
+            eventListener.apply(this, arguments);
+            TransitionEvents.off(node, listener);
+        };
+        TransitionEvents.on(node, listener);
+    }
+};
 
-        // timestamp
-        // warning: this exposes the exact date and time
-        // that the uid was created.
-        timestamp = (new Date().getTime()).toString(base),
+},{"./intact":3,"./utils":5,"vdt":20}],2:[function(require,module,exports){
+'use strict';
 
-        // Prevent same-machine collisions.
-        counter,
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Vdt = undefined;
 
-        // A few chars to generate distinct ids for different
-        // clients (so different computers are far less
-        // likely to generate the same id)
-        fingerprint = api.fingerprint(),
+var _animate = require('./animate');
 
-        // Grab some more chars from Math.random()
-        random = randomBlock() + randomBlock();
+var _animate2 = _interopRequireDefault(_animate);
 
-        counter = pad(safeCounter().toString(base), blockSize);
+var _intact = require('./intact');
 
-      return  (letter + timestamp + counter + fingerprint + random);
+var _intact2 = _interopRequireDefault(_intact);
+
+var _vdt = require('vdt');
+
+var _vdt2 = _interopRequireDefault(_vdt);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+_intact2.default.prototype.Animate = _animate2.default;
+_intact2.default.Animate = _animate2.default;
+
+exports.default = _intact2.default;
+exports.Vdt = _vdt2.default;
+
+
+module.exports = exports['default'];
+module.exports.Vdt = exports.Vdt;
+
+},{"./animate":1,"./intact":3,"vdt":20}],3:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
+var _utils = require('./utils');
+
+var _thunk = require('./thunk');
+
+var _thunk2 = _interopRequireDefault(_thunk);
+
+var _vdt = require('vdt');
+
+var _vdt2 = _interopRequireDefault(_vdt);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var Intact = function Intact() {
+    var _this = this;
+
+    var attrs = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+    var contextWidgets = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+    if (!(this instanceof Intact)) {
+        return new _thunk2.default(this, attrs, contextWidgets);
+    }
+
+    if (!this.template) {
+        throw new Error('Can not instantiate when this.template does not exist.');
+    }
+
+    attrs = (0, _utils.extend)({
+        children: undefined
+    }, (0, _utils.result)(this, 'defaults'), attrs);
+
+    this._events = {};
+    this.attributes = {};
+
+    this.vdt = (0, _vdt2.default)(this.template);
+    this.set(attrs, { silent: true });
+    this.key = attrs.key;
+
+    this.widgets = this.vdt.widgets;
+
+    this.inited = false;
+    this.rendered = false;
+    this._hasCalledInit = false;
+
+    this._contextWidgets = contextWidgets;
+    this._widget = this.attributes.widget || (0, _utils.uniqueId)('widget');
+
+    // for debug
+    this.displayName = this.displayName;
+
+    this.addEvents();
+
+    this.children = this.get('children');
+    delete this.attributes.children;
+    // 存在widget名称引用属性，则注入所处上下文的widgets中
+    this._contextWidgets[this._widget] = this;
+
+    // 如果存在arguments属性，则将其拆开赋给attributes
+    if (this.attributes.arguments) {
+        (0, _utils.extend)(this.attributes, (0, _utils.result)(this.attributes, 'arguments'));
+        delete this.attributes.arguments;
+    }
+
+    // change事件，自动更新，当一个更新操作正在进行中，下一个更新操作必须等其完成
+    this._updateCount = 0;
+    var handleUpdate = function handleUpdate() {
+        if (_this._updateCount > 0) {
+            _this.update();
+            _this._updateCount--;
+            handleUpdate.call(_this);
+        }
+    };
+    this.on('change', function () {
+        if (++this._updateCount === 1) {
+            handleUpdate();
+        } else if (this._updateCount > 10) {
+            throw new Error('Too many recursive update.');
+        }
+    });
+
+    var ret = this._init();
+    // support promise
+    var inited = function inited() {
+        _this.inited = true;
+        _this.trigger('inited', _this);
+    };
+    if (ret && ret.then) {
+        ret.then(inited);
+    } else {
+        inited();
+    }
+};
+
+Intact.prototype = {
+    constructor: Intact,
+
+    type: 'Widget',
+
+    _init: function _init() {},
+    _create: function _create() {},
+    _beforeUpdate: function _beforeUpdate(prevWidget, domNode) {},
+    _update: function _update(prevWidget, domNode) {},
+    _destroy: function _destroy(domNode) {},
+    removeEvents: function removeEvents() {
+        var _this2 = this;
+
+        // 解绑所有事件
+        (0, _utils.each)(this.attributes, function (value, key) {
+            if (key.substring(0, 3) === 'ev-' && (0, _utils.isFunction)(value)) {
+                _this2.off(key.substring(3), value);
+                delete _this2.attributes[key];
+            }
+        });
+    },
+    addEvents: function addEvents(attrs) {
+        var _this3 = this;
+
+        // 所有以'ev-'开头的属性，都转化为事件
+        attrs || (attrs = this.attributes);
+        (0, _utils.each)(attrs, function (value, key) {
+            if (key.substring(0, 3) === 'ev-' && (0, _utils.isFunction)(value)) {
+                _this3.on(key.substring(3), value);
+            }
+        });
+    },
+    init: function init(isUpdate /* for private */) {
+        !isUpdate && (this.element = this.vdt.render(this));
+        this.rendered = true;
+        this._hasCalledInit = true;
+        this.trigger('rendered', this);
+        this._create();
+        return this.element;
+    },
+    update: function update(prevWidget, domNode) {
+        if (!this.vdt.node && (!prevWidget || !prevWidget.vdt.node)) return;
+        this._beforeUpdate(prevWidget, domNode);
+        if (prevWidget && domNode) {
+            this.vdt.node = domNode;
+            this.vdt.tree = prevWidget.vdt.tree;
+        }
+        this.prevWidget = prevWidget;
+        this.element = this.vdt.update(this);
+        if (!this._hasCalledInit) {
+            this.init(true);
+        }
+        this._update(prevWidget, domNode);
+        return this.element;
+    },
+    destroy: function destroy(domNode) {
+        // 如果只是移动了一个组件，会先执行创建，再销毁，所以需要判断父组件引用的是不是自己
+        if (this._contextWidgets[this._widget] === this) {
+            delete this._contextWidgets[this._widget];
+        }
+        this.off();
+        function destroy(children) {
+            (0, _utils.each)(children, function (child) {
+                if (child.hasThunks) {
+                    destroy(child.children);
+                } else if (child.type === 'Thunk') {
+                    child.widget.destroy();
+                }
+            });
+        }
+        destroy([this.vdt.tree]);
+        this._destroy(domNode);
+    },
+    get: function get(attr) {
+        // @deprecated for v0.0.1 compatibility, use this.children instead of
+        if (attr === 'children') {
+            return this.attributes.children || this.children;
+        }
+        return arguments.length === 0 ? this.attributes : this.attributes[attr];
+    },
+    set: function set(key, val, options) {
+        var _this4 = this;
+
+        if (key == null) return this;
+
+        var attrs = void 0;
+        if ((typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object') {
+            attrs = key;
+            options = val;
+        } else {
+            (attrs = {})[key] = val;
+        }
+
+        options = (0, _utils.extend)({
+            silent: false,
+            global: true,
+            async: false
+        }, options);
+
+        var current = this.attributes,
+            changes = [];
+
+        for (var attr in attrs) {
+            val = attrs[attr];
+            if (!(0, _utils.isEqual)(current[attr], val)) {
+                changes.push(attr);
+            }
+            current[attr] = val;
+        }
+
+        if (changes.length) {
+            var eventName = void 0;
+            for (var i = 0, l = changes.length; i < l; i++) {
+                var _attr = changes[i];
+                eventName = 'change:' + _attr;
+                options[eventName] && options[eventName].call(this, current[_attr]);
+                !options.silent && this.trigger(eventName, this, current[_attr]);
+            }
+
+            options.change && options.change.call(this);
+            if (!options.silent) {
+                this.trigger('beforeChange', this);
+                if (options.global) {
+                    clearTimeout(this._asyncUpdate);
+                    if (options.async) {
+                        this._asyncUpdate = setTimeout(function () {
+                            _this4.trigger('change', _this4);
+                        });
+                    } else {
+                        this.trigger('change', this);
+                    }
+                }
+            }
+        }
+
+        return this;
+    },
+    on: function on(name, callback) {
+        (this._events[name] || (this._events[name] = [])).push(callback);
+
+        return this;
+    },
+    off: function off(name, callback) {
+        if (!arguments.length) {
+            this._events = {};
+            return this;
+        }
+
+        var callbacks = this._events[name];
+        if (!callbacks) return this;
+
+        if (arguments.length === 1) {
+            delete this._events[name];
+            return this;
+        }
+
+        for (var cb, i = 0; i < callbacks.length; i++) {
+            cb = callbacks[i];
+            if (cb === callback) {
+                callbacks.splice(i, 1);
+                i--;
+            }
+        }
+
+        return this;
+    },
+    trigger: function trigger(name) {
+        var callbacks = this._events[name];
+
+        if (callbacks) {
+            for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+                args[_key - 1] = arguments[_key];
+            }
+
+            for (var i = 0, l = callbacks.length; i < l; i++) {
+                callbacks[i].apply(this, args);
+            }
+        }
+
+        return this;
+    }
+};
+
+/**
+ * @brief 继承某个组件
+ *
+ * @param prototype
+ */
+Intact.extend = function () {
+    var prototype = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+    prototype.defaults = (0, _utils.extend)({}, this.prototype.defaults, prototype.defaults);
+    return (0, _utils.inherit)(this, prototype);
+};
+
+/**
+ * 挂载组件到dom中
+ * @param widget {Intact} Intact类或子类，也可以是实例化的对象
+ * @param node {Node} html节点
+ */
+Intact.mount = function (widget, node) {
+    if (widget.prototype && (widget.prototype instanceof Intact || widget === Intact)) {
+        widget = new widget();
+    }
+    if (widget.rendered) {
+        node.appendChild(widget.element);
+    } else if (widget.inited) {
+        node.appendChild(widget.init());
+    } else {
+        widget.on('inited', function () {
+            return node.appendChild(widget.init());
+        });
+    }
+    return widget;
+};
+
+exports.default = Intact;
+
+},{"./thunk":4,"./utils":5,"vdt":20}],4:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _utils = require('./utils');
+
+var Thunk = function Thunk(Widget, attributes, contextWidget) {
+    this.Widget = Widget;
+    this.attributes = attributes || {};
+    this.key = this.attributes.key;
+    this.contextWidget = contextWidget;
+};
+
+Thunk.prototype = {
+    constructor: Thunk,
+
+    type: 'Thunk',
+
+    render: function render(previous) {
+        if (!previous || previous.Widget !== this.Widget || previous.key !== this.key) {
+            this.widget = new this.Widget(this.attributes, this.contextWidget);
+        } else if (previous.Widget === this.Widget) {
+            if (!previous.widget) throw new Error('Don\'t update when updating.');
+
+            var widget = this.widget = previous.widget;
+            widget.children = this.attributes.children;
+            delete this.attributes.children;
+
+            // 如果存在arguments属性，则将其拆开赋给attributes
+            if (this.attributes.arguments) {
+                (0, _utils.extend)(this.attributes, (0, _utils.result)(this.attributes, 'arguments'));
+                delete this.attributes.arguments;
+            }
+
+            widget.removeEvents();
+            widget.addEvents(this.attributes);
+            widget.set(this.attributes, { global: false });
+
+            // 当一个组件，用同一个组件的另一个实例，去更新自己，由于子组件都相同
+            // 所以子组件不会新建，也就写入不了新实例的widgets引用中，这里强制设置一遍
+            this.contextWidget[this.widget._widget] = this.widget;
+        }
+
+        return this.widget;
+    }
+};
+
+exports.default = Thunk;
+
+},{"./utils":5}],5:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.isArray = exports.extend = undefined;
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
+exports.inherit = inherit;
+exports.create = create;
+exports.each = each;
+exports.isFunction = isFunction;
+exports.isObject = isObject;
+exports.result = result;
+exports.bind = bind;
+exports.isEqual = isEqual;
+exports.uniqueId = uniqueId;
+exports.values = values;
+
+var _vdt = require('vdt');
+
+var _vdt2 = _interopRequireDefault(_vdt);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var extend = exports.extend = _vdt2.default.utils.extend;
+var isArray = exports.isArray = _vdt2.default.utils.isArray;
+
+/**
+ * inherit
+ * @param Parent
+ * @param prototype
+ * @returns {Function}
+ */
+function inherit(Parent, prototype) {
+    var Child = function Child() {
+        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+        }
+
+        if (!this || !(this instanceof Child || this.prototype instanceof Child)) {
+            return Parent.apply(Child, args);
+        }
+        return Parent.apply(this, args);
     };
 
-  api.slug = function slug() {
-    var date = new Date().getTime().toString(36),
-      counter,
-      print = api.fingerprint().slice(0,1) +
-        api.fingerprint().slice(-1),
-      random = randomBlock().slice(-2);
+    Child.prototype = create(Parent.prototype);
+    each(prototype, function (proto, name) {
+        if (name === 'displayName') {
+            return Child.displayName = proto;
+        }
+        if (!isFunction(proto) || name === 'template') {
+            return Child.prototype[name] = proto;
+        }
+        Child.prototype[name] = function () {
+            var _super = function _super() {
+                for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+                    args[_key2] = arguments[_key2];
+                }
 
-      counter = safeCounter().toString(36).slice(-4);
+                return Parent.prototype[name].apply(this, args);
+            },
+                _superApply = function _superApply(args) {
+                return Parent.prototype[name].apply(this, args);
+            };
+            return function () {
+                var self = this || {},
+                    __super = self._super,
+                    __superApply = self._superApply,
+                    returnValue = void 0;
 
-    return date.slice(-2) +
-      counter + print + random;
-  };
+                self._super = _super;
+                self._superApply = _superApply;
 
-  api.globalCount = function globalCount() {
-    // We want to cache the results of this
-    var cache = (function calc() {
-        var i,
-          count = 0;
+                for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+                    args[_key3] = arguments[_key3];
+                }
 
-        for (i in window) {
-          count++;
+                returnValue = proto.apply(this, args);
+
+                self._super = __super;
+                self._superApply = __superApply;
+
+                return returnValue;
+            };
+        }();
+    });
+    Child.__super = Parent.prototype;
+    Child.prototype.constructor = Child;
+
+    extend(Child, Parent);
+
+    return Child;
+}
+
+var nativeCreate = Object.create;
+function create(object) {
+    if (nativeCreate) {
+        return nativeCreate(object);
+    } else {
+        var fn = function fn() {};
+        fn.prototype = object;
+        return new fn();
+    }
+}
+
+var hasOwn = Object.prototype.hasOwnProperty;
+function each(obj, iter, thisArg) {
+    if (isArray(obj)) {
+        for (var i = 0, l = obj.length; i < l; i++) {
+            iter.call(thisArg, obj[i], i, obj);
+        }
+    } else if (isObject(obj)) {
+        for (var key in obj) {
+            if (hasOwn.call(obj, key)) {
+                iter.call(thisArg, obj[key], key, obj);
+            }
+        }
+    }
+}
+
+function isFunction(obj) {
+    return typeof obj === 'function';
+}
+
+function isObject(obj) {
+    var type = typeof obj === 'undefined' ? 'undefined' : _typeof(obj);
+    return type === 'function' || type === 'object' && !!obj;
+}
+
+function result(obj, property, fallback) {
+    var value = obj == null ? undefined : obj[property];
+    if (value === undefined) {
+        value = fallback;
+    }
+    return isFunction(value) ? value.call(obj) : value;
+}
+
+var executeBound = function executeBound(sourceFunc, boundFunc, context, callingContext, args) {
+    if (!(callingContext instanceof boundFunc)) return sourceFunc.apply(context, args);
+    var self = create(sourceFunc.prototype);
+    var result = sourceFunc.apply(self, args);
+    if (isObject(result)) return result;
+    return self;
+};
+var nativeBind = Function.prototype.bind;
+function bind(func, context) {
+    for (var _len4 = arguments.length, args = Array(_len4 > 2 ? _len4 - 2 : 0), _key4 = 2; _key4 < _len4; _key4++) {
+        args[_key4 - 2] = arguments[_key4];
+    }
+
+    if (nativeBind && func.bind === nativeBind) {
+        return nativeBind.call.apply(nativeBind, [func, context].concat(args));
+    }
+    if (!isFunction(func)) throw new TypeError('Bind must be called on a function');
+    var bound = function bound() {
+        for (var _len5 = arguments.length, args1 = Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
+            args1[_key5] = arguments[_key5];
         }
 
-        return count;
-      }());
+        return executeBound(func, bound, context, this, [].concat(args, args1));
+    };
+    return bound;
+}
 
-    api.globalCount = function () { return cache; };
-    return cache;
-  };
+function isEqual(a, b) {
+    return a == b;
+}
 
-  api.fingerprint = function browserPrint() {
-    return pad((navigator.mimeTypes.length +
-      navigator.userAgent.length).toString(36) +
-      api.globalCount().toString(36), 4);
-  };
+var idCounter = 0;
+function uniqueId(prefix) {
+    var id = ++idCounter + '';
+    return prefix ? prefix + id : id;
+}
 
-  // don't change anything from here down.
-  if (app.register) {
-    app.register(namespace, api);
-  } else if (typeof module !== 'undefined') {
-    module.exports = api;
-  } else {
-    app[namespace] = api;
-  }
+function values(obj) {
+    var ret = [];
+    each(obj, function (value) {
+        return ret.push(value);
+    });
+    return ret;
+}
 
-}(this.applitude || this));
-
-},{}],3:[function(require,module,exports){
+},{"vdt":20}],6:[function(require,module,exports){
 var EvStore = require("ev-store")
 
 module.exports = addEvent
@@ -238,7 +950,7 @@ function addEvent(target, type, handler) {
     }
 }
 
-},{"ev-store":8}],4:[function(require,module,exports){
+},{"ev-store":10}],7:[function(require,module,exports){
 var globalDocument = require("global/document")
 var EvStore = require("ev-store")
 var createStore = require("weakmap-shim/create-store")
@@ -370,7 +1082,7 @@ function createHandler(eventName, delegator) {
 }
 
 function findAndInvokeListeners(elem, ev, eventName) {
-    var listener = getListener(elem, eventName)
+    var listener = getListener(elem, eventName, ev)
 
     if (listener && listener.handlers.length > 0) {
         var listenerEvent = new ProxyEvent(ev);
@@ -384,7 +1096,7 @@ function findAndInvokeListeners(elem, ev, eventName) {
     }
 }
 
-function getListener(target, type) {
+function getListener(target, type, ev) {
     // terminate recursion if parent is `null`
     if (target === null || typeof target === "undefined") {
         return null
@@ -395,8 +1107,8 @@ function getListener(target, type) {
     var handler = events[type]
     var allHandler = events.event
 
-    if (!handler && !allHandler) {
-        return getListener(target.parentNode, type)
+    if (!handler && !allHandler && ev.bubbles) {
+        return getListener(target.parentNode, type, ev)
     }
 
     var handlers = [].concat(handler || [], allHandler || [])
@@ -427,7 +1139,7 @@ function Handle() {
     this.type = "dom-delegator-handle"
 }
 
-},{"./add-event.js":3,"./proxy-event.js":6,"./remove-event.js":7,"ev-store":8,"global/document":11,"weakmap-shim/create-store":50}],5:[function(require,module,exports){
+},{"./add-event.js":6,"./proxy-event.js":18,"./remove-event.js":19,"ev-store":10,"global/document":13,"weakmap-shim/create-store":16}],8:[function(require,module,exports){
 var Individual = require("individual")
 var cuid = require("cuid")
 var globalDocument = require("global/document")
@@ -489,7 +1201,293 @@ function Delegator(opts) {
 Delegator.allocateHandle = DOMDelegator.allocateHandle;
 Delegator.transformHandle = DOMDelegator.transformHandle;
 
-},{"./dom-delegator.js":4,"cuid":2,"global/document":11,"individual":13}],6:[function(require,module,exports){
+},{"./dom-delegator.js":7,"cuid":9,"global/document":13,"individual":14}],9:[function(require,module,exports){
+/**
+ * cuid.js
+ * Collision-resistant UID generator for browsers and node.
+ * Sequential for fast db lookups and recency sorting.
+ * Safe for element IDs and server-side lookups.
+ *
+ * Extracted from CLCTR
+ *
+ * Copyright (c) Eric Elliott 2012
+ * MIT License
+ */
+
+/*global window, navigator, document, require, process, module */
+(function (app) {
+  'use strict';
+  var namespace = 'cuid',
+    c = 0,
+    blockSize = 4,
+    base = 36,
+    discreteValues = Math.pow(base, blockSize),
+
+    pad = function pad(num, size) {
+      var s = "000000000" + num;
+      return s.substr(s.length-size);
+    },
+
+    randomBlock = function randomBlock() {
+      return pad((Math.random() *
+            discreteValues << 0)
+            .toString(base), blockSize);
+    },
+
+    safeCounter = function () {
+      c = (c < discreteValues) ? c : 0;
+      c++; // this is not subliminal
+      return c - 1;
+    },
+
+    api = function cuid() {
+      // Starting with a lowercase letter makes
+      // it HTML element ID friendly.
+      var letter = 'c', // hard-coded allows for sequential access
+
+        // timestamp
+        // warning: this exposes the exact date and time
+        // that the uid was created.
+        timestamp = (new Date().getTime()).toString(base),
+
+        // Prevent same-machine collisions.
+        counter,
+
+        // A few chars to generate distinct ids for different
+        // clients (so different computers are far less
+        // likely to generate the same id)
+        fingerprint = api.fingerprint(),
+
+        // Grab some more chars from Math.random()
+        random = randomBlock() + randomBlock();
+
+        counter = pad(safeCounter().toString(base), blockSize);
+
+      return  (letter + timestamp + counter + fingerprint + random);
+    };
+
+  api.slug = function slug() {
+    var date = new Date().getTime().toString(36),
+      counter,
+      print = api.fingerprint().slice(0,1) +
+        api.fingerprint().slice(-1),
+      random = randomBlock().slice(-2);
+
+      counter = safeCounter().toString(36).slice(-4);
+
+    return date.slice(-2) +
+      counter + print + random;
+  };
+
+  api.globalCount = function globalCount() {
+    // We want to cache the results of this
+    var cache = (function calc() {
+        var i,
+          count = 0;
+
+        for (i in window) {
+          count++;
+        }
+
+        return count;
+      }());
+
+    api.globalCount = function () { return cache; };
+    return cache;
+  };
+
+  api.fingerprint = function browserPrint() {
+    return pad((navigator.mimeTypes.length +
+      navigator.userAgent.length).toString(36) +
+      api.globalCount().toString(36), 4);
+  };
+
+  // don't change anything from here down.
+  if (app.register) {
+    app.register(namespace, api);
+  } else if (typeof module !== 'undefined') {
+    module.exports = api;
+  } else {
+    app[namespace] = api;
+  }
+
+}(this.applitude || this));
+
+},{}],10:[function(require,module,exports){
+'use strict';
+
+var OneVersionConstraint = require('individual/one-version');
+
+var MY_VERSION = '7';
+OneVersionConstraint('ev-store', MY_VERSION);
+
+var hashKey = '__EV_STORE_KEY@' + MY_VERSION;
+
+module.exports = EvStore;
+
+function EvStore(elem) {
+    var hash = elem[hashKey];
+
+    if (!hash) {
+        hash = elem[hashKey] = {};
+    }
+
+    return hash;
+}
+
+},{"individual/one-version":12}],11:[function(require,module,exports){
+(function (global){
+'use strict';
+
+/*global window, global*/
+
+var root = typeof window !== 'undefined' ?
+    window : typeof global !== 'undefined' ?
+    global : {};
+
+module.exports = Individual;
+
+function Individual(key, value) {
+    if (key in root) {
+        return root[key];
+    }
+
+    root[key] = value;
+
+    return value;
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],12:[function(require,module,exports){
+'use strict';
+
+var Individual = require('./index.js');
+
+module.exports = OneVersion;
+
+function OneVersion(moduleName, version, defaultValue) {
+    var key = '__INDIVIDUAL_ONE_VERSION_' + moduleName;
+    var enforceKey = key + '_ENFORCE_SINGLETON';
+
+    var versionValue = Individual(enforceKey, version);
+
+    if (versionValue !== version) {
+        throw new Error('Can only have one copy of ' +
+            moduleName + '.\n' +
+            'You already have version ' + versionValue +
+            ' installed.\n' +
+            'This means you cannot install version ' + version);
+    }
+
+    return Individual(key, defaultValue);
+}
+
+},{"./index.js":11}],13:[function(require,module,exports){
+(function (global){
+var topLevel = typeof global !== 'undefined' ? global :
+    typeof window !== 'undefined' ? window : {}
+var minDoc = require('min-document');
+
+if (typeof document !== 'undefined') {
+    module.exports = document;
+} else {
+    var doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'];
+
+    if (!doccy) {
+        doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'] = minDoc;
+    }
+
+    module.exports = doccy;
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"min-document":61}],14:[function(require,module,exports){
+(function (global){
+var root = typeof window !== 'undefined' ?
+    window : typeof global !== 'undefined' ?
+    global : {};
+
+module.exports = Individual
+
+function Individual(key, value) {
+    if (root[key]) {
+        return root[key]
+    }
+
+    Object.defineProperty(root, key, {
+        value: value
+        , configurable: true
+    })
+
+    return value
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],15:[function(require,module,exports){
+if (typeof Object.create === 'function') {
+  // implementation from standard node.js 'util' module
+  module.exports = function inherits(ctor, superCtor) {
+    ctor.super_ = superCtor
+    ctor.prototype = Object.create(superCtor.prototype, {
+      constructor: {
+        value: ctor,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+  };
+} else {
+  // old school shim for old browsers
+  module.exports = function inherits(ctor, superCtor) {
+    ctor.super_ = superCtor
+    var TempCtor = function () {}
+    TempCtor.prototype = superCtor.prototype
+    ctor.prototype = new TempCtor()
+    ctor.prototype.constructor = ctor
+  }
+}
+
+},{}],16:[function(require,module,exports){
+var hiddenStore = require('./hidden-store.js');
+
+module.exports = createStore;
+
+function createStore() {
+    var key = {};
+
+    return function (obj) {
+        if ((typeof obj !== 'object' || obj === null) &&
+            typeof obj !== 'function'
+        ) {
+            throw new Error('Weakmap-shim: Key must be object')
+        }
+
+        var store = obj.valueOf(key);
+        return store && store.identity === key ?
+            store : hiddenStore(obj, key);
+    };
+}
+
+},{"./hidden-store.js":17}],17:[function(require,module,exports){
+module.exports = hiddenStore;
+
+function hiddenStore(obj, key) {
+    var store = { identity: key };
+    var valueOf = obj.valueOf;
+
+    Object.defineProperty(obj, "valueOf", {
+        value: function (value) {
+            return value !== key ?
+                valueOf.apply(this, arguments) : store;
+        },
+        writable: true
+    });
+
+    return store;
+}
+
+},{}],18:[function(require,module,exports){
 var inherits = require("inherits")
 
 var ALL_PROPS = [
@@ -569,7 +1567,7 @@ function KeyEvent(ev) {
 
 inherits(KeyEvent, ProxyEvent)
 
-},{"inherits":14}],7:[function(require,module,exports){
+},{"inherits":15}],19:[function(require,module,exports){
 var EvStore = require("ev-store")
 
 module.exports = removeEvent
@@ -590,171 +1588,10 @@ function removeEvent(target, type, handler) {
     }
 }
 
-},{"ev-store":8}],8:[function(require,module,exports){
-'use strict';
-
-var OneVersionConstraint = require('individual/one-version');
-
-var MY_VERSION = '7';
-OneVersionConstraint('ev-store', MY_VERSION);
-
-var hashKey = '__EV_STORE_KEY@' + MY_VERSION;
-
-module.exports = EvStore;
-
-function EvStore(elem) {
-    var hash = elem[hashKey];
-
-    if (!hash) {
-        hash = elem[hashKey] = {};
-    }
-
-    return hash;
-}
-
-},{"individual/one-version":10}],9:[function(require,module,exports){
-(function (global){
-'use strict';
-
-/*global window, global*/
-
-var root = typeof window !== 'undefined' ?
-    window : typeof global !== 'undefined' ?
-    global : {};
-
-module.exports = Individual;
-
-function Individual(key, value) {
-    if (key in root) {
-        return root[key];
-    }
-
-    root[key] = value;
-
-    return value;
-}
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],10:[function(require,module,exports){
-'use strict';
-
-var Individual = require('./index.js');
-
-module.exports = OneVersion;
-
-function OneVersion(moduleName, version, defaultValue) {
-    var key = '__INDIVIDUAL_ONE_VERSION_' + moduleName;
-    var enforceKey = key + '_ENFORCE_SINGLETON';
-
-    var versionValue = Individual(enforceKey, version);
-
-    if (versionValue !== version) {
-        throw new Error('Can only have one copy of ' +
-            moduleName + '.\n' +
-            'You already have version ' + versionValue +
-            ' installed.\n' +
-            'This means you cannot install version ' + version);
-    }
-
-    return Individual(key, defaultValue);
-}
-
-},{"./index.js":9}],11:[function(require,module,exports){
-(function (global){
-var topLevel = typeof global !== 'undefined' ? global :
-    typeof window !== 'undefined' ? window : {}
-var minDoc = require('min-document');
-
-if (typeof document !== 'undefined') {
-    module.exports = document;
-} else {
-    var doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'];
-
-    if (!doccy) {
-        doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'] = minDoc;
-    }
-
-    module.exports = doccy;
-}
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-document":58}],12:[function(require,module,exports){
-(function (global){
-var topLevel = typeof global !== 'undefined' ? global :
-    typeof window !== 'undefined' ? window : {}
-var minDoc = require('min-documentx');
-
-if (typeof document !== 'undefined') {
-    module.exports = document;
-} else {
-    var doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'];
-
-    if (!doccy) {
-        doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'] = minDoc;
-    }
-
-    module.exports = doccy;
-}
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-documentx":58}],13:[function(require,module,exports){
-(function (global){
-var root = typeof window !== 'undefined' ?
-    window : typeof global !== 'undefined' ?
-    global : {};
-
-module.exports = Individual
-
-function Individual(key, value) {
-    if (root[key]) {
-        return root[key]
-    }
-
-    Object.defineProperty(root, key, {
-        value: value
-        , configurable: true
-    })
-
-    return value
-}
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],14:[function(require,module,exports){
-if (typeof Object.create === 'function') {
-  // implementation from standard node.js 'util' module
-  module.exports = function inherits(ctor, superCtor) {
-    ctor.super_ = superCtor
-    ctor.prototype = Object.create(superCtor.prototype, {
-      constructor: {
-        value: ctor,
-        enumerable: false,
-        writable: true,
-        configurable: true
-      }
-    });
-  };
-} else {
-  // old school shim for old browsers
-  module.exports = function inherits(ctor, superCtor) {
-    ctor.super_ = superCtor
-    var TempCtor = function () {}
-    TempCtor.prototype = superCtor.prototype
-    ctor.prototype = new TempCtor()
-    ctor.prototype.constructor = ctor
-  }
-}
-
-},{}],15:[function(require,module,exports){
-"use strict";
-
-module.exports = function isObject(x) {
-	return typeof x === "object" && x !== null;
-};
-
-},{}],16:[function(require,module,exports){
+},{"ev-store":10}],20:[function(require,module,exports){
 module.exports = require('./lib/index');
 
-},{"./lib/index":20}],17:[function(require,module,exports){
+},{"./lib/index":24}],21:[function(require,module,exports){
 /**
  * @fileoverview parse jsx to ast
  * @author javey
@@ -1171,7 +2008,7 @@ Parser.prototype = {
 
 module.exports = Parser;
 
-},{"./utils":19}],18:[function(require,module,exports){
+},{"./utils":23}],22:[function(require,module,exports){
 /**
  * @fileoverview stringify ast of jsx to js
  * @author javey
@@ -1343,7 +2180,7 @@ Stringifier.prototype = {
 
 module.exports = Stringifier;
 
-},{"./utils":19}],19:[function(require,module,exports){
+},{"./utils":23}],23:[function(require,module,exports){
 /**
  * @fileoverview utility methods
  * @author javey
@@ -1465,6 +2302,7 @@ var Utils = {
             return require('./compile');
         } else {
             // use amd require
+            return typeof require !== 'undefined' ? require : Utils.noRequire;
         }
     })(),
 
@@ -1475,7 +2313,7 @@ var Utils = {
 
 module.exports = Utils;
 
-},{"./compile":20}],20:[function(require,module,exports){
+},{"./compile":24}],24:[function(require,module,exports){
 var parser = new (require('./parser')),
     stringifier = new (require('./stringifier')),
     virtualDom = require('virtual-domx'),
@@ -1494,7 +2332,8 @@ var Vdt = function(source, options) {
                 vdt.data = data;
             }
             vdt.data.vdt = vdt;
-            vdt.tree = vdt.template.call(vdt.data, vdt.data, Vdt);
+            // pass vdt as `this`, does not dirty data.
+            vdt.tree = vdt.template.call(vdt, vdt.data, Vdt);
             return vdt.tree;
         },
 
@@ -1517,6 +2356,7 @@ var Vdt = function(source, options) {
         data: {},
         tree: {},
         patches: {},
+        widgets: {},
         node: null,
         template: compile(source, options),
 
@@ -1538,7 +2378,7 @@ var Vdt = function(source, options) {
     };
 
     // reference cycle vdt
-    vdt.data.vdt = vdt;
+    // vdt.data.vdt = vdt;
 
     return vdt;
 };
@@ -1554,7 +2394,9 @@ function compile(source, options) {
     options = utils.extend({
         autoReturn: true,
         onlySource: false,
-        delimiters: utils.getDelimiters()
+        delimiters: utils.getDelimiters(),
+        // remove `with` statement, then you can get data by `set.get(name)` method.
+        noWith: false
     }, options);
 
     switch (typeof source) {
@@ -1566,13 +2408,14 @@ function compile(source, options) {
                 '_Vdt || (_Vdt = Vdt);',
                 'obj || (obj = {});',
                 'blocks || (blocks = {});',
-                'var h = _Vdt.virtualDom.h, widgets = this.widgets || (this.widgets = {}), _blocks = {}, __blocks = {},',
-                    'extend = _Vdt.utils.extend;',
-                'obj.require = _Vdt.utils.require || (typeof require === "undefined" ? _Vdt.utils.noRequire : require);',
-                'var self; if (obj.type === "Widget") { self = this; } else { obj.get = function(name) { return obj[name]; }; self = obj; }',
-                'with (obj) {',
-                    hscript,
-                '}'
+                'var h = _Vdt.virtualDom.h, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},',
+                    'extend = _Vdt.utils.extend, require = _Vdt.utils.require;',
+                'var self = {}; if (obj.type === "Widget") { self = obj; } else { self.get = function(name) { return obj[name]; } }',
+                options.noWith ? hscript : [
+                    'with (obj) {',
+                        hscript,
+                    '}'
+                ].join('\n')
             ].join('\n');
             templateFn = options.onlySource ? utils.noop : new Function('obj', '_Vdt', 'blocks', hscript);
             templateFn.source = 'function(obj, _Vdt, blocks) {\n' + hscript + '\n}';
@@ -1597,22 +2440,22 @@ Vdt.getDelimiters = utils.getDelimiters;
 
 module.exports = Vdt;
 
-},{"./parser":17,"./stringifier":18,"./utils":19,"virtual-domx":24}],21:[function(require,module,exports){
+},{"./parser":21,"./stringifier":22,"./utils":23,"virtual-domx":28}],25:[function(require,module,exports){
 var createElement = require("./vdom/create-element.js")
 
 module.exports = createElement
 
-},{"./vdom/create-element.js":27}],22:[function(require,module,exports){
+},{"./vdom/create-element.js":38}],26:[function(require,module,exports){
 var diff = require("./vtree/diff.js")
 
 module.exports = diff
 
-},{"./vtree/diff.js":49}],23:[function(require,module,exports){
+},{"./vtree/diff.js":60}],27:[function(require,module,exports){
 var h = require("./virtual-hyperscript/index.js")
 
 module.exports = h
 
-},{"./virtual-hyperscript/index.js":34}],24:[function(require,module,exports){
+},{"./virtual-hyperscript/index.js":45}],28:[function(require,module,exports){
 var diff = require("./diff.js")
 var patch = require("./patch.js")
 var h = require("./h.js")
@@ -1629,12 +2472,162 @@ module.exports = {
     VText: VText
 }
 
-},{"./create-element.js":21,"./diff.js":22,"./h.js":23,"./patch.js":25,"./vnode/vnode.js":45,"./vnode/vtext.js":47}],25:[function(require,module,exports){
+},{"./create-element.js":25,"./diff.js":26,"./h.js":27,"./patch.js":36,"./vnode/vnode.js":56,"./vnode/vtext.js":58}],29:[function(require,module,exports){
+/*!
+ * Cross-Browser Split 1.1.1
+ * Copyright 2007-2012 Steven Levithan <stevenlevithan.com>
+ * Available under the MIT License
+ * ECMAScript compliant, uniform cross-browser split method
+ */
+
+/**
+ * Splits a string into an array of strings using a regex or string separator. Matches of the
+ * separator are not included in the result array. However, if `separator` is a regex that contains
+ * capturing groups, backreferences are spliced into the result each time `separator` is matched.
+ * Fixes browser bugs compared to the native `String.prototype.split` and can be used reliably
+ * cross-browser.
+ * @param {String} str String to split.
+ * @param {RegExp|String} separator Regex or string to use for separating the string.
+ * @param {Number} [limit] Maximum number of items to include in the result array.
+ * @returns {Array} Array of substrings.
+ * @example
+ *
+ * // Basic use
+ * split('a b c d', ' ');
+ * // -> ['a', 'b', 'c', 'd']
+ *
+ * // With limit
+ * split('a b c d', ' ', 2);
+ * // -> ['a', 'b']
+ *
+ * // Backreferences in result array
+ * split('..word1 word2..', /([a-z]+)(\d+)/i);
+ * // -> ['..', 'word', '1', ' ', 'word', '2', '..']
+ */
+module.exports = (function split(undef) {
+
+  var nativeSplit = String.prototype.split,
+    compliantExecNpcg = /()??/.exec("")[1] === undef,
+    // NPCG: nonparticipating capturing group
+    self;
+
+  self = function(str, separator, limit) {
+    // If `separator` is not a regex, use `nativeSplit`
+    if (Object.prototype.toString.call(separator) !== "[object RegExp]") {
+      return nativeSplit.call(str, separator, limit);
+    }
+    var output = [],
+      flags = (separator.ignoreCase ? "i" : "") + (separator.multiline ? "m" : "") + (separator.extended ? "x" : "") + // Proposed for ES6
+      (separator.sticky ? "y" : ""),
+      // Firefox 3+
+      lastLastIndex = 0,
+      // Make `global` and avoid `lastIndex` issues by working with a copy
+      separator = new RegExp(separator.source, flags + "g"),
+      separator2, match, lastIndex, lastLength;
+    str += ""; // Type-convert
+    if (!compliantExecNpcg) {
+      // Doesn't need flags gy, but they don't hurt
+      separator2 = new RegExp("^" + separator.source + "$(?!\\s)", flags);
+    }
+    /* Values for `limit`, per the spec:
+     * If undefined: 4294967295 // Math.pow(2, 32) - 1
+     * If 0, Infinity, or NaN: 0
+     * If positive number: limit = Math.floor(limit); if (limit > 4294967295) limit -= 4294967296;
+     * If negative number: 4294967296 - Math.floor(Math.abs(limit))
+     * If other: Type-convert, then use the above rules
+     */
+    limit = limit === undef ? -1 >>> 0 : // Math.pow(2, 32) - 1
+    limit >>> 0; // ToUint32(limit)
+    while (match = separator.exec(str)) {
+      // `separator.lastIndex` is not reliable cross-browser
+      lastIndex = match.index + match[0].length;
+      if (lastIndex > lastLastIndex) {
+        output.push(str.slice(lastLastIndex, match.index));
+        // Fix browsers whose `exec` methods don't consistently return `undefined` for
+        // nonparticipating capturing groups
+        if (!compliantExecNpcg && match.length > 1) {
+          match[0].replace(separator2, function() {
+            for (var i = 1; i < arguments.length - 2; i++) {
+              if (arguments[i] === undef) {
+                match[i] = undef;
+              }
+            }
+          });
+        }
+        if (match.length > 1 && match.index < str.length) {
+          Array.prototype.push.apply(output, match.slice(1));
+        }
+        lastLength = match[0].length;
+        lastLastIndex = lastIndex;
+        if (output.length >= limit) {
+          break;
+        }
+      }
+      if (separator.lastIndex === match.index) {
+        separator.lastIndex++; // Avoid an infinite loop
+      }
+    }
+    if (lastLastIndex === str.length) {
+      if (lastLength || !separator.test("")) {
+        output.push("");
+      }
+    } else {
+      output.push(str.slice(lastLastIndex));
+    }
+    return output.length > limit ? output.slice(0, limit) : output;
+  };
+
+  return self;
+})();
+
+},{}],30:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"dup":10,"individual/one-version":33}],31:[function(require,module,exports){
+(function (global){
+var topLevel = typeof global !== 'undefined' ? global :
+    typeof window !== 'undefined' ? window : {}
+var minDoc = require('min-documentx');
+
+if (typeof document !== 'undefined') {
+    module.exports = document;
+} else {
+    var doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'];
+
+    if (!doccy) {
+        doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'] = minDoc;
+    }
+
+    module.exports = doccy;
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"min-documentx":61}],32:[function(require,module,exports){
+arguments[4][11][0].apply(exports,arguments)
+},{"dup":11}],33:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"./index.js":32,"dup":12}],34:[function(require,module,exports){
+"use strict";
+
+module.exports = function isObject(x) {
+	return typeof x === "object" && x !== null;
+};
+
+},{}],35:[function(require,module,exports){
+var nativeIsArray = Array.isArray
+var toString = Object.prototype.toString
+
+module.exports = nativeIsArray || isArray
+
+function isArray(obj) {
+    return toString.call(obj) === "[object Array]"
+}
+
+},{}],36:[function(require,module,exports){
 var patch = require("./vdom/patch.js")
 
 module.exports = patch
 
-},{"./vdom/patch.js":30}],26:[function(require,module,exports){
+},{"./vdom/patch.js":41}],37:[function(require,module,exports){
 var isObject = require("is-object")
 var isHook = require("../vnode/is-vhook.js")
 
@@ -1737,7 +2730,7 @@ function getPrototype(value) {
     }
 }
 
-},{"../vnode/is-vhook.js":39,"is-object":15}],27:[function(require,module,exports){
+},{"../vnode/is-vhook.js":50,"is-object":34}],38:[function(require,module,exports){
 var document = require("globalx/document")
 
 var applyProperties = require("./apply-properties")
@@ -1793,7 +2786,7 @@ function createElement(vnode, opts) {
     return node
 }
 
-},{"../vnode/handle-thunk.js":36,"../vnode/is-vcomment.js":38,"../vnode/is-vnode.js":40,"../vnode/is-vtext.js":41,"../vnode/is-widget.js":42,"./apply-properties":26,"globalx/document":12}],28:[function(require,module,exports){
+},{"../vnode/handle-thunk.js":47,"../vnode/is-vcomment.js":49,"../vnode/is-vnode.js":51,"../vnode/is-vtext.js":52,"../vnode/is-widget.js":53,"./apply-properties":37,"globalx/document":31}],39:[function(require,module,exports){
 // Maps a virtual DOM tree onto a real DOM tree in an efficient manner.
 // We don't want to read all of the DOM nodes in the tree so we use
 // the in-order tree indexing to eliminate recursion down certain branches.
@@ -1880,7 +2873,7 @@ function ascending(a, b) {
     return a > b ? 1 : -1
 }
 
-},{}],29:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 var applyProperties = require("./apply-properties")
 
 var isWidget = require("../vnode/is-widget.js")
@@ -2055,7 +3048,7 @@ function replaceRoot(oldRoot, newRoot) {
     return newRoot;
 }
 
-},{"../vnode/is-widget.js":42,"../vnode/vpatch.js":46,"./apply-properties":26,"./update-widget":31}],30:[function(require,module,exports){
+},{"../vnode/is-widget.js":53,"../vnode/vpatch.js":57,"./apply-properties":37,"./update-widget":42}],41:[function(require,module,exports){
 var document = require("globalx/document")
 var isArray = require("x-is-array")
 
@@ -2137,7 +3130,7 @@ function patchIndices(patches) {
     return indices
 }
 
-},{"./create-element":27,"./dom-index":28,"./patch-op":29,"globalx/document":12,"x-is-array":52}],31:[function(require,module,exports){
+},{"./create-element":38,"./dom-index":39,"./patch-op":40,"globalx/document":31,"x-is-array":35}],42:[function(require,module,exports){
 var isWidget = require("../vnode/is-widget.js")
 
 module.exports = updateWidget
@@ -2156,7 +3149,7 @@ function updateWidget(a, b) {
     return false
 }
 
-},{"../vnode/is-widget.js":42}],32:[function(require,module,exports){
+},{"../vnode/is-widget.js":53}],43:[function(require,module,exports){
 'use strict';
 
 var EvStore = require('ev-store');
@@ -2190,7 +3183,7 @@ EvHook.prototype.unhook = function(node, propertyName) {
     es[propName] = undefined;
 };
 
-},{"dom-delegator":5,"ev-store":8}],33:[function(require,module,exports){
+},{"dom-delegator":8,"ev-store":30}],44:[function(require,module,exports){
 'use strict';
 
 module.exports = SoftSetHook;
@@ -2209,7 +3202,7 @@ SoftSetHook.prototype.hook = function (node, propertyName) {
     }
 };
 
-},{}],34:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 'use strict';
 
 var isArray = require('x-is-array');
@@ -2354,7 +3347,7 @@ function errorString(obj) {
     }
 }
 
-},{"../vnode/is-thunk":37,"../vnode/is-vcomment":38,"../vnode/is-vhook":39,"../vnode/is-vnode":40,"../vnode/is-vtext":41,"../vnode/is-widget":42,"../vnode/vcomment.js":43,"../vnode/vnode.js":45,"../vnode/vtext.js":47,"./hooks/ev-hook.js":32,"./hooks/soft-set-hook.js":33,"./parse-tag.js":35,"x-is-array":52}],35:[function(require,module,exports){
+},{"../vnode/is-thunk":48,"../vnode/is-vcomment":49,"../vnode/is-vhook":50,"../vnode/is-vnode":51,"../vnode/is-vtext":52,"../vnode/is-widget":53,"../vnode/vcomment.js":54,"../vnode/vnode.js":56,"../vnode/vtext.js":58,"./hooks/ev-hook.js":43,"./hooks/soft-set-hook.js":44,"./parse-tag.js":46,"x-is-array":35}],46:[function(require,module,exports){
 'use strict';
 
 var split = require('browser-split');
@@ -2410,7 +3403,7 @@ function parseTag(tag, props) {
     return props.namespace ? tagName : tagName.toUpperCase();
 }
 
-},{"browser-split":1}],36:[function(require,module,exports){
+},{"browser-split":29}],47:[function(require,module,exports){
 var isVNode = require("./is-vnode")
 var isVText = require("./is-vtext")
 var isWidget = require("./is-widget")
@@ -2452,14 +3445,14 @@ function renderThunk(thunk, previous) {
     return renderedThunk
 }
 
-},{"./is-thunk":37,"./is-vnode":40,"./is-vtext":41,"./is-widget":42}],37:[function(require,module,exports){
+},{"./is-thunk":48,"./is-vnode":51,"./is-vtext":52,"./is-widget":53}],48:[function(require,module,exports){
 module.exports = isThunk
 
 function isThunk(t) {
     return t && t.type === "Thunk"
 }
 
-},{}],38:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = isVirtualComment
@@ -2468,7 +3461,7 @@ function isVirtualComment(x) {
     return x && x.type === "VirtualComment" && x.version === version 
 }
 
-},{"./version":44}],39:[function(require,module,exports){
+},{"./version":55}],50:[function(require,module,exports){
 module.exports = isHook
 
 function isHook(hook) {
@@ -2477,7 +3470,7 @@ function isHook(hook) {
        typeof hook.unhook === "function" && !hook.hasOwnProperty("unhook"))
 }
 
-},{}],40:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = isVirtualNode
@@ -2486,7 +3479,7 @@ function isVirtualNode(x) {
     return x && x.type === "VirtualNode" && x.version === version
 }
 
-},{"./version":44}],41:[function(require,module,exports){
+},{"./version":55}],52:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = isVirtualText
@@ -2495,14 +3488,14 @@ function isVirtualText(x) {
     return x && x.type === "VirtualText" && x.version === version
 }
 
-},{"./version":44}],42:[function(require,module,exports){
+},{"./version":55}],53:[function(require,module,exports){
 module.exports = isWidget
 
 function isWidget(w) {
     return w && w.type === "Widget"
 }
 
-},{}],43:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = VirtualComment
@@ -2514,10 +3507,10 @@ function VirtualComment(comment) {
 VirtualComment.prototype.version = version
 VirtualComment.prototype.type = "VirtualComment"
 
-},{"./version":44}],44:[function(require,module,exports){
+},{"./version":55}],55:[function(require,module,exports){
 module.exports = "2"
 
-},{}],45:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 var version = require("./version")
 var isVNode = require("./is-vnode")
 var isWidget = require("./is-widget")
@@ -2591,7 +3584,7 @@ function VirtualNode(tagName, properties, children, key, namespace) {
 VirtualNode.prototype.version = version
 VirtualNode.prototype.type = "VirtualNode"
 
-},{"./is-thunk":37,"./is-vhook":39,"./is-vnode":40,"./is-widget":42,"./version":44}],46:[function(require,module,exports){
+},{"./is-thunk":48,"./is-vhook":50,"./is-vnode":51,"./is-widget":53,"./version":55}],57:[function(require,module,exports){
 var version = require("./version")
 
 VirtualPatch.NONE = 0
@@ -2616,7 +3609,7 @@ function VirtualPatch(type, vNode, patch) {
 VirtualPatch.prototype.version = version
 VirtualPatch.prototype.type = "VirtualPatch"
 
-},{"./version":44}],47:[function(require,module,exports){
+},{"./version":55}],58:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = VirtualText
@@ -2628,7 +3621,7 @@ function VirtualText(text) {
 VirtualText.prototype.version = version
 VirtualText.prototype.type = "VirtualText"
 
-},{"./version":44}],48:[function(require,module,exports){
+},{"./version":55}],59:[function(require,module,exports){
 var isObject = require("is-object")
 var isHook = require("../vnode/is-vhook")
 
@@ -2688,7 +3681,7 @@ function getPrototype(value) {
   }
 }
 
-},{"../vnode/is-vhook":39,"is-object":15}],49:[function(require,module,exports){
+},{"../vnode/is-vhook":50,"is-object":34}],60:[function(require,module,exports){
 var isArray = require("x-is-array")
 
 var VPatch = require("../vnode/vpatch")
@@ -3124,974 +4117,7 @@ function appendPatch(apply, patch) {
     }
 }
 
-},{"../vnode/handle-thunk":36,"../vnode/is-thunk":37,"../vnode/is-vcomment":38,"../vnode/is-vnode":40,"../vnode/is-vtext":41,"../vnode/is-widget":42,"../vnode/vpatch":46,"./diff-props":48,"x-is-array":52}],50:[function(require,module,exports){
-var hiddenStore = require('./hidden-store.js');
+},{"../vnode/handle-thunk":47,"../vnode/is-thunk":48,"../vnode/is-vcomment":49,"../vnode/is-vnode":51,"../vnode/is-vtext":52,"../vnode/is-widget":53,"../vnode/vpatch":57,"./diff-props":59,"x-is-array":35}],61:[function(require,module,exports){
 
-module.exports = createStore;
-
-function createStore() {
-    var key = {};
-
-    return function (obj) {
-        if ((typeof obj !== 'object' || obj === null) &&
-            typeof obj !== 'function'
-        ) {
-            throw new Error('Weakmap-shim: Key must be object')
-        }
-
-        var store = obj.valueOf(key);
-        return store && store.identity === key ?
-            store : hiddenStore(obj, key);
-    };
-}
-
-},{"./hidden-store.js":51}],51:[function(require,module,exports){
-module.exports = hiddenStore;
-
-function hiddenStore(obj, key) {
-    var store = { identity: key };
-    var valueOf = obj.valueOf;
-
-    Object.defineProperty(obj, "valueOf", {
-        value: function (value) {
-            return value !== key ?
-                valueOf.apply(this, arguments) : store;
-        },
-        writable: true
-    });
-
-    return store;
-}
-
-},{}],52:[function(require,module,exports){
-var nativeIsArray = Array.isArray
-var toString = Object.prototype.toString
-
-module.exports = nativeIsArray || isArray
-
-function isArray(obj) {
-    return toString.call(obj) === "[object Array]"
-}
-
-},{}],53:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-
-var _utils = require('./utils');
-
-var _intact = require('./intact');
-
-var _intact2 = _interopRequireDefault(_intact);
-
-var _vdt = require('vdt');
-
-var _vdt2 = _interopRequireDefault(_vdt);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// Animate Widget for animation
-exports.default = _intact2.default.extend({
-    displayName: 'Animate',
-
-    defaults: {
-        tagName: 'div',
-        transition: 'animate'
-    },
-
-    template: _vdt2.default.compile('return h(this.get("tagName"), _.extend({}, this.get()), _.values(this.childrenMap))', { autoReturn: false }),
-
-    _init: function _init() {
-        this._ = _;
-        this.key = this.get('key');
-        this.childrenMap = getChildMap(this.children);
-        this.currentKeys = {};
-        this.keysToEnter = [];
-        this.keysToLeave = [];
-    },
-    _beforeUpdate: function _beforeUpdate(prevWidget) {
-        if (!prevWidget) return;
-
-        var nextMap = getChildMap(this.children),
-            prevMap = prevWidget.childrenMap;
-        this.childrenMap = mergeChildren(prevMap, nextMap);
-
-        (0, _utils.each)(nextMap, function (value, key) {
-            if (nextMap[key] && !prevMap.hasOwnProperty(key) && !this.currentKeys[key]) {
-                this.keysToEnter.push(key);
-            }
-        }, this);
-
-        (0, _utils.each)(prevMap, function (value, key) {
-            if (prevMap[key] && !nextMap.hasOwnProperty(key) && !this.currentKeys[key]) {
-                this.keysToLeave.push(key);
-            }
-        }, this);
-    },
-    _update: function _update(prevWidget) {
-        if (!prevWidget) return;
-
-        var keysToEnter = this.keysToEnter;
-        this.keysToEnter = [];
-        (0, _utils.each)(keysToEnter, this.performEnter, this);
-
-        var keysToLeave = this.keysToLeave;
-        this.keysToLeave = [];
-        (0, _utils.each)(keysToLeave, this.performLeave, this);
-    },
-    performEnter: function performEnter(key) {
-        var _this = this;
-
-        var widget = this.childrenMap[key].widget;
-        this.currentKeys[key] = true;
-        if (widget && widget.enter) {
-            widget.enter(function () {
-                return _this._doneEntering(key);
-            });
-        } else {
-            this._doneEntering(key);
-        }
-    },
-    performLeave: function performLeave(key) {
-        var _this2 = this;
-
-        var widget = this.childrenMap[key].widget;
-        this.currentKeys[key] = true;
-        if (widget && widget.leave) {
-            widget.leave(function () {
-                return _this2._doneLeaving(key);
-            });
-        } else {
-            this._doneLeaving(key);
-        }
-    },
-    _doneEntering: function _doneEntering(key) {
-        delete this.currentKeys[key];
-        var map = getChildMap(this.children);
-        if (!map[key]) {
-            this.performLeave(key);
-        }
-    },
-    _doneLeaving: function _doneLeaving(key) {
-        delete this.currentKeys[key];
-        var map = getChildMap(this.children);
-        if (map && map[key]) {
-            this.performEnter(key);
-        } else {
-            delete this.childrenMap[key];
-            this.vdt.update();
-        }
-    },
-    enter: function enter(done) {
-        var transition = this.get('transition'),
-            element = this.element;
-
-        addClass(element, transition + '-enter');
-        TransitionEvents.one(element, function (e) {
-            e && e.stopPropagation();
-            removeClass(element, transition + '-enter');
-            removeClass(element, transition + '-enter-active');
-            done();
-        });
-        element.offsetWidth;
-        addClass(element, transition + '-enter-active');
-    },
-    leave: function leave(done) {
-        var transition = this.get('transition'),
-            element = this.element;
-
-        addClass(element, transition + '-leave');
-        TransitionEvents.one(element, function (e) {
-            e && e.stopPropagation();
-            removeClass(element, transition + '-leave');
-            removeClass(element, transition + '-leave-active');
-            done();
-        });
-        element.offsetWidth;
-        addClass(element, transition + '-leave-active');
-    }
-});
-
-/**
- * 将子元素数组转为map
- * @param children
- * @param ret
- * @param index
- * @returns {*}
- */
-
-function getChildMap(children, ret, index) {
-    if (!children) {
-        return children;
-    }
-    ret = ret || {};
-    index = index || '$0';
-    (0, _utils.each)(children, function (child, _index) {
-        _index = '$' + _index;
-        if (child && (child.type === 'Widget' || child.type === 'Thunk')) {
-            ret[child.key || _index] = child;
-        } else if ((0, _utils.isArray)(child)) {
-            getChildMap(child, ret, '' + index + _index);
-        } else {
-            ret['' + index + _index] = child;
-        }
-    });
-    return ret;
-}
-
-/**
- * 合并两个子元素map
- * @param prev
- * @param next
- * @returns {*|{}}
- */
-function mergeChildren(prev, next) {
-    prev = prev || {};
-    next = next || {};
-
-    function getValueForKey(key) {
-        if (next.hasOwnProperty(key)) {
-            return next[key];
-        } else {
-            return prev[key];
-        }
-    }
-
-    // For each key of `next`, the list of keys to insert before that key in
-    // the combined list
-    var nextKeysPending = {};
-
-    var pendingKeys = [];
-    for (var prevKey in prev) {
-        if (next.hasOwnProperty(prevKey)) {
-            if (pendingKeys.length) {
-                nextKeysPending[prevKey] = pendingKeys;
-                pendingKeys = [];
-            }
-        } else {
-            pendingKeys.push(prevKey);
-        }
-    }
-
-    var childMapping = {};
-    for (var nextKey in next) {
-        if (nextKeysPending.hasOwnProperty(nextKey)) {
-            for (var i = 0; i < nextKeysPending[nextKey].length; i++) {
-                var pendingNextKey = nextKeysPending[nextKey][i];
-                var value = getValueForKey(pendingNextKey);
-                childMapping[nextKeysPending[nextKey][i]] = getValueForKey(pendingNextKey);
-            }
-        }
-        childMapping[nextKey] = getValueForKey(nextKey);
-    }
-
-    // Finally, add the keys which didn't appear before any key in `next`
-    for (var _i = 0; _i < pendingKeys.length; _i++) {
-        childMapping[pendingKeys[_i]] = getValueForKey(pendingKeys[_i]);
-    }
-
-    return childMapping;
-}
-
-function addClass(element, className) {
-    if (className) {
-        if (element.classList) {
-            element.classList.add(className);
-        } else if (!hasClass(element, className)) {
-            element.className += ' ' + className;
-        }
-    }
-    return element;
-}
-
-function hasClass(element, className) {
-    if (element.classList) {
-        return !!className && element.className.contains(className);
-    }
-    return (' ' + element.className + ' ').indexOf(' ' + className + ' ') > -1;
-}
-
-function removeClass(element, className) {
-    if (className) {
-        if (element.classList) {
-            element.classList.remove(className);
-        } else if (hasClass(element, className)) {
-            element.className = element.className.replace(new RegExp('(^|\\s)' + className + '(?:\\s|$)', 'g'), '$1').replace(/\s+/g, ' ') // multiple spaces to one
-            .replace(/^\s*|\s*$/g, ''); // trim the ends
-        }
-    }
-}
-
-var EVENT_NAME_MAP = {
-    transitionend: {
-        'transition': 'transitionend',
-        'WebkitTransition': 'webkitTransitionEnd',
-        'MozTransition': 'mozTransitionEnd',
-        'OTransition': 'oTransitionEnd',
-        'msTransition': 'MSTransitionEnd'
-    },
-
-    animationend: {
-        'animation': 'animationend',
-        'WebkitAnimation': 'webkitAnimationEnd',
-        'MozAnimation': 'mozAnimationEnd',
-        'OAnimation': 'oAnimationEnd',
-        'msAnimation': 'MSAnimationEnd'
-    }
-};
-
-var endEvents = [];
-
-function detectEvents() {
-    var testEl = document.createElement('div');
-    var style = testEl.style;
-
-    // On some platforms, in particular some releases of Android 4.x,
-    // the un-prefixed "animation" and "transition" properties are defined on the
-    // style object but the events that fire will still be prefixed, so we need
-    // to check if the un-prefixed events are useable, and if not remove them
-    // from the map
-    if (!('AnimationEvent' in window)) {
-        delete EVENT_NAME_MAP.animationend.animation;
-    }
-
-    if (!('TransitionEvent' in window)) {
-        delete EVENT_NAME_MAP.transitionend.transition;
-    }
-
-    for (var baseEventName in EVENT_NAME_MAP) {
-        var baseEvents = EVENT_NAME_MAP[baseEventName];
-        for (var styleName in baseEvents) {
-            if (styleName in style) {
-                endEvents.push(baseEvents[styleName]);
-                break;
-            }
-        }
-    }
-}
-
-detectEvents();
-
-function addEventListener(node, eventName, eventListener) {
-    node.addEventListener(eventName, eventListener, false);
-}
-
-function removeEventListener(node, eventName, eventListener) {
-    node.removeEventListener(eventName, eventListener, false);
-}
-
-var TransitionEvents = {
-    on: function on(node, eventListener) {
-        if (endEvents.length === 0) {
-            // If CSS transitions are not supported, trigger an "end animation"
-            // event immediately.
-            window.setTimeout(eventListener, 0);
-            return;
-        }
-        endEvents.forEach(function (endEvent) {
-            addEventListener(node, endEvent, eventListener);
-        });
-    },
-
-    off: function off(node, eventListener) {
-        if (endEvents.length === 0) {
-            return;
-        }
-        endEvents.forEach(function (endEvent) {
-            removeEventListener(node, endEvent, eventListener);
-        });
-    },
-
-    one: function one(node, eventListener) {
-        var listener = function listener() {
-            eventListener.apply(this, arguments);
-            TransitionEvents.off(node, listener);
-        };
-        TransitionEvents.on(node, listener);
-    }
-};
-
-},{"./intact":55,"./utils":57,"vdt":16}],54:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.Vdt = undefined;
-
-var _animate = require('./animate');
-
-var _animate2 = _interopRequireDefault(_animate);
-
-var _intact = require('./intact');
-
-var _intact2 = _interopRequireDefault(_intact);
-
-var _vdt = require('vdt');
-
-var _vdt2 = _interopRequireDefault(_vdt);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-_intact2.default.prototype.Animate = _animate2.default;
-
-exports.default = _intact2.default;
-exports.Vdt = _vdt2.default;
-
-
-module.exports = exports['default'];
-module.exports.Vdt = exports.Vdt;
-
-},{"./animate":53,"./intact":55,"vdt":16}],55:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
-
-var _utils = require('./utils');
-
-var _thunk = require('./thunk');
-
-var _thunk2 = _interopRequireDefault(_thunk);
-
-var _vdt = require('vdt');
-
-var _vdt2 = _interopRequireDefault(_vdt);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var Intact = function Intact() {
-    var _this = this;
-
-    var attrs = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-    var contextWidgets = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-    if (!(this instanceof Intact)) {
-        return new _thunk2.default(this, attrs, contextWidgets);
-    }
-
-    if (!this.template) {
-        throw new Error('Can not instantiate when this.template does not exist.');
-    }
-
-    attrs = (0, _utils.extend)({
-        children: undefined
-    }, (0, _utils.result)(this, 'defaults'), attrs);
-
-    this._events = {};
-    this.attributes = {};
-
-    this.vdt = (0, _vdt2.default)(this.template);
-    this.set(attrs, { silent: true });
-    this.key = attrs.key;
-
-    this.widgets = {};
-
-    this.inited = false;
-    this.rendered = false;
-    this._hasCalledInit = false;
-
-    this._contextWidgets = contextWidgets;
-    this._widget = this.attributes.widget || (0, _utils.uniqueId)('widget');
-
-    // for debug
-    this.displayName = this.displayName;
-
-    this.addEvents();
-
-    this.children = this.get('children');
-    delete this.attributes.children;
-    // 存在widget名称引用属性，则注入所处上下文的widgets中
-    this._contextWidgets[this._widget] = this;
-
-    // 如果存在arguments属性，则将其拆开赋给attributes
-    if (this.attributes.arguments) {
-        (0, _utils.extend)(this.attributes, (0, _utils.result)(this.attributes, 'arguments'));
-        delete this.attributes.arguments;
-    }
-
-    // change事件，自动更新，当一个更新操作正在进行中，下一个更新操作必须等其完成
-    this._updateCount = 0;
-    var handleUpdate = function handleUpdate() {
-        if (_this._updateCount > 0) {
-            _this.update();
-            _this._updateCount--;
-            handleUpdate.call(_this);
-        }
-    };
-    this.on('change', function () {
-        if (++this._updateCount === 1) {
-            handleUpdate();
-        } else if (this._updateCount > 10) {
-            throw new Error('Too many recursive update.');
-        }
-    });
-
-    var ret = this._init();
-    // support promise
-    var inited = function inited() {
-        _this.inited = true;
-        _this.trigger('inited', _this);
-    };
-    if (ret && ret.then) {
-        ret.then(inited);
-    } else {
-        inited();
-    }
-};
-
-Intact.prototype = {
-    constructor: Intact,
-
-    type: 'Widget',
-
-    _init: function _init() {},
-    _create: function _create() {},
-    _beforeUpdate: function _beforeUpdate(prevWidget, domNode) {},
-    _update: function _update(prevWidget, domNode) {},
-    _destroy: function _destroy(domNode) {},
-    removeEvents: function removeEvents() {
-        var _this2 = this;
-
-        // 解绑所有事件
-        (0, _utils.each)(this.attributes, function (value, key) {
-            if (key.substring(0, 3) === 'ev-' && (0, _utils.isFunction)(value)) {
-                _this2.off(key.substring(3), value);
-                delete _this2.attributes[key];
-            }
-        });
-    },
-    addEvents: function addEvents(attrs) {
-        var _this3 = this;
-
-        // 所有以'ev-'开头的属性，都转化为事件
-        attrs || (attrs = this.attributes);
-        (0, _utils.each)(attrs, function (value, key) {
-            if (key.substring(0, 3) === 'ev-' && (0, _utils.isFunction)(value)) {
-                _this3.on(key.substring(3), value);
-            }
-        });
-    },
-    init: function init(isUpdate /* for private */) {
-        !isUpdate && (this.element = this.vdt.render(this));
-        this.rendered = true;
-        this._hasCalledInit = true;
-        this.trigger('rendered', this);
-        this._create();
-        return this.element;
-    },
-    update: function update(prevWidget, domNode) {
-        if (!this.vdt.node && (!prevWidget || !prevWidget.vdt.node)) return;
-        this._beforeUpdate(prevWidget, domNode);
-        if (prevWidget && domNode) {
-            this.vdt.node = domNode;
-            this.vdt.tree = prevWidget.vdt.tree;
-        }
-        this.prevWidget = prevWidget;
-        this.element = this.vdt.update(this);
-        if (!this._hasCalledInit) {
-            this.init(true);
-        }
-        this._update(prevWidget, domNode);
-        return this.element;
-    },
-    destroy: function destroy(domNode) {
-        // 如果只是移动了一个组件，会先执行创建，再销毁，所以需要判断父组件引用的是不是自己
-        if (this._contextWidgets[this._widget] === this) {
-            delete this._contextWidgets[this._widget];
-        }
-        this.off();
-        function destroy(children) {
-            (0, _utils.each)(children, function (child) {
-                if (child.hasThunks) {
-                    destroy(child.children);
-                } else if (child.type === 'Thunk') {
-                    child.widget.destroy();
-                }
-            });
-        }
-        destroy([this.vdt.tree]);
-        this._destroy(domNode);
-    },
-    get: function get(attr) {
-        // @deprecated for v0.0.1 compatibility, use this.children instead of
-        if (attr === 'children') {
-            return this.attributes.children || this.children;
-        }
-        return arguments.length === 0 ? this.attributes : this.attributes[attr];
-    },
-    set: function set(key, val, options) {
-        var _this4 = this;
-
-        if (key == null) return this;
-
-        var attrs = void 0;
-        if ((typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object') {
-            attrs = key;
-            options = val;
-        } else {
-            (attrs = {})[key] = val;
-        }
-
-        options = (0, _utils.extend)({
-            silent: false,
-            global: true,
-            async: false
-        }, options);
-
-        var current = this.attributes,
-            changes = [];
-
-        for (var attr in attrs) {
-            val = attrs[attr];
-            if (!(0, _utils.isEqual)(current[attr], val)) {
-                changes.push(attr);
-            }
-            current[attr] = val;
-        }
-
-        if (changes.length) {
-            var eventName = void 0;
-            for (var i = 0, l = changes.length; i < l; i++) {
-                var _attr = changes[i];
-                eventName = 'change:' + _attr;
-                options[eventName] && options[eventName].call(this, current[_attr]);
-                !options.silent && this.trigger(eventName, this, current[_attr]);
-            }
-
-            options.change && options.change.call(this);
-            if (!options.silent) {
-                this.trigger('beforeChange', this);
-                if (options.global) {
-                    clearTimeout(this._asyncUpdate);
-                    if (options.async) {
-                        this._asyncUpdate = setTimeout(function () {
-                            _this4.trigger('change', _this4);
-                        });
-                    } else {
-                        this.trigger('change', this);
-                    }
-                }
-            }
-        }
-
-        return this;
-    },
-    on: function on(name, callback) {
-        (this._events[name] || (this._events[name] = [])).push(callback);
-
-        return this;
-    },
-    off: function off(name, callback) {
-        if (!arguments.length) {
-            this._events = {};
-            return this;
-        }
-
-        var callbacks = this._events[name];
-        if (!callbacks) return this;
-
-        if (arguments.length === 1) {
-            delete this._events[name];
-            return this;
-        }
-
-        for (var cb, i = 0; i < callbacks.length; i++) {
-            cb = callbacks[i];
-            if (cb === callback) {
-                callbacks.splice(i, 1);
-                i--;
-            }
-        }
-
-        return this;
-    },
-    trigger: function trigger(name) {
-        var callbacks = this._events[name];
-
-        if (callbacks) {
-            for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-                args[_key - 1] = arguments[_key];
-            }
-
-            for (var i = 0, l = callbacks.length; i < l; i++) {
-                callbacks[i].apply(this, args);
-            }
-        }
-
-        return this;
-    }
-};
-
-/**
- * @brief 继承某个组件
- *
- * @param prototype
- */
-Intact.extend = function () {
-    var prototype = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-    prototype.defaults = (0, _utils.extend)({}, this.prototype.defaults, prototype.defaults);
-    return (0, _utils.inherit)(this, prototype);
-};
-
-/**
- * 挂载组件到dom中
- * @param widget {Intact} Intact类或子类，也可以是实例化的对象
- * @param node {Node} html节点
- */
-Intact.mount = function (widget, node) {
-    if (widget.prototype && (widget.prototype instanceof Intact || widget === Intact)) {
-        widget = new widget();
-    }
-    if (widget.rendered) {
-        node.appendChild(widget.element);
-    } else if (widget.inited) {
-        node.appendChild(widget.init());
-    } else {
-        widget.on('inited', function () {
-            return node.appendChild(widget.init());
-        });
-    }
-    return widget;
-};
-
-exports.default = Intact;
-
-},{"./thunk":56,"./utils":57,"vdt":16}],56:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-
-var _utils = require('./utils');
-
-var Thunk = function Thunk(Widget, attributes, contextWidget) {
-    this.Widget = Widget;
-    this.attributes = attributes || {};
-    this.key = this.attributes.key;
-    this.contextWidget = contextWidget;
-};
-
-Thunk.prototype = {
-    constructor: Thunk,
-
-    type: 'Thunk',
-
-    render: function render(previous) {
-        if (!previous || previous.Widget !== this.Widget || previous.key !== this.key) {
-            this.widget = new this.Widget(this.attributes, this.contextWidget);
-        } else if (previous.Widget === this.Widget) {
-            if (!previous.widget) throw new Error('Don\'t update when updating.');
-
-            var widget = this.widget = previous.widget;
-            widget.children = this.attributes.children;
-            delete this.attributes.children;
-
-            // 如果存在arguments属性，则将其拆开赋给attributes
-            if (this.attributes.arguments) {
-                (0, _utils.extend)(this.attributes, (0, _utils.result)(this.attributes, 'arguments'));
-                delete this.attributes.arguments;
-            }
-
-            widget.removeEvents();
-            widget.addEvents(this.attributes);
-            widget.set(this.attributes, { global: false });
-
-            // 当一个组件，用同一个组件的另一个实例，去更新自己，由于子组件都相同
-            // 所以子组件不会新建，也就写入不了新实例的widgets引用中，这里强制设置一遍
-            this.contextWidget[this.widget._widget] = this.widget;
-        }
-
-        return this.widget;
-    }
-};
-
-exports.default = Thunk;
-
-},{"./utils":57}],57:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.isArray = exports.extend = undefined;
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
-
-exports.inherit = inherit;
-exports.create = create;
-exports.each = each;
-exports.isFunction = isFunction;
-exports.isObject = isObject;
-exports.result = result;
-exports.bind = bind;
-exports.isEqual = isEqual;
-exports.uniqueId = uniqueId;
-
-var _vdt = require('vdt');
-
-var _vdt2 = _interopRequireDefault(_vdt);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var extend = exports.extend = _vdt2.default.utils.extend;
-var isArray = exports.isArray = _vdt2.default.utils.isArray;
-
-/**
- * inherit
- * @param Parent
- * @param prototype
- * @returns {Function}
- */
-function inherit(Parent, prototype) {
-    var Child = function Child() {
-        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-            args[_key] = arguments[_key];
-        }
-
-        if (!this || !(this instanceof Child || this.prototype instanceof Child)) {
-            return Parent.apply(Child, args);
-        }
-        return Parent.apply(this, args);
-    };
-
-    Child.prototype = create(Parent.prototype);
-    each(prototype, function (proto, name) {
-        if (name === 'displayName') {
-            return Child.displayName = proto;
-        }
-        if (!isFunction(proto) || name === 'template') {
-            return Child.prototype[name] = proto;
-        }
-        Child.prototype[name] = function () {
-            var _super = function _super() {
-                for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-                    args[_key2] = arguments[_key2];
-                }
-
-                return Parent.prototype[name].apply(this, args);
-            },
-                _superApply = function _superApply(args) {
-                return Parent.prototype[name].apply(this, args);
-            };
-            return function () {
-                var self = this || {},
-                    __super = self._super,
-                    __superApply = self._superApply,
-                    returnValue = void 0;
-
-                self._super = _super;
-                self._superApply = _superApply;
-
-                for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-                    args[_key3] = arguments[_key3];
-                }
-
-                returnValue = proto.apply(this, args);
-
-                self._super = __super;
-                self._superApply = __superApply;
-
-                return returnValue;
-            };
-        }();
-    });
-    Child.__super = Parent.prototype;
-    Child.prototype.constructor = Child;
-
-    extend(Child, Parent);
-
-    return Child;
-}
-
-var nativeCreate = Object.create;
-function create(object) {
-    if (nativeCreate) {
-        return nativeCreate(object);
-    } else {
-        var fn = function fn() {};
-        fn.prototype = object;
-        return new fn();
-    }
-}
-
-var hasOwn = Object.prototype.hasOwnProperty;
-function each(obj, iter, thisArg) {
-    if (isArray(obj)) {
-        for (var i = 0, l = obj.length; i < l; i++) {
-            iter.call(thisArg, obj[i], i, obj);
-        }
-    } else if (isObject(obj)) {
-        for (var key in obj) {
-            if (hasOwn.call(obj, key)) {
-                iter.call(thisArg, obj[key], key, obj);
-            }
-        }
-    }
-}
-
-function isFunction(obj) {
-    return typeof obj === 'function';
-}
-
-function isObject(obj) {
-    var type = typeof obj === 'undefined' ? 'undefined' : _typeof(obj);
-    return type === 'function' || type === 'object' && !!obj;
-}
-
-function result(obj, property, fallback) {
-    var value = obj == null ? undefined : obj[property];
-    if (value === undefined) {
-        value = fallback;
-    }
-    return isFunction(value) ? value.call(obj) : value;
-}
-
-var executeBound = function executeBound(sourceFunc, boundFunc, context, callingContext, args) {
-    if (!(callingContext instanceof boundFunc)) return sourceFunc.apply(context, args);
-    var self = create(sourceFunc.prototype);
-    var result = sourceFunc.apply(self, args);
-    if (isObject(result)) return result;
-    return self;
-};
-var nativeBind = Function.prototype.bind;
-function bind(func, context) {
-    for (var _len4 = arguments.length, args = Array(_len4 > 2 ? _len4 - 2 : 0), _key4 = 2; _key4 < _len4; _key4++) {
-        args[_key4 - 2] = arguments[_key4];
-    }
-
-    if (nativeBind && func.bind === nativeBind) {
-        return nativeBind.call.apply(nativeBind, [func, context].concat(args));
-    }
-    if (!isFunction(func)) throw new TypeError('Bind must be called on a function');
-    var bound = function bound() {
-        for (var _len5 = arguments.length, args1 = Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
-            args1[_key5] = arguments[_key5];
-        }
-
-        return executeBound(func, bound, context, this, [].concat(args, args1));
-    };
-    return bound;
-}
-
-function isEqual(a, b) {
-    return a == b;
-}
-
-var idCounter = 0;
-function uniqueId(prefix) {
-    var id = ++idCounter + '';
-    return prefix ? prefix + id : id;
-}
-
-},{"vdt":16}],58:[function(require,module,exports){
-
-},{}]},{},[54])(54)
+},{}]},{},[2])(2)
 });

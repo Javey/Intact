@@ -8,13 +8,13 @@
     "release-patch": "git checkout master && bower version patch && git push origin master --tags",
     "release-minor": "git checkout master && bower version minor && git push origin master --tags",
     "release-major": "git checkout master && bower version major && git push origin master --tags",
-    "build": "browserify src/index.js -t babelify -o dist/intact.js -s Intact"
+    "build": "browserify src/index.js -t babelify -o dist/intact.js -s Intact && uglifyjs dist/intact.js -o dist/intact.min.js -m"
   },
   "dependencies": {
   },
   "main": "src/index",
   "devDependencies": {
-    "vdt": "^0.8.10",
+    "vdt": "^0.9.0",
     "babel-cli": "^6.10.1",
     "babel-plugin-transform-decorators": "^6.8.0",
     "babel-polyfill": "^6.9.1",

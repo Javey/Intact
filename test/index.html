@@ -5,6 +5,16 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="mocha.css"/>
+    <style type="text/css">
+        .animate-leave {
+            opacity: 1;
+        }
+        .animate-leave.animate-leave-active {
+            -webkit-transition: opacity cubic-bezier(0.250, 0.460, 0.450, 0.940) 200ms;
+            transition: opacity cubic-bezier(0.250, 0.460, 0.450, 0.940) 200ms;
+            opacity: 0;
+        }
+    </style>
 </head>
 <body>
 <div id="mocha"></div>
@@ -18,6 +28,7 @@
 <script>mocha.setup('bdd')</script>
 <script src="simpleTest.js"></script>
 <script src="componentTest.js"></script>
+<script src="animateTest.js"></script>
 <script>
     if (window.mochaPhantomJS) {
         mochaPhantomJS.run();

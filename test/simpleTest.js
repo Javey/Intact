@@ -22,7 +22,7 @@ describe('Simple Test', function() {
                     a: 1
                 },
 
-                template: '<div>{this.get("a")}</div>'
+                template: '<div>{self.get("a")}</div>'
             });
             SubComponent = Component.extend({
                 defaults: {
@@ -89,7 +89,7 @@ describe('Simple Test', function() {
                     a: 1
                 },
 
-                template: '<div>{this.get("a")}</div>'
+                template: '<div>{self.get("a")}</div>'
             });
             instance = new Component({c: 3});
         });
@@ -194,7 +194,7 @@ describe('Simple Test', function() {
         beforeEach(function() {
             Component = Intact.extend({
                 defaults: {a: 1},
-                template: '<i>{this.get("a")}</i>'
+                template: '<i>{self.get("a")}</i>'
             });
         });
 

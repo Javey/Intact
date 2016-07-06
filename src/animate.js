@@ -1,4 +1,4 @@
-import {each, isArray, bind} from './utils';
+import {each, isArray, bind, extend, values} from './utils';
 import Intact from './intact';
 import Vdt from 'vdt';
 
@@ -11,16 +11,21 @@ export default Intact.extend({
         transition: 'animate'
     },
 
-    template: Vdt.compile('return h(this.get("tagName"), _.extend({}, this.get()), _.values(this.childrenMap))', {autoReturn: false}),
+    template: Vdt.compile(
+        'return h(self.get("tagName"), self.extend({}, self.get()), self.values(self.childrenMap))',
+        {autoReturn: false, noWith: true}
+    ),
 
     _init() {
-        this._ = _;
         this.key = this.get('key');
         this.childrenMap = getChildMap(this.children);
         this.currentKeys = {};
         this.keysToEnter = [];
         this.keysToLeave = [];
     },
+
+    extend: extend,
+    values: values,
 
     _beforeUpdate(prevWidget) {
         if (!prevWidget) return;

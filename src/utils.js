@@ -129,3 +129,9 @@ export function uniqueId(prefix) {
     let id = ++idCounter + '';
     return prefix ? prefix + id : id;
 }
+
+export function values(obj) {
+    var ret = [];
+    each(obj, (value) => ret.push(value));
+    return ret;
+}
