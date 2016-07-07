@@ -2,6 +2,8 @@ import Vdt from 'vdt';
 
 export let extend = Vdt.utils.extend; 
 export let isArray = Vdt.utils.isArray;
+export let each = Vdt.utils.each;
+export let isObject = Vdt.utils.isObject;
 
 /**
  * inherit
@@ -70,27 +72,9 @@ export function create(object) {
 }
 
 let hasOwn = Object.prototype.hasOwnProperty;
-export function each(obj, iter, thisArg) {
-    if (isArray(obj)) {
-        for (let i = 0, l = obj.length; i < l; i++) {
-            iter.call(thisArg, obj[i], i, obj);
-        } 
-    } else if (isObject(obj)) {
-        for (let key in obj) {
-            if (hasOwn.call(obj, key)) {
-                iter.call(thisArg, obj[key], key, obj);
-            }
-        }
-    }
-}
 
 export function isFunction(obj) {
     return typeof obj === 'function';
-}
-
-export function isObject(obj) {
-    let type = typeof obj;
-    return type === 'function' || type === 'object' && !!obj; 
 }
 
 export function result(obj, property, fallback) {
@@ -160,9 +144,15 @@ var eq = function(a, b, aStack, bStack) {
         // Objects with different constructors are not equivalent, but `Object`s or `Array`s
         // from different frames are.
         var aCtor = a.constructor, bCtor = b.constructor;
-        if (aCtor !== bCtor && !(isFunction(aCtor) && aCtor instanceof aCtor &&
-                                 isFunction(bCtor) && bCtor instanceof bCtor)
-                            && ('constructor' in a && 'constructor' in b)) {
+        if (aCtor !== bCtor && 
+            !(
+                isFunction(aCtor) && 
+                aCtor instanceof aCtor &&
+                isFunction(bCtor) && 
+                bCtor instanceof bCtor
+            ) && 
+            ('constructor' in a && 'constructor' in b)
+        ) {
             return false;
         }
     }
