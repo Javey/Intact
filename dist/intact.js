@@ -2266,7 +2266,13 @@ Stringifier.prototype = {
     _visitJSXAttribute: function(attributes) {
         var ret = [];
         Utils.each(attributes, function(attr) {
-            ret.push("'" + attrMap(attr.name) + "': " + this._visitJSXAttributeValue(attr.value));
+            var name = attrMap(attr.name),
+                value = this._visitJSXAttributeValue(attr.value);
+            if (name === 'className' && attr.value.type === Type.JSXExpressionContainer && Utils.trimLeft(value)[0] === '{') {
+                // for class={ {active: true} }
+                value = '_Vdt.utils.className(' + value + ')';
+            }
+            ret.push("'" + name + "': " + value);
         }, this);
 
         return ret.length ? '{' + ret.join(', ') + '}' : 'null';
@@ -2426,6 +2432,16 @@ var Utils = {
         return ret;
     },
 
+    className: function(obj) {
+        var ret = [];
+        for (var key in obj) {
+            if (hasOwn.call(obj, key) && obj[key]) {
+                ret.push(key);
+            }
+        }
+        return ret.join(' ');
+    },
+
     isObject: isObject,
 
     isWhiteSpace: function(charCode) {
@@ -2439,6 +2455,14 @@ var Utils = {
         while (index-- && Utils.isWhiteSpace(str.charCodeAt(index))) {}
 
         return str.slice(0, index + 1);
+    },
+
+    trimLeft: function(str) {
+        var length = str.length, index = -1;
+
+        while (index++ < length && Utils.isWhiteSpace(str.charCodeAt(index))) {}
+
+        return str.slice(index);
     },
 
     Type: Type,
@@ -2599,8 +2623,7 @@ function compile(source, options) {
                 'obj || (obj = {});',
                 'blocks || (blocks = {});',
                 'var h = _Vdt.virtualDom.h, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},',
-                    'extend = _Vdt.utils.extend, require = _Vdt.utils.require;',
-                'var self = {}; if (obj.type === "Widget") { self = obj; } else { self.get = function(name) { return obj[name]; } }',
+                    'extend = _Vdt.utils.extend, require = _Vdt.utils.require, self = obj;',
                 options.noWith ? hscript : [
                     'with (obj) {',
                         hscript,
