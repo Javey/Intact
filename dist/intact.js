@@ -2268,7 +2268,7 @@ Stringifier.prototype = {
         Utils.each(attributes, function(attr) {
             var name = attrMap(attr.name),
                 value = this._visitJSXAttributeValue(attr.value);
-            if (name === 'className' && attr.value.type === Type.JSXExpressionContainer && Utils.trimLeft(value)[0] === '{') {
+            if (name === 'className' && attr.value.type === Type.JSXExpressionContainer/*  && Utils.trimLeft(value)[0] === '{' */) {
                 // for class={ {active: true} }
                 value = '_Vdt.utils.className(' + value + ')';
             }
@@ -2433,6 +2433,8 @@ var Utils = {
     },
 
     className: function(obj) {
+        if (obj == null) return;
+        if (typeof obj === 'string') return obj;
         var ret = [];
         for (var key in obj) {
             if (hasOwn.call(obj, key) && obj[key]) {
