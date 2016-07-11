@@ -2292,7 +2292,7 @@ Stringifier.prototype = {
 
     _visitJSXWidget: function(element) {
         element.attributes.push({name: 'children', value: element.children});
-        return element.value + '(' + this._visitJSXAttribute(element.attributes) + ', widgets)';
+        return this._visitJSXDiretive(element.directives, element.value + '(' + this._visitJSXAttribute(element.attributes) + ', widgets)');
     },
 
     _visitJSXBlock: function(element, isAncestor) {
@@ -2625,7 +2625,7 @@ function compile(source, options) {
                 'obj || (obj = {});',
                 'blocks || (blocks = {});',
                 'var h = _Vdt.virtualDom.h, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},',
-                    'extend = _Vdt.utils.extend, require = _Vdt.utils.require, self = obj;',
+                    'extend = _Vdt.utils.extend, require = _Vdt.utils.require, self = this.data, scope = obj;',
                 options.noWith ? hscript : [
                     'with (obj) {',
                         hscript,
