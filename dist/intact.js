@@ -796,7 +796,7 @@ function inherit(Parent, prototype) {
     Child.prototype = create(Parent.prototype);
     each(prototype, function (proto, name) {
         if (name === 'displayName') {
-            return Child.displayName = proto;
+            Child.displayName = proto;
         }
         if (!isFunction(proto) || name === 'template') {
             return Child.prototype[name] = proto;

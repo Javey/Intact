@@ -22,7 +22,9 @@ describe('Simple Test', function() {
                     a: 1
                 },
 
-                template: '<div>{self.get("a")}</div>'
+                template: '<div>{self.get("a")}</div>',
+
+                displayName: 'Component'
             });
             SubComponent = Component.extend({
                 defaults: {
@@ -37,6 +39,12 @@ describe('Simple Test', function() {
             SubComponent.prototype.defaults.a.should.be.eql(2);
             SubComponent.prototype.defaults.b.should.be.eql(1);
             SubComponent.prototype.template.should.be.type('string');
+            
+            // displayName
+            Component.prototype.displayName.should.be.eql('Component');
+            Component.displayName.should.be.eql('Component');
+            SubComponent.prototype.displayName.should.be.eql('Component');
+            SubComponent.displayName.should.be.eql('Component');
         });
 
         it('instantiate', function() {
