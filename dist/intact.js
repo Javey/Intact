@@ -599,12 +599,20 @@ Intact.prototype = {
                 this.trigger('beforeChange', this);
                 if (options.global) {
                     clearTimeout(this._asyncUpdate);
+                    var triggerChange = function triggerChange() {
+                        _this4.trigger('change', _this4);
+                        for (var _i = 0, _l = changes.length; _i < _l; _i++) {
+                            var _attr2 = changes[_i],
+                                _eventName = 'changed:' + _attr2;
+
+                            options[_eventName] && options[_eventName].call(_this4, current[_attr2]);
+                            _this4.trigger(_eventName, _this4, current[_attr2]);
+                        }
+                    };
                     if (options.async) {
-                        this._asyncUpdate = setTimeout(function () {
-                            _this4.trigger('change', _this4);
-                        });
+                        this._asyncUpdate = setTimeout(triggerChange);
                     } else {
-                        this.trigger('change', this);
+                        triggerChange();
                     }
                 }
             }

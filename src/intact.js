@@ -206,12 +206,20 @@ Intact.prototype = {
                 this.trigger('beforeChange', this);
                 if (options.global) {
                     clearTimeout(this._asyncUpdate);
-                    if (options.async) {
-                        this._asyncUpdate = setTimeout(() => {
-                            this.trigger('change', this);
-                        });
-                    } else {
+                    let triggerChange = () => {
                         this.trigger('change', this);
+                        for (let i = 0, l = changes.length; i < l; i++) {
+                            let attr = changes[i],
+                                eventName = `changed:${attr}`;
+
+                            options[eventName] && options[eventName].call(this, current[attr]);
+                            this.trigger(eventName, this, current[attr]);
+                        }
+                    };
+                    if (options.async) {
+                        this._asyncUpdate = setTimeout(triggerChange);
+                    } else {
+                        triggerChange();
                     }
                 }
             }
