@@ -113,6 +113,16 @@ Intact.prototype = {
     },
 
     init(isUpdate/* for private */) {
+        // support async component
+        if (!this.inited && !isUpdate) {
+            var placeholder = document.createComment('placeholder');
+            this.on('inited', function() {
+                var parent = placeholder.parentNode;
+                parent && parent.replaceChild(this.init(), placeholder);
+            });
+            return placeholder;
+        }
+
         !isUpdate && (this.element = this.vdt.render(this));
         this.rendered = true;
         this._hasCalledInit = true;
