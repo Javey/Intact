@@ -14,7 +14,7 @@
   },
   "main": "src/index",
   "devDependencies": {
-    "vdt": "^0.9.1",
+    "vdt": "^0.9.9",
     "babel-cli": "^6.10.1",
     "babel-plugin-transform-decorators": "^6.8.0",
     "babel-polyfill": "^6.9.1",

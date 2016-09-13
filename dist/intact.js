@@ -454,19 +454,20 @@ var Intact = function Intact() {
             handleUpdate.call(_this);
         }
     };
-    this.on('change', function () {
-        if (++this._updateCount === 1) {
-            handleUpdate();
-        } else if (this._updateCount > 10) {
-            throw new Error('Too many recursive update.');
-        }
-    });
 
     var ret = this._init();
     // support promise
     var inited = function inited() {
         _this.inited = true;
         _this.trigger('inited', _this);
+        // don't bind change event to update until component inited
+        _this.on('change', function () {
+            if (++this._updateCount === 1) {
+                handleUpdate();
+            } else if (this._updateCount > 10) {
+                throw new Error('Too many recursive update.');
+            }
+        });
     };
     if (ret && ret.then) {
         ret.then(inited);
@@ -2530,19 +2531,7 @@ var Utils = {
 
     noop: function() {},
 
-    require: (function() {
-        var isNode = new Function("try { return this === global; } catch (e) { return false; }"); 
-        if (isNode()) {
-            return require('./compile');
-        } else {
-            // use amd require
-            return typeof require !== 'undefined' ? require : Utils.noRequire;
-        }
-    })(),
-
-    noRequire: function() {
-        throw new Error('Vdt depends RequireJs to require file over http.');
-    }
+    require: require('./compile')
 };
 
 module.exports = Utils;
@@ -2630,7 +2619,9 @@ function compile(source, options) {
         onlySource: false,
         delimiters: utils.getDelimiters(),
         // remove `with` statement, then you can get data by `set.get(name)` method.
-        noWith: false
+        noWith: false,
+        // whether to render on server or not
+        server: false
     }, options);
 
     switch (typeof source) {
@@ -2643,7 +2634,9 @@ function compile(source, options) {
                 'obj || (obj = {});',
                 'blocks || (blocks = {});',
                 'var h = _Vdt.virtualDom.h, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},',
-                    'extend = _Vdt.utils.extend, require = _Vdt.utils.require, self = this.data, scope = obj;',
+                    'extend = _Vdt.utils.extend, ' +
+                    (options.server ? 'require = _Vdt.utils.require, ' : '') +
+                    'self = this.data, scope = obj;',
                 options.noWith ? hscript : [
                     'with (obj) {',
                         hscript,

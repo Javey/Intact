@@ -56,19 +56,20 @@ let Intact = function(attrs = {}, contextWidgets = {}) {
             handleUpdate.call(this);
         }
     };
-    this.on('change', function() { 
-        if (++this._updateCount === 1) {
-            handleUpdate();
-        } else if (this._updateCount > 10) {
-            throw new Error('Too many recursive update.');
-        }
-    });
 
     let ret = this._init();
     // support promise
     let inited = () => {
         this.inited = true;
         this.trigger('inited', this);
+        // don't bind change event to update until component inited
+        this.on('change', function() { 
+            if (++this._updateCount === 1) {
+                handleUpdate();
+            } else if (this._updateCount > 10) {
+                throw new Error('Too many recursive update.');
+            }
+        });
     };
     if (ret && ret.then) {
         ret.then(inited);
