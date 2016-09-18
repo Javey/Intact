@@ -559,12 +559,16 @@ Intact.prototype = {
         destroy([this.vdt.tree]);
         this._destroy(domNode);
     },
-    get: function get(attr) {
+    get: function get(attr, defaultValue) {
+        if (!arguments.length) return this.attributes;
         // @deprecated for v0.0.1 compatibility, use this.children instead of
         if (attr === 'children') {
             return this.attributes.children || this.children;
         }
-        return arguments.length === 0 ? this.attributes : this.attributes[attr];
+        if (_utils.hasOwn.call(this.attributes, attr)) return this.attributes[attr];
+        // support get value by path like lodash `_.get`
+        var ret = (0, _utils.get)(this.attributes, attr);
+        return ret === undefined ? defaultValue : ret;
     },
     set: function set(key, val, options) {
         var _this4 = this;
@@ -770,7 +774,7 @@ exports.default = Thunk;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.keys = exports.isObject = exports.each = exports.isArray = exports.extend = undefined;
+exports.keys = exports.hasOwn = exports.isObject = exports.each = exports.isArray = exports.extend = undefined;
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
@@ -782,6 +786,7 @@ exports.bind = bind;
 exports.isEqual = isEqual;
 exports.uniqueId = uniqueId;
 exports.values = values;
+exports.get = get;
 
 var _vdt = require('vdt');
 
@@ -872,7 +877,7 @@ function create(object) {
     }
 }
 
-var hasOwn = Object.prototype.hasOwnProperty;
+var hasOwn = exports.hasOwn = Object.prototype.hasOwnProperty;
 
 function isFunction(obj) {
     return typeof obj === 'function';
@@ -1028,6 +1033,38 @@ function values(obj) {
         return ret.push(value);
     });
     return ret;
+}
+
+var pathMap = {},
+    reLeadingDot = /^\./,
+    rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g,
+    reEscapeChar = /\\(\\)?/g;
+function castPath(path) {
+    if (typeof path !== 'string') return path;
+    if (pathMap[path]) return pathMap[path];
+
+    var ret = [];
+    if (reLeadingDot.test(path)) {
+        result.push('');
+    }
+    path.replace(rePropName, function (match, number, quote, string) {
+        ret.push(quote ? path.replace(reEscapeChar, '$1') : number || match);
+    });
+    pathMap[path] = ret;
+
+    return ret;
+}
+function get(object, path) {
+    path = castPath(path);
+
+    var index = 0,
+        length = path.length;
+
+    while (object != null && index < length) {
+        object = object[path[index++]];
+    }
+
+    return index && index === length ? object : undefined;
 }
 
 },{"vdt":20}],6:[function(require,module,exports){
@@ -2643,7 +2680,7 @@ function compile(source, options) {
                     '}'
                 ].join('\n')
             ].join('\n');
-            templateFn = options.onlySource ? utils.noop : new Function('obj', '_Vdt', 'blocks', hscript);
+            templateFn = options.onlySource ? function() {} : new Function('obj', '_Vdt', 'blocks', hscript);
             templateFn.source = 'function(obj, _Vdt, blocks) {\n' + hscript + '\n}';
             break;
         case 'function':

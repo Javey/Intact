@@ -1,4 +1,4 @@
-import {inherit, extend, result, each, isFunction, isEqual, uniqueId} from './utils';
+import {inherit, extend, result, each, isFunction, isEqual, uniqueId, hasOwn, get} from './utils';
 import Thunk from './thunk';
 import Vdt from 'vdt';
 
@@ -167,12 +167,16 @@ Intact.prototype = {
         this._destroy(domNode);
     },
 
-    get(attr) {
+    get(attr, defaultValue) {
+        if (!arguments.length) return this.attributes;
         // @deprecated for v0.0.1 compatibility, use this.children instead of
         if (attr === 'children') {
             return this.attributes.children || this.children;
         }
-        return arguments.length === 0 ? this.attributes : this.attributes[attr];
+        if (hasOwn.call(this.attributes, attr)) return this.attributes[attr];
+        // support get value by path like lodash `_.get`
+        let ret = get(this.attributes, attr);
+        return ret === undefined ? defaultValue : ret;
     },
 
     set(key, val, options) {

@@ -94,7 +94,14 @@ describe('Simple Test', function() {
         beforeEach(function() {
             var Component = Intact.extend({
                 defaults: {
-                    a: 1
+                    a: 1,
+                    bb: {
+                        bb: 2
+                    },
+                    cc: [
+                        {cc: 2}
+                    ],
+                    'a.a': 1
                 },
 
                 template: '<div>{self.get("a")}</div>'
@@ -124,7 +131,11 @@ describe('Simple Test', function() {
         it('get', function() {
             instance.get('a').should.be.eql(1);
             (instance.get('aa') === undefined).should.be.true;
-            instance.get().should.be.eql({a: 1, c: 3});
+            instance.get().should.have.properties({a: 1, c: 3});
+            instance.get('bb.bb').should.be.eql(2);
+            instance.get('cc[0].cc').should.be.eql(2);
+            (instance.get('aa.aa.aa') === undefined).should.be.true;
+            instance.get('a.a').should.be.eql(1);
         });
 
         it('set', function() {

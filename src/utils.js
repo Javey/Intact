@@ -71,7 +71,7 @@ export function create(object) {
     }
 }
 
-let hasOwn = Object.prototype.hasOwnProperty;
+export let hasOwn = Object.prototype.hasOwnProperty;
 
 export function isFunction(obj) {
     return typeof obj === 'function';
@@ -221,4 +221,36 @@ export function values(obj) {
     var ret = [];
     each(obj, (value) => ret.push(value));
     return ret;
+}
+
+let pathMap = {},
+    reLeadingDot = /^\./,
+    rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g,
+    reEscapeChar = /\\(\\)?/g;
+function castPath(path) {
+    if (typeof path !== 'string') return path;
+    if (pathMap[path]) return pathMap[path];
+
+    let ret = [];
+    if (reLeadingDot.test(path)) {
+        result.push('');
+    }
+    path.replace(rePropName, function(match, number, quote, string) {
+       ret.push(quote ? path.replace(reEscapeChar, '$1') : (number || match));
+    });
+    pathMap[path] = ret;
+
+    return ret;
+}
+export function get(object, path) {
+    path = castPath(path);
+
+    var index = 0,
+        length = path.length;
+
+    while (object != null && index < length) {
+        object = object[path[index++]];
+    }
+
+    return (index && index === length) ? object : undefined;
 }
