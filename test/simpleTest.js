@@ -135,6 +135,7 @@ describe('Simple Test', function() {
             instance.get('bb.bb').should.be.eql(2);
             instance.get('cc[0].cc').should.be.eql(2);
             (instance.get('aa.aa.aa') === undefined).should.be.true;
+            instance.get('aa.aa.aa', 'a').should.be.eql('a');
             instance.get('a.a').should.be.eql(1);
         });
 

@@ -169,13 +169,18 @@ Intact.prototype = {
 
     get(attr, defaultValue) {
         if (!arguments.length) return this.attributes;
-        // @deprecated for v0.0.1 compatibility, use this.children instead of
+        
+        let ret;
         if (attr === 'children') {
-            return this.attributes.children || this.children;
+            // @deprecated for v0.0.1 compatibility, use this.children instead of
+            ret = this.attributes.children || this.children;
+        } else if (hasOwn.call(this.attributes, attr)) {
+            ret = this.attributes[attr];
+        } else {
+            // support get value by path like lodash `_.get`
+            ret = get(this.attributes, attr);
         }
-        if (hasOwn.call(this.attributes, attr)) return this.attributes[attr];
-        // support get value by path like lodash `_.get`
-        let ret = get(this.attributes, attr);
+
         return ret === undefined ? defaultValue : ret;
     },
 

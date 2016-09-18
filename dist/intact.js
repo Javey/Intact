@@ -561,13 +561,18 @@ Intact.prototype = {
     },
     get: function get(attr, defaultValue) {
         if (!arguments.length) return this.attributes;
-        // @deprecated for v0.0.1 compatibility, use this.children instead of
+
+        var ret = void 0;
         if (attr === 'children') {
-            return this.attributes.children || this.children;
+            // @deprecated for v0.0.1 compatibility, use this.children instead of
+            ret = this.attributes.children || this.children;
+        } else if (_utils.hasOwn.call(this.attributes, attr)) {
+            ret = this.attributes[attr];
+        } else {
+            // support get value by path like lodash `_.get`
+            ret = (0, _utils.get)(this.attributes, attr);
         }
-        if (_utils.hasOwn.call(this.attributes, attr)) return this.attributes[attr];
-        // support get value by path like lodash `_.get`
-        var ret = (0, _utils.get)(this.attributes, attr);
+
         return ret === undefined ? defaultValue : ret;
     },
     set: function set(key, val, options) {
