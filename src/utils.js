@@ -243,6 +243,7 @@ function castPath(path) {
     return ret;
 }
 export function get(object, path) {
+    if (hasOwn.call(object, path)) return object[path];
     path = castPath(path);
 
     var index = 0,

@@ -1,4 +1,4 @@
-import {inherit, extend, result, each, isFunction, isEqual, uniqueId, hasOwn, get} from './utils';
+import {inherit, extend, result, each, isFunction, isEqual, uniqueId, get} from './utils';
 import Thunk from './thunk';
 import Vdt from 'vdt';
 
@@ -174,8 +174,6 @@ Intact.prototype = {
         if (attr === 'children') {
             // @deprecated for v0.0.1 compatibility, use this.children instead of
             ret = this.attributes.children || this.children;
-        } else if (hasOwn.call(this.attributes, attr)) {
-            ret = this.attributes[attr];
         } else {
             // support get value by path like lodash `_.get`
             ret = get(this.attributes, attr);
