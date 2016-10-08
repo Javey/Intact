@@ -186,11 +186,37 @@ Intact.prototype = {
         if (key == null) return this;
 
         let attrs;
-        if (typeof key === 'object') {
+
+        if (typeof key === 'string') {
+            pathFilter.call(this, key, val);
+        }
+        else if (typeof key === 'object') {
+            for (var item in key) {
+                pathFilter.call(this, item, key[item]);
+            }
             attrs = key;
             options = val;
-        } else {
-            (attrs = {})[key] = val;
+        }
+
+        function pathFilter(path, value) {
+            path = castPath(path);
+            var index = -1,
+                length = path.length,
+                lastIndex = length - 1,
+                obj, obj2 = obj =this.attributes;
+
+            while (obj != null && ++index < length) {
+                var key = path[index];
+                if (index == lastIndex) {
+                    obj[key] = value;
+                } else {
+                    var temp = path[index + 1];
+                    _.has(obj2, obj[key]);
+                    obj[key] = /^\d+$/.test(temp) ? [] : {};
+                }
+                obj = obj[key];
+            }
+            return obj;
         }
 
         options = extend({
