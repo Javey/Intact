@@ -226,8 +226,9 @@ export function values(obj) {
 let pathMap = {},
     reLeadingDot = /^\./,
     rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g,
-    reEscapeChar = /\\(\\)?/g;
-function castPath(path) {
+    reEscapeChar = /\\(\\)?/g,
+    reIsUint = /^(?:0|[1-9]\d*)$/;
+export function castPath(path) {
     if (typeof path !== 'string') return path;
     if (pathMap[path]) return pathMap[path];
 
@@ -242,6 +243,10 @@ function castPath(path) {
 
     return ret;
 }
+function isIndex(value) {
+    return (typeof value === 'number' || reIsUint.test(value)) &&
+        value > -1 && value % 1 === 0;
+}
 export function get(object, path) {
     if (hasOwn.call(object, path)) return object[path];
     path = castPath(path);
@@ -254,4 +259,29 @@ export function get(object, path) {
     }
 
     return (index && index === length) ? object : undefined;
+}
+export function set(object, path, value) {
+    if (hasOwn.call(object, path)) {
+        object[path] = value;
+        return object;
+    }
+
+    path = castPath(path);
+
+    var index = -1,
+        length = path.length,
+        lastIndex = length - 1,
+        nested = object;
+    while (nested != null && ++index < length) {
+        var key = path[index],
+            newValue = value;
+        if (index !== lastIndex) {
+            var objValue = nested[key];
+            newValue = isObject(objValue) ? objValue : (isIndex(path[index + 1]) ? [] : {});
+        }
+        nested[key] = newValue;
+        nested = nested[key];
+    }
+
+    return object;
 }

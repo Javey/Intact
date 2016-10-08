@@ -1,4 +1,4 @@
-import {inherit, extend, result, each, isFunction, isEqual, uniqueId, get} from './utils';
+import {inherit, extend, result, each, isFunction, isEqual, uniqueId, get, set, castPath} from './utils';
 import Thunk from './thunk';
 import Vdt from 'vdt';
 
@@ -185,38 +185,27 @@ Intact.prototype = {
     set(key, val, options) {
         if (key == null) return this;
 
-        let attrs;
+        let current = this.attributes,
+            changes = [];
 
-        if (typeof key === 'string') {
-            pathFilter.call(this, key, val);
-        }
-        else if (typeof key === 'object') {
-            for (var item in key) {
-                pathFilter.call(this, item, key[item]);
-            }
-            attrs = key;
+        if (typeof key === 'object') {
             options = val;
-        }
-
-        function pathFilter(path, value) {
-            path = castPath(path);
-            var index = -1,
-                length = path.length,
-                lastIndex = length - 1,
-                obj, obj2 = obj =this.attributes;
-
-            while (obj != null && ++index < length) {
-                var key = path[index];
-                if (index == lastIndex) {
-                    obj[key] = value;
-                } else {
-                    var temp = path[index + 1];
-                    _.has(obj2, obj[key]);
-                    obj[key] = /^\d+$/.test(temp) ? [] : {};
+            for (let attr in key) {
+                val = key[attr];
+                if (!isEqual(current[attr], val)) {
+                    changes.push(attr);
                 }
-                obj = obj[key];
+                current[attr] = val;
             }
-            return obj;
+        } else {
+            // support set value by path like 'a.b.c'
+            if (!isEqual(get(current, key), val)) {
+                let path = castPath(key);
+                // trigger `change:a.b.c` and `change:a` events
+                changes.push(key);
+                if (path.length > 1) changes.push(path[0]);
+            }
+            set(current, key, val);
         }
 
         options = extend({
@@ -224,17 +213,6 @@ Intact.prototype = {
             global: true,
             async: false
         }, options);
-
-        let current = this.attributes,
-            changes = [];
-
-        for (let attr in attrs) {
-            val = attrs[attr];
-            if (!isEqual(current[attr], val)) {
-                changes.push(attr);
-            }
-            current[attr] = val;
-        }
 
         if (changes.length) {
             let eventName;

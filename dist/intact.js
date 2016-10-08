@@ -578,12 +578,27 @@ Intact.prototype = {
 
         if (key == null) return this;
 
-        var attrs = void 0;
+        var current = this.attributes,
+            changes = [];
+
         if ((typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object') {
-            attrs = key;
             options = val;
+            for (var attr in key) {
+                val = key[attr];
+                if (!(0, _utils.isEqual)(current[attr], val)) {
+                    changes.push(attr);
+                }
+                current[attr] = val;
+            }
         } else {
-            (attrs = {})[key] = val;
+            // support set value by path like 'a.b.c'
+            if (!(0, _utils.isEqual)((0, _utils.get)(current, key), val)) {
+                var path = (0, _utils.castPath)(key);
+                // trigger `change:a.b.c` and `change:a` events
+                changes.push(key);
+                if (path.length > 1) changes.push(path[0]);
+            }
+            (0, _utils.set)(current, key, val);
         }
 
         options = (0, _utils.extend)({
@@ -591,17 +606,6 @@ Intact.prototype = {
             global: true,
             async: false
         }, options);
-
-        var current = this.attributes,
-            changes = [];
-
-        for (var attr in attrs) {
-            val = attrs[attr];
-            if (!(0, _utils.isEqual)(current[attr], val)) {
-                changes.push(attr);
-            }
-            current[attr] = val;
-        }
 
         if (changes.length) {
             var eventName = void 0;
@@ -789,7 +793,9 @@ exports.bind = bind;
 exports.isEqual = isEqual;
 exports.uniqueId = uniqueId;
 exports.values = values;
+exports.castPath = castPath;
 exports.get = get;
+exports.set = set;
 
 var _vdt = require('vdt');
 
@@ -1041,7 +1047,8 @@ function values(obj) {
 var pathMap = {},
     reLeadingDot = /^\./,
     rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g,
-    reEscapeChar = /\\(\\)?/g;
+    reEscapeChar = /\\(\\)?/g,
+    reIsUint = /^(?:0|[1-9]\d*)$/;
 function castPath(path) {
     if (typeof path !== 'string') return path;
     if (pathMap[path]) return pathMap[path];
@@ -1057,6 +1064,9 @@ function castPath(path) {
 
     return ret;
 }
+function isIndex(value) {
+    return (typeof value === 'number' || reIsUint.test(value)) && value > -1 && value % 1 === 0;
+}
 function get(object, path) {
     if (hasOwn.call(object, path)) return object[path];
     path = castPath(path);
@@ -1069,6 +1079,31 @@ function get(object, path) {
     }
 
     return index && index === length ? object : undefined;
+}
+function set(object, path, value) {
+    if (hasOwn.call(object, path)) {
+        object[path] = value;
+        return object;
+    }
+
+    path = castPath(path);
+
+    var index = -1,
+        length = path.length,
+        lastIndex = length - 1,
+        nested = object;
+    while (nested != null && ++index < length) {
+        var key = path[index],
+            newValue = value;
+        if (index !== lastIndex) {
+            var objValue = nested[key];
+            newValue = isObject(objValue) ? objValue : isIndex(path[index + 1]) ? [] : {};
+        }
+        nested[key] = newValue;
+        nested = nested[key];
+    }
+
+    return object;
 }
 
 },{"vdt":20}],6:[function(require,module,exports){
@@ -1806,14 +1841,14 @@ Parser.prototype = {
             } else if (this._isElementStart()) {
                 break;
             } else {
-                if (this._isExpect(Delimiters[0])) {
+                if (ch === '{') {
                     braces.count++;
-                } else if (this._isExpect(Delimiters[1])) {
+                } else if (braces.count > 0 && ch === '}') {
                     braces.count--;
-                    if (braces.count < 0) {
-                        this._updateIndex();
-                        break;
-                    }
+                } else if (this._isExpect(Delimiters[1])) {
+                    // for parseTemplate break
+                    braces.count--;
+                    break;
                 } else if (ch === '\n') {
                     this._updateLine();
                 }
@@ -1821,7 +1856,9 @@ Parser.prototype = {
             }
         }
 
-        return this._type(Type.JS, {value: this.source.slice(start, braces.count < 0 ? this.index - 1 : this.index)});
+        return this._type(Type.JS, {
+            value: this.source.slice(start, this.index)
+        });
     },
 
     _scanStringLiteral: function() {
@@ -1829,10 +1866,12 @@ Parser.prototype = {
             start = this.index,
             str = '';
         this._updateIndex();
-        
 
         while (this.index < this.length) {
             var ch = this._char();
+            if (ch.charCodeAt(0) === 10) {
+                this._updateLine();
+            }
             this._updateIndex();
 
             if (ch === quote) {
@@ -1848,7 +1887,9 @@ Parser.prototype = {
             this._error('Unclosed quote');
         }
 
-        return this._type(Type.StringLiteral, {value: this.source.slice(start, this.index)});
+        return this._type(Type.StringLiteral, {
+            value: this.source.slice(start, this.index)
+        });
     },
 
     _scanJSX: function() {
@@ -1865,14 +1906,18 @@ Parser.prototype = {
                 this._updateLine();
             }
             for (i = 0; i < l; i++) {
-                if (typeof stopChars[i] === 'function' && stopChars[i].call(this) || this._isExpect(stopChars[i])) {
+                if (typeof stopChars[i] === 'function' && stopChars[i].call(this) || 
+                    this._isExpect(stopChars[i])
+                ) {
                     break loop;
                 }
             }
             this._updateIndex();
         }
 
-        return this._type(Type.JSXText, {value: this.source.slice(start, this.index)});
+        return this._type(Type.JSXText, {
+            value: this.source.slice(start, this.index)
+        });
     },
 
     _scanJSXStringLiteral: function() {
@@ -1949,7 +1994,7 @@ Parser.prototype = {
             this._expect('>');
         } else {
             this._expect('>');
-            ret.children = this._parseJSXChildren();
+            ret.children = this._parseJSXChildren(ret);
         }
 
         return ret;
@@ -2028,37 +2073,53 @@ Parser.prototype = {
     },
 
     _parseExpression: function() {
-        var ret = this._parseTemplate();
-        this._updateIndex(-1);
-        return ret;
+        return this._parseTemplate();
     },
 
-    _parseJSXChildren: function() {
-        var children = [];
+    _parseJSXChildren: function(element) {
+        var children = [],
+            endTag = element.value + '>';
+
+        switch (element.type) {
+            case Type.JSXBlock:
+                endTag = '</b:' + endTag;
+                break;
+            case Type.JSXVdt:
+                endTag = '</t:' + endTag;
+                break;
+            case Type.JSXElement:
+            default:
+                endTag = '</' + endTag;
+                break;
+        }
+
         while (this.index < this.length) {
-            if (this._char(this.index) === '<' && this._char(this.index + 1) === '/') {
+            if (this._isExpect(endTag)) {
                 break;
             }
-            children.push(this._parseJSXChild());
+            children.push(this._parseJSXChild(element, endTag));
         }
         this._parseJSXClosingElement();
         return children;
     },
 
-    _parseJSXChild: function() {
-        var token,
+    _parseJSXChild: function(element, endTag) {
+        var ret,
             Delimiters = this.options.delimiters;
+
         if (this._isExpect(Delimiters[0])) {
-            token = this._parseJSXExpressionContainer();
+            ret = this._parseJSXExpressionContainer();
+        } else if (Utils.isTextTag(element.value)) {
+            ret = this._scanJSXText([endTag, Delimiters[0]]);
         } else if (this._isElementStart()) {
-            token = this._parseJSXElement();
+            ret = this._parseJSXElement();
         } else {
-            token = this._scanJSXText([function() {
-                return this._isExpect('</') || this._isElementStart();
+            ret = this._scanJSXText([function() {
+                return this._isExpect(endTag) || this._isElementStart();
             }, Delimiters[0]]);
         }
 
-        return token;
+        return ret;
     },
 
     _parseJSXClosingElement: function() {
@@ -2068,7 +2129,7 @@ Parser.prototype = {
             if (!isJSXIdentifierPart(this._charCode())) {
                 break;
             }
-            this._updateIndex();;
+            this._updateIndex();
         }
 
         this._skipWhitespace();
@@ -2086,7 +2147,9 @@ Parser.prototype = {
             }
             this._updateIndex();
         }
-        var ret = this._type(Type.JSXComment, {value: this.source.slice(start, this.index)});
+        var ret = this._type(Type.JSXComment, {
+            value: this.source.slice(start, this.index)
+        });
         this._expect('-->');
 
         return ret;
@@ -2119,7 +2182,7 @@ Parser.prototype = {
         if (!this._isExpect(str)) {
             this._error('expect string ' + str);
         }
-        this.index += str.length;
+        this._updateIndex(str.length);
     },
 
     _isExpect: function(str) {
@@ -2127,7 +2190,11 @@ Parser.prototype = {
     },
 
     _isElementStart: function() {
-        return this._char() === '<' && (this._isExpect('<!--') || elementNameRegexp.test(this.source.slice(this.index)));
+        return this._char() === '<' && 
+            (
+                this._isExpect('<!--') || 
+                elementNameRegexp.test(this.source.slice(this.index))
+            );
     },
 
     _type: function(type, ret) {
@@ -2343,7 +2410,7 @@ Stringifier.prototype = {
     },
 
     _visitJSXText: function(element, noQuotes) {
-        var ret = element.value.replace(/[\r\n]/g, '\\n').replace(/([\'\"])/g, '\\$1');
+        var ret = element.value.replace(/([\'\"\\])/g, '\\$1').replace(/[\r\n]/g, '\\n');
         if (!noQuotes) {
             ret = "'" + ret + "'";
         }
@@ -2434,6 +2501,13 @@ var i = 0,
         'source': true,
         'track': true,
         'wbr': true
+    },
+
+    // which children must be text
+    TextTags = {
+        style: true,
+        script: true,
+        textarea: true
     },
 
     Directives = {
@@ -2542,7 +2616,11 @@ var Utils = {
     },
 
     isSelfClosingTag: function(tag) {
-        return hasOwn.call(SelfClosingTags, tag);
+        return SelfClosingTags[tag];
+    },
+
+    isTextTag: function(tag) {
+        return TextTags[tag];
     },
 
     isDirective: function(name) {

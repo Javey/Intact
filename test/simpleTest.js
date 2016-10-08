@@ -145,6 +145,14 @@ describe('Simple Test', function() {
             instance.set({a: 11});
             instance.get('a').should.be.eql(11);
             instance.defaults.a.should.be.eql(1);
+            instance.set({'aa.a': 1});
+            instance.get('aa.a').should.be.eql(1);
+            (instance.get('aa') === undefined).should.be.true;
+            instance.set('aa.a', 2);
+            (instance.get('aa') === undefined).should.be.true;
+            instance.get('aa.a').should.be.eql(2);
+            instance.set('aaa.a', 1);
+            instance.get('aaa').should.be.eql({a: 1});
         });
     });
 
@@ -270,6 +278,16 @@ describe('Simple Test', function() {
             instance.set({a: 5}, {silent: true, global: true});
             changeAFn.calledTwice.should.be.true;
             changeFn.calledOnce.should.be.true;
+
+            var changePathAAFn = sinon.spy(),
+                changePathAAAFn = sinon.spy();
+            instance.on('change:aa', changePathAAFn);
+            instance.on('change:aa.a', changePathAAAFn);
+            instance.set('aa.a', 1);
+            changePathAAFn.calledOnce.should.be.true;
+            changePathAAAFn.calledOnce.should.be.true;
+            changePathAAAFn.calledBefore(changePathAAFn).should.be.true;
+            changeFn.callCount.should.be.eql(2);
         });
 
         it('off event', function() {
