@@ -288,6 +288,8 @@ describe('Simple Test', function() {
             changePathAAAFn.calledOnce.should.be.true;
             changePathAAAFn.calledBefore(changePathAAFn).should.be.true;
             changeFn.callCount.should.be.eql(2);
+            changePathAAAFn.calledWith(instance, 1).should.be.true;
+            changePathAAFn.calledWith(instance, {a: 1}).should.be.true;
         });
 
         it('off event', function() {

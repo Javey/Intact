@@ -215,12 +215,13 @@ Intact.prototype = {
         }, options);
 
         if (changes.length) {
-            let eventName;
+            // trigger `change` event
             for (let i = 0, l = changes.length; i < l; i++) {
-                let attr = changes[i];
-                eventName = `change:${attr}`;
-                options[eventName] && options[eventName].call(this, current[attr]);
-                !options.silent && this.trigger(eventName, this, current[attr]);
+                let attr = changes[i],
+                    value = get(current, attr),
+                    eventName = `change:${attr}`;
+                options[eventName] && options[eventName].call(this, value);
+                !options.silent && this.trigger(eventName, this, value);
             }
 
             options.change && options.change.call(this);
@@ -230,12 +231,14 @@ Intact.prototype = {
                     clearTimeout(this._asyncUpdate);
                     let triggerChange = () => {
                         this.trigger('change', this);
+                        // trigger `changed` event
                         for (let i = 0, l = changes.length; i < l; i++) {
                             let attr = changes[i],
+                                value = get(current, attr),
                                 eventName = `changed:${attr}`;
 
-                            options[eventName] && options[eventName].call(this, current[attr]);
-                            this.trigger(eventName, this, current[attr]);
+                            options[eventName] && options[eventName].call(this, value);
+                            this.trigger(eventName, this, value);
                         }
                     };
                     if (options.async) {

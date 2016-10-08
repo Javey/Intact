@@ -608,12 +608,13 @@ Intact.prototype = {
         }, options);
 
         if (changes.length) {
-            var eventName = void 0;
+            // trigger `change` event
             for (var i = 0, l = changes.length; i < l; i++) {
-                var _attr = changes[i];
-                eventName = 'change:' + _attr;
-                options[eventName] && options[eventName].call(this, current[_attr]);
-                !options.silent && this.trigger(eventName, this, current[_attr]);
+                var _attr = changes[i],
+                    value = (0, _utils.get)(current, _attr),
+                    eventName = 'change:' + _attr;
+                options[eventName] && options[eventName].call(this, value);
+                !options.silent && this.trigger(eventName, this, value);
             }
 
             options.change && options.change.call(this);
@@ -623,12 +624,14 @@ Intact.prototype = {
                     clearTimeout(this._asyncUpdate);
                     var triggerChange = function triggerChange() {
                         _this4.trigger('change', _this4);
+                        // trigger `changed` event
                         for (var _i = 0, _l = changes.length; _i < _l; _i++) {
                             var _attr2 = changes[_i],
+                                _value = (0, _utils.get)(current, _attr2),
                                 _eventName = 'changed:' + _attr2;
 
-                            options[_eventName] && options[_eventName].call(_this4, current[_attr2]);
-                            _this4.trigger(_eventName, _this4, current[_attr2]);
+                            options[_eventName] && options[_eventName].call(_this4, _value);
+                            _this4.trigger(_eventName, _this4, _value);
                         }
                     };
                     if (options.async) {
