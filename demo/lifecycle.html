@@ -3,9 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <title>Hello</title>
-    <!-- <script type="text/javascript" src="https://rawgit.com/Javey/vdt.js/master/dist/vdt.js"></script> -->
     <script type="text/javascript" src="https://rawgit.com/jashkenas/underscore/master/underscore.js"></script>
-    <!-- <script type="text/javascript" src="https://rawgit.com/Javey/Intact/master/src/intact.js"></script> -->
     <script type="text/javascript" src="/dist/intact.js"></script>
 </head>
 <body>
@@ -26,7 +24,7 @@
             name: ''
         },
 
-        template: 'console.log(self.get("name"));<h1 ev-click={this.change.bind(this)}>Hello {this.get("name")}!</h1>',
+        template: 'console.log(self.get("name"));<h1 ev-click={self.change.bind(self)}>Hello {self.get("name")}!</h1>',
 
         _init: function() {
             // return a promise

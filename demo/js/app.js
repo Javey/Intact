@@ -3,7 +3,7 @@ var Widget = Intact.extend({
         name: 'Javey'
     },
 
-    template: '<div ev-click={_.bind(this.change, this)}>{this.get("name")}</div>',
+    template: '<div ev-click={_.bind(self.change, this)}>{self.get("name")}</div>',
 
     change: function() {
         this.set('name', 'Hello Javey!');
@@ -21,7 +21,7 @@ var Card = Intact.extend({
         title: 'card'
     },
 
-    template: '<div ev-click={_.bind(this.click, this)}>{this.get("title")}</div>',
+    template: '<div ev-click={_.bind(self.click, this)}>{self.get("title")}</div>',
 
     click: function() {
         alert('click card');
@@ -107,7 +107,7 @@ var ComponentCard = Intact.extend({
 Intact.mount(ComponentCard, $('body')[0]);
 
 var ComponentCard1 = Intact.extend({
-    template: '<div><Card title="component card" widget="card" /><div ev-click={_.bind(this.click, this)}>Click Me</div></div>',
+    template: '<div><Card title="component card" widget="card" /><div ev-click={_.bind(self.click, this)}>Click Me</div></div>',
 
     _init: function() {
         // 注入Card组件

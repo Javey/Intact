@@ -7,8 +7,8 @@
 <body>
 
 <script type="text/vdt" id="card_template">
-    <div ev-click={_.bind(this.click, this)}>
-        {this.get('title')}
+    <div ev-click={_.bind(self.click, this)}>
+        {self.get('title')}
         {/* 在这里挖个坑 */}
         <b:body />
     </div>
@@ -42,15 +42,15 @@
 
 <script type="text/vdt" id="event_template">
     <div>
-        <Card title="component card" widget="card" ev-change:title={_.bind(this.onChangeTitle, this)} />
-        <div ev-click={_.bind(this.click, this)}>Change Title</div>
+        <Card title="component card" widget="card" ev-change:title={_.bind(self.onChangeTitle, self)} />
+        <div ev-click={_.bind(self.click, self)}>Change Title</div>
     </div>
 </script>
 
 <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
 <script type="text/javascript" src="../bower_components/underscore/underscore.js"></script>
 <script type="text/javascript" src="../bower_components/vdt/dist/vdt.js"></script>
-<script type="text/javascript" src="../src/intact.js"></script>
+<script type="text/javascript" src="../dist/intact.js"></script>
 <script type="text/javascript" src="../bower_components/requirejs/require.js"></script>
 <script type="text/javascript" src="js/app.js"></script>
 </body>

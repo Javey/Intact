@@ -4,8 +4,21 @@
     <meta charset="UTF-8">
     <title></title>
     <script type="text/javascript" src="../bower_components/underscore/underscore.js"></script>
-    <script type="text/javascript" src="../bower_components/vdt/dist/vdt.js"></script>
-    <script type="text/javascript" src="../src/intact.js"></script>
+    <script type="text/javascript" src="../dist/intact.js"></script>
+    <style type="text/css">
+        .outer {
+            padding: 20px;
+            background: #333;
+        }
+        .center {
+            padding: 20px;
+            background: #666;
+        }
+        .inner {
+            padding: 20px;
+            background: #999;
+        }
+    </style>
 </head>
 <body>
 <div id="example"></div>
@@ -17,7 +30,7 @@
 
         displayName: 'SubComponent',
 
-        template: '<div ev-click={this.change.bind(this)}>num: {this.get("num")} count:{this.get("count")}</div>',
+        template: '<div ev-click={self.change.bind(self)}>num: {self.get("num")} count:{self.get("count")}</div>',
 
         change: function() {
             this.set({
@@ -25,7 +38,7 @@
                 'count': this.get('count') + 1
             });
             this.test = this.test ? this.test + 1 : 1;
-//            console.log(this.test);
+//            console.log(self.test);
         }
     });
 
@@ -33,7 +46,7 @@
         defaults: {
             num: 1
         },
-        template: '<div>{this.get("num")}</div>',
+        template: '<div>{self.get("num")}</div>',
         displayName: 'SubComponentOther'
     });
 
@@ -44,9 +57,9 @@
 
         displayName: 'MyComponent',
 
-        template: '<div ev-mousenter={ function() {console.log(1)} }>' +
-            '<div ev-click={this.change.bind(this)}>{this.get("a")}</div>' +
-            '{this.get("a") !== 10 ? <SubComponent count={this.get("a")} ev-change:count={this.changeCount.bind(this)} /> : <SubComponentOther />}' +
+        template: '<div ev-mouseenter={ function() {console.log(1)} }>' +
+            '<div ev-click={self.change.bind(self)}>{self.get("a")}</div>' +
+            '{self.get("a") !== 10 ? <SubComponent count={self.get("a")} ev-change:count={self.changeCount.bind(self)} /> : <SubComponentOther />}' +
         '</div>',
 
         change: function() {
@@ -58,7 +71,30 @@
         }
     });
 
-    VdWidget.mount(MyComponent, document.getElementById('example'));
+    Intact.mount(MyComponent, document.getElementById('example'));
+
+    var EventTest = Intact.extend({
+        template: '<div class="outer" ev-click={self.clickOuter.bind(self)}>' + 
+            '<div class="center" ev-click={self.clickCenter.bind(self)}>' +
+                '<div class="inner"></div>' +
+            '</div>' +
+        '</div>',
+
+        clickOuter: function() {
+            console.log('outer');
+        },
+
+        clickCenter: function(e) {
+            e.startPropagation();
+            console.log('center');
+        },
+
+        clickInner: function() {
+            console.log('inner');
+        }
+    });
+
+    Intact.mount(EventTest, document.getElementById('example'));
 </script>
 </body>
 </html>
