@@ -1423,7 +1423,8 @@ Parser.prototype = {
 
     _parseJSXChildren: function(element) {
         var children = [],
-            endTag = element.value + '>';
+            endTag = element.value + '>',
+            current = null;
 
         switch (element.type) {
             case Type.JSXBlock:
@@ -1442,13 +1443,14 @@ Parser.prototype = {
             if (this._isExpect(endTag)) {
                 break;
             }
-            children.push(this._parseJSXChild(element, endTag));
+            current = this._parseJSXChild(element, endTag, current);
+            children.push(current);
         }
         this._parseJSXClosingElement();
         return children;
     },
 
-    _parseJSXChild: function(element, endTag) {
+    _parseJSXChild: function(element, endTag, prev) {
         var ret,
             Delimiters = this.options.delimiters;
 
@@ -1462,6 +1464,13 @@ Parser.prototype = {
             ret = this._scanJSXText([function() {
                 return this._isExpect(endTag) || this._isElementStart();
             }, Delimiters[0]]);
+        }
+
+        ret.prev = undefined;
+        ret.next = undefined;
+        if (prev) {
+            prev.next = ret;
+            ret.prev = prev;
         }
 
         return ret;
@@ -1599,6 +1608,7 @@ Stringifier.prototype = {
     constructor: Stringifier,
 
     stringify: function(ast, autoReturn) {
+        //console.log(require('util').inspect(ast, {showHidden: true, depth: null}));
         if (arguments.length === 1) {
             autoReturn = true;
         }
@@ -1666,7 +1676,7 @@ Stringifier.prototype = {
             }
         }
 
-        return this._visitJSXDiretive(element.directives, this._visitJSXElement(element));
+        return this._visitJSXDiretive(element, this._visitJSXElement(element));
     },
 
     _visitJSXElement: function(element) {
@@ -1677,23 +1687,29 @@ Stringifier.prototype = {
     _visitJSXChildren: function(children) {
         var ret = [];
         Utils.each(children, function(child) {
+            // if this.element has be handled return directly
+            if (child._skip) return;
             ret.push(this._visit(child));
         }, this);
 
         return '[' + ret.join(', ') + ']';
     },
 
-    _visitJSXDiretive: function(directives, ret) {
+    _visitJSXDiretive: function(element, ret) {
         var directiveFor = {
             data: null,
             value: 'value',
             key: 'key'
         };
-        Utils.each(directives, function(directive) {
+        Utils.each(element.directives, function(directive) {
             switch (directive.name) {
                 case 'v-if':
-                    ret = this._visitJSXDiretiveIf(directive, ret);
+                    ret = this._visitJSXDiretiveIf(directive, ret, element);
                     break;
+                case 'v-else-if':
+                case 'v-else':
+                    if (element._skip) break;
+                    throw new Error(directive.name + ' (' + this._visitJSXAttributeValue(directive.value) + ') must be led with v-if');
                 case 'v-for':
                     directiveFor.data = this._visitJSXAttributeValue(directive.value);
                     break;
@@ -1715,8 +1731,51 @@ Stringifier.prototype = {
         return ret;
     },
 
-    _visitJSXDiretiveIf: function(directive, ret) {
-        return this._visitJSXAttributeValue(directive.value) + ' ? ' + ret + ' : undefined';
+    _visitJSXDiretiveIf: function(directive, ret, element) {
+        var result = this._visitJSXAttributeValue(directive.value) + ' ? ' + ret + ' : ',
+            hasElse = false,
+            next = element,
+            emptyTextNodes = [], // persist empty text node, skip them if find v-else-if or v-else
+            skipNodes = function() {
+                Utils.each(emptyTextNodes, function(item) {
+                    item._skip = true;
+                });
+                emptyTextNodes = [];
+            };
+        while (next = next.next) {
+            if (next.type === Utils.Type.JSXText) {
+                if (!/^\s*$/.test(next.value)) break;
+                // is not the last text node, mark as handled
+                else emptyTextNodes.push(next);
+            } else if (next.type === Utils.Type.JSXElement) {
+                if (!next.directives || !next.directives.length) break;
+                var isContinue = false;
+                for (var i = 0, l = next.directives.length; i < l; i++) {
+                    var dire = next.directives[i],
+                        name = dire.name;
+                    if (name === 'v-else-if') {
+                        // mark this element as handled
+                        next._skip = true;
+                        result += this._visitJSXAttributeValue(dire.value) + ' ? ' + this._visit(next) + ' : ';
+                        isContinue = true;
+                        // mark text node before as handled
+                        skipNodes();
+                        break;
+                    } else if (name === 'v-else') {
+                        // mark this element as handled
+                        next._skip = true;
+                        result += this._visit(next);
+                        hasElse = true;
+                        // mark text node before as handled
+                        skipNodes();
+                        break;
+                    }
+                }
+                if (!isContinue) break;
+            }
+        }
+        if (!hasElse) result += 'undefined';
+        return result;
     },
 
     _visitJSXDiretiveFor: function(directive, ret) {
@@ -1740,7 +1799,7 @@ Stringifier.prototype = {
         Utils.each(attributes, function(attr) {
             var name = attrMap(attr.name),
                 value = this._visitJSXAttributeValue(attr.value);
-            if (name === 'className' && attr.value.type === Type.JSXExpressionContainer/*  && Utils.trimLeft(value)[0] === '{' */) {
+            if (name === 'className' && attr.value.type === Type.JSXExpressionContainer) {
                 // for class={ {active: true} }
                 value = '_Vdt.utils.className(' + value + ')';
             }
@@ -1764,7 +1823,7 @@ Stringifier.prototype = {
 
     _visitJSXWidget: function(element) {
         element.attributes.push({name: 'children', value: element.children});
-        return this._visitJSXDiretive(element.directives, element.value + '(' + this._visitJSXAttribute(element.attributes) + ', widgets)');
+        return this._visitJSXDiretive(element, element.value + '(' + this._visitJSXAttribute(element.attributes) + ', widgets)');
     },
 
     _visitJSXBlock: function(element, isAncestor) {
@@ -1857,6 +1916,8 @@ var i = 0,
 
     Directives = {
         'v-if': true,
+        'v-else-if': true,
+        'v-else': true,
         'v-for': true,
         'v-for-value': true,
         'v-for-key': true
