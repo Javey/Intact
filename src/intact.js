@@ -61,8 +61,8 @@ let Intact = function(attrs = {}, contextWidgets = {}) {
     // support promise
     let inited = () => {
         this.inited = true;
-        this.trigger('inited', this);
         // don't bind change event to update until component inited
+        // 对于顶级组件，可能inited事件会执行init()，然后在_create()里面更新数据
         this.on('change', function() { 
             if (++this._updateCount === 1) {
                 handleUpdate();
@@ -70,6 +70,7 @@ let Intact = function(attrs = {}, contextWidgets = {}) {
                 throw new Error('Too many recursive update.');
             }
         });
+        this.trigger('inited', this);
     };
     if (ret && ret.then) {
         ret.then(inited);
