@@ -11,7 +11,7 @@
     "build": "browserify src/index.js -t babelify -o dist/intact.js -s Intact && uglifyjs dist/intact.js -o dist/intact.min.js -m"
   },
   "dependencies": {
-    "vdt": "^0.9.14"
+    "vdt": "^0.9.19"
   },
   "main": "src/index",
   "devDependencies": {

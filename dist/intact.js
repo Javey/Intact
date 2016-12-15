@@ -1679,7 +1679,7 @@ Stringifier.prototype = {
             }
         }
 
-        return this._visitJSXDiretive(element, this._visitJSXElement(element));
+        return this._visitJSXDirective(element, this._visitJSXElement(element));
     },
 
     _visitJSXElement: function(element) {
@@ -1698,7 +1698,7 @@ Stringifier.prototype = {
         return '[' + ret.join(', ') + ']';
     },
 
-    _visitJSXDiretive: function(element, ret) {
+    _visitJSXDirective: function(element, ret) {
         var directiveFor = {
             data: null,
             value: 'value',
@@ -1707,7 +1707,7 @@ Stringifier.prototype = {
         Utils.each(element.directives, function(directive) {
             switch (directive.name) {
                 case 'v-if':
-                    ret = this._visitJSXDiretiveIf(directive, ret, element);
+                    ret = this._visitJSXDirectiveIf(directive, ret, element);
                     break;
                 case 'v-else-if':
                 case 'v-else':
@@ -1728,13 +1728,13 @@ Stringifier.prototype = {
         }, this);
         // if exists v-for
         if (directiveFor.data) {
-            ret = this._visitJSXDiretiveFor(directiveFor, ret);
+            ret = this._visitJSXDirectiveFor(directiveFor, ret);
         }
 
         return ret;
     },
 
-    _visitJSXDiretiveIf: function(directive, ret, element) {
+    _visitJSXDirectiveIf: function(directive, ret, element) {
         var result = this._visitJSXAttributeValue(directive.value) + ' ? ' + ret + ' : ',
             hasElse = false,
             next = element,
@@ -1750,7 +1750,7 @@ Stringifier.prototype = {
                 if (!/^\s*$/.test(next.value)) break;
                 // is not the last text node, mark as handled
                 else emptyTextNodes.push(next);
-            } else if (next.type === Utils.Type.JSXElement) {
+            } else if (next.type === Utils.Type.JSXElement || next.type === Utils.Type.JSXWidget) {
                 if (!next.directives || !next.directives.length) break;
                 var isContinue = false;
                 for (var i = 0, l = next.directives.length; i < l; i++) {
@@ -1781,7 +1781,7 @@ Stringifier.prototype = {
         return result;
     },
 
-    _visitJSXDiretiveFor: function(directive, ret) {
+    _visitJSXDirectiveFor: function(directive, ret) {
         return '_Vdt.utils.map(' + directive.data + ', function(' + directive.value + ', ' + directive.key + ') {\n' +
             'return ' + ret + ';\n' +
         '}, this)';
@@ -1826,7 +1826,7 @@ Stringifier.prototype = {
 
     _visitJSXWidget: function(element) {
         element.attributes.push({name: 'children', value: element.children});
-        return this._visitJSXDiretive(element, element.value + '(' + this._visitJSXAttribute(element.attributes) + ', widgets)');
+        return this._visitJSXDirective(element, element.value + '(' + this._visitJSXAttribute(element.attributes) + ', widgets)');
     },
 
     _visitJSXBlock: function(element, isAncestor) {
