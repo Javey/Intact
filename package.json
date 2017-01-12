@@ -1,7 +1,7 @@
 {
   "name": "intact",
   "description": "A very lightweight data-binding library to create rich web application",
-  "version": "1.2.19",
+  "version": "1.2.20",
   "scripts": {
     "test": "node_modules/.bin/mocha-phantomjs test/index.html",
     "release": "npm run release-patch",
