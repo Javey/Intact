@@ -124,6 +124,10 @@ Intact.prototype = {
         ++this._updateCount;
         if (this._updateCount > 100) throw new Error('Too many recursive update.');
         if (this._updateCount > 1) return this.element;
+        if (this._updateCount === 1) return this.__update(prevWidget, domNode);
+    },
+
+    __update(prevWidget, domNode) {
         if (!this.vdt.node && (!prevWidget || !prevWidget.vdt.node)) return;
         this._beforeUpdate(prevWidget, domNode);
         if (prevWidget && domNode) {
@@ -136,7 +140,7 @@ Intact.prototype = {
             this.init(true);
         }
         this._update(prevWidget, domNode);
-        if (--this._updateCount > 0) return this.update(prevWidget, domNode);
+        if (--this._updateCount > 0) return this.__update(prevWidget, domNode);
         return this.element;
     },
 
