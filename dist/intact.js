@@ -449,13 +449,6 @@ var Intact = function Intact() {
 
     // change事件，自动更新，当一个更新操作正在进行中，下一个更新操作必须等其完成
     this._updateCount = 0;
-    var handleUpdate = function handleUpdate() {
-        if (_this._updateCount > 0) {
-            _this.update();
-            _this._updateCount--;
-            handleUpdate.call(_this);
-        }
-    };
 
     var ret = this._init();
     // support promise
@@ -463,13 +456,7 @@ var Intact = function Intact() {
         _this.inited = true;
         // don't bind change event to update until component inited
         // 对于顶级组件，可能inited事件会执行init()，然后在_create()里面更新数据
-        _this.on('change', function () {
-            if (++this._updateCount === 1) {
-                handleUpdate();
-            } else if (this._updateCount > 10) {
-                throw new Error('Too many recursive update.');
-            }
-        });
+        _this.on('change', _this.update);
         _this.trigger('inited', _this);
     };
     if (ret && ret.then) {
@@ -530,6 +517,9 @@ Intact.prototype = {
         return this.element;
     },
     update: function update(prevWidget, domNode) {
+        ++this._updateCount;
+        if (this._updateCount > 100) throw new Error('Too many recursive update.');
+        if (this._updateCount > 1) return this.element;
         if (!this.vdt.node && (!prevWidget || !prevWidget.vdt.node)) return;
         this._beforeUpdate(prevWidget, domNode);
         if (prevWidget && domNode) {
@@ -542,6 +532,7 @@ Intact.prototype = {
             this.init(true);
         }
         this._update(prevWidget, domNode);
+        if (--this._updateCount > 0) return this.update(prevWidget, domNode);
         return this.element;
     },
     destroy: function destroy(domNode) {
