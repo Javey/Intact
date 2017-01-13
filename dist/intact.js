@@ -535,7 +535,8 @@ Intact.prototype = {
             this.init(true);
         }
         this._update(prevWidget, domNode);
-        if (--this._updateCount > 0) return this.__update(prevWidget, domNode);
+        // 第二次更新自己，prevWidget应该指向自己
+        if (--this._updateCount > 0) return this.__update(this, domNode);
         return this.element;
     },
     destroy: function destroy(domNode) {
