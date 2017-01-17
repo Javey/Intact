@@ -128,7 +128,11 @@ Intact.prototype = {
     },
 
     __update(prevWidget, domNode) {
-        if (!this.vdt.node && (!prevWidget || !prevWidget.vdt.node)) return;
+        if (!this.vdt.node && (!prevWidget || !prevWidget.vdt.node)) {
+            // 如果dom还没渲染，就去调用update方法
+            if (--this._updateCount > 0) return this.__update(this, domNode);
+            return;
+        }
         this._beforeUpdate(prevWidget, domNode);
         if (prevWidget && domNode) {
             this.vdt.node = domNode;
