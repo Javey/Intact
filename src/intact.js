@@ -15,6 +15,12 @@ let Intact = function(attrs = {}, contextWidgets = {}) {
         children: undefined 
     }, result(this, 'defaults'), attrs);
 
+    // 如果存在arguments属性，则将其拆开赋给attributes
+    if (attrs.arguments) {
+        extend(attrs, result(attrs, 'arguments'));
+        delete attrs.arguments;
+    }
+
     this._events = {};
     this.attributes = {};
 
@@ -41,11 +47,6 @@ let Intact = function(attrs = {}, contextWidgets = {}) {
     // 存在widget名称引用属性，则注入所处上下文的widgets中
     this._contextWidgets[this._widget] = this;
 
-    // 如果存在arguments属性，则将其拆开赋给attributes
-    if (this.attributes.arguments) {
-        extend(this.attributes, result(this.attributes, 'arguments'));
-        delete this.attributes.arguments;
-    }
 
     // change事件，自动更新，当一个更新操作正在进行中，下一个更新操作必须等其完成
     this._updateCount = 0;
