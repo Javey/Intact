@@ -456,7 +456,9 @@ var Intact = function Intact() {
         _this.inited = true;
         // don't bind change event to update until component inited
         // 对于顶级组件，可能inited事件会执行init()，然后在_create()里面更新数据
-        _this.on('change', _this.update);
+        _this.on('change', function () {
+            return _this.update();
+        });
         _this.trigger('inited', _this);
     };
     if (ret && ret.then) {
@@ -619,13 +621,13 @@ Intact.prototype = {
                 !options.silent && this.trigger(eventName, this, value);
             }
 
-            options.change && options.change.call(this);
+            options.change && options.change.call(this, changes);
             if (!options.silent) {
-                this.trigger('beforeChange', this);
+                this.trigger('beforeChange', this, changes);
                 if (options.global) {
                     clearTimeout(this._asyncUpdate);
                     var triggerChange = function triggerChange() {
-                        _this4.trigger('change', _this4);
+                        _this4.trigger('change', _this4, changes);
                         // trigger `changed` event
                         for (var _i = 0, _l = changes.length; _i < _l; _i++) {
                             var _attr2 = changes[_i],
