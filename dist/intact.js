@@ -1635,7 +1635,11 @@ Stringifier.prototype = {
         }, this);
 
         if (!isRoot && !this.enterStringExpression) {
-            str = 'function() {try {return ' + str + '} catch(e) {_e(e)}}.call(this)';
+            // for 
+            // return (
+            // /* comment */
+            // )
+            str = 'function() {try {return ([' + str + '])[0]} catch(e) {_e(e)}}.call(this)';
         }
 
         return str;
