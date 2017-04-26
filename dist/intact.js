@@ -1559,6 +1559,8 @@ Parser.prototype = {
         ret || (ret = {});
         ret.type = type;
         ret.typeName = TypeName[type];
+        ret.line = this.line;
+        ret.column = this.column;
         return ret;
     },
 
@@ -1632,6 +1634,10 @@ Stringifier.prototype = {
             }
         }, this);
 
+        if (!isRoot && !this.enterStringExpression) {
+            str = 'function() {try {return ' + str + '} catch(e) {_e(e)}}.call(this)';
+        }
+
         return str;
     },
 
@@ -1639,7 +1645,7 @@ Stringifier.prototype = {
         element = element || {};
         switch (element.type) {
             case Type.JS:
-                return this._visitJS(element);
+                return this._visitJS(element, isRoot);
             case Type.JSXElement:
                 return this._visitJSX(element);
             case Type.JSXText:
@@ -1660,7 +1666,9 @@ Stringifier.prototype = {
     },
 
     _visitJS: function(element) {
-        return this.enterStringExpression ? '(' + element.value + ')' : element.value;
+        return this.enterStringExpression ? 
+            '(' + element.value + ')' : 
+            element.value; 
     },
 
     _visitJSX: function(element) {
@@ -1713,7 +1721,10 @@ Stringifier.prototype = {
                 case 'v-else-if':
                 case 'v-else':
                     if (element._skip) break;
-                    throw new Error(directive.name + ' (' + this._visitJSXAttributeValue(directive.value) + ') must be led with v-if');
+                    throw new Error(directive.name + ' must be led with v-if. At: {line: ' +
+                        element.line + ', column: ' + 
+                        element.column + '}'
+                    );
                 case 'v-for':
                     directiveFor.data = this._visitJSXAttributeValue(directive.value);
                     break;
@@ -1868,8 +1879,7 @@ Stringifier.prototype = {
 module.exports = Stringifier;
 
 },{"./utils":10}],10:[function(require,module,exports){
-/**
- * @fileoverview utility methods
+/** * @fileoverview utility methods
  * @author javey
  * @date 15-4-22
  */
@@ -1929,7 +1939,8 @@ var i = 0,
 
     Delimiters = ['{', '}'];
 
-var hasOwn = Object.prototype.hasOwnProperty;
+var hasOwn = Object.prototype.hasOwnProperty,
+    noop = function() {};
 
 (function() {
     for (var type in Type) {
@@ -2058,9 +2069,14 @@ var Utils = {
         return Object.prototype.toString.call(arr) === '[object Array]';
     },
 
-    noop: function() {},
+    noop: noop,
 
-    require: require('./compile')
+    require: require('./compile'),
+
+    error: (function() {
+        var hasConsole = typeof console !== 'undefined';
+        return hasConsole ? function(e) {console.error(e);} : noop;
+    })()
 };
 
 module.exports = Utils;
@@ -2163,7 +2179,7 @@ function compile(source, options) {
                 'obj || (obj = {});',
                 'blocks || (blocks = {});',
                 'var h = _Vdt.virtualDom.h, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},',
-                    'extend = _Vdt.utils.extend, ' +
+                    'extend = _Vdt.utils.extend, _e = _Vdt.utils.error,' +
                     (options.server ? 
                         'require = function(file) { return _Vdt.utils.require(file, "' + 
                             options.filename.replace(/\\/g, '\\\\') + 
