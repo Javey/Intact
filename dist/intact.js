@@ -1639,7 +1639,7 @@ Stringifier.prototype = {
             // return (
             // /* comment */
             // )
-            str = 'function() {try {return ([' + str + '])[0]} catch(e) {_e(e)}}.call(this)';
+            str = 'function() {try {return [' + str + '][0]} catch(e) {_e(e)}}.call(this)';
         }
 
         return str;
@@ -2225,17 +2225,17 @@ var createElement = require("./vdom/create-element.js")
 
 module.exports = createElement
 
-},{"./vdom/create-element.js":35}],13:[function(require,module,exports){
+},{"./vdom/create-element.js":34}],13:[function(require,module,exports){
 var diff = require("./vtree/diff.js")
 
 module.exports = diff
 
-},{"./vtree/diff.js":57}],14:[function(require,module,exports){
+},{"./vtree/diff.js":55}],14:[function(require,module,exports){
 var h = require("./virtual-hyperscript/index.js")
 
 module.exports = h
 
-},{"./virtual-hyperscript/index.js":42}],15:[function(require,module,exports){
+},{"./virtual-hyperscript/index.js":41}],15:[function(require,module,exports){
 var diff = require("./diff.js")
 var patch = require("./patch.js")
 var h = require("./h.js")
@@ -2252,115 +2252,7 @@ module.exports = {
     VText: VText
 }
 
-},{"./create-element.js":12,"./diff.js":13,"./h.js":14,"./patch.js":33,"./vnode/vnode.js":53,"./vnode/vtext.js":55}],16:[function(require,module,exports){
-/*!
- * Cross-Browser Split 1.1.1
- * Copyright 2007-2012 Steven Levithan <stevenlevithan.com>
- * Available under the MIT License
- * ECMAScript compliant, uniform cross-browser split method
- */
-
-/**
- * Splits a string into an array of strings using a regex or string separator. Matches of the
- * separator are not included in the result array. However, if `separator` is a regex that contains
- * capturing groups, backreferences are spliced into the result each time `separator` is matched.
- * Fixes browser bugs compared to the native `String.prototype.split` and can be used reliably
- * cross-browser.
- * @param {String} str String to split.
- * @param {RegExp|String} separator Regex or string to use for separating the string.
- * @param {Number} [limit] Maximum number of items to include in the result array.
- * @returns {Array} Array of substrings.
- * @example
- *
- * // Basic use
- * split('a b c d', ' ');
- * // -> ['a', 'b', 'c', 'd']
- *
- * // With limit
- * split('a b c d', ' ', 2);
- * // -> ['a', 'b']
- *
- * // Backreferences in result array
- * split('..word1 word2..', /([a-z]+)(\d+)/i);
- * // -> ['..', 'word', '1', ' ', 'word', '2', '..']
- */
-module.exports = (function split(undef) {
-
-  var nativeSplit = String.prototype.split,
-    compliantExecNpcg = /()??/.exec("")[1] === undef,
-    // NPCG: nonparticipating capturing group
-    self;
-
-  self = function(str, separator, limit) {
-    // If `separator` is not a regex, use `nativeSplit`
-    if (Object.prototype.toString.call(separator) !== "[object RegExp]") {
-      return nativeSplit.call(str, separator, limit);
-    }
-    var output = [],
-      flags = (separator.ignoreCase ? "i" : "") + (separator.multiline ? "m" : "") + (separator.extended ? "x" : "") + // Proposed for ES6
-      (separator.sticky ? "y" : ""),
-      // Firefox 3+
-      lastLastIndex = 0,
-      // Make `global` and avoid `lastIndex` issues by working with a copy
-      separator = new RegExp(separator.source, flags + "g"),
-      separator2, match, lastIndex, lastLength;
-    str += ""; // Type-convert
-    if (!compliantExecNpcg) {
-      // Doesn't need flags gy, but they don't hurt
-      separator2 = new RegExp("^" + separator.source + "$(?!\\s)", flags);
-    }
-    /* Values for `limit`, per the spec:
-     * If undefined: 4294967295 // Math.pow(2, 32) - 1
-     * If 0, Infinity, or NaN: 0
-     * If positive number: limit = Math.floor(limit); if (limit > 4294967295) limit -= 4294967296;
-     * If negative number: 4294967296 - Math.floor(Math.abs(limit))
-     * If other: Type-convert, then use the above rules
-     */
-    limit = limit === undef ? -1 >>> 0 : // Math.pow(2, 32) - 1
-    limit >>> 0; // ToUint32(limit)
-    while (match = separator.exec(str)) {
-      // `separator.lastIndex` is not reliable cross-browser
-      lastIndex = match.index + match[0].length;
-      if (lastIndex > lastLastIndex) {
-        output.push(str.slice(lastLastIndex, match.index));
-        // Fix browsers whose `exec` methods don't consistently return `undefined` for
-        // nonparticipating capturing groups
-        if (!compliantExecNpcg && match.length > 1) {
-          match[0].replace(separator2, function() {
-            for (var i = 1; i < arguments.length - 2; i++) {
-              if (arguments[i] === undef) {
-                match[i] = undef;
-              }
-            }
-          });
-        }
-        if (match.length > 1 && match.index < str.length) {
-          Array.prototype.push.apply(output, match.slice(1));
-        }
-        lastLength = match[0].length;
-        lastLastIndex = lastIndex;
-        if (output.length >= limit) {
-          break;
-        }
-      }
-      if (separator.lastIndex === match.index) {
-        separator.lastIndex++; // Avoid an infinite loop
-      }
-    }
-    if (lastLastIndex === str.length) {
-      if (lastLength || !separator.test("")) {
-        output.push("");
-      }
-    } else {
-      output.push(str.slice(lastLastIndex));
-    }
-    return output.length > limit ? output.slice(0, limit) : output;
-  };
-
-  return self;
-})();
-
-},{}],17:[function(require,module,exports){
+},{"./create-element.js":12,"./diff.js":13,"./h.js":14,"./patch.js":32,"./vnode/vnode.js":51,"./vnode/vtext.js":53}],16:[function(require,module,exports){
 /**
  * cuid.js
  * Collision-resistant UID generator for browsers and node.
@@ -2472,7 +2364,7 @@ module.exports = (function split(undef) {
 
 }(this.applitude || this));
 
-},{}],18:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var EvStore = require("ev-store")
 
 module.exports = addEvent
@@ -2492,7 +2384,7 @@ function addEvent(target, type, handler) {
     }
 }
 
-},{"ev-store":24}],19:[function(require,module,exports){
+},{"ev-store":23}],18:[function(require,module,exports){
 var globalDocument = require("global/document")
 var EvStore = require("ev-store")
 var createStore = require("weakmap-shim/create-store")
@@ -2681,7 +2573,7 @@ function Handle() {
     this.type = "dom-delegator-handle"
 }
 
-},{"./add-event.js":18,"./proxy-event.js":22,"./remove-event.js":23,"ev-store":24,"global/document":25,"weakmap-shim/create-store":30}],20:[function(require,module,exports){
+},{"./add-event.js":17,"./proxy-event.js":21,"./remove-event.js":22,"ev-store":23,"global/document":24,"weakmap-shim/create-store":29}],19:[function(require,module,exports){
 var Individual = require("individual")
 var cuid = require("cuid")
 var globalDocument = require("global/document")
@@ -2743,7 +2635,7 @@ function Delegator(opts) {
 Delegator.allocateHandle = DOMDelegator.allocateHandle;
 Delegator.transformHandle = DOMDelegator.transformHandle;
 
-},{"./dom-delegator.js":19,"cuid":17,"global/document":25,"individual":21}],21:[function(require,module,exports){
+},{"./dom-delegator.js":18,"cuid":16,"global/document":24,"individual":20}],20:[function(require,module,exports){
 (function (global){
 var root = typeof window !== 'undefined' ?
     window : typeof global !== 'undefined' ?
@@ -2765,7 +2657,7 @@ function Individual(key, value) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],22:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var inherits = require("inherits")
 
 var ALL_PROPS = [
@@ -2845,7 +2737,7 @@ function KeyEvent(ev) {
 
 inherits(KeyEvent, ProxyEvent)
 
-},{"inherits":28}],23:[function(require,module,exports){
+},{"inherits":27}],22:[function(require,module,exports){
 var EvStore = require("ev-store")
 
 module.exports = removeEvent
@@ -2866,7 +2758,7 @@ function removeEvent(target, type, handler) {
     }
 }
 
-},{"ev-store":24}],24:[function(require,module,exports){
+},{"ev-store":23}],23:[function(require,module,exports){
 'use strict';
 
 var OneVersionConstraint = require('individual/one-version');
@@ -2888,7 +2780,7 @@ function EvStore(elem) {
     return hash;
 }
 
-},{"individual/one-version":27}],25:[function(require,module,exports){
+},{"individual/one-version":26}],24:[function(require,module,exports){
 (function (global){
 var topLevel = typeof global !== 'undefined' ? global :
     typeof window !== 'undefined' ? window : {}
@@ -2907,7 +2799,7 @@ if (typeof document !== 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-document":1}],26:[function(require,module,exports){
+},{"min-document":1}],25:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -2930,7 +2822,7 @@ function Individual(key, value) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],27:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 'use strict';
 
 var Individual = require('./index.js');
@@ -2954,7 +2846,7 @@ function OneVersion(moduleName, version, defaultValue) {
     return Individual(key, defaultValue);
 }
 
-},{"./index.js":26}],28:[function(require,module,exports){
+},{"./index.js":25}],27:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -2979,14 +2871,14 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],29:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 "use strict";
 
 module.exports = function isObject(x) {
 	return typeof x === "object" && x !== null;
 };
 
-},{}],30:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 var hiddenStore = require('./hidden-store.js');
 
 module.exports = createStore;
@@ -3007,7 +2899,7 @@ function createStore() {
     };
 }
 
-},{"./hidden-store.js":31}],31:[function(require,module,exports){
+},{"./hidden-store.js":30}],30:[function(require,module,exports){
 module.exports = hiddenStore;
 
 function hiddenStore(obj, key) {
@@ -3025,7 +2917,7 @@ function hiddenStore(obj, key) {
     return store;
 }
 
-},{}],32:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 var nativeIsArray = Array.isArray
 var toString = Object.prototype.toString
 
@@ -3035,12 +2927,12 @@ function isArray(obj) {
     return toString.call(obj) === "[object Array]"
 }
 
-},{}],33:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 var patch = require("./vdom/patch.js")
 
 module.exports = patch
 
-},{"./vdom/patch.js":38}],34:[function(require,module,exports){
+},{"./vdom/patch.js":37}],33:[function(require,module,exports){
 var isObject = require("is-object")
 var isHook = require("../vnode/is-vhook.js")
 
@@ -3152,7 +3044,7 @@ function getPrototype(value) {
     }
 }
 
-},{"../vnode/is-vhook.js":47,"is-object":29}],35:[function(require,module,exports){
+},{"../vnode/is-vhook.js":45,"is-object":28}],34:[function(require,module,exports){
 var document = require("global/document")
 
 var applyProperties = require("./apply-properties")
@@ -3208,7 +3100,7 @@ function createElement(vnode, opts) {
     return node
 }
 
-},{"../vnode/handle-thunk.js":44,"../vnode/is-vcomment.js":46,"../vnode/is-vnode.js":48,"../vnode/is-vtext.js":49,"../vnode/is-widget.js":50,"./apply-properties":34,"global/document":25}],36:[function(require,module,exports){
+},{"../vnode/handle-thunk.js":42,"../vnode/is-vcomment.js":44,"../vnode/is-vnode.js":46,"../vnode/is-vtext.js":47,"../vnode/is-widget.js":48,"./apply-properties":33,"global/document":24}],35:[function(require,module,exports){
 // Maps a virtual DOM tree onto a real DOM tree in an efficient manner.
 // We don't want to read all of the DOM nodes in the tree so we use
 // the in-order tree indexing to eliminate recursion down certain branches.
@@ -3295,7 +3187,7 @@ function ascending(a, b) {
     return a > b ? 1 : -1
 }
 
-},{}],37:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 var applyProperties = require("./apply-properties")
 
 var isWidget = require("../vnode/is-widget.js")
@@ -3470,7 +3362,7 @@ function replaceRoot(oldRoot, newRoot) {
     return newRoot;
 }
 
-},{"../vnode/is-widget.js":50,"../vnode/vpatch.js":54,"./apply-properties":34,"./update-widget":39}],38:[function(require,module,exports){
+},{"../vnode/is-widget.js":48,"../vnode/vpatch.js":52,"./apply-properties":33,"./update-widget":38}],37:[function(require,module,exports){
 var document = require("global/document")
 var isArray = require("x-is-array")
 
@@ -3552,7 +3444,7 @@ function patchIndices(patches) {
     return indices
 }
 
-},{"./create-element":35,"./dom-index":36,"./patch-op":37,"global/document":25,"x-is-array":32}],39:[function(require,module,exports){
+},{"./create-element":34,"./dom-index":35,"./patch-op":36,"global/document":24,"x-is-array":31}],38:[function(require,module,exports){
 var isWidget = require("../vnode/is-widget.js")
 
 module.exports = updateWidget
@@ -3571,7 +3463,7 @@ function updateWidget(a, b) {
     return false
 }
 
-},{"../vnode/is-widget.js":50}],40:[function(require,module,exports){
+},{"../vnode/is-widget.js":48}],39:[function(require,module,exports){
 'use strict';
 
 var EvStore = require('ev-store');
@@ -3605,7 +3497,7 @@ EvHook.prototype.unhook = function(node, propertyName) {
     es[propName] = undefined;
 };
 
-},{"dom-delegator":20,"ev-store":24}],41:[function(require,module,exports){
+},{"dom-delegator":19,"ev-store":23}],40:[function(require,module,exports){
 'use strict';
 
 module.exports = SoftSetHook;
@@ -3624,7 +3516,7 @@ SoftSetHook.prototype.hook = function (node, propertyName) {
     }
 };
 
-},{}],42:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 'use strict';
 
 var isArray = require('x-is-array');
@@ -3639,15 +3531,16 @@ var isWidget = require('../vnode/is-widget');
 var isHook = require('../vnode/is-vhook');
 var isVThunk = require('../vnode/is-thunk');
 
-var parseTag = require('./parse-tag.js');
 var softSetHook = require('./hooks/soft-set-hook.js');
 var evHook = require('./hooks/ev-hook.js');
 
 module.exports = h;
 
-function h(tagName, properties, children) {
+function h(tag, properties, children) {
     var childNodes = [];
-    var tag, props, key, namespace;
+    var props, key, namespace;
+
+    tag || (tag = "DIV")
 
     if (!children && isChildren(properties)) {
         children = properties;
@@ -3655,7 +3548,10 @@ function h(tagName, properties, children) {
     }
 
     props = props || properties || {};
-    tag = parseTag(tagName, props);
+
+    if (!props.namespace) {
+        tag = tag.toUpperCase();
+    }
 
     // support keys
     if (props.hasOwnProperty('key')) {
@@ -3769,63 +3665,7 @@ function errorString(obj) {
     }
 }
 
-},{"../vnode/is-thunk":45,"../vnode/is-vcomment":46,"../vnode/is-vhook":47,"../vnode/is-vnode":48,"../vnode/is-vtext":49,"../vnode/is-widget":50,"../vnode/vcomment.js":51,"../vnode/vnode.js":53,"../vnode/vtext.js":55,"./hooks/ev-hook.js":40,"./hooks/soft-set-hook.js":41,"./parse-tag.js":43,"x-is-array":32}],43:[function(require,module,exports){
-'use strict';
-
-var split = require('browser-split');
-
-var classIdSplit = /([\.#]?[a-zA-Z0-9\u007F-\uFFFF_:-]+)/;
-var notClassId = /^\.|#/;
-
-module.exports = parseTag;
-
-function parseTag(tag, props) {
-    if (!tag) {
-        return 'DIV';
-    }
-
-    var noId = !(props.hasOwnProperty('id'));
-
-    var tagParts = split(tag, classIdSplit);
-    var tagName = null;
-
-    if (notClassId.test(tagParts[1])) {
-        tagName = 'DIV';
-    }
-
-    var classes, part, type, i;
-
-    for (i = 0; i < tagParts.length; i++) {
-        part = tagParts[i];
-
-        if (!part) {
-            continue;
-        }
-
-        type = part.charAt(0);
-
-        if (!tagName) {
-            tagName = part;
-        } else if (type === '.') {
-            classes = classes || [];
-            classes.push(part.substring(1, part.length));
-        } else if (type === '#' && noId) {
-            props.id = part.substring(1, part.length);
-        }
-    }
-
-    if (classes) {
-        if (props.className) {
-            classes.push(props.className);
-        }
-
-        props.className = classes.join(' ');
-    }
-
-    return props.namespace ? tagName : tagName.toUpperCase();
-}
-
-},{"browser-split":16}],44:[function(require,module,exports){
+},{"../vnode/is-thunk":43,"../vnode/is-vcomment":44,"../vnode/is-vhook":45,"../vnode/is-vnode":46,"../vnode/is-vtext":47,"../vnode/is-widget":48,"../vnode/vcomment.js":49,"../vnode/vnode.js":51,"../vnode/vtext.js":53,"./hooks/ev-hook.js":39,"./hooks/soft-set-hook.js":40,"x-is-array":31}],42:[function(require,module,exports){
 var isVNode = require("./is-vnode")
 var isVText = require("./is-vtext")
 var isWidget = require("./is-widget")
@@ -3867,14 +3707,14 @@ function renderThunk(thunk, previous) {
     return renderedThunk
 }
 
-},{"./is-thunk":45,"./is-vnode":48,"./is-vtext":49,"./is-widget":50}],45:[function(require,module,exports){
+},{"./is-thunk":43,"./is-vnode":46,"./is-vtext":47,"./is-widget":48}],43:[function(require,module,exports){
 module.exports = isThunk
 
 function isThunk(t) {
     return t && t.type === "Thunk"
 }
 
-},{}],46:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = isVirtualComment
@@ -3883,7 +3723,7 @@ function isVirtualComment(x) {
     return x && x.type === "VirtualComment" && x.version === version 
 }
 
-},{"./version":52}],47:[function(require,module,exports){
+},{"./version":50}],45:[function(require,module,exports){
 module.exports = isHook
 
 function isHook(hook) {
@@ -3892,7 +3732,7 @@ function isHook(hook) {
        typeof hook.unhook === "function" && !hook.hasOwnProperty("unhook"))
 }
 
-},{}],48:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = isVirtualNode
@@ -3901,7 +3741,7 @@ function isVirtualNode(x) {
     return x && x.type === "VirtualNode" && x.version === version
 }
 
-},{"./version":52}],49:[function(require,module,exports){
+},{"./version":50}],47:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = isVirtualText
@@ -3910,14 +3750,14 @@ function isVirtualText(x) {
     return x && x.type === "VirtualText" && x.version === version
 }
 
-},{"./version":52}],50:[function(require,module,exports){
+},{"./version":50}],48:[function(require,module,exports){
 module.exports = isWidget
 
 function isWidget(w) {
     return w && w.type === "Widget"
 }
 
-},{}],51:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = VirtualComment
@@ -3929,10 +3769,10 @@ function VirtualComment(comment) {
 VirtualComment.prototype.version = version
 VirtualComment.prototype.type = "VirtualComment"
 
-},{"./version":52}],52:[function(require,module,exports){
+},{"./version":50}],50:[function(require,module,exports){
 module.exports = "2"
 
-},{}],53:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 var version = require("./version")
 var isVNode = require("./is-vnode")
 var isWidget = require("./is-widget")
@@ -4006,7 +3846,7 @@ function VirtualNode(tagName, properties, children, key, namespace) {
 VirtualNode.prototype.version = version
 VirtualNode.prototype.type = "VirtualNode"
 
-},{"./is-thunk":45,"./is-vhook":47,"./is-vnode":48,"./is-widget":50,"./version":52}],54:[function(require,module,exports){
+},{"./is-thunk":43,"./is-vhook":45,"./is-vnode":46,"./is-widget":48,"./version":50}],52:[function(require,module,exports){
 var version = require("./version")
 
 VirtualPatch.NONE = 0
@@ -4031,7 +3871,7 @@ function VirtualPatch(type, vNode, patch) {
 VirtualPatch.prototype.version = version
 VirtualPatch.prototype.type = "VirtualPatch"
 
-},{"./version":52}],55:[function(require,module,exports){
+},{"./version":50}],53:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = VirtualText
@@ -4043,7 +3883,7 @@ function VirtualText(text) {
 VirtualText.prototype.version = version
 VirtualText.prototype.type = "VirtualText"
 
-},{"./version":52}],56:[function(require,module,exports){
+},{"./version":50}],54:[function(require,module,exports){
 var isObject = require("is-object")
 var isHook = require("../vnode/is-vhook")
 
@@ -4103,7 +3943,7 @@ function getPrototype(value) {
   }
 }
 
-},{"../vnode/is-vhook":47,"is-object":29}],57:[function(require,module,exports){
+},{"../vnode/is-vhook":45,"is-object":28}],55:[function(require,module,exports){
 var isArray = require("x-is-array")
 
 var VPatch = require("../vnode/vpatch")
@@ -4539,5 +4379,5 @@ function appendPatch(apply, patch) {
     }
 }
 
-},{"../vnode/handle-thunk":44,"../vnode/is-thunk":45,"../vnode/is-vcomment":46,"../vnode/is-vnode":48,"../vnode/is-vtext":49,"../vnode/is-widget":50,"../vnode/vpatch":54,"./diff-props":56,"x-is-array":32}]},{},[3])(3)
+},{"../vnode/handle-thunk":42,"../vnode/is-thunk":43,"../vnode/is-vcomment":44,"../vnode/is-vnode":46,"../vnode/is-vtext":47,"../vnode/is-widget":48,"../vnode/vpatch":52,"./diff-props":54,"x-is-array":31}]},{},[3])(3)
 });
