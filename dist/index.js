@@ -1,25 +1,43 @@
-(function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('vdt')) :
-	typeof define === 'function' && define.amd ? define(['vdt'], factory) :
-	(global.Intact = factory());
-}(this, (function () { 'use strict';
+'use strict';
 
 var minDocument = {};
 
-const toString$1 = Object.prototype.toString;
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
+  return typeof obj;
+} : function (obj) {
+  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+};
 
-const doc = typeof document === 'undefined' ? minDocument : document;
 
-const isArray$2 = Array.isArray || function(arr) {
+
+
+
+
+
+
+
+
+
+var classCallCheck = function (instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+};
+
+var toString$1 = Object.prototype.toString;
+
+var doc = typeof document === 'undefined' ? minDocument : document;
+
+var isArray$2 = Array.isArray || function (arr) {
     return toString$1.call(arr) === '[object Array]';
 };
 
 function isObject$2(o) {
-    return typeof o === 'object' && o !== null;
+    return (typeof o === 'undefined' ? 'undefined' : _typeof(o)) === 'object' && o !== null;
 }
 
 function isStringOrNumber(o) {
-    const type = typeof o;
+    var type = typeof o === 'undefined' ? 'undefined' : _typeof(o);
     return type === 'string' || type === 'number';
 }
 
@@ -35,14 +53,14 @@ function isEventProp$1(propName) {
     return propName.substr(0, 3) === 'ev-';
 }
 
-const indexOf = (function() {
+var indexOf = function () {
     if (Array.prototype.indexOf) {
-        return function(arr, value) {
+        return function (arr, value) {
             return arr.indexOf(value);
         };
     } else {
-        return function(arr, value) {
-            for (let i = 0; i < arr.length; i++) {
+        return function (arr, value) {
+            for (var i = 0; i < arr.length; i++) {
                 if (arr[i] === value) {
                     return i;
                 }
@@ -50,32 +68,32 @@ const indexOf = (function() {
             return -1;
         };
     }
-})();
+}();
 
-const nativeObject = Object.create;
-const createObject = (function() {
+var nativeObject = Object.create;
+var createObject = function () {
     if (nativeObject) {
-        return function(obj) {
+        return function (obj) {
             return nativeObject(obj);
         };
     } else {
-        return function(obj) {
+        return function (obj) {
             function Fn() {}
             Fn.prototype = obj;
             return new Fn();
         };
     }
-})();
+}();
 
-const SimpleMap = typeof Map === 'function' ? Map : (function() {
+var SimpleMap = typeof Map === 'function' ? Map : function () {
     function SimpleMap() {
         this._keys = [];
         this._values = [];
         this.size = 0;
     }
 
-    SimpleMap.prototype.set = function(key, value) {
-        let index = indexOf(this._keys, key);
+    SimpleMap.prototype.set = function (key, value) {
+        var index = indexOf(this._keys, key);
         if (!~index) {
             index = this._keys.push(key) - 1;
             this.size++;
@@ -83,13 +101,13 @@ const SimpleMap = typeof Map === 'function' ? Map : (function() {
         this._values[index] = value;
         return this;
     };
-    SimpleMap.prototype.get = function(key) {
-        let index = indexOf(this._keys, key);
+    SimpleMap.prototype.get = function (key) {
+        var index = indexOf(this._keys, key);
         if (!~index) return;
         return this._values[index];
     };
-    SimpleMap.prototype.delete = function(key) {
-        const index = indexOf(this._keys, key);
+    SimpleMap.prototype.delete = function (key) {
+        var index = indexOf(this._keys, key);
         if (!~index) return false;
         this._keys.splice(index, 1);
         this._values.splice(index, 1);
@@ -98,17 +116,16 @@ const SimpleMap = typeof Map === 'function' ? Map : (function() {
     };
 
     return SimpleMap;
-})();
+}();
 
-
-const skipProps = {
+var skipProps = {
     key: true,
     ref: true,
     children: true,
     className: true
 };
 
-const booleanProps = {
+var booleanProps = {
     muted: true,
     scoped: true,
     loop: true,
@@ -130,7 +147,7 @@ const booleanProps = {
     selected: true
 };
 
-const strictProps = {
+var strictProps = {
     volume: true,
     defaultChecked: true
 };
@@ -138,32 +155,32 @@ const strictProps = {
 function MountedQueue() {
     this.queue = [];
 }
-MountedQueue.prototype.push = function(fn) {
+MountedQueue.prototype.push = function (fn) {
     this.queue.push(fn);
 };
-MountedQueue.prototype.trigger = function() {
-    const queue = this.queue;
-    let callback;
+MountedQueue.prototype.trigger = function () {
+    var queue = this.queue;
+    var callback = void 0;
     while (callback = queue.shift()) {
         callback();
     }
 };
 
-const browser = {};
+var browser = {};
 if (typeof navigator !== 'undefined') {
-    const ua = navigator.userAgent;
-    const index = ua.indexOf('MSIE ');
+    var ua = navigator.userAgent;
+    var index = ua.indexOf('MSIE ');
     if (~index) {
         browser.isIE = true;
-        const version = parseInt(ua.substring(index + 5, ua.indexOf('.', index)), 10);
+        var version = parseInt(ua.substring(index + 5, ua.indexOf('.', index)), 10);
         browser.version = version;
         browser.isIE8 = version === 8;
     }
 }
 
-const setTextContent = browser.isIE8 ? function(dom, text) {
+var setTextContent = browser.isIE8 ? function (dom, text) {
     dom.innerText = text;
-} : function(dom, text) {
+} : function (dom, text) {
     dom.textContent = text;
 };
 
@@ -173,8 +190,8 @@ const setTextContent = browser.isIE8 ? function(dom, text) {
  * @date 15-4-22
  */
 
-let i = 0;
-const Type$1 = {
+var i = 0;
+var Type$1 = {
     JS: i++,
     JSXText: i++,
     JSXElement: i++,
@@ -189,13 +206,12 @@ const Type$1 = {
 
     JSXDirective: i++
 };
-const TypeName$1 = [];
-for (let type in Type$1) {
+var TypeName$1 = [];
+for (var type in Type$1) {
     TypeName$1[Type$1[type]] = type;
 }
 
-
-const SelfClosingTags = {
+var SelfClosingTags = {
     'area': true,
     'base': true,
     'br': true,
@@ -215,13 +231,13 @@ const SelfClosingTags = {
 };
 
 // which children must be text
-const TextTags = {
+var TextTags = {
     style: true,
     script: true,
     textarea: true
 };
 
-const Directives = {
+var Directives = {
     'v-if': true,
     'v-else-if': true,
     'v-else': true,
@@ -230,7 +246,7 @@ const Directives = {
     'v-for-key': true
 };
 
-const Options = {
+var Options = {
     autoReturn: true,
     onlySource: false,
     delimiters: ['{', '}'],
@@ -242,8 +258,8 @@ const Options = {
     skipWhitespace: false
 };
 
-const hasOwn$1 = Object.prototype.hasOwnProperty;
-const noop = function() {};
+var hasOwn$1 = Object.prototype.hasOwnProperty;
+var noop = function noop() {};
 
 function isArrayLike(value) {
     if (isNullOrUndefined(value)) return false;
@@ -255,7 +271,7 @@ function each$1(obj, iter, thisArg) {
     if (isArrayLike(obj)) {
         for (var i = 0, l = obj.length; i < l; i++) {
             iter.call(thisArg, obj[i], i, obj);
-        } 
+        }
     } else if (isObject$1(obj)) {
         for (var key in obj) {
             if (hasOwn$1.call(obj, key)) {
@@ -266,18 +282,17 @@ function each$1(obj, iter, thisArg) {
 }
 
 function isObject$1(obj) {
-    var type = typeof obj;
-    return type === 'function' || type === 'object' && !!obj; 
+    var type = typeof obj === 'undefined' ? 'undefined' : _typeof(obj);
+    return type === 'function' || type === 'object' && !!obj;
 }
 
 function map(obj, iter, thisArgs) {
     var ret = [];
-    each$1(obj, function(value, key, obj) {
+    each$1(obj, function (value, key, obj) {
         ret.push(iter.call(thisArgs, value, key, obj));
     });
     return ret;
 }
-
 
 function className(obj) {
     if (isNullOrUndefined(obj)) return;
@@ -292,8 +307,7 @@ function className(obj) {
 }
 
 function isWhiteSpace(charCode) {
-    return ((charCode <= 160 && (charCode >= 9 && charCode <= 13) || charCode == 32 || charCode == 160) || charCode == 5760 || charCode == 6158 ||
-    (charCode >= 8192 && (charCode <= 8202 || charCode == 8232 || charCode == 8233 || charCode == 8239 || charCode == 8287 || charCode == 12288 || charCode == 65279)));
+    return charCode <= 160 && charCode >= 9 && charCode <= 13 || charCode == 32 || charCode == 160 || charCode == 5760 || charCode == 6158 || charCode >= 8192 && (charCode <= 8202 || charCode == 8232 || charCode == 8233 || charCode == 8239 || charCode == 8287 || charCode == 12288 || charCode == 65279);
 }
 
 function trimRight(str) {
@@ -305,7 +319,8 @@ function trimRight(str) {
 }
 
 function trimLeft(str) {
-    var length = str.length, index = -1;
+    var length = str.length,
+        index = -1;
 
     while (index++ < length && Utils.isWhiteSpace(str.charCodeAt(index))) {}
 
@@ -326,7 +341,7 @@ function getDelimiters() {
 function configure(options) {
     if (options !== undefined) {
         extend$1(Options, options);
-    } 
+    }
     return Options;
 }
 
@@ -342,12 +357,16 @@ function isDirective(name) {
     return hasOwn$1.call(Directives, name);
 }
 
-function extend$1(...args) {
+function extend$1() {
+    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+    }
+
     var dest = args[0];
     var length = args.length;
     if (length > 1) {
         for (var i = 1; i < length; i++) {
-            let source = args[i];
+            var source = args[i];
             if (source) {
                 for (var key in source) {
                     if (hasOwn$1.call(source, key)) {
@@ -360,15 +379,16 @@ function extend$1(...args) {
     return dest;
 }
 
-const require = require('./compile');
-
-const error = (function() {
+var error$1 = function () {
     var hasConsole = typeof console !== 'undefined';
-    return hasConsole ? function(e) {console.error(e);} : noop;
-})();
+    return hasConsole ? function (e) {
+        console.error(e);
+    } : noop;
+}();
 
 
-var Utils$1 = (Object.freeze || Object)({
+
+var utils = (Object.freeze || Object)({
 	Type: Type$1,
 	TypeName: TypeName$1,
 	SelfClosingTags: SelfClosingTags,
@@ -390,8 +410,7 @@ var Utils$1 = (Object.freeze || Object)({
 	isTextTag: isTextTag,
 	isDirective: isDirective,
 	extend: extend$1,
-	require: require,
-	error: error,
+	error: error$1,
 	isNullOrUndefined: isNullOrUndefined$1,
 	isArray: isArray$2
 });
@@ -402,14 +421,16 @@ var Utils$1 = (Object.freeze || Object)({
  * @date 15-4-22
  */
 
-const {Type: Type$$1, TypeName: TypeName$$1} = Utils$1;
-const elementNameRegexp = /^<\w+:?\s*[\w\/>]/;
+var Type$$1 = Type$1;
+var TypeName$$1 = TypeName$1;
+
+var elementNameRegexp = /^<\w+:?\s*[\w\/>]/;
 
 function isJSXIdentifierPart(ch) {
-    return (ch === 58) || (ch === 95) || (ch === 45) ||  // : and _ (underscore) and -
-        (ch >= 65 && ch <= 90) ||         // A..Z
-        (ch >= 97 && ch <= 122) ||        // a..z
-        (ch >= 48 && ch <= 57);         // 0..9
+    return ch === 58 || ch === 95 || ch === 45 || // : and _ (underscore) and -
+    ch >= 65 && ch <= 90 || // A..Z
+    ch >= 97 && ch <= 122 || // a..z
+    ch >= 48 && ch <= 57; // 0..9
 }
 
 function Parser() {
@@ -421,7 +442,7 @@ function Parser() {
 Parser.prototype = {
     constructor: Parser,
 
-    parse: function(source, options) {
+    parse: function parse(source, options) {
         this.source = trimRight(source);
         this.index = 0;
         this.line = 1;
@@ -433,9 +454,9 @@ Parser.prototype = {
         return this._parseTemplate();
     },
 
-    _parseTemplate: function() {
+    _parseTemplate: function _parseTemplate() {
         var elements = [],
-            braces = {count: 0};
+            braces = { count: 0 };
         while (this.index < this.length && braces.count >= 0) {
             elements.push(this._advance(braces));
         }
@@ -443,7 +464,7 @@ Parser.prototype = {
         return elements;
     },
 
-    _advance: function(braces) {
+    _advance: function _advance(braces) {
         var ch = this._char();
         if (ch !== '<') {
             return this._scanJS(braces);
@@ -452,7 +473,7 @@ Parser.prototype = {
         }
     },
 
-    _scanJS: function(braces) {
+    _scanJS: function _scanJS(braces) {
         var start = this.index,
             Delimiters = this.options.delimiters;
 
@@ -484,7 +505,7 @@ Parser.prototype = {
         });
     },
 
-    _scanStringLiteral: function() {
+    _scanStringLiteral: function _scanStringLiteral() {
         var quote = this._char(),
             start = this.index,
             str = '';
@@ -515,18 +536,17 @@ Parser.prototype = {
         });
     },
 
-    _scanJSX: function() {
+    _scanJSX: function _scanJSX() {
         return this._parseJSXElement();
     },
 
-    _scanJSXText: function(stopChars) {
+    _scanJSXText: function _scanJSXText(stopChars) {
         var start = this.index,
             l = stopChars.length,
             i,
             charCode,
             skipped = false;
-        loop:
-        while (this.index < this.length) {
+        loop: while (this.index < this.length) {
             charCode = this._charCode();
             if (isWhiteSpace(charCode)) {
                 if (charCode === 10) {
@@ -539,9 +559,7 @@ Parser.prototype = {
             } else {
                 skipped = true;
                 for (i = 0; i < l; i++) {
-                    if (typeof stopChars[i] === 'function' && stopChars[i].call(this) || 
-                        this._isExpect(stopChars[i])
-                    ) {
+                    if (typeof stopChars[i] === 'function' && stopChars[i].call(this) || this._isExpect(stopChars[i])) {
                         break loop;
                     }
                 }
@@ -554,7 +572,7 @@ Parser.prototype = {
         });
     },
 
-    _scanJSXStringLiteral: function() {
+    _scanJSXStringLiteral: function _scanJSXStringLiteral() {
         var quote = this._char();
         if (quote !== '\'' && quote !== '"') {
             this._error('String literal must starts with a qoute');
@@ -565,32 +583,34 @@ Parser.prototype = {
         return token;
     },
 
-    _parseJSXElement: function() {
+    _parseJSXElement: function _parseJSXElement() {
         this._expect('<');
         var start = this.index,
             ret = {},
             flag = this._charCode();
-        if (flag >= 65 && flag <= 90/* upper case */) {
-            // is a widget
-            this._type(Type$$1.JSXWidget, ret);
-        } else if (this._isExpect('!--')) {
+        if (flag >= 65 && flag <= 90 /* upper case */) {
+                // is a widget
+                this._type(Type$$1.JSXWidget, ret);
+            } else if (this._isExpect('!--')) {
             // is html comment
             return this._parseJSXComment();
-        } else if (this._charCode(this.index + 1) === 58/* : */){
-            // is a directive
-            start += 2;
-            switch (flag) {
-                case 116: // t
-                    this._type(Type$$1.JSXVdt, ret);
-                    break;
-                case 98: // b
-                    this._type(Type$$1.JSXBlock, ret);
-                    break;
-                default:
-                    this._error('Unknown directive ' + String.fromCharCode(flag) + ':');
-            }
-            this._updateIndex(2);
-        } else {
+        } else if (this._charCode(this.index + 1) === 58 /* : */) {
+                // is a directive
+                start += 2;
+                switch (flag) {
+                    case 116:
+                        // t
+                        this._type(Type$$1.JSXVdt, ret);
+                        break;
+                    case 98:
+                        // b
+                        this._type(Type$$1.JSXBlock, ret);
+                        break;
+                    default:
+                        this._error('Unknown directive ' + String.fromCharCode(flag) + ':');
+                }
+                this._updateIndex(2);
+            } else {
             // is an element
             this._type(Type$$1.JSXElement, ret);
         }
@@ -607,7 +627,7 @@ Parser.prototype = {
         return this._parseAttributeAndChildren(ret);
     },
 
-    _parseAttributeAndChildren: function(ret) {
+    _parseAttributeAndChildren: function _parseAttributeAndChildren(ret) {
         var attrs = this._parseJSXAttribute();
         extend$1(ret, {
             attributes: attrs.attributes,
@@ -634,7 +654,7 @@ Parser.prototype = {
         return ret;
     },
 
-    _parseJSXAttribute: function() {
+    _parseJSXAttribute: function _parseJSXAttribute() {
         var ret = {
             attributes: [],
             directives: []
@@ -656,7 +676,7 @@ Parser.prototype = {
         return ret;
     },
 
-    _parseJSXAttributeName: function() {
+    _parseJSXAttributeName: function _parseJSXAttributeName() {
         var start = this.index;
         if (!isJSXIdentifierPart(this._charCode())) {
             this._error('Unexpected identifier ' + this._char());
@@ -668,16 +688,16 @@ Parser.prototype = {
             }
             this._updateIndex();
         }
-        
+
         var name = this.source.slice(start, this.index);
         if (isDirective(name)) {
-            return this._type(Type$$1.JSXDirective, {name: name});
+            return this._type(Type$$1.JSXDirective, { name: name });
         }
 
-        return this._type(Type$$1.JSXAttribute, {name: name});
+        return this._type(Type$$1.JSXAttribute, { name: name });
     },
 
-    _parseJSXAttributeValue: function() {
+    _parseJSXAttributeValue: function _parseJSXAttributeValue() {
         var value,
             Delimiters = this.options.delimiters;
         if (this._isExpect(Delimiters[0])) {
@@ -688,7 +708,7 @@ Parser.prototype = {
         return value;
     },
 
-    _parseJSXExpressionContainer: function() {
+    _parseJSXExpressionContainer: function _parseJSXExpressionContainer() {
         var expression,
             Delimiters = this.options.delimiters;
         this._expect(Delimiters[0]);
@@ -699,18 +719,18 @@ Parser.prototype = {
         }
         this._expect(Delimiters[1]);
 
-        return this._type(Type$$1.JSXExpressionContainer, {value: expression});
+        return this._type(Type$$1.JSXExpressionContainer, { value: expression });
     },
 
-    _parseJSXEmptyExpression: function() {
-        return this._type(Type$$1.JSXEmptyExpression, {value: null});
+    _parseJSXEmptyExpression: function _parseJSXEmptyExpression() {
+        return this._type(Type$$1.JSXEmptyExpression, { value: null });
     },
 
-    _parseExpression: function() {
+    _parseExpression: function _parseExpression() {
         return this._parseTemplate();
     },
 
-    _parseJSXChildren: function(element) {
+    _parseJSXChildren: function _parseJSXChildren(element) {
         var children = [],
             endTag = element.value + '>',
             current = null;
@@ -741,7 +761,7 @@ Parser.prototype = {
         return children;
     },
 
-    _parseJSXChild: function(element, endTag, prev) {
+    _parseJSXChild: function _parseJSXChild(element, endTag, prev) {
         var ret,
             Delimiters = this.options.delimiters;
 
@@ -752,7 +772,7 @@ Parser.prototype = {
         } else if (this._isElementStart()) {
             ret = this._parseJSXElement();
         } else {
-            ret = this._scanJSXText([function() {
+            ret = this._scanJSXText([function () {
                 return this._isExpect(endTag) || this._isElementStart();
             }, Delimiters[0]]);
         }
@@ -765,11 +785,11 @@ Parser.prototype = {
                 ret.prev = prev;
             }
         }
-        
+
         return ret;
     },
 
-    _parseJSXClosingElement: function() {
+    _parseJSXClosingElement: function _parseJSXClosingElement() {
         this._expect('</');
 
         while (this.index < this.length) {
@@ -783,7 +803,7 @@ Parser.prototype = {
         this._expect('>');
     },
 
-    _parseJSXComment: function() {
+    _parseJSXComment: function _parseJSXComment() {
         this._expect('!--');
         var start = this.index;
         while (this.index < this.length) {
@@ -802,17 +822,17 @@ Parser.prototype = {
         return ret;
     },
 
-    _char: function(index) {
+    _char: function _char(index) {
         arguments.length === 0 && (index = this.index);
         return this.source.charAt(index);
     },
 
-    _charCode: function(index) {
-         arguments.length === 0 && (index = this.index);
-         return this.source.charCodeAt(index);
+    _charCode: function _charCode(index) {
+        arguments.length === 0 && (index = this.index);
+        return this.source.charCodeAt(index);
     },
 
-    _skipWhitespace: function() {
+    _skipWhitespace: function _skipWhitespace() {
         while (this.index < this.length) {
             var code = this._charCode();
             if (!isWhiteSpace(code)) {
@@ -825,26 +845,22 @@ Parser.prototype = {
         }
     },
 
-    _expect: function(str) {
+    _expect: function _expect(str) {
         if (!this._isExpect(str)) {
             this._error('expect string ' + str);
         }
         this._updateIndex(str.length);
     },
 
-    _isExpect: function(str) {
+    _isExpect: function _isExpect(str) {
         return this.source.slice(this.index, this.index + str.length) === str;
     },
 
-    _isElementStart: function() {
-        return this._char() === '<' && 
-            (
-                this._isExpect('<!--') || 
-                elementNameRegexp.test(this.source.slice(this.index))
-            );
+    _isElementStart: function _isElementStart() {
+        return this._char() === '<' && (this._isExpect('<!--') || elementNameRegexp.test(this.source.slice(this.index)));
     },
 
-    _type: function(type, ret) {
+    _type: function _type(type, ret) {
         ret || (ret = {});
         ret.type = type;
         ret.typeName = TypeName$$1[type];
@@ -853,12 +869,12 @@ Parser.prototype = {
         return ret;
     },
 
-    _updateLine: function() {
+    _updateLine: function _updateLine() {
         this.line++;
         this.column = 0;
     },
 
-    _updateIndex: function(value) {
+    _updateIndex: function _updateIndex(value) {
         value === undefined && (value = 1);
         var index = this.index;
         this.index = this.index + value;
@@ -866,11 +882,8 @@ Parser.prototype = {
         return index;
     },
 
-    _error: function(msg) {
-        throw new Error(
-            msg + ' At: {line: ' + this.line + ', column: ' + this.column +
-            '} Near: "' + this.source.slice(this.index - 10, this.index + 20) + '"'
-        );
+    _error: function _error(msg) {
+        throw new Error(msg + ' At: {line: ' + this.line + ', column: ' + this.column + '} Near: "' + this.source.slice(this.index - 10, this.index + 20) + '"');
     }
 };
 
@@ -880,26 +893,28 @@ Parser.prototype = {
  * @date 15-4-22
  */
 
-const {Type: Type$2, TypeName: TypeName$2} = Utils$1;
+var Type$2 = Type$1;
+var TypeName$2 = TypeName$1;
 
-const attrMap = (function() {
+
+var attrMap = function () {
     var map$$1 = {
         'class': 'className',
         'for': 'htmlFor'
     };
-    return function(name) {
+    return function (name) {
         return map$$1[name] || name;
     };
-})();
-    
-const normalizeArgs = function(args) {
+}();
+
+var normalizeArgs = function normalizeArgs(args) {
     var l = args.length - 1;
     for (var i = l; i >= 0; i--) {
         if (args[i] !== 'null') {
             break;
         }
     }
-    return (i === l ? args : args.slice(0, i + 1)).join(', '); 
+    return (i === l ? args : args.slice(0, i + 1)).join(', ');
 };
 
 function Stringifier() {}
@@ -907,7 +922,7 @@ function Stringifier() {}
 Stringifier.prototype = {
     constructor: Stringifier,
 
-    stringify: function(ast, autoReturn) {
+    stringify: function stringify(ast, autoReturn) {
         if (arguments.length === 1) {
             autoReturn = true;
         }
@@ -916,9 +931,10 @@ Stringifier.prototype = {
         return this._visitJSXExpressionContainer(ast, true);
     },
 
-    _visitJSXExpressionContainer: function(ast, isRoot) {
-        var str = '', length = ast.length;
-        each$1(ast, function(element, i) {
+    _visitJSXExpressionContainer: function _visitJSXExpressionContainer(ast, isRoot) {
+        var str = '',
+            length = ast.length;
+        each$1(ast, function (element, i) {
             // if is root, add `return` keyword
             if (this.autoReturn && isRoot && i === length - 1) {
                 str += 'return ' + this._visit(element, isRoot);
@@ -936,7 +952,7 @@ Stringifier.prototype = {
         return str;
     },
 
-    _visit: function(element, isRoot) {
+    _visit: function _visit(element, isRoot) {
         element = element || {};
         switch (element.type) {
             case Type$2.JS:
@@ -960,13 +976,11 @@ Stringifier.prototype = {
         }
     },
 
-    _visitJS: function(element) {
-        return this.enterStringExpression ? 
-            '(' + element.value + ')' : 
-            element.value; 
+    _visitJS: function _visitJS(element) {
+        return this.enterStringExpression ? '(' + element.value + ')' : element.value;
     },
 
-    _visitJSX: function(element) {
+    _visitJSX: function _visitJSX(element) {
         if (element.value === 'script' || element.value === 'style') {
             if (element.children.length) {
                 element.attributes.push({
@@ -986,36 +1000,29 @@ Stringifier.prototype = {
         return this._visitJSXDirective(element, this._visitJSXElement(element));
     },
 
-    _visitJSXElement: function(element) {
+    _visitJSXElement: function _visitJSXElement(element) {
         var attributes = this._visitJSXAttribute(element.attributes, true, true);
-        return "h(" + normalizeArgs([
-            "'" + element.value + "'", 
-            attributes.props, 
-            this._visitJSXChildren(element.children),
-            attributes.className,
-            attributes.key,
-            attributes.ref
-        ]) + ')';
+        return "h(" + normalizeArgs(["'" + element.value + "'", attributes.props, this._visitJSXChildren(element.children), attributes.className, attributes.key, attributes.ref]) + ')';
     },
 
-    _visitJSXChildren: function(children) {
+    _visitJSXChildren: function _visitJSXChildren(children) {
         var ret = [];
-        each$1(children, function(child) {
+        each$1(children, function (child) {
             // if this.element has be handled return directly
             if (child._skip) return;
             ret.push(this._visit(child));
         }, this);
 
-        return ret.length > 1 ? '[' + ret.join(', ') + ']' : (ret[0] || 'null');
+        return ret.length > 1 ? '[' + ret.join(', ') + ']' : ret[0] || 'null';
     },
 
-    _visitJSXDirective: function(element, ret) {
+    _visitJSXDirective: function _visitJSXDirective(element, ret) {
         var directiveFor = {
             data: null,
             value: 'value',
             key: 'key'
         };
-        each$1(element.directives, function(directive) {
+        each$1(element.directives, function (directive) {
             switch (directive.name) {
                 case 'v-if':
                     ret = this._visitJSXDirectiveIf(directive, ret, element);
@@ -1023,10 +1030,7 @@ Stringifier.prototype = {
                 case 'v-else-if':
                 case 'v-else':
                     if (element._skip) break;
-                    throw new Error(directive.name + ' must be led with v-if. At: {line: ' +
-                        element.line + ', column: ' + 
-                        element.column + '}'
-                    );
+                    throw new Error(directive.name + ' must be led with v-if. At: {line: ' + element.line + ', column: ' + element.column + '}');
                 case 'v-for':
                     directiveFor.data = this._visitJSXAttributeValue(directive.value);
                     break;
@@ -1048,17 +1052,18 @@ Stringifier.prototype = {
         return ret;
     },
 
-    _visitJSXDirectiveIf: function(directive, ret, element) {
+    _visitJSXDirectiveIf: function _visitJSXDirectiveIf(directive, ret, element) {
         var result = this._visitJSXAttributeValue(directive.value) + ' ? ' + ret + ' : ',
             hasElse = false,
             next = element,
-            emptyTextNodes = [], // persist empty text node, skip them if find v-else-if or v-else
-            skipNodes = function() {
-                each$1(emptyTextNodes, function(item) {
-                    item._skip = true;
-                });
-                emptyTextNodes = [];
-            };
+            emptyTextNodes = [],
+            // persist empty text node, skip them if find v-else-if or v-else
+        skipNodes = function skipNodes() {
+            each$1(emptyTextNodes, function (item) {
+                item._skip = true;
+            });
+            emptyTextNodes = [];
+        };
         while (next = next.next) {
             if (next.type === Type$1.JSXText) {
                 if (!/^\s*$/.test(next.value)) break;
@@ -1095,28 +1100,26 @@ Stringifier.prototype = {
         return result;
     },
 
-    _visitJSXDirectiveFor: function(directive, ret) {
-        return '_Vdt.utils.map(' + directive.data + ', function(' + directive.value + ', ' + directive.key + ') {\n' +
-            'return ' + ret + ';\n' +
-        '}, this)';
+    _visitJSXDirectiveFor: function _visitJSXDirectiveFor(directive, ret) {
+        return '_Vdt.utils.map(' + directive.data + ', function(' + directive.value + ', ' + directive.key + ') {\n' + 'return ' + ret + ';\n' + '}, this)';
     },
 
-    _visitJSXChildrenAsString: function(children) {
+    _visitJSXChildrenAsString: function _visitJSXChildrenAsString(children) {
         var ret = [];
         this.enterStringExpression = true;
-        each$1(children, function(child) {
+        each$1(children, function (child) {
             ret.push(this._visit(child));
         }, this);
         this.enterStringExpression = false;
         return ret.join('+');
     },
 
-    _visitJSXAttribute: function(attributes, individualClassName, individualKeyAndRef) {
+    _visitJSXAttribute: function _visitJSXAttribute(attributes, individualClassName, individualKeyAndRef) {
         var ret = [],
             className$$1,
             key,
             ref;
-        each$1(attributes, function(attr) {
+        each$1(attributes, function (attr) {
             var name = attrMap(attr.name),
                 value = this._visitJSXAttributeValue(attr.value);
             if (name === 'widget' && attr.value.type === Type$2.JSXText) {
@@ -1152,11 +1155,11 @@ Stringifier.prototype = {
         };
     },
 
-    _visitJSXAttributeValue: function(value) {
+    _visitJSXAttributeValue: function _visitJSXAttributeValue(value) {
         return isArray$2(value) ? this._visitJSXChildren(value) : this._visit(value);
     },
 
-    _visitJSXText: function(element, noQuotes) {
+    _visitJSXText: function _visitJSXText(element, noQuotes) {
         var ret = element.value.replace(/([\'\"\\])/g, '\\$1').replace(/[\r\n]/g, '\\n');
         if (!noQuotes) {
             ret = "'" + ret + "'";
@@ -1164,56 +1167,41 @@ Stringifier.prototype = {
         return ret;
     },
 
-    _visitJSXWidget: function(element) {
+    _visitJSXWidget: function _visitJSXWidget(element) {
         if (element.children.length) {
-            element.attributes.push({name: 'children', value: element.children});
+            element.attributes.push({ name: 'children', value: element.children });
         }
         var attributes = this._visitJSXAttribute(element.attributes, false, true);
-        return this._visitJSXDirective(
-            element, 
-            'h(' + normalizeArgs(
-                [element.value, attributes.props, 'null', 'null', attributes.key, attributes.ref]
-            ) + ')'
-        );
+        return this._visitJSXDirective(element, 'h(' + normalizeArgs([element.value, attributes.props, 'null', 'null', attributes.key, attributes.ref]) + ')');
     },
 
-    _visitJSXBlock: function(element, isAncestor) {
+    _visitJSXBlock: function _visitJSXBlock(element, isAncestor) {
         arguments.length === 1 && (isAncestor = true);
 
-        return '(_blocks.' + element.value + ' = function(parent) {return ' + this._visitJSXChildren(element.children) + ';}) && (__blocks.' + element.value + ' = function(parent) {\n' +
-            'var self = this;\n' +
-            'return blocks.' + element.value + ' ? blocks.' + element.value + '.call(this, function() {\n' +
-                'return _blocks.' + element.value + '.call(self, parent);\n' +
-            '}) : _blocks.' + element.value + '.call(this, parent);\n' +
-        '})' + (isAncestor ? ' && __blocks.' + element.value + '.call(this)' : '');
+        return '(_blocks.' + element.value + ' = function(parent) {return ' + this._visitJSXChildren(element.children) + ';}) && (__blocks.' + element.value + ' = function(parent) {\n' + 'var self = this;\n' + 'return blocks.' + element.value + ' ? blocks.' + element.value + '.call(this, function() {\n' + 'return _blocks.' + element.value + '.call(self, parent);\n' + '}) : _blocks.' + element.value + '.call(this, parent);\n' + '})' + (isAncestor ? ' && __blocks.' + element.value + '.call(this)' : '');
     },
 
-    _visitJSXVdt: function(element, isRoot) {
-        var ret = ['(function(blocks) {',
-                'var _blocks = {}, __blocks = extend({}, blocks), _obj = ' + 
-                this._visitJSXAttribute(element.attributes, false, false).props + ' || {};',
-                'if (_obj.hasOwnProperty("arguments")) { extend(_obj, _obj.arguments === null ? obj : _obj.arguments); delete _obj.arguments; }',
-                'return ' + element.value + '.call(this, _obj, _Vdt, '
-            ].join('\n'),
+    _visitJSXVdt: function _visitJSXVdt(element, isRoot) {
+        var ret = ['(function(blocks) {', 'var _blocks = {}, __blocks = extend({}, blocks), _obj = ' + this._visitJSXAttribute(element.attributes, false, false).props + ' || {};', 'if (_obj.hasOwnProperty("arguments")) { extend(_obj, _obj.arguments === null ? obj : _obj.arguments); delete _obj.arguments; }', 'return ' + element.value + '.call(this, _obj, _Vdt, '].join('\n'),
             blocks = [];
 
-        each$1(element.children, function(child) {
+        each$1(element.children, function (child) {
             if (child.type === Type$2.JSXBlock) {
                 blocks.push(this._visitJSXBlock(child, false));
             }
         }, this);
 
-        ret += (blocks.length ? blocks.join(' && ') + ' && __blocks)' : '__blocks)') + ('}).call(this, ') + (isRoot ? 'blocks)' : '{})');
+        ret += (blocks.length ? blocks.join(' && ') + ' && __blocks)' : '__blocks)') + '}).call(this, ' + (isRoot ? 'blocks)' : '{})');
 
         return ret;
     },
 
-    _visitJSXComment: function(element) {
+    _visitJSXComment: function _visitJSXComment(element) {
         return 'hc(' + this._visitJSXText(element) + ')';
     }
 };
 
-const Types = {
+var Types = {
     Text: 1,
     HtmlElement: 1 << 1,
 
@@ -1227,9 +1215,9 @@ Types.Element = Types.HtmlElement;
 Types.ComponentClassOrInstance = Types.ComponentClass | Types.ComponentInstance;
 Types.TextElement = Types.Text | Types.HtmlComment;
 
-const EMPTY_OBJ$1 = {};
+var EMPTY_OBJ = {};
 if (process.env.NODE_ENV !== 'production' && !browser.isIE) {
-    Object.freeze(EMPTY_OBJ$1);
+    Object.freeze(EMPTY_OBJ);
 }
 
 function VNode(type, tag, props, children, className, key, ref) {
@@ -1240,12 +1228,12 @@ function VNode(type, tag, props, children, className, key, ref) {
     this.key = key;
     this.ref = ref;
     this.className = className;
-} 
+}
 
 function createVNode(tag, props, children, className, key, ref) {
-    let type;
-    props || (props = EMPTY_OBJ$1);
-    switch (typeof tag) {
+    var type = void 0;
+    props || (props = EMPTY_OBJ);
+    switch (typeof tag === 'undefined' ? 'undefined' : _typeof(tag)) {
         case 'string':
             type = Types.HtmlElement;
             break;
@@ -1257,40 +1245,34 @@ function createVNode(tag, props, children, className, key, ref) {
             }
             break;
         default:
-            throw new Error(`unknown vNode type: ${tag}`);
+            throw new Error('unknown vNode type: ' + tag);
     }
 
     if (props.children) {
         props.children = normalizeChildren(props.children);
     }
 
-    return new VNode(type, tag, props, normalizeChildren(children), 
-        className || props.className, 
-        key || props.key, 
-        ref || props.ref
-    );
+    return new VNode(type, tag, props, normalizeChildren(children), className || props.className, key || props.key, ref || props.ref);
 }
 
 function createCommentVNode(children) {
-    return new VNode(Types.HtmlComment, null, EMPTY_OBJ$1, children);
+    return new VNode(Types.HtmlComment, null, EMPTY_OBJ, children);
 }
 
 function createTextVNode(text) {
-    return new VNode(Types.Text, null, EMPTY_OBJ$1, text);
+    return new VNode(Types.Text, null, EMPTY_OBJ, text);
 }
 
 
 
 function createComponentInstanceVNode(instance) {
-    const props = instance.props || EMPTY_OBJ$1;
-    return new VNode(Types.ComponentInstance, instance.constructor, 
-        props, instance, null, props.key, props.ref
-    );
+    var props = instance.props || EMPTY_OBJ;
+    return new VNode(Types.ComponentInstance, instance.constructor, props, instance, null, props.key, props.ref);
 }
 
 function normalizeChildren(vNodes) {
     if (isArray$2(vNodes)) {
-        const childNodes = addChild(vNodes, {index: 0});
+        var childNodes = addChild(vNodes, { index: 0 });
         return childNodes.length ? childNodes : null;
     } else if (isComponentInstance(vNodes)) {
         return createComponentInstanceVNode(vNodes);
@@ -1300,15 +1282,15 @@ function normalizeChildren(vNodes) {
 
 function applyKey(vNode, reference) {
     if (isNullOrUndefined$1(vNode.key)) {
-        vNode.key = `.$${reference.index++}`;
+        vNode.key = '.$' + reference.index++;
     }
     return vNode;
 }
 
 function addChild(vNodes, reference) {
-    let newVNodes;
-    for (let i = 0; i < vNodes.length; i++) {
-        const n = vNodes[i];
+    var newVNodes = void 0;
+    for (var i = 0; i < vNodes.length; i++) {
+        var n = vNodes[i];
         if (isNullOrUndefined$1(n)) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
@@ -1338,51 +1320,43 @@ function addChild(vNodes, reference) {
     return newVNodes || vNodes;
 }
 
-const ALL_PROPS = [
-    "altKey", "bubbles", "cancelable", "ctrlKey",
-    "eventPhase", "metaKey", "relatedTarget", "shiftKey",
-    "target", "timeStamp", "type", "view", "which"
-];
-const KEY_PROPS = ["char", "charCode", "key", "keyCode"];
-const MOUSE_PROPS = [
-    "button", "buttons", "clientX", "clientY", "layerX",
-    "layerY", "offsetX", "offsetY", "pageX", "pageY",
-    "screenX", "screenY", "toElement"
-];
+var ALL_PROPS = ["altKey", "bubbles", "cancelable", "ctrlKey", "eventPhase", "metaKey", "relatedTarget", "shiftKey", "target", "timeStamp", "type", "view", "which"];
+var KEY_PROPS = ["char", "charCode", "key", "keyCode"];
+var MOUSE_PROPS = ["button", "buttons", "clientX", "clientY", "layerX", "layerY", "offsetX", "offsetY", "pageX", "pageY", "screenX", "screenY", "toElement"];
 
-const rkeyEvent = /^key|input/;
-const rmouseEvent = /^(?:mouse|pointer|contextmenu)|click/;
+var rkeyEvent = /^key|input/;
+var rmouseEvent = /^(?:mouse|pointer|contextmenu)|click/;
 
 function Event(e) {
-    for (let i = 0; i < ALL_PROPS.length; i++) {
-        let propKey = ALL_PROPS[i];
+    for (var i = 0; i < ALL_PROPS.length; i++) {
+        var propKey = ALL_PROPS[i];
         this[propKey] = e[propKey];
     }
-    
+
     if (!e.target) {
         this.target = e.srcElement;
     }
 
     this._rawEvent = e;
 }
-Event.prototype.preventDefault = function() {
-    const e = this._rawEvent;
+Event.prototype.preventDefault = function () {
+    var e = this._rawEvent;
     if (e.preventDefault) {
         e.preventDefault();
     } else {
         e.returnValue = false;
     }
 };
-Event.prototype.stopPropagation = function() {
-    const e = this._rawEvent;    
+Event.prototype.stopPropagation = function () {
+    var e = this._rawEvent;
     e.cancelBubble = true;
     e.stopImmediatePropagation && e.stopImmediatePropagation();
 };
 
 function MouseEvent(e) {
     Event.call(this, e);
-    for (let j = 0; j < MOUSE_PROPS.length; j++) {
-        let mousePropKey = MOUSE_PROPS[j];
+    for (var j = 0; j < MOUSE_PROPS.length; j++) {
+        var mousePropKey = MOUSE_PROPS[j];
         this[mousePropKey] = e[mousePropKey];
     }
 }
@@ -1391,8 +1365,8 @@ MouseEvent.prototype.constructor = MouseEvent;
 
 function KeyEvent(e) {
     Event.call(this, e);
-    for (let j = 0; j < KEY_PROPS.length; j++) {
-        let keyPropKey = KEY_PROPS[j];
+    for (var j = 0; j < KEY_PROPS.length; j++) {
+        var keyPropKey = KEY_PROPS[j];
         this[keyPropKey] = e[keyPropKey];
     }
 }
@@ -1409,40 +1383,40 @@ function proxyEvent(e) {
     }
 }
 
-let addEventListener$1;
-let removeEventListener$1;
+var addEventListener$1 = void 0;
+var removeEventListener$1 = void 0;
 if ('addEventListener' in doc) {
-    addEventListener$1 = function(name, fn) {
+    addEventListener$1 = function addEventListener(name, fn) {
         doc.addEventListener(name, fn, false);
     };
 
-    removeEventListener$1 = function(name, fn) {
+    removeEventListener$1 = function removeEventListener(name, fn) {
         doc.removeEventListener(name, fn);
     };
 } else {
-    addEventListener$1 = function(name, fn) {
-        doc.attachEvent(`on${name}`, fn);
+    addEventListener$1 = function addEventListener(name, fn) {
+        doc.attachEvent("on" + name, fn);
     };
 
-    removeEventListener$1 = function(name, fn) {
-        doc.detachEvent(`on${name}`, fn);
+    removeEventListener$1 = function removeEventListener(name, fn) {
+        doc.detachEvent("on" + name, fn);
     };
 }
 
-const delegatedEvents = {};
+var delegatedEvents = {};
 
 function handleEvent(name, lastEvent, nextEvent, dom) {
-    let delegatedRoots = delegatedEvents[name];
+    var delegatedRoots = delegatedEvents[name];
 
     if (nextEvent) {
         if (!delegatedRoots) {
-            delegatedRoots = {items: new SimpleMap(), docEvent: null};
-            delegatedRoots.docEvent = attachEventToDocument(name, delegatedRoots); 
+            delegatedRoots = { items: new SimpleMap(), docEvent: null };
+            delegatedRoots.docEvent = attachEventToDocument(name, delegatedRoots);
             delegatedEvents[name] = delegatedRoots;
         }
         delegatedRoots.items.set(dom, nextEvent);
     } else if (delegatedRoots) {
-        const items = delegatedRoots.items;
+        var items = delegatedRoots.items;
         if (items.delete(dom)) {
             if (items.size === 0) {
                 removeEventListener$1(name, delegatedRoots.docEvent);
@@ -1453,7 +1427,7 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
 }
 
 function dispatchEvent(event, target, items, count, isClick) {
-    const eventToTrigger = items.get(target);
+    var eventToTrigger = items.get(target);
     if (eventToTrigger) {
         count--;
         event.currentTarget = target;
@@ -1463,8 +1437,8 @@ function dispatchEvent(event, target, items, count, isClick) {
         }
     }
     if (count > 0) {
-        const parentDom = target.parentNode;
-        if (isNullOrUndefined$1(parentDom) || (isClick && parentDom.nodeType === 1 && parentDom.disabled)) {
+        var parentDom = target.parentNode;
+        if (isNullOrUndefined$1(parentDom) || isClick && parentDom.nodeType === 1 && parentDom.disabled) {
             return;
         }
         dispatchEvent(event, parentDom, items, count, isClick);
@@ -1472,12 +1446,12 @@ function dispatchEvent(event, target, items, count, isClick) {
 }
 
 function attachEventToDocument(name, delegatedRoots) {
-    var docEvent = function(event) {
-        const count = delegatedRoots.items.size;
+    var docEvent = function docEvent(event) {
+        var count = delegatedRoots.items.size;
         event || (event = window.event);
         if (count > 0) {
             event = proxyEvent(event);
-            dispatchEvent(event, event.target, delegatedRoots.items, count, event.type === 'click'); 
+            dispatchEvent(event, event.target, delegatedRoots.items, count, event.type === 'click');
         }
     };
     addEventListener$1(name, docEvent);
@@ -1486,14 +1460,14 @@ function attachEventToDocument(name, delegatedRoots) {
 
 function render(vNode, parentDom) {
     if (isNullOrUndefined$1(vNode)) return;
-    const mountedQueue = new MountedQueue();
-    const dom = createElement(vNode, parentDom, mountedQueue);
+    var mountedQueue = new MountedQueue();
+    var dom = createElement(vNode, parentDom, mountedQueue);
     mountedQueue.trigger();
     return dom;
 }
 
 function createElement(vNode, parentDom, mountedQueue) {
-    const type = vNode.type;
+    var type = vNode.type;
     if (type & Types.HtmlElement) {
         return createHtmlElement(vNode, parentDom, mountedQueue);
     } else if (type & Types.Text) {
@@ -1502,21 +1476,21 @@ function createElement(vNode, parentDom, mountedQueue) {
         return createComponentClassOrInstance(vNode, parentDom, mountedQueue);
     } else if (type & Types.ComponentFunction) {
         return createComponentFunction(vNode, parentDom, mountedQueue);
-    // } else if (type & Types.ComponentInstance) {
+        // } else if (type & Types.ComponentInstance) {
         // return createComponentInstance(vNode, parentDom, mountedQueue);
     } else if (type & Types.HtmlComment) {
         return createCommentElement(vNode, parentDom);
     } else {
-        throw new Error(`unknown vnode type ${type}`);
+        throw new Error('unknown vnode type ' + type);
     }
 }
 
 function createHtmlElement(vNode, parentDom, mountedQueue) {
-    const dom = doc.createElement(vNode.tag);
-    const children = vNode.children;
-    const ref = vNode.ref;
-    const props = vNode.props;
-    const className = vNode.className;
+    var dom = doc.createElement(vNode.tag);
+    var children = vNode.children;
+    var ref = vNode.ref;
+    var props = vNode.props;
+    var className = vNode.className;
 
     vNode.dom = dom;
 
@@ -1528,8 +1502,8 @@ function createHtmlElement(vNode, parentDom, mountedQueue) {
         dom.className = className;
     }
 
-    if (props !== EMPTY_OBJ$1) {
-        for (let prop in props) {
+    if (props !== EMPTY_OBJ) {
+        for (var prop in props) {
             patchProp(prop, null, props[prop], dom);
         }
     }
@@ -1546,7 +1520,7 @@ function createHtmlElement(vNode, parentDom, mountedQueue) {
 }
 
 function createTextElement(vNode, parentDom) {
-    const dom = doc.createTextNode(vNode.children);
+    var dom = doc.createTextNode(vNode.children);
     vNode.dom = dom;
 
     if (parentDom) {
@@ -1557,11 +1531,10 @@ function createTextElement(vNode, parentDom) {
 }
 
 function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode) {
-    const props = vNode.props;
-    const instance = vNode.type & Types.ComponentClass ?
-        new vNode.tag(props) : vNode.children;
-    const dom = instance.init(lastVNode, vNode);
-    const ref = vNode.ref;
+    var props = vNode.props;
+    var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
+    var dom = instance.init(lastVNode, vNode);
+    var ref = vNode.ref;
 
     vNode.dom = dom;
     vNode.children = instance;
@@ -1571,7 +1544,9 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
     }
 
     if (typeof instance.mount === 'function') {
-        mountedQueue.push(() => instance.mount(lastVNode, vNode));
+        mountedQueue.push(function () {
+            return instance.mount(lastVNode, vNode);
+        });
     }
 
     if (typeof ref === 'function') {
@@ -1582,35 +1557,35 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
 }
 
 // export function createComponentInstance(vNode, parentDom, mountedQueue, lastVNode) {
-    // const props = vNode.props;
-    // const instance = vNode.children;
-    // const dom = instance.init(lastVNode, vNode);
-    // const ref = vNode.ref;
+// const props = vNode.props;
+// const instance = vNode.children;
+// const dom = instance.init(lastVNode, vNode);
+// const ref = vNode.ref;
 
-    // vNode.dom = dom;
+// vNode.dom = dom;
 
-    // if (parentDom) {
-        // parentDom.appendChild(dom);
-    // }
+// if (parentDom) {
+// parentDom.appendChild(dom);
+// }
 
-    // if (typeof instance.mount === 'function') {
-        // mountedQueue.push(() => instance.mount(lastVNode, vNode));
-    // }
+// if (typeof instance.mount === 'function') {
+// mountedQueue.push(() => instance.mount(lastVNode, vNode));
+// }
 
-    // if (typeof ref === 'function') {
-        // ref(instance);
-    // }
+// if (typeof ref === 'function') {
+// ref(instance);
+// }
 
-    // return dom;
+// return dom;
 // }
 
 function createComponentFunction(vNode, parentDom, mountedQueue) {
-    const props = vNode.props;
-    const ref = vNode.ref;
+    var props = vNode.props;
+    var ref = vNode.ref;
 
     createComponentFunctionVNode(vNode);
 
-    const dom = createElement(vNode.children, null, mountedQueue);
+    var dom = createElement(vNode.children, null, mountedQueue);
     vNode.dom = dom;
 
     if (parentDom) {
@@ -1625,7 +1600,7 @@ function createComponentFunction(vNode, parentDom, mountedQueue) {
 }
 
 function createCommentElement(vNode, parentDom) {
-    const dom = doc.createComment(vNode.children);
+    var dom = doc.createComment(vNode.children);
     vNode.dom = dom;
 
     if (parentDom) {
@@ -1636,9 +1611,9 @@ function createCommentElement(vNode, parentDom) {
 }
 
 function createComponentFunctionVNode(vNode) {
-    let result = vNode.tag(vNode.props);
+    var result = vNode.tag(vNode.props);
     if (isArray$2(result)) {
-        throw new Error(`ComponentFunction ${vNode.tag.name} returned a invalid vNode`);
+        throw new Error('ComponentFunction ' + vNode.tag.name + ' returned a invalid vNode');
     } else if (isStringOrNumber(result)) {
         result = createTextVNode(result);
     }
@@ -1652,7 +1627,7 @@ function createElements(vNodes, parentDom, mountedQueue) {
     if (isStringOrNumber(vNodes)) {
         setTextContent(parentDom, vNodes);
     } else if (isArray$2(vNodes)) {
-        for (let i = 0; i < vNodes.length; i++) {
+        for (var i = 0; i < vNodes.length; i++) {
             createElement(vNodes[i], parentDom, mountedQueue);
         }
     } else {
@@ -1664,7 +1639,7 @@ function removeElements(vNodes, parentDom) {
     if (isNullOrUndefined$1(vNodes)) {
         return;
     } else if (isArray$2(vNodes)) {
-        for (let i = 0; i < vNodes.length; i++) {
+        for (var i = 0; i < vNodes.length; i++) {
             removeElement(vNodes[i], parentDom);
         }
     } else {
@@ -1673,7 +1648,7 @@ function removeElements(vNodes, parentDom) {
 }
 
 function removeElement(vNode, parentDom) {
-    const type = vNode.type;
+    var type = vNode.type;
     if (type & Types.Element) {
         return removeHtmlElement(vNode, parentDom);
     } else if (type & Types.TextElement) {
@@ -1686,9 +1661,9 @@ function removeElement(vNode, parentDom) {
 }
 
 function removeHtmlElement(vNode, parentDom) {
-    const ref = vNode.ref;
-    const props = vNode.props;
-    const dom = vNode.dom;
+    var ref = vNode.ref;
+    var props = vNode.props;
+    var dom = vNode.dom;
 
     if (ref) {
         ref(null);
@@ -1697,8 +1672,8 @@ function removeHtmlElement(vNode, parentDom) {
     removeElements(vNode.children, null);
 
     // remove event
-    for (let name in props) {
-        const prop = props[name];
+    for (var name in props) {
+        var prop = props[name];
         if (!isNullOrUndefined$1(prop) && isEventProp$1(name)) {
             handleEvent(name.substr(0, 3), prop, null, dom);
         }
@@ -1716,7 +1691,7 @@ function removeText(vNode, parentDom) {
 }
 
 function removeComponentFunction(vNode, parentDom) {
-    const ref = vNode.ref;
+    var ref = vNode.ref;
     if (ref) {
         ref(null);
     }
@@ -1724,8 +1699,8 @@ function removeComponentFunction(vNode, parentDom) {
 }
 
 function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
-    const instance = vNode.children;
-    const ref = vNode.ref;
+    var instance = vNode.children;
+    var ref = vNode.ref;
 
     if (typeof instance.destroy === 'function') {
         instance.destroy(vNode, nextVNode);
@@ -1754,23 +1729,25 @@ function replaceChild(parentDom, nextDom, lastDom) {
 
 function createRef(dom, ref, mountedQueue) {
     if (typeof ref === 'function') {
-        mountedQueue.push(() => ref(dom));
+        mountedQueue.push(function () {
+            return ref(dom);
+        });
     } else {
-        throw new Error(`ref must be a function, but got "${JSON.stringify(ref)}"`);
+        throw new Error('ref must be a function, but got "' + JSON.stringify(ref) + '"');
     }
 }
 
 function patch(lastVNode, nextVNode, parentDom) {
-    const mountedQueue = new MountedQueue();
-    const dom = patchVNode(lastVNode, nextVNode, parentDom, mountedQueue);
+    var mountedQueue = new MountedQueue();
+    var dom = patchVNode(lastVNode, nextVNode, parentDom, mountedQueue);
     mountedQueue.trigger();
     return dom;
 }
 
 function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue) {
     if (lastVNode !== nextVNode) {
-        const nextType = nextVNode.type;
-        const lastType = lastVNode.type;
+        var nextType = nextVNode.type;
+        var lastType = lastVNode.type;
 
         if (nextType & Types.Element) {
             if (lastType & Types.Element) {
@@ -1808,14 +1785,14 @@ function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue) {
 }
 
 function patchElement(lastVNode, nextVNode, parentDom, mountedQueue) {
-    const dom = lastVNode.dom;
-    const lastProps = lastVNode.props;
-    const nextProps = nextVNode.props;
-    const lastChildren = lastVNode.children;
-    const nextChildren = nextVNode.children;
-    const nextRef = nextVNode.ref;
-    const lastClassName = lastVNode.className;
-    const nextClassName = nextVNode.className;
+    var dom = lastVNode.dom;
+    var lastProps = lastVNode.props;
+    var nextProps = nextVNode.props;
+    var lastChildren = lastVNode.children;
+    var nextChildren = nextVNode.children;
+    var nextRef = nextVNode.ref;
+    var lastClassName = lastVNode.className;
+    var nextClassName = nextVNode.className;
 
     nextVNode.dom = dom;
 
@@ -1842,16 +1819,15 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue) {
             createRef(dom, nextRef, mountedQueue);
         }
     }
-
 }
 
 function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue) {
-    const lastTag = lastVNode.tag;
-    const nextTag = nextVNode.tag;
-    const dom = lastVNode.dom;
+    var lastTag = lastVNode.tag;
+    var nextTag = nextVNode.tag;
+    var dom = lastVNode.dom;
 
-    let instance;
-    let newDom;
+    var instance = void 0;
+    var newDom = void 0;
 
     if (lastTag !== nextTag || lastVNode.key !== nextVNode.key) {
         removeComponentClassOrInstance(lastVNode, null, nextVNode);
@@ -1869,11 +1845,11 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue) {
 }
 
 function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue) {
-    const lastInstance = lastVNode.children;
-    const nextInstance = nextVNode.children;
-    const dom = lastVNode.dom;
+    var lastInstance = lastVNode.children;
+    var nextInstance = nextVNode.children;
+    var dom = lastVNode.dom;
 
-    let newDom;
+    var newDom = void 0;
 
     if (lastInstance !== nextInstance) {
         removeComponentClassOrInstance(lastVNode, null, nextVNode);
@@ -1889,8 +1865,8 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue) {
 }
 
 function patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue) {
-    const lastTag = lastVNode.tag;
-    const nextTag = nextVNode.tag;
+    var lastTag = lastVNode.tag;
+    var nextTag = nextVNode.tag;
 
     if (lastVNode.key !== nextVNode.key) {
         removeElement(lastVNode.children, parentDom);
@@ -1908,7 +1884,7 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
             createElements(nextChildren, parentDom, mountedQueue);
         }
     } else if (isNullOrUndefined$1(nextChildren)) {
-        removeElements(lastChildren, parentDom); 
+        removeElements(lastChildren, parentDom);
     } else if (isStringOrNumber(nextChildren)) {
         if (isStringOrNumber(lastChildren)) {
             parentDom.firstChild.nodeValue = nextChildren;
@@ -1935,23 +1911,23 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
 }
 
 function patchChildrenByKey(a, b, dom, mountedQueue) {
-    let aLength = a.length;
-    let bLength = b.length;
-    let aEnd = aLength - 1;
-    let bEnd = bLength - 1;
-    let aStart = 0;
-    let bStart = 0;
-    let i;
-    let j;
-    let aNode;
-    let bNode;
-    let nextNode;
-    let nextPos;
-    let node;
-    let aStartNode = a[aStart];
-    let bStartNode = b[bStart];
-    let aEndNode = a[aEnd];
-    let bEndNode = b[bEnd];
+    var aLength = a.length;
+    var bLength = b.length;
+    var aEnd = aLength - 1;
+    var bEnd = bLength - 1;
+    var aStart = 0;
+    var bStart = 0;
+    var i = void 0;
+    var j = void 0;
+    var aNode = void 0;
+    var bNode = void 0;
+    var nextNode = void 0;
+    var nextPos = void 0;
+    var node = void 0;
+    var aStartNode = a[aStart];
+    var bStartNode = b[bStart];
+    var aEndNode = a[aEnd];
+    var bEndNode = b[bEnd];
 
     outer: while (true) {
         while (aStartNode.key === bStartNode.key) {
@@ -1986,7 +1962,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
         }
 
         if (aStartNode.key === bEndNode.key) {
-            patchVNode(aStartNode, bEndNode, dom, mountedQueue); 
+            patchVNode(aStartNode, bEndNode, dom, mountedQueue);
             insertOrAppend(bEnd, bLength, bEndNode.dom, b, dom);
             ++aStart;
             --bEnd;
@@ -1999,11 +1975,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
 
     if (aStart > aEnd) {
         while (bStart <= bEnd) {
-            insertOrAppend(
-                bEnd, bLength, 
-                createElement(b[bStart], null, mountedQueue),
-                b, dom
-            );
+            insertOrAppend(bEnd, bLength, createElement(b[bStart], null, mountedQueue), b, dom);
             ++bStart;
         }
     } else if (bStart > bEnd) {
@@ -2014,13 +1986,13 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
     } else {
         aLength = aEnd - aStart + 1;
         bLength = bEnd - bStart + 1;
-        const sources = new Array(bLength);
+        var sources = new Array(bLength);
         for (i = 0; i < bLength; i++) {
             sources[i] = -1;
         }
-        let moved = false;
-        let pos = 0;
-        let patched = 0;
+        var moved = false;
+        var pos = 0;
+        var patched = 0;
 
         if (bLength <= 4 || aLength * bLength <= 16) {
             for (i = aStart; i <= aEnd; i++) {
@@ -2077,16 +2049,12 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
             // some browsers, e.g. ie, must insert before remove for some element,
             // e.g. select/option, otherwise the selected property will be weird
             if (moved) {
-                const seq = lisAlgorithm(sources);
+                var seq = lisAlgorithm(sources);
                 j = seq.length - 1;
                 for (i = bLength - 1; i >= 0; i--) {
                     if (sources[i] === -1) {
                         pos = i + bStart;
-                        insertOrAppend(
-                            pos, b.length, 
-                            createElement(b[pos], null, mountedQueue), 
-                            b, dom
-                        );
+                        insertOrAppend(pos, b.length, createElement(b[pos], null, mountedQueue), b, dom);
                     } else {
                         if (j < 0 || i !== seq[j]) {
                             pos = i + bStart;
@@ -2100,11 +2068,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
                 for (i = bLength - 1; i >= 0; i--) {
                     if (sources[i] === -1) {
                         pos = i + bStart;
-                        insertOrAppend(
-                            pos, b.length,
-                            createElement(b[pos], null, mountedQueue),
-                            b, dom
-                        );
+                        insertOrAppend(pos, b.length, createElement(b[pos], null, mountedQueue), b, dom);
                     }
                 }
             }
@@ -2121,16 +2085,16 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
 }
 
 function lisAlgorithm(arr) {
-    let p = arr.slice(0);
-    let result = [0];
-    let i;
-    let j;
-    let u;
-    let v;
-    let c;
-    let len = arr.length;
+    var p = arr.slice(0);
+    var result = [0];
+    var i = void 0;
+    var j = void 0;
+    var u = void 0;
+    var v = void 0;
+    var c = void 0;
+    var len = arr.length;
     for (i = 0; i < len; i++) {
-        let arrI = arr[i];
+        var arrI = arr[i];
         if (arrI === -1) {
             continue;
         }
@@ -2143,11 +2107,10 @@ function lisAlgorithm(arr) {
         u = 0;
         v = result.length - 1;
         while (u < v) {
-            c = ((u + v) / 2) | 0;
+            c = (u + v) / 2 | 0;
             if (arr[result[c]] < arrI) {
                 u = c + 1;
-            }
-            else {
+            } else {
                 v = c;
             }
         }
@@ -2168,7 +2131,7 @@ function lisAlgorithm(arr) {
 }
 
 function insertOrAppend(pos, length, newDom, nodes, dom) {
-    const nextPos = pos + 1;
+    var nextPos = pos + 1;
     if (nextPos < length) {
         dom.insertBefore(newDom, nodes[nextPos].dom);
     } else {
@@ -2184,8 +2147,8 @@ function replaceElement(lastVNode, nextVNode, parentDom, mountedQueue) {
 }
 
 function patchText(lastVNode, nextVNode, parentDom) {
-    const nextText = nextVNode.children;
-    const dom = lastVNode.dom;
+    var nextText = nextVNode.children;
+    var dom = lastVNode.dom;
     nextVNode.dom = dom;
     if (lastVNode.children !== nextText) {
         dom.nodeValue = nextText;
@@ -2193,20 +2156,20 @@ function patchText(lastVNode, nextVNode, parentDom) {
 }
 
 function patchProps(lastVNode, nextVNode) {
-    const lastProps = lastVNode.props;
-    const nextProps = nextVNode.props;
-    const dom = nextVNode.dom;
-    let prop;
-    if (nextProps !== EMPTY_OBJ$1) {
+    var lastProps = lastVNode.props;
+    var nextProps = nextVNode.props;
+    var dom = nextVNode.dom;
+    var prop = void 0;
+    if (nextProps !== EMPTY_OBJ) {
         for (prop in nextProps) {
             patchProp(prop, lastProps[prop], nextProps[prop], dom);
         }
     }
-    if (lastProps !== EMPTY_OBJ$1) {
+    if (lastProps !== EMPTY_OBJ) {
         for (prop in lastProps) {
             if (!(prop in nextProps)) {
                 removeProp(prop, lastProps[prop], dom);
-            } 
+            }
         }
     }
 }
@@ -2218,7 +2181,7 @@ function patchProp(prop, lastValue, nextValue, dom) {
         } else if (booleanProps[prop]) {
             dom[prop] = !!nextValue;
         } else if (strictProps[prop]) {
-            const value = isNullOrUndefined$1(nextValue) ? '' : nextValue;
+            var value = isNullOrUndefined$1(nextValue) ? '' : nextValue;
             if (dom[prop] !== value) {
                 dom[prop] = value;
             }
@@ -2246,13 +2209,13 @@ function removeProp(prop, lastValue, dom) {
                 dom.removeAttribute('style');
                 return;
             case 'attributes':
-                for (let key in lastValue) {
+                for (var key in lastValue) {
                     dom.removeAttribute(key);
                 }
                 return;
             case 'dataset':
                 removeDataset(lastValue, dom);
-                return; 
+                return;
             default:
                 break;
         }
@@ -2261,14 +2224,14 @@ function removeProp(prop, lastValue, dom) {
             dom[prop] = false;
         } else if (isEventProp$1(prop)) {
             handleEvent(prop.substr(3), lastValue, null, dom);
-        } else if (isObject$2(lastValue)){
-            const domProp = dom[prop];
+        } else if (isObject$2(lastValue)) {
+            var domProp = dom[prop];
             try {
                 dom[prop] = undefined;
                 delete dom[prop];
             } catch (e) {
-                for (let key in lastValue) {
-                    delete domProp[key];
+                for (var _key in lastValue) {
+                    delete domProp[_key];
                 }
             }
         } else {
@@ -2277,18 +2240,16 @@ function removeProp(prop, lastValue, dom) {
     }
 }
 
-const removeDataset = browser.isIE ? 
-    function(lastValue, dom) {
-        for (let key in lastValue) {
-            dom.removeAttribute(`data-${kebabCase(key)}`);
-        }
-    } :
-    function(lastValue, dom) {
-        const domProp = dom.dataset;
-        for (let key in lastValue) {
-            delete domProp[key];
-        }
-    };
+var removeDataset = browser.isIE ? function (lastValue, dom) {
+    for (var key in lastValue) {
+        dom.removeAttribute('data-' + kebabCase(key));
+    }
+} : function (lastValue, dom) {
+    var domProp = dom.dataset;
+    for (var key in lastValue) {
+        delete domProp[key];
+    }
+};
 
 function patchPropByObject(prop, lastValue, nextValue, dom) {
     if (lastValue && !isObject$2(lastValue) && !isNullOrUndefined$1(lastValue)) {
@@ -2307,49 +2268,48 @@ function patchPropByObject(prop, lastValue, nextValue, dom) {
     }
 }
 
-const patchDataset = browser.isIE ? 
-    function patchDataset(prop, lastValue, nextValue, dom) {
-        let hasRemoved = {};
-        let key;
-        let value;
+var patchDataset = browser.isIE ? function patchDataset(prop, lastValue, nextValue, dom) {
+    var hasRemoved = {};
+    var key = void 0;
+    var value = void 0;
 
-        for (key in nextValue) {
-            const dataKey = `data-${kebabCase(key)}`;
-            value = nextValue[key];
-            if (isNullOrUndefined$1(value)) {
-                dom.removeAttribute(dataKey); 
-                hasRemoved[key] = true;
-            } else {
-                dom.setAttribute(dataKey, value);
-            }
-        } 
+    for (key in nextValue) {
+        var dataKey = 'data-' + kebabCase(key);
+        value = nextValue[key];
+        if (isNullOrUndefined$1(value)) {
+            dom.removeAttribute(dataKey);
+            hasRemoved[key] = true;
+        } else {
+            dom.setAttribute(dataKey, value);
+        }
+    }
 
-        if (!isNullOrUndefined$1(lastValue)) {
-            for (key in lastValue) {
-                if (isNullOrUndefined$1(nextValue[key]) && !hasRemoved[key]) {
-                    dom.removeAttribute(`data-${kebabCase(key)}`);
-                }
+    if (!isNullOrUndefined$1(lastValue)) {
+        for (key in lastValue) {
+            if (isNullOrUndefined$1(nextValue[key]) && !hasRemoved[key]) {
+                dom.removeAttribute('data-' + kebabCase(key));
             }
         }
-    } : patchObject;
+    }
+} : patchObject;
 
-const _cache = {};
+var _cache = {};
 function kebabCase(word) {
     if (!_cache[word]) {
-        _cache[word] = word.replace(/[A-Z]/g, (item) => {
-            return `-${item.toLowerCase()}`;
+        _cache[word] = word.replace(/[A-Z]/g, function (item) {
+            return '-' + item.toLowerCase();
         });
     }
     return _cache[word];
 }
 
 function patchObject(prop, lastValue, nextValue, dom) {
-    let domProps = dom[prop];
+    var domProps = dom[prop];
     if (isNullOrUndefined$1(domProps)) {
         domProps = dom[prop] = {};
     }
-    let key;
-    let value;
+    var key = void 0;
+    var value = void 0;
     for (key in nextValue) {
         domProps[key] = nextValue[key];
     }
@@ -2363,9 +2323,9 @@ function patchObject(prop, lastValue, nextValue, dom) {
 }
 
 function patchAttributes(lastValue, nextValue, dom) {
-    const hasRemoved = {};
-    let key;
-    let value;
+    var hasRemoved = {};
+    var key = void 0;
+    var value = void 0;
     for (key in nextValue) {
         value = nextValue[key];
         if (isNullOrUndefined$1(value)) {
@@ -2385,10 +2345,10 @@ function patchAttributes(lastValue, nextValue, dom) {
 }
 
 function patchStyle(lastValue, nextValue, dom) {
-    const domStyle = dom.style;
-    const hasRemoved = {};
-    let key;
-    let value;
+    var domStyle = dom.style;
+    var hasRemoved = {};
+    var key = void 0;
+    var value = void 0;
     for (key in nextValue) {
         value = nextValue[key];
         if (isNullOrUndefined$1(value)) {
@@ -2416,11 +2376,11 @@ var miss = (Object.freeze || Object)({
 	hc: createCommentVNode
 });
 
-const parser = new Parser();
-const stringifier = new Stringifier();
+var parser = new Parser();
+var stringifier = new Stringifier();
 
-function Vdt$2(source, options) {
-    if (!(this instanceof Vdt$2)) return new Vdt$2(source, options);
+function Vdt$1(source, options) {
+    if (!(this instanceof Vdt$1)) return new Vdt$1(source, options);
 
     this.template = compile(source, options);
     this.data = null;
@@ -2428,32 +2388,29 @@ function Vdt$2(source, options) {
     this.node = null;
     this.widgets = {};
 }
-Vdt$2.prototype = {
-    constructor: Vdt$2,
+Vdt$1.prototype = {
+    constructor: Vdt$1,
 
-    render(data) {
+    render: function render$$1(data) {
         this.renderVNode(data);
         this.node = render(this.vNode);
 
         return this.node;
     },
-
-    renderVNode(data) {
+    renderVNode: function renderVNode(data) {
         if (data !== undefined) {
             this.data = data;
         }
-        this.vNode = this.template(this.data, Vdt$2);
+        this.vNode = this.template(this.data, Vdt$1);
 
         return this.vNode;
     },
-
-    renderString(data) {
+    renderString: function renderString(data) {
         var node = this.render(data);
 
         return node.outerHTML || node.toString();
     },
-
-    update(data) {
+    update: function update(data) {
         var oldVNode = this.vNode;
         this.renderVNode(data);
         this.node = patch(oldVNode, this.vNode);
@@ -2467,36 +2424,18 @@ function compile(source, options) {
 
     // backward compatibility v0.2.2
     if (options === true || options === false) {
-        options = {autoReturn: options};
+        options = { autoReturn: options };
     }
 
     options = extend$1({}, configure(), options);
 
-    switch (typeof source) {
+    switch (typeof source === 'undefined' ? 'undefined' : _typeof(source)) {
         case 'string':
-            var ast = parser.parse(source, {delimiters: options.delimiters}),
+            var ast = parser.parse(source, { delimiters: options.delimiters }),
                 hscript = stringifier.stringify(ast, options.autoReturn);
 
-            hscript = [
-                '_Vdt || (_Vdt = Vdt);',
-                'obj || (obj = {});',
-                'blocks || (blocks = {});',
-                'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},',
-                    'extend = _Vdt.utils.extend, _e = _Vdt.utils.error,' +
-                    (options.server ? 
-                        'require = function(file) { return _Vdt.utils.require(file, "' + 
-                            options.filename.replace(/\\/g, '\\\\') + 
-                        '") }, ' : 
-                        ''
-                    ) +
-                    'self = this.data, scope = obj;',
-                options.noWith ? hscript : [
-                    'with (obj) {',
-                        hscript,
-                    '}'
-                ].join('\n')
-            ].join('\n');
-            templateFn = options.onlySource ? function() {} : new Function('obj', '_Vdt', 'blocks', hscript);
+            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', 'extend = _Vdt.utils.extend, _e = _Vdt.utils.error,' + (options.server ? 'require = function(file) { return _Vdt.utils.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj;', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
+            templateFn = options.onlySource ? function () {} : new Function('obj', '_Vdt', 'blocks', hscript);
             templateFn.source = 'function(obj, _Vdt, blocks) {\n' + hscript + '\n}';
             break;
         case 'function':
@@ -2509,55 +2448,21 @@ function compile(source, options) {
     return templateFn;
 }
 
-Vdt$2.parser = parser;
-Vdt$2.stringifier = stringifier;
-Vdt$2.miss = miss;
-Vdt$2.compile = compile;
-Vdt$2.utils = Utils$1;
-Vdt$2.setDelimiters = setDelimiters;
-Vdt$2.getDelimiters = getDelimiters;
+Vdt$1.parser = parser;
+Vdt$1.stringifier = stringifier;
+Vdt$1.miss = miss;
+Vdt$1.compile = compile;
+Vdt$1.utils = utils;
+Vdt$1.setDelimiters = setDelimiters;
+Vdt$1.getDelimiters = getDelimiters;
 
 // for compatibility v1.0
-Vdt$2.virtualDom = miss;
+Vdt$1.virtualDom = miss;
 
-
-
-var client = (Object.freeze || Object)({
-	'default': Vdt$2
-});
-
-var require$$0 = ( client && Vdt$2 ) || client;
-
-function _interopDefault$1 (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
-
-var Vdt = _interopDefault$1(require$$0);
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
-  return typeof obj;
-} : function (obj) {
-  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-};
-
-
-
-
-
-
-
-
-
-
-
-var classCallCheck = function (instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-};
-
-var extend = Vdt.utils.extend;
-var isArray$1 = Vdt.utils.isArray;
-var each = Vdt.utils.each;
-var isObject = Vdt.utils.isObject;
+var extend = Vdt$1.utils.extend;
+var isArray$1 = Vdt$1.utils.isArray;
+var each = Vdt$1.utils.each;
+var isObject = Vdt$1.utils.isObject;
 
 /**
  * inherit
@@ -2832,7 +2737,7 @@ function set$$1(object, path, value) {
     return object;
 }
 
-var EMPTY_OBJ = {};
+var EMPTY_OBJ$1 = {};
 
 var Intact$1 = function () {
     function Intact(props) {
@@ -2848,7 +2753,7 @@ var Intact$1 = function () {
 
         this._events = {};
         this.props = {};
-        this.vdt = Vdt(this.template);
+        this.vdt = Vdt$1(this.template);
         this.set(props, { silent: true });
 
         // for compatibility v1.0
@@ -2965,10 +2870,10 @@ var Intact$1 = function () {
     };
 
     Intact.prototype._patchProps = function _patchProps(lastProps, nextProps) {
-        lastProps = lastProps || EMPTY_OBJ;
-        nextProps = nextProps || EMPTY_OBJ;
+        lastProps = lastProps || EMPTY_OBJ$1;
+        nextProps = nextProps || EMPTY_OBJ$1;
         if (lastProps !== nextProps) {
-            if (nextProps !== EMPTY_OBJ) {
+            if (nextProps !== EMPTY_OBJ$1) {
                 for (var prop in nextProps) {}
             }
             this.set(nextProps, { global: false });
@@ -3172,7 +3077,7 @@ var Animate = Intact$1.extend({
         transition: 'animate'
     },
 
-    template: Vdt.compile('return h(self.get("tagName"), self.extend({}, self.get()), self.values(self.childrenMap))', { autoReturn: false, noWith: true }),
+    template: Vdt$1.compile('return h(self.get("tagName"), self.extend({}, self.get()), self.values(self.childrenMap))', { autoReturn: false, noWith: true }),
 
     _init: function _init() {
         this.key = this.get('key');
@@ -3489,10 +3394,6 @@ var TransitionEvents = {
 
 Intact$1.prototype.Animate = Animate;
 Intact$1.Animate = Animate;
-Intact$1.Vdt = Vdt;
+Intact$1.Vdt = Vdt$1;
 
-var index = Intact$1;
-
-return index;
-
-})));
+module.exports = Intact$1;

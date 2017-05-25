@@ -1,193 +1,162 @@
-import {inherit, extend, result, each, isFunction, isEqual, uniqueId, get, set, castPath} from './utils';
-import Thunk from './thunk';
+import {
+    inherit, extend, result, each, isFunction, 
+    isEqual, uniqueId, get, set, castPath, hasOwn
+} from './utils';
 import Vdt from 'vdt';
 
-let Intact = function(attrs = {}, contextWidgets = {}) {
-    if (!(this instanceof Intact)) {
-        return new Thunk(this, attrs, contextWidgets);
+const EMPTY_OBJ = {};
+
+export default class Intact {
+    constructor(props) {
+        if (!this.template) {
+            throw new Error('Can not instantiate when this.template does not exist.');
+        }
+        
+        props = extend({}, result(this, 'defaults'), props);
+
+        this._events = {};
+        this.props = {};
+        this.vdt = Vdt(this.template);
+        this.set(props, {silent: true});
+
+        // for compatibility v1.0
+        this.widgets = this.vdt.widgets || {};
+        this._widget = this.props.widget || uniqueId('widget');
+        this.attributes = this.props;
+
+        this.inited = false;
+        this.rendered = false;
+        this.mounted = false;
+
+        // for debug
+        this.displayName = this.displayName;
+
+        this.addEvents();
+
+        this._updateCount = 0;
+
+        const inited = () => {
+            this.inited = true;
+            this.on('change', () => this.update());
+            this.trigger('inited', this);
+        };
+        const ret = this._init();
+        if (ret && ret.then) {
+            ret.then(inited);
+        } else {
+            inited();
+        }
     }
 
-    if (!this.template) {
-        throw new Error('Can not instantiate when this.template does not exist.');
-    }
-
-    attrs = extend({
-        children: undefined 
-    }, result(this, 'defaults'), attrs);
-
-    // 如果存在arguments属性，则将其拆开赋给attributes
-    if (attrs.arguments) {
-        extend(attrs, result(attrs, 'arguments'));
-        delete attrs.arguments;
-    }
-
-    this._events = {};
-    this.attributes = {};
-
-    this.vdt = Vdt(this.template);
-    this.set(attrs, {silent: true});
-    this.key = attrs.key;
-
-    this.widgets = this.vdt.widgets || {};
-
-    this.inited = false;
-    this.rendered = false;
-    this._hasCalledInit = false;
-
-    this._contextWidgets = contextWidgets;
-    this._widget = this.attributes.widget || uniqueId('widget');
-
-    // for debug
-    this.displayName = this.displayName;
-
-    this.addEvents(); 
-
-    this.children = this.get('children');
-    delete this.attributes.children;
-    // 存在widget名称引用属性，则注入所处上下文的widgets中
-    this._contextWidgets[this._widget] = this;
-
-
-    // change事件，自动更新，当一个更新操作正在进行中，下一个更新操作必须等其完成
-    this._updateCount = 0;
-
-    let ret = this._init();
-    // support promise
-    let inited = () => {
-        this.inited = true;
-        // don't bind change event to update until component inited
-        // 对于顶级组件，可能inited事件会执行init()，然后在_create()里面更新数据
-        this.on('change', () => this.update());
-        this.trigger('inited', this);
-    };
-    if (ret && ret.then) {
-        ret.then(inited);
-    } else {
-        inited();
-    }
-};
-
-Intact.prototype = {
-    constructor: Intact,
-
-    type: 'Widget',
-
-    _init() {},
-
-    _create() {},
-
-    _beforeUpdate(prevWidget, domNode) {},
-
-    _update(prevWidget, domNode) {},
-
-    _destroy(domNode) {},
-
-    removeEvents() {
-        // 解绑所有事件
-        each(this.attributes, (value, key) => {
-            if (key.substring(0, 3) === 'ev-' && isFunction(value)) {
-                this.off(key.substring(3), value);
-                delete this.attributes[key];
+    addEvents(props = this.props) {
+        each(props , (value, key) => {
+            if (key.substr(0, 3) === 'ev-' && isFunction(value)) {
+                this.on(key.substr(3), value);
             }
         });
-    },
+    }
 
-    addEvents(attrs) {
-        // 所有以'ev-'开头的属性，都转化为事件
-        attrs || (attrs = this.attributes);
-        each(attrs, (value, key) => {
-            if (key.substring(0, 3) === 'ev-' && isFunction(value)) {
-                this.on(key.substring(3), value);
-            }
-        });
-    },
+    _init(props) {}
+    _create(lastVNode, nextVNode) {}
+    _mount(lastVNode, nextVNode) {}
+    _beforeUpdate(lastVNode, nextVNode) {}
+    _update(lastVNode, nextVNode) {}
+    _destroy(lastVNode, nextVNode) {}
 
-    init(isUpdate/* for private */) {
-        // support async component
-        if (!this.inited && !isUpdate) {
-            var placeholder = document.createComment('placeholder');
-            this.on('inited', function() {
-                var parent = placeholder.parentNode;
-                parent && parent.replaceChild(this.init(), placeholder);
+    init(lastVNode, nextVNode) {
+        if (!this.inited) {
+            // 支持异步组件
+            const placeholder = document.createComment('placeholder');
+            this.one('inited', () => {
+                const parent = placeholder.parentNode;
+                if (parent) {
+                    parent.replaceChild(this.init(), placeholder);
+                }
             });
             return placeholder;
         }
-
-        !isUpdate && (this.element = this.vdt.render(this));
+        this.element = this.vdt.render(this);
         this.rendered = true;
-        this._hasCalledInit = true;
         this.trigger('rendered', this);
-        this._create();
-        return this.element;
-    },
+        this._create(lastVNode, nextVNode);
 
-    update(prevWidget, domNode) {
+        return this.element;
+    }
+
+    mount(lastVNode, nextVNode) {
+        this.mounted = true;
+        this.trigger('mounted', this);
+        this._mount(lastVNode, nextVNode);
+    }
+
+    update(lastVNode, nextVNode) {
+        // 如果还没有渲染，则不去更新
+        if (!this.rendered) return;
+
         ++this._updateCount;
-        if (this._updateCount > 100) throw new Error('Too many recursive update.');
         if (this._updateCount > 1) return this.element;
-        if (this._updateCount === 1) return this.__update(prevWidget, domNode);
-    },
+        if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
+    }
 
-    __update(prevWidget, domNode) {
-        if (!this.vdt.node && (!prevWidget || !prevWidget.vdt.node)) {
-            // 如果dom还没渲染，就去调用update方法
-            if (--this._updateCount > 0) return this.__update(this, domNode);
-            return;
+    __update(lastVNode, nextVNode) {
+        // 如果不存在nextVNode，则为直接调用update方法更新自己
+        // 否则则是父组件触发的子组件更新，此时需要更新一些状态
+        if (nextVNode) {
+            this._patchProps(lastVNode, nextVNode);
         }
-        this._beforeUpdate(prevWidget, domNode);
-        if (prevWidget && domNode) {
-            this.vdt.node = domNode;
-            this.vdt.tree = prevWidget.vdt.tree;
-        }
-        this.prevWidget = prevWidget;
+
+        this._beforeUpdate(lastVNode, nextVNode);
         this.element = this.vdt.update(this);
-        if (!this._hasCalledInit) {
-            this.init(true);
-        }
-        this._update(prevWidget, domNode);
-        // 第二次更新自己，prevWidget应该指向自己
-        if (--this._updateCount > 0) return this.__update(this, domNode);
-        return this.element;
-    },
+        this._update(lastVNode, nextVNode);
 
-    destroy(domNode) {
-        // 如果只是移动了一个组件，会先执行创建，再销毁，所以需要判断父组件引用的是不是自己
-        if (this._contextWidgets[this._widget] === this) {
-            delete this._contextWidgets[this._widget];
+        if (--this._updateCount > 0) {
+            // 如果更新完成，发现还有更新，则是在更新过程中又触发了更新
+            // 此时直接将_updateCount置为0，因为所有数据都已更新，只做最后一次模板更新即可
+            this._updateCount = 0;
+            return this.__update();
         }
-        this.off();
-        function destroy(children) {
-            each(children, function(child) {
-                if (child.hasThunks) {
-                    destroy(child.children);
-                } else if (child.type === 'Thunk') {
-                    child.widget.destroy();
+
+        return this.element;       
+    }
+
+    _patchProps(lastProps, nextProps) {
+        lastProps = lastProps || EMPTY_OBJ;
+        nextProps = nextProps || EMPTY_OBJ;
+        if (lastProps !== nextProps) {
+            if (nextProps !== EMPTY_OBJ) {
+                for (let prop in nextProps) {
+
                 }
-            });
+            }
+            this.set(nextProps, {global: false});
+            for (let prop in lastProps) {
+                if (!hasOwn.call(nextProps, prop)) {
+                    this.set(prop, undefined, {global: false});
+                    const lastValue = lastProps[prop];
+                    if (isEventProp(prop) && isFunction(lastValue)) {
+                        // 如果是事件，则要解绑事件
+                        this.off(prop.substr(3), lastValue);
+                    }
+                }
+            }
         }
-        destroy([this.vdt.tree]);
-        this._destroy(domNode);
-    },
+    }
 
-    get(attr, defaultValue) {
-        if (!arguments.length) return this.attributes;
-        
-        let ret;
-        if (attr === 'children') {
-            // @deprecated for v0.0.1 compatibility, use this.children instead of
-            ret = this.attributes.children || this.children;
-        } else {
-            // support get value by path like lodash `_.get`
-            ret = get(this.attributes, attr);
-        }
+    destroy(lastVNode, nextVNode) {
+        this.off();
+        this._destroy(lastVNode, nextVNode);
+    }
 
-        return ret === undefined ? defaultValue : ret;
-    },
+    get(key, defaultValue) {
+        if (key === undefined) return this.props;
+
+        return get(this.props, key, defaultValue);
+    }
 
     set(key, val, options) {
         if (key == null) return this;
 
-        let current = this.attributes,
+        let current = this.props,
             changes = [];
 
         if (typeof key === 'object') {
@@ -226,7 +195,7 @@ Intact.prototype = {
                 !options.silent && this.trigger(eventName, this, value);
             }
 
-            options.change && options.change.call(this, changes);
+            if (options.change) options.change.call(this, changes);
             if (!options.silent) {
                 this.trigger('beforeChange', this, changes);
                 if (options.global) {
@@ -239,7 +208,7 @@ Intact.prototype = {
                                 value = get(current, attr),
                                 eventName = `changed:${attr}`;
 
-                            options[eventName] && options[eventName].call(this, value);
+                            if (options[eventName]) options[eventName].call(this, value);
                             this.trigger(eventName, this, value);
                         }
                     };
@@ -253,16 +222,26 @@ Intact.prototype = {
         }
 
         return this;
-    },
+    }
 
     on(name, callback) {
         (this._events[name] || (this._events[name] = [])).push(callback);
 
         return this;
-    },
+    }
+
+    one(name, callback) {
+        const fn = (...args) => {
+            callback.apply(this, args); 
+            this.off(name, fn);
+        };
+        this.on(name, fn);
+
+        return this;
+    }
 
     off(name, callback) {
-        if (!arguments.length) {
+        if (name === undefined) {
             this._events = {};
             return this;
         }
@@ -270,7 +249,7 @@ Intact.prototype = {
         let callbacks = this._events[name];
         if (!callbacks) return this;
 
-        if (arguments.length === 1) {
+        if (callback === undefined) {
             delete this._events[name];
             return this;
         }
@@ -284,7 +263,7 @@ Intact.prototype = {
         }
 
         return this;
-    },
+    }
 
     trigger(name, ...args) {
         let callbacks = this._events[name];
@@ -297,7 +276,7 @@ Intact.prototype = {
 
         return this;
     }
-};
+}
 
 /**
  * @brief 继承某个组件
@@ -323,9 +302,7 @@ Intact.mount = function(widget, node) {
     } else if (widget.inited) {
         node.appendChild(widget.init()); 
     } else {
-        widget.on('inited', () => node.appendChild(widget.init()));
+        widget.one('inited', () => node.appendChild(widget.init()));
     }
     return widget;
 };
-
-export default Intact;

@@ -49,7 +49,6 @@ describe('Simple Test', function() {
 
         it('instantiate', function() {
             (new Component()).get('a').should.be.eql(1);
-            (new Component()).type.should.be.eql('Widget');
             (new Component({a: 2})).get('a').should.be.eql(2);
             (new SubComponent()).get('a').should.be.eql(2);
             (new SubComponent({c: 3})).get().should.be.eql({a: 2, b: 1, c: 3});
@@ -59,19 +58,19 @@ describe('Simple Test', function() {
             instance.vdt.template.should.be.a.Function;
             instance.inited.should.be.eql(true);
             instance.rendered.should.be.eql(false);
-            instance._hasCalledInit.should.be.eql(false);
+            // instance._hasCalledInit.should.be.eql(false);
             instance._events.should.have.keys('change');
             instance._events.change.length.should.be.eql(1);
             (instance.get('children') === undefined).should.be.true;
-            instance._updateCount.should.be.eql(0);
+            // instance._updateCount.should.be.eql(0);
         });
 
-        it('call constructor directly should return a thunk', function() {
-            var thunk = Component();
-            thunk.type.should.be.eql('Thunk');
-            thunk.Widget.should.be.eql(Component);
-            (SubComponent()).type.should.be.eql('Thunk');
-        });
+        // it('call constructor directly should return a thunk', function() {
+            // var thunk = Component();
+            // thunk.type.should.be.eql('Thunk');
+            // thunk.Widget.should.be.eql(Component);
+            // (SubComponent()).type.should.be.eql('Thunk');
+        // });
         
         it('widgets reference', function() {
             var TestComponent = Intact.extend({
@@ -115,7 +114,7 @@ describe('Simple Test', function() {
             instance.element.should.be.eql(element);
             instance.inited.should.be.eql(true);
             instance.rendered.should.be.eql(true);
-            instance._hasCalledInit.should.be.eql(true);
+            // instance._hasCalledInit.should.be.eql(true);
         });
 
         it('update', function() {
@@ -192,10 +191,10 @@ describe('Simple Test', function() {
             instance.init();
             assert(1, 1, 0, 0, 0);
 
-            instance = new Component();
-            instance.vdt.render(instance);
-            instance.update();
-            assert(2, 2, 1, 1, 0);
+            // instance = new Component();
+            // instance.vdt.render(instance);
+            // instance.update();
+            // assert(2, 2, 1, 1, 0);
         });
 
         it('_udpate', function() {
@@ -342,17 +341,17 @@ describe('Simple Test', function() {
             instance.rendered.should.be.true;
         });
 
-        it('should trigger rendered event when update without init', function() {
-            var testFn = sinon.spy(),
-                instance = new Component();
-            instance.on('rendered', testFn);
-            instance.vdt.render(instance);
-            instance.update();
-            testFn.calledOnce.should.be.true;
-            testFn.calledWith(instance).should.be.true;
-            testFn.calledOn(instance).should.be.true;
-            instance.inited.should.be.true;
-            instance.rendered.should.be.true; 
-        });
+        // it('should trigger rendered event when update without init', function() {
+            // var testFn = sinon.spy(),
+                // instance = new Component();
+            // instance.on('rendered', testFn);
+            // instance.vdt.render(instance);
+            // instance.update();
+            // testFn.calledOnce.should.be.true;
+            // testFn.calledWith(instance).should.be.true;
+            // testFn.calledOn(instance).should.be.true;
+            // instance.inited.should.be.true;
+            // instance.rendered.should.be.true; 
+        // });
     });
 });

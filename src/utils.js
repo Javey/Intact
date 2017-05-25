@@ -247,7 +247,7 @@ function isIndex(value) {
     return (typeof value === 'number' || reIsUint.test(value)) &&
         value > -1 && value % 1 === 0;
 }
-export function get(object, path) {
+export function get(object, path, defaultValue) {
     if (hasOwn.call(object, path)) return object[path];
     path = castPath(path);
 
@@ -258,7 +258,7 @@ export function get(object, path) {
         object = object[path[index++]];
     }
 
-    return (index && index === length) ? object : undefined;
+    return (index && index === length) ? object : defaultValue;
 }
 export function set(object, path, value) {
     if (hasOwn.call(object, path)) {

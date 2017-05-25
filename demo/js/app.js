@@ -3,7 +3,7 @@ var Widget = Intact.extend({
         name: 'Javey'
     },
 
-    template: '<div ev-click={_.bind(self.change, this)}>{self.get("name")}</div>',
+    template: '<div ev-click={_.bind(self.change, self)}>{self.get("name")}</div>',
 
     change: function() {
         this.set('name', 'Hello Javey!');

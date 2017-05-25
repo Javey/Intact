@@ -2,27 +2,34 @@
   "name": "intact",
   "description": "A very lightweight data-binding library to create rich web application",
   "version": "1.2.29",
+  "main": "dist/index.js",
+  "browser": "dist/intact.js",
   "scripts": {
     "test": "node_modules/.bin/mocha-phantomjs test/index.html",
     "release": "npm run release-patch",
     "release-patch": "git checkout master && npm version patch && bower version patch 2>/dev/null; git push origin master --tags && npm publish",
     "release-minor": "git checkout master && npm version minor && bower version minor 2>/dev/null; git push origin master --tags && npm publish",
     "release-major": "git checkout master && npm version major && bower version major 2>/dev/null; git push origin master --tags && npm publish",
-    "build": "browserify src/index.js -t babelify -o dist/intact.js -s Intact && uglifyjs dist/intact.js -o dist/intact.min.js -m"
+    "build": "rollup -c rollup.config.build.js && rollup -c rollup.config.js && uglifyjs dist/intact.js -o dist/intact.min.js -m"
   },
   "dependencies": {
-    "vdt": "^0.10.2"
+    "vdt": "^0.10.2",
+    "miss": "*"
   },
   "main": "src/index",
   "devDependencies": {
-    "babel-cli": "^6.10.1",
-    "babel-plugin-transform-decorators": "^6.8.0",
+    "babel-core": "^6.24.1",
+    "babel-plugin-external-helpers": "^6.22.0",
     "babel-polyfill": "^6.9.1",
-    "babel-preset-es2015": "^6.9.0",
-    "babelify": "^7.3.0",
+    "babel-preset-es2015": "^6.24.1",
     "express": "^4.13.1",
     "mocha": "^2.4.5",
     "mocha-phantomjs": "^4.0.2",
+    "rollup": "^0.41.6",
+    "rollup-plugin-babel": "^2.7.1",
+    "rollup-plugin-commonjs": "^8.0.2",
+    "rollup-plugin-node-resolve": "^3.0.0",
+    "rollup-plugin-replace": "^1.1.1",
     "sinon": "^1.17.3",
     "underscore": "^1.8.3"
   },

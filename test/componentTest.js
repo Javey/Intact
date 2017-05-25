@@ -36,7 +36,7 @@ describe('Component Test', function() {
         b.element.outerHTML.should.be.eql('<b><a>2</a>3</b>');
     });
 
-    it('pass arguments to child', function() {
+    it('pass props to child', function() {
         var C = Intact.extend({
             defaults: {
                 c: 3
@@ -51,10 +51,10 @@ describe('Component Test', function() {
         c.init();
         c.element.outerHTML.should.be.eql(html);
 
-        C.prototype.template = '<span><A arguments={{a: self.get("c")}} /></span>';
-        c = new C();
-        c.init();
-        c.element.outerHTML.should.be.eql(html);
+        // C.prototype.template = '<span><A arguments={{a: self.get("c")}} /></span>';
+        // c = new C();
+        // c.init();
+        // c.element.outerHTML.should.be.eql(html);
     });
 
     it('parent component update', function() {
@@ -151,6 +151,7 @@ describe('Component Test', function() {
 
         a.set('a', 2);
         a.widgets.b.should.be.instanceOf(B);
+        a.element.outerHTML.should.be.eql('<div><b>3</b><b>1</b></div>');
     });
 
     it('should remove events', function() {
