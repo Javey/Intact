@@ -193,7 +193,7 @@ describe('Component Test', function() {
         var a = new A();
         a.inited.should.be.false;
         a.rendered.should.be.false;
-        a._hasCalledInit.should.be.false;
+        // a._hasCalledInit.should.be.false;
 
         var inited = sinon.spy(function() {
             a.init().outerHTML.should.be.eql('<a>1</a>');

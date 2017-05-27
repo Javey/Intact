@@ -1,9 +1,7 @@
-import Vdt from 'vdt';
+import {extend, isArray, each, isObject, hasOwn} from 'vdt/src/lib/utils';
+import {isNullOrUndefined} from 'miss/src/utils';
 
-export let extend = Vdt.utils.extend; 
-export let isArray = Vdt.utils.isArray;
-export let each = Vdt.utils.each;
-export let isObject = Vdt.utils.isObject;
+export {extend, isArray, each, isObject, hasOwn};
 
 /**
  * inherit
@@ -25,7 +23,8 @@ export function inherit(Parent, prototype) {
             Child.displayName = proto;
         }
         if (!isFunction(proto) || name === 'template') {
-            return Child.prototype[name] = proto;
+            Child.prototype[name] = proto;
+            return;
         }
         Child.prototype[name] = (() => {
             let _super = function(...args) {
@@ -71,14 +70,12 @@ export function create(object) {
     }
 }
 
-export let hasOwn = Object.prototype.hasOwnProperty;
-
 export function isFunction(obj) {
     return typeof obj === 'function';
 }
 
 export function result(obj, property, fallback) {
-    let value = obj == null ? undefined : obj[property];
+    let value = isNullOrUndefined(obj) ? undefined : obj[property];
     if (value === undefined) {
         value = fallback;
     }
@@ -111,7 +108,7 @@ var eq = function(a, b, aStack, bStack) {
     // See the [Harmony `egal` proposal](http://wiki.ecmascript.org/doku.php?id=harmony:egal).
     if (a === b) return a !== 0 || 1 / a === 1 / b;
     // A strict comparison is necessary because `null == undefined`.
-    if (a == null || b == null) return a === b;
+    if (isNullOrUndefined(a) || isNullOrUndefined(b)) return a === b;
     // Compare `[[Class]]` names.
     var className = toString.call(a);
     if (className !== toString.call(b)) return false;
@@ -254,7 +251,7 @@ export function get(object, path, defaultValue) {
     var index = 0,
         length = path.length;
 
-    while (object != null && index < length) {
+    while (!isNullOrUndefined(object) && index < length) {
         object = object[path[index++]];
     }
 
@@ -272,7 +269,7 @@ export function set(object, path, value) {
         length = path.length,
         lastIndex = length - 1,
         nested = object;
-    while (nested != null && ++index < length) {
+    while (!isNullOrUndefined(nested) && ++index < length) {
         var key = path[index],
             newValue = value;
         if (index !== lastIndex) {

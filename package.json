@@ -2,7 +2,7 @@
   "name": "intact",
   "description": "A very lightweight data-binding library to create rich web application",
   "version": "1.2.29",
-  "main": "dist/index.js",
+  "main": "src/index",
   "browser": "dist/intact.js",
   "scripts": {
     "test": "node_modules/.bin/mocha-phantomjs test/index.html",
@@ -16,7 +16,6 @@
     "vdt": "^0.10.2",
     "miss": "*"
   },
-  "main": "src/index",
   "devDependencies": {
     "babel-core": "^6.24.1",
     "babel-plugin-external-helpers": "^6.22.0",
@@ -30,6 +29,7 @@
     "rollup-plugin-commonjs": "^8.0.2",
     "rollup-plugin-node-resolve": "^3.0.0",
     "rollup-plugin-replace": "^1.1.1",
+    "rollup-watch": "^3.2.2",
     "sinon": "^1.17.3",
     "underscore": "^1.8.3"
   },

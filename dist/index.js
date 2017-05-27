@@ -1,4 +1,8 @@
-'use strict';
+(function (global, factory) {
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+	typeof define === 'function' && define.amd ? define(factory) :
+	(global.Intact = factory());
+}(this, (function () { 'use strict';
 
 var minDocument = {};
 
@@ -1216,7 +1220,7 @@ Types.ComponentClassOrInstance = Types.ComponentClass | Types.ComponentInstance;
 Types.TextElement = Types.Text | Types.HtmlComment;
 
 var EMPTY_OBJ = {};
-if (process.env.NODE_ENV !== 'production' && !browser.isIE) {
+if ('production' !== 'production' && !browser.isIE) {
     Object.freeze(EMPTY_OBJ);
 }
 
@@ -3396,4 +3400,6 @@ Intact$1.prototype.Animate = Animate;
 Intact$1.Animate = Animate;
 Intact$1.Vdt = Vdt$1;
 
-module.exports = Intact$1;
+return Intact$1;
+
+})));

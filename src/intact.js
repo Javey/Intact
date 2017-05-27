@@ -3,8 +3,8 @@ import {
     isEqual, uniqueId, get, set, castPath, hasOwn
 } from './utils';
 import Vdt from 'vdt';
-
-const EMPTY_OBJ = {};
+import {EMPTY_OBJ} from 'miss/src/vnode';
+import {isNullOrUndefined, isEventProp} from 'miss/src/utils';
 
 export default class Intact {
     constructor(props) {
@@ -50,7 +50,7 @@ export default class Intact {
 
     addEvents(props = this.props) {
         each(props , (value, key) => {
-            if (key.substr(0, 3) === 'ev-' && isFunction(value)) {
+            if (isEventProp(key) && isFunction(value)) {
                 this.on(key.substr(3), value);
             }
         });
@@ -102,7 +102,7 @@ export default class Intact {
         // 如果不存在nextVNode，则为直接调用update方法更新自己
         // 否则则是父组件触发的子组件更新，此时需要更新一些状态
         if (nextVNode) {
-            this._patchProps(lastVNode, nextVNode);
+            this._patchProps(lastVNode.props, nextVNode.props);
         }
 
         this._beforeUpdate(lastVNode, nextVNode);
@@ -122,21 +122,77 @@ export default class Intact {
     _patchProps(lastProps, nextProps) {
         lastProps = lastProps || EMPTY_OBJ;
         nextProps = nextProps || EMPTY_OBJ;
+        let lastValue;
+        let nextValue;
         if (lastProps !== nextProps) {
+            // 需要先处理事件，因为prop变更可能触发相应的事件
+            let lastPropsWithoutEvents;
+            let nextPropsWithoutEvents;
             if (nextProps !== EMPTY_OBJ) {
                 for (let prop in nextProps) {
-
+                    nextValue = nextProps[prop];
+                    if (isEventProp(prop)) {
+                        this.set(prop, nextValue, {silent: true});
+                        lastValue = lastProps[prop];
+                        if (isFunction(nextValue)) {
+                            // 更换事件监听函数
+                            let eventName = prop.substr(3);
+                            if (isFunction(lastValue)) {
+                                this.off(eventName, lastValue);
+                            }
+                            this.on(eventName, nextValue);
+                        } else if (isFunction(lastValue)) {
+                            // 解绑事件监听函数
+                            this.off(prop.substr(3), lastValue);
+                        }
+                    } else {
+                        if (!nextPropsWithoutEvents) {
+                            nextPropsWithoutEvents = {};
+                        }
+                        nextPropsWithoutEvents[prop] = nextValue;
+                    }
                 }
-            }
-            this.set(nextProps, {global: false});
-            for (let prop in lastProps) {
-                if (!hasOwn.call(nextProps, prop)) {
-                    this.set(prop, undefined, {global: false});
-                    const lastValue = lastProps[prop];
+                if (lastProps !== EMPTY_OBJ) {
+                    for (let prop in lastProps) {
+                        if (!hasOwn.call(nextProps, prop)) {
+                            lastValue = lastProps[prop];
+                            if (isEventProp(prop) && isFunction(lastValue)) {
+                                this.set(prop, undefined, {global: false});
+                                // 如果是事件，则要解绑事件
+                                this.off(prop.substr(3), lastValue);
+                            } else {
+                                if (!lastPropsWithoutEvents) {
+                                    lastPropsWithoutEvents = {};
+                                }
+                                lastPropsWithoutEvents[prop] = lastValue;
+                            }
+                        }
+                    }
+                }
+
+                if (nextPropsWithoutEvents) {
+                    this.set(nextPropsWithoutEvents, {global: false});
+                }
+            } else {
+                for (let prop in lastProps) {
+                    lastValue = lastProps[prop];
                     if (isEventProp(prop) && isFunction(lastValue)) {
+                        this.set(prop, undefined, {silent: true});
                         // 如果是事件，则要解绑事件
                         this.off(prop.substr(3), lastValue);
+                    } else {
+                        if (!lastPropsWithoutEvents) {
+                            lastPropsWithoutEvents = {};
+                        }
+                        lastPropsWithoutEvents[prop] = lastValue;
                     }
+                }
+            }
+
+            // 将不存在nextProps中，但存在lastProps中的属性，统统置为空
+            if (lastPropsWithoutEvents) {
+                for (let prop in lastPropsWithoutEvents) {
+                    this.set(prop, undefined, {global: false});
                 }
             }
         }
@@ -154,7 +210,7 @@ export default class Intact {
     }
 
     set(key, val, options) {
-        if (key == null) return this;
+        if (isNullOrUndefined(key)) return this;
 
         let current = this.props,
             changes = [];

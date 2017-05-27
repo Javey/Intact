@@ -1,11 +1,13 @@
 var commonjs = require('rollup-plugin-commonjs'),
     nodeResolve = require('rollup-plugin-node-resolve'),
+    replace = require('rollup-plugin-replace'),
     babel = require('rollup-plugin-babel');
 
 module.exports = {
     entry: 'src/index.js',
-    dest: 'dist/index.js',
-    format: 'cjs',
+    dest: 'dist/intact.js',
+    format: 'umd',
+    moduleName: 'Intact',
     legacy: true,
     // external: ['vdt'],
     plugins: [
@@ -20,5 +22,8 @@ module.exports = {
         }),
         nodeResolve({module: true, jsnext: true, main: true, browser: true}),
         commonjs(),
+        replace({
+            'process.env.NODE_ENV': "'production'"
+        })
     ]
 };
