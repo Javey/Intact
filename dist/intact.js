@@ -400,6 +400,7 @@ var utils = (Object.freeze || Object)({
 	SelfClosingTags: SelfClosingTags,
 	TextTags: TextTags,
 	Directives: Directives,
+	Options: Options,
 	hasOwn: hasOwn,
 	noop: noop,
 	each: each,
@@ -1980,7 +1981,8 @@ function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
         ref(null);
     }
 
-    removeElements(vNode.props.children, null);
+    // instance destroy method will remove everything
+    // removeElements(vNode.props.children, null);
 
     if (parentDom) {
         parentDom.removeChild(vNode.dom);
@@ -2643,7 +2645,8 @@ var miss = (Object.freeze || Object)({
 	h: createVNode,
 	patch: patch,
 	render: render,
-	hc: createCommentVNode
+	hc: createCommentVNode,
+	remove: removeElement
 });
 
 var parser = new Parser();
@@ -2686,6 +2689,9 @@ Vdt$1.prototype = {
         this.node = patch(oldVNode, this.vNode);
 
         return this.node;
+    },
+    destroy: function destroy() {
+        removeElement(this.vNode);
     }
 };
 
@@ -2704,7 +2710,7 @@ function compile(source, options) {
             var ast = parser.parse(source, { delimiters: options.delimiters }),
                 hscript = stringifier.stringify(ast, options.autoReturn);
 
-            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', 'extend = _Vdt.utils.extend, _e = _Vdt.utils.error,' + (options.server ? 'require = function(file) { return _Vdt.utils.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj;', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
+            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', 'extend = _Vdt.utils.extend, _e = _Vdt.utils.error,' + (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj;', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
             templateFn = options.onlySource ? function () {} : new Function('obj', '_Vdt', 'blocks', hscript);
             templateFn.source = 'function(obj, _Vdt, blocks) {\n' + hscript + '\n}';
             break;
@@ -2897,7 +2903,7 @@ var Intact$1 = function () {
                         if (!hasOwn.call(nextProps, _prop)) {
                             lastValue = lastProps[_prop];
                             if (isEventProp(_prop) && isFunction(lastValue)) {
-                                this.set(_prop, undefined, { global: false });
+                                this.set(_prop, undefined, { silent: true });
                                 // 如果是事件，则要解绑事件
                                 this.off(_prop.substr(3), lastValue);
                             } else {
@@ -2911,7 +2917,7 @@ var Intact$1 = function () {
                 }
 
                 if (nextPropsWithoutEvents) {
-                    this.set(nextPropsWithoutEvents, { global: false });
+                    this.set(nextPropsWithoutEvents, { update: false });
                 }
             } else {
                 for (var _prop2 in lastProps) {
@@ -2932,7 +2938,7 @@ var Intact$1 = function () {
             // 将不存在nextProps中，但存在lastProps中的属性，统统置为空
             if (lastPropsWithoutEvents) {
                 for (var _prop3 in lastPropsWithoutEvents) {
-                    this.set(_prop3, undefined, { global: false });
+                    this.set(_prop3, undefined, { update: false });
                 }
             }
         }
@@ -2940,6 +2946,7 @@ var Intact$1 = function () {
 
     Intact.prototype.destroy = function destroy(lastVNode, nextVNode) {
         this.off();
+        this.vdt.destroy();
         this._destroy(lastVNode, nextVNode);
     };
 
@@ -2979,42 +2986,44 @@ var Intact$1 = function () {
 
         options = extend({
             silent: false,
-            global: true,
+            update: true,
             async: false
         }, options);
+        // 兼容老版本
+        if (hasOwn.call(options, 'global')) {
+            options.update = options.global;
+        }
 
-        if (changes.length) {
+        if (!options.silent && changes.length) {
             // trigger `change` event
             for (var i = 0, l = changes.length; i < l; i++) {
                 var _attr = changes[i],
                     value = get$$1(current, _attr),
                     eventName = 'change:' + _attr;
-                options[eventName] && options[eventName].call(this, value);
-                !options.silent && this.trigger(eventName, this, value);
+                // options[eventName] && options[eventName].call(this, value);
+                this.trigger(eventName, this, value);
             }
 
-            if (options.change) options.change.call(this, changes);
-            if (!options.silent) {
+            // if (options.change) options.change.call(this, changes);
+            if (!options.silent && options.update) {
                 this.trigger('beforeChange', this, changes);
-                if (options.global) {
-                    clearTimeout(this._asyncUpdate);
-                    var triggerChange = function triggerChange() {
-                        _this4.trigger('change', _this4, changes);
-                        // trigger `changed` event
-                        for (var _i = 0, _l = changes.length; _i < _l; _i++) {
-                            var _attr2 = changes[_i],
-                                _value = get$$1(current, _attr2),
-                                _eventName = 'changed:' + _attr2;
+                clearTimeout(this._asyncUpdate);
+                var triggerChange = function triggerChange() {
+                    _this4.trigger('change', _this4, changes);
+                    // trigger `changed` event
+                    for (var _i = 0, _l = changes.length; _i < _l; _i++) {
+                        var _attr2 = changes[_i],
+                            _value = get$$1(current, _attr2),
+                            _eventName = 'changed:' + _attr2;
 
-                            if (options[_eventName]) options[_eventName].call(_this4, _value);
-                            _this4.trigger(_eventName, _this4, _value);
-                        }
-                    };
-                    if (options.async) {
-                        this._asyncUpdate = setTimeout(triggerChange);
-                    } else {
-                        triggerChange();
+                        // if (options[eventName]) options[eventName].call(this, value);
+                        _this4.trigger(_eventName, _this4, _value);
                     }
+                };
+                if (options.async) {
+                    this._asyncUpdate = setTimeout(triggerChange);
+                } else {
+                    triggerChange();
                 }
             }
         }
@@ -3087,6 +3096,13 @@ var Intact$1 = function () {
 
     return Intact;
 }();
+
+/**
+ * @brief 继承某个组件
+ *
+ * @param prototype
+ */
+
 
 Intact$1.extend = function () {
     var prototype = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};

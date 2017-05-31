@@ -157,7 +157,7 @@ export default class Intact {
                         if (!hasOwn.call(nextProps, prop)) {
                             lastValue = lastProps[prop];
                             if (isEventProp(prop) && isFunction(lastValue)) {
-                                this.set(prop, undefined, {global: false});
+                                this.set(prop, undefined, {silent: true});
                                 // 如果是事件，则要解绑事件
                                 this.off(prop.substr(3), lastValue);
                             } else {
@@ -171,7 +171,7 @@ export default class Intact {
                 }
 
                 if (nextPropsWithoutEvents) {
-                    this.set(nextPropsWithoutEvents, {global: false});
+                    this.set(nextPropsWithoutEvents, {update: false});
                 }
             } else {
                 for (let prop in lastProps) {
@@ -192,7 +192,7 @@ export default class Intact {
             // 将不存在nextProps中，但存在lastProps中的属性，统统置为空
             if (lastPropsWithoutEvents) {
                 for (let prop in lastPropsWithoutEvents) {
-                    this.set(prop, undefined, {global: false});
+                    this.set(prop, undefined, {update: false});
                 }
             }
         }
@@ -200,6 +200,7 @@ export default class Intact {
 
     destroy(lastVNode, nextVNode) {
         this.off();
+        this.vdt.destroy();
         this._destroy(lastVNode, nextVNode);
     }
 
@@ -237,42 +238,44 @@ export default class Intact {
 
         options = extend({
             silent: false,
-            global: true,
+            update: true,
             async: false
         }, options);
+        // 兼容老版本
+        if (hasOwn.call(options, 'global')) {
+            options.update = options.global;
+        }
 
-        if (changes.length) {
+        if (!options.silent && changes.length) {
             // trigger `change` event
             for (let i = 0, l = changes.length; i < l; i++) {
                 let attr = changes[i],
                     value = get(current, attr),
                     eventName = `change:${attr}`;
-                options[eventName] && options[eventName].call(this, value);
-                !options.silent && this.trigger(eventName, this, value);
+                // options[eventName] && options[eventName].call(this, value);
+                this.trigger(eventName, this, value);
             }
 
-            if (options.change) options.change.call(this, changes);
-            if (!options.silent) {
+            // if (options.change) options.change.call(this, changes);
+            if (!options.silent && options.update) {
                 this.trigger('beforeChange', this, changes);
-                if (options.global) {
-                    clearTimeout(this._asyncUpdate);
-                    let triggerChange = () => {
-                        this.trigger('change', this, changes);
-                        // trigger `changed` event
-                        for (let i = 0, l = changes.length; i < l; i++) {
-                            let attr = changes[i],
-                                value = get(current, attr),
-                                eventName = `changed:${attr}`;
+                clearTimeout(this._asyncUpdate);
+                let triggerChange = () => {
+                    this.trigger('change', this, changes);
+                    // trigger `changed` event
+                    for (let i = 0, l = changes.length; i < l; i++) {
+                        let attr = changes[i],
+                            value = get(current, attr),
+                            eventName = `changed:${attr}`;
 
-                            if (options[eventName]) options[eventName].call(this, value);
-                            this.trigger(eventName, this, value);
-                        }
-                    };
-                    if (options.async) {
-                        this._asyncUpdate = setTimeout(triggerChange);
-                    } else {
-                        triggerChange();
+                        // if (options[eventName]) options[eventName].call(this, value);
+                        this.trigger(eventName, this, value);
                     }
+                };
+                if (options.async) {
+                    this._asyncUpdate = setTimeout(triggerChange);
+                } else {
+                    triggerChange();
                 }
             }
         }
