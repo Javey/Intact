@@ -332,7 +332,7 @@ function trimLeft(str) {
 }
 
 function setDelimiters(delimiters) {
-    if (isArray(delimiters)) {
+    if (!isArray(delimiters)) {
         throw new Error('The parameter must be an array like ["{{", "}}"]');
     }
     Options.delimiters = delimiters;
@@ -420,6 +420,12 @@ var utils = (Object.freeze || Object)({
 	error: error$1
 });
 
+/**
+ * inherit
+ * @param Parent
+ * @param prototype
+ * @returns {Function}
+ */
 function inherit(Parent, prototype) {
     var Child = function Child() {
         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
@@ -1729,11 +1735,17 @@ function attachEventToDocument(name, delegatedRoots) {
     return docEvent;
 }
 
-function render(vNode, parentDom) {
+function render(vNode, parentDom, mountedQueue) {
     if (isNullOrUndefined(vNode)) return;
-    var mountedQueue = new MountedQueue();
+    var isTrigger = false;
+    if (parentDom || !mountedQueue) {
+        mountedQueue = new MountedQueue();
+        isTrigger = true;
+    }
     var dom = createElement(vNode, parentDom, mountedQueue);
-    mountedQueue.trigger();
+    if (isTrigger) {
+        mountedQueue.trigger();
+    }
     return dom;
 }
 
@@ -1804,6 +1816,8 @@ function createTextElement(vNode, parentDom) {
 function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode) {
     var props = vNode.props;
     var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
+    instance.parentDom = null;
+    instance.mountedQueue = mountedQueue;
     var dom = instance.init(lastVNode, vNode);
     var ref = vNode.ref;
 
@@ -1826,29 +1840,6 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
 
     return dom;
 }
-
-// export function createComponentInstance(vNode, parentDom, mountedQueue, lastVNode) {
-// const props = vNode.props;
-// const instance = vNode.children;
-// const dom = instance.init(lastVNode, vNode);
-// const ref = vNode.ref;
-
-// vNode.dom = dom;
-
-// if (parentDom) {
-// parentDom.appendChild(dom);
-// }
-
-// if (typeof instance.mount === 'function') {
-// mountedQueue.push(() => instance.mount(lastVNode, vNode));
-// }
-
-// if (typeof ref === 'function') {
-// ref(instance);
-// }
-
-// return dom;
-// }
 
 function createComponentFunction(vNode, parentDom, mountedQueue) {
     var props = vNode.props;
@@ -2646,7 +2637,8 @@ var miss = (Object.freeze || Object)({
 	patch: patch,
 	render: render,
 	hc: createCommentVNode,
-	remove: removeElement
+	remove: removeElement,
+	MountedQueue: MountedQueue
 });
 
 var parser = new Parser();
@@ -2664,9 +2656,9 @@ function Vdt$1(source, options) {
 Vdt$1.prototype = {
     constructor: Vdt$1,
 
-    render: function render$$1(data) {
+    render: function render$$1(data, parentDom, queue) {
         this.renderVNode(data);
-        this.node = render(this.vNode);
+        this.node = render(this.vNode, parentDom, queue);
 
         return this.node;
     },
@@ -2770,8 +2762,9 @@ var Intact$1 = function () {
 
         var inited = function inited() {
             _this.inited = true;
-            _this.on('change', function () {
-                return _this.update();
+            // 为了兼容之前change事件必update的用法
+            _this.on('change', function (c, nouse, noUpdate) {
+                return !noUpdate && _this.update();
             });
             _this.trigger('inited', _this);
         };
@@ -2816,12 +2809,12 @@ var Intact$1 = function () {
             this.one('inited', function () {
                 var parent = placeholder.parentNode;
                 if (parent) {
-                    parent.replaceChild(_this3.init(), placeholder);
+                    parent.replaceChild(_this3.init(lastVNode, nextVNode), placeholder);
                 }
             });
             return placeholder;
         }
-        this.element = this.vdt.render(this);
+        this.element = this.vdt.render(this, this.parentDom, this.moutedQueue);
         this.rendered = true;
         this.trigger('rendered', this);
         this._create(lastVNode, nextVNode);
@@ -2961,29 +2954,11 @@ var Intact$1 = function () {
 
         if (isNullOrUndefined(key)) return this;
 
-        var current = this.props,
-            changes = [];
-
+        var isSetByObject = false;
         if ((typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object') {
             options = val;
-            for (var attr in key) {
-                val = key[attr];
-                if (!isEqual(current[attr], val)) {
-                    changes.push(attr);
-                }
-                current[attr] = val;
-            }
-        } else {
-            // support set value by path like 'a.b.c'
-            if (!isEqual(get$$1(current, key), val)) {
-                var path = castPath(key);
-                // trigger `change:a.b.c` and `change:a` events
-                changes.push(key);
-                if (path.length > 1) changes.push(path[0]);
-            }
-            set$$1(current, key, val);
+            isSetByObject = true;
         }
-
         options = extend({
             silent: false,
             update: true,
@@ -2994,31 +2969,87 @@ var Intact$1 = function () {
             options.update = options.global;
         }
 
-        if (!options.silent && changes.length) {
-            // trigger `change` event
-            for (var i = 0, l = changes.length; i < l; i++) {
-                var _attr = changes[i],
-                    value = get$$1(current, _attr),
-                    eventName = 'change:' + _attr;
-                // options[eventName] && options[eventName].call(this, value);
-                this.trigger(eventName, this, value);
-            }
+        var props = this.props;
+        var changes = {};
 
-            // if (options.change) options.change.call(this, changes);
-            if (!options.silent && options.update) {
-                this.trigger('beforeChange', this, changes);
+        var hasChanged = false;
+
+        // 前面做了undefined的判断，这里不可能为undefined了
+        if (isSetByObject) {
+            if (!options.silent) {
+                for (var prop in key) {
+                    var nextValue = key[prop];
+                    var lastValue = props[prop];
+                    if (!isEqual(lastValue, nextValue)) {
+                        changes[prop] = [lastValue, nextValue];
+                        hasChanged = true;
+                    }
+                    // 即使相等，也要重新复制，因为有可能引用地址变更
+                    props[prop] = nextValue;
+                }
+            } else {
+                // 如果静默更新，则直接赋值
+                extend(props, key);
+            }
+        } else {
+            if (!options.silent) {
+                var _lastValue2 = get$$1(props, key);
+                if (!isEqual(_lastValue2, val)) {
+                    if (!hasOwn.call(props, key)) {
+                        changes[key] = [_lastValue2, val];
+                        var path = castPath(key);
+                        // 如果是像'a.b.c'这样设置属性，而该属性不存在
+                        // 依次触发change:a.b.c、change:a.b、change:a这样的事件
+                        // 先不设置props，去取老值
+                        var _props = [];
+                        for (var i = path.length - 1; i > 0; i--) {
+                            var _prop4 = path.slice(0, i).join('.');
+                            var _lastValue = get$$1(props, _prop4);
+                            changes[_prop4] = [_lastValue];
+                            _props.push(_prop4);
+                        }
+                        // 设置props后，去取新值
+                        // 对于引用数据类型，新老值可能一样
+                        set$$1(props, key, val);
+                        for (var _i = 0; _i < _props.length; _i++) {
+                            var _prop5 = _props[_i];
+                            changes[_prop5].push(get$$1(props, _prop5));
+                        }
+                    } else {
+                        // 否则，只触发change:a.b.c
+                        changes[key] = [_lastValue2, val];
+                        set$$1(props, key, val);
+                    }
+
+                    hasChanged = true;
+                } else {
+                    set$$1(props, key, val);
+                }
+            } else {
+                set$$1(props, key, val);
+            }
+        }
+
+        if (hasChanged) {
+            // trigger `change*` events
+            for (var _prop6 in changes) {
+                var values$$1 = changes[_prop6];
+                this.trigger('change:' + _prop6, this, values$$1[1], values$$1[0]);
+            }
+            var changeKeys = keys(changes);
+            // 之前存在触发change就会调用update的用法，这里传入true做兼容
+            // 如果第三个参数为true，则不update
+            this.trigger('change', this, changeKeys, true);
+
+            if (options.update && this.rendered) {
                 clearTimeout(this._asyncUpdate);
                 var triggerChange = function triggerChange() {
-                    _this4.trigger('change', _this4, changes);
-                    // trigger `changed` event
-                    for (var _i = 0, _l = changes.length; _i < _l; _i++) {
-                        var _attr2 = changes[_i],
-                            _value = get$$1(current, _attr2),
-                            _eventName = 'changed:' + _attr2;
-
-                        // if (options[eventName]) options[eventName].call(this, value);
-                        _this4.trigger(_eventName, _this4, _value);
+                    _this4.update();
+                    for (var _prop7 in changes) {
+                        var _values = changes[_prop7];
+                        _this4.trigger('changed:' + _prop7, _this4, _values[1], _values[0]);
                     }
+                    _this4.trigger('changed', _this4, changeKeys);
                 };
                 if (options.async) {
                     this._asyncUpdate = setTimeout(triggerChange);
@@ -3097,13 +3128,6 @@ var Intact$1 = function () {
     return Intact;
 }();
 
-/**
- * @brief 继承某个组件
- *
- * @param prototype
- */
-
-
 Intact$1.extend = function () {
     var prototype = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
@@ -3113,25 +3137,26 @@ Intact$1.extend = function () {
 
 /**
  * 挂载组件到dom中
- * @param widget {Intact} Intact类或子类，也可以是实例化的对象
+ * @param Component {Intact} Intact类或子类
  * @param node {Node} html节点
  */
-Intact$1.mount = function (widget, node) {
-    if (widget.prototype && (widget.prototype instanceof Intact$1 || widget === Intact$1)) {
-        widget = new widget();
+Intact$1.mount = function (Component, node) {
+    if (!Component || !(Component.prototype instanceof Intact$1 || Component === Intact$1)) {
+        throw new Error('expect for a class component');
     }
-    if (widget.rendered) {
-        node.appendChild(widget.element);
-    } else if (widget.inited) {
-        node.appendChild(widget.init());
+    var c = new Component();
+    c.parentDom = node;
+    if (c.inited) {
+        c.init();
     } else {
-        widget.one('inited', function () {
-            return node.appendChild(widget.init());
+        c.one('inited', function () {
+            return c.init();
         });
     }
-    return widget;
+    return c;
 };
 
+// Animate Widget for animation
 var Animate = Intact$1.extend({
     displayName: 'Animate',
 
@@ -3140,11 +3165,10 @@ var Animate = Intact$1.extend({
         transition: 'animate'
     },
 
-    template: Vdt$1.compile('return h(self.get("tagName"), self.extend({}, self.get()), self.values(self.childrenMap))', { autoReturn: false, noWith: true }),
+    template: Vdt$1.compile('\n        var tagName = self.get(\'tagName\'),\n            isComponent = typeof tagName === \'function\',\n            props = {}, \n            allProps = self.get(),\n            children = self.values(self.childrenMap);\n        for (var prop in allProps) {\n            if (prop === \'tagName\' || prop === \'transition\') continue;\n            props[prop] = allProps[prop];\n        }\n\n        if (isComponent) {\n            props.children = children;\n            return h(tagName, props);\n        } else {\n            return h(tagName, props, children);\n        }', { autoReturn: false, noWith: true }),
 
     _init: function _init() {
-        this.key = this.get('key');
-        this.childrenMap = getChildMap(this.children);
+        this.childrenMap = getChildMap(this.get('children'));
         this.currentKeys = {};
         this.keysToEnter = [];
         this.keysToLeave = [];
@@ -3154,27 +3178,27 @@ var Animate = Intact$1.extend({
     extend: extend,
     values: values,
 
-    _beforeUpdate: function _beforeUpdate(prevWidget) {
-        if (!prevWidget) return;
+    _beforeUpdate: function _beforeUpdate(lastVNode, nextVNode) {
+        if (!nextVNode) return;
 
-        var nextMap = getChildMap(this.children),
-            prevMap = prevWidget.childrenMap;
+        var nextMap = getChildMap(this.get('children'));
+        var prevMap = this.childrenMap;
         this.childrenMap = mergeChildren(prevMap, nextMap);
 
         each(nextMap, function (value, key) {
-            if (nextMap[key] && !prevMap.hasOwnProperty(key) && !this.currentKeys[key]) {
+            if (nextMap[key] && (!prevMap || !prevMap.hasOwnProperty(key)) && !this.currentKeys[key]) {
                 this.keysToEnter.push(key);
             }
         }, this);
 
         each(prevMap, function (value, key) {
-            if (prevMap[key] && !nextMap.hasOwnProperty(key) && !this.currentKeys[key]) {
+            if (prevMap[key] && (!nextMap || !nextMap.hasOwnProperty(key)) && !this.currentKeys[key]) {
                 this.keysToLeave.push(key);
             }
         }, this);
     },
-    _update: function _update(prevWidget) {
-        if (!prevWidget) return;
+    _update: function _update(lastVNode, nextVNode) {
+        if (!nextVNode) return;
 
         var keysToEnter = this.keysToEnter;
         this.keysToEnter = [];
@@ -3187,10 +3211,10 @@ var Animate = Intact$1.extend({
     performEnter: function performEnter(key) {
         var _this = this;
 
-        var widget = this.childrenMap[key].widget;
+        var component = this.childrenMap[key].children;
         this.currentKeys[key] = true;
-        if (widget && widget.enter) {
-            widget.enter(function () {
+        if (component && component.enter) {
+            component.enter(function () {
                 return _this._doneEntering(key);
             });
         } else {
@@ -3200,10 +3224,10 @@ var Animate = Intact$1.extend({
     performLeave: function performLeave(key) {
         var _this2 = this;
 
-        var widget = this.childrenMap[key].widget;
+        var component = this.childrenMap[key].children;
         this.currentKeys[key] = true;
-        if (widget && widget.leave) {
-            widget.leave(function () {
+        if (component && component.leave) {
+            component.leave(function () {
                 return _this2._doneLeaving(key);
             });
         } else {
@@ -3264,22 +3288,18 @@ var Animate = Intact$1.extend({
  * @param index
  * @returns {*}
  */
-function getChildMap(children, ret, index) {
-    if (!children) {
-        return children;
+function getChildMap(children) {
+    if (!children) return children;
+    if (!isArray(children)) {
+        var _ref;
+
+        return _ref = {}, _ref[children.key || '$'] = children, _ref;
     }
-    ret = ret || {};
-    index = index || '$0';
-    each(children, function (child, _index) {
-        _index = '$' + _index;
-        if (child && (child.type === 'Widget' || child.type === 'Thunk')) {
-            ret[child.key || _index] = child;
-        } else if (isArray(child)) {
-            getChildMap(child, ret, '' + index + _index);
-        } else {
-            ret['' + index + _index] = child;
-        }
-    });
+    var ret = {};
+    for (var i = 0; i < children.length; i++) {
+        var vNode = children[i];
+        ret[vNode.key] = vNode;
+    }
     return ret;
 }
 

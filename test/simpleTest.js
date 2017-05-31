@@ -272,11 +272,11 @@ describe('Simple Test', function() {
 
             instance.set('a', 4, {global: false});
             changeAFn.calledTwice.should.be.true;
-            changeFn.calledOnce.should.be.true;
+            changeFn.calledTwice.should.be.true;
 
             instance.set({a: 5}, {silent: true, global: true});
             changeAFn.calledTwice.should.be.true;
-            changeFn.calledOnce.should.be.true;
+            changeFn.calledTwice.should.be.true;
 
             var changePathAAFn = sinon.spy(),
                 changePathAAAFn = sinon.spy();
@@ -286,7 +286,7 @@ describe('Simple Test', function() {
             changePathAAFn.calledOnce.should.be.true;
             changePathAAAFn.calledOnce.should.be.true;
             changePathAAAFn.calledBefore(changePathAAFn).should.be.true;
-            changeFn.callCount.should.be.eql(2);
+            changeFn.callCount.should.be.eql(3);
             changePathAAAFn.calledWith(instance, 1).should.be.true;
             changePathAAFn.calledWith(instance, {a: 1}).should.be.true;
         });

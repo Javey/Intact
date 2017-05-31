@@ -11,14 +11,28 @@ export default Intact.extend({
         transition: 'animate'
     },
 
-    template: Vdt.compile(
-        'return h(self.get("tagName"), self.extend({}, self.get()), self.values(self.childrenMap))',
+    template: Vdt.compile(`
+        var tagName = self.get('tagName'),
+            isComponent = typeof tagName === 'function',
+            props = {}, 
+            allProps = self.get(),
+            children = self.values(self.childrenMap);
+        for (var prop in allProps) {
+            if (prop === 'tagName' || prop === 'transition') continue;
+            props[prop] = allProps[prop];
+        }
+
+        if (isComponent) {
+            props.children = children;
+            return h(tagName, props);
+        } else {
+            return h(tagName, props, children);
+        }`,
         {autoReturn: false, noWith: true}
     ),
 
     _init() {
-        this.key = this.get('key');
-        this.childrenMap = getChildMap(this.children);
+        this.childrenMap = getChildMap(this.get('children'));
         this.currentKeys = {};
         this.keysToEnter = [];
         this.keysToLeave = [];
@@ -27,28 +41,28 @@ export default Intact.extend({
     extend: extend,
     values: values,
 
-    _beforeUpdate(prevWidget) {
-        if (!prevWidget) return;
+    _beforeUpdate(lastVNode, nextVNode) {
+        if (!nextVNode) return;
 
-        let nextMap = getChildMap(this.children),
-            prevMap = prevWidget.childrenMap;
+        const nextMap = getChildMap(this.get('children'));
+        const prevMap = this.childrenMap;
         this.childrenMap = mergeChildren(prevMap, nextMap);
 
         each(nextMap, function(value, key) {
-            if (nextMap[key] && !prevMap.hasOwnProperty(key) && !this.currentKeys[key]) {
+            if (nextMap[key] && (!prevMap || !prevMap.hasOwnProperty(key)) && !this.currentKeys[key]) {
                 this.keysToEnter.push(key);
             }
         }, this);
 
         each(prevMap, function(value, key) {
-            if (prevMap[key] && !nextMap.hasOwnProperty(key) && !this.currentKeys[key]) {
+            if (prevMap[key] && (!nextMap || !nextMap.hasOwnProperty(key)) && !this.currentKeys[key]) {
                 this.keysToLeave.push(key);
             }
         }, this);
     },
 
-    _update(prevWidget) {
-        if (!prevWidget) return;
+    _update(lastVNode, nextVNode) {
+        if (!nextVNode) return;
 
         let keysToEnter = this.keysToEnter;
         this.keysToEnter = [];
@@ -60,20 +74,20 @@ export default Intact.extend({
     },
 
     performEnter(key) {
-        let widget = this.childrenMap[key].widget;
+        let component = this.childrenMap[key].children;
         this.currentKeys[key] = true;
-        if (widget && widget.enter) {
-            widget.enter(() => this._doneEntering(key));
+        if (component && component.enter) {
+            component.enter(() => this._doneEntering(key));
         } else {
             this._doneEntering(key);
         }
     },
 
     performLeave(key) {
-        let widget = this.childrenMap[key].widget;
+        let component = this.childrenMap[key].children;
         this.currentKeys[key] = true;
-        if (widget && widget.leave) {
-            widget.leave(() => this._doneLeaving(key));
+        if (component && component.leave) {
+            component.leave(() => this._doneLeaving(key));
         } else {
             this._doneLeaving(key);
         }
@@ -136,22 +150,16 @@ export default Intact.extend({
  * @param index
  * @returns {*}
  */
-function getChildMap(children, ret, index) {
-    if (!children) {
-        return children;
+function getChildMap(children) {
+    if (!children) return children;
+    if (!isArray(children)) {
+        return {[children.key || '$']: children};
     }
-    ret = ret || {};
-    index = index || '$0';
-    each(children, function(child, _index) {
-        _index = `$${_index}`;
-        if (child && (child.type === 'Widget' || child.type === 'Thunk')) {
-            ret[child.key || _index] = child;
-        } else if (isArray(child)) {
-            getChildMap(child, ret, `${index}${_index}`);
-        } else {
-            ret[`${index}${_index}`] = child;
-        }
-    });
+    const ret = {};
+    for (let i = 0; i < children.length; i++) {
+        let vNode = children[i];
+        ret[vNode.key] = vNode;
+    }
     return ret;
 }
 

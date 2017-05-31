@@ -1,10 +1,147 @@
-(function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-	typeof define === 'function' && define.amd ? define(factory) :
-	(global.Intact = factory());
-}(this, (function () { 'use strict';
+'use strict';
 
-var minDocument = {};
+var slice = Array.prototype.slice;
+
+var index$2 = iterativelyWalk;
+
+function iterativelyWalk(nodes, cb) {
+    if (!('length' in nodes)) {
+        nodes = [nodes];
+    }
+
+    nodes = slice.call(nodes);
+
+    while (nodes.length) {
+        var node = nodes.shift(),
+            ret = cb(node);
+
+        if (ret) {
+            return ret;
+        }
+
+        if (node.childNodes && node.childNodes.length) {
+            nodes = slice.call(node.childNodes).concat(nodes);
+        }
+    }
+}
+
+var domComment = Comment;
+
+function Comment(data, owner) {
+    if (!(this instanceof Comment)) {
+        return new Comment(data, owner);
+    }
+
+    this.data = data;
+    this.nodeValue = data;
+    this.length = data.length;
+    this.ownerDocument = owner || null;
+}
+
+Comment.prototype.nodeType = 8;
+Comment.prototype.nodeName = "#comment";
+
+Comment.prototype.toString = function _Comment_toString() {
+    return "[object Comment]";
+};
+
+var domText = DOMText;
+
+function DOMText(value, owner) {
+    if (!(this instanceof DOMText)) {
+        return new DOMText(value);
+    }
+
+    this.data = value || "";
+    this.length = this.data.length;
+    this.ownerDocument = owner || null;
+}
+
+DOMText.prototype.type = "DOMTextNode";
+DOMText.prototype.nodeType = 3;
+DOMText.prototype.nodeName = "#text";
+
+DOMText.prototype.toString = function _Text_toString() {
+    return this.data;
+};
+
+DOMText.prototype.replaceData = function replaceData(index, length, value) {
+    var current = this.data;
+    var left = current.substring(0, index);
+    var right = current.substring(index + length, current.length);
+    this.data = left + value + right;
+    this.length = this.data.length;
+};
+
+var dispatchEvent_1 = dispatchEvent;
+
+function dispatchEvent(ev) {
+    var elem = this;
+    var type = ev.type;
+
+    if (!ev.target) {
+        ev.target = elem;
+    }
+
+    if (!elem.listeners) {
+        elem.listeners = {};
+    }
+
+    var listeners = elem.listeners[type];
+
+    if (listeners) {
+        return listeners.forEach(function (listener) {
+            ev.currentTarget = elem;
+            if (typeof listener === 'function') {
+                listener(ev);
+            } else {
+                listener.handleEvent(ev);
+            }
+        });
+    }
+
+    if (elem.parentNode) {
+        elem.parentNode.dispatchEvent(ev);
+    }
+}
+
+var addEventListener_1 = addEventListener$1;
+
+function addEventListener$1(type, listener) {
+    var elem = this;
+
+    if (!elem.listeners) {
+        elem.listeners = {};
+    }
+
+    if (!elem.listeners[type]) {
+        elem.listeners[type] = [];
+    }
+
+    if (elem.listeners[type].indexOf(listener) === -1) {
+        elem.listeners[type].push(listener);
+    }
+}
+
+var removeEventListener_1 = removeEventListener$1;
+
+function removeEventListener$1(type, listener) {
+    var elem = this;
+
+    if (!elem.listeners) {
+        return;
+    }
+
+    if (!elem.listeners[type]) {
+        return;
+    }
+
+    var list = elem.listeners[type];
+    var index = list.indexOf(listener);
+    if (index !== -1) {
+        list.splice(index, 1);
+    }
+}
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
@@ -28,15 +165,475 @@ var classCallCheck = function (instance, Constructor) {
   }
 };
 
+var createClass = function () {
+  function defineProperties(target, props) {
+    for (var i = 0; i < props.length; i++) {
+      var descriptor = props[i];
+      descriptor.enumerable = descriptor.enumerable || false;
+      descriptor.configurable = true;
+      if ("value" in descriptor) descriptor.writable = true;
+      Object.defineProperty(target, descriptor.key, descriptor);
+    }
+  }
+
+  return function (Constructor, protoProps, staticProps) {
+    if (protoProps) defineProperties(Constructor.prototype, protoProps);
+    if (staticProps) defineProperties(Constructor, staticProps);
+    return Constructor;
+  };
+}();
+
+
+
+
+
+var defineProperty = function (obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+};
+
+var serialize = serializeNode;
+
+var voidElements = ["area", "base", "br", "col", "embed", "hr", "img", "input", "keygen", "link", "menuitem", "meta", "param", "source", "track", "wbr"];
+
+function serializeNode(node) {
+    switch (node.nodeType) {
+        case 3:
+            return escapeText(node.data);
+        case 8:
+            return "<!--" + node.data + "-->";
+        default:
+            return serializeElement(node);
+    }
+}
+
+function serializeElement(elem) {
+    var strings = [];
+
+    var tagname = elem.tagName;
+
+    if (elem.namespaceURI === "http://www.w3.org/1999/xhtml") {
+        tagname = tagname.toLowerCase();
+    }
+
+    strings.push("<" + tagname + properties(elem) + datasetify(elem));
+
+    if (voidElements.indexOf(tagname) > -1) {
+        strings.push(" />");
+    } else {
+        strings.push(">");
+
+        if (elem.childNodes.length) {
+            strings.push.apply(strings, elem.childNodes.map(serializeNode));
+        } else if (elem.textContent || elem.innerText) {
+            strings.push(escapeText(elem.textContent || elem.innerText));
+        } else if (elem.innerHTML) {
+            strings.push(elem.innerHTML);
+        }
+
+        strings.push("</" + tagname + ">");
+    }
+
+    return strings.join("");
+}
+
+function isProperty(elem, key) {
+    var type = _typeof(elem[key]);
+
+    if (key === "style" && (type === "object" && Object.keys(elem.style).length > 0 || type === "string" && elem.style)) {
+        return true;
+    }
+
+    return elem.hasOwnProperty(key) && (type === "string" || type === "boolean" && elem[key] || type === "number") && key !== "nodeName" && key !== "className" && key !== "tagName" && key !== "textContent" && key !== "innerText" && key !== "namespaceURI" && key !== "innerHTML";
+}
+
+function stylify(styles) {
+    if (typeof styles === 'string') return styles;
+    var attr = "";
+    Object.keys(styles).forEach(function (key) {
+        var value = styles[key];
+        key = key.replace(/[A-Z]/g, function (c) {
+            return "-" + c.toLowerCase();
+        });
+        attr += key + ":" + value + ";";
+    });
+    return attr;
+}
+
+function datasetify(elem) {
+    var ds = elem.dataset;
+    var props = [];
+
+    for (var key in ds) {
+        props.push({ name: "data-" + key, value: ds[key] });
+    }
+
+    return props.length ? stringify(props) : "";
+}
+
+function stringify(list) {
+    var attributes = [];
+    list.forEach(function (tuple) {
+        var name = tuple.name;
+        var value = tuple.value;
+
+        if (name === "style") {
+            value = stylify(value);
+        }
+
+        attributes.push(name + "=" + "\"" + escapeAttributeValue(value) + "\"");
+    });
+
+    return attributes.length ? " " + attributes.join(" ") : "";
+}
+
+function properties(elem) {
+    var props = [];
+    for (var key in elem) {
+        if (isProperty(elem, key)) {
+            props.push({ name: key, value: elem[key] });
+        }
+    }
+
+    for (var ns in elem._attributes) {
+        for (var attribute in elem._attributes[ns]) {
+            var prop = elem._attributes[ns][attribute];
+            var name = (prop.prefix ? prop.prefix + ":" : "") + attribute;
+            props.push({ name: name, value: prop.value });
+        }
+    }
+
+    if (elem.className) {
+        props.push({ name: "class", value: elem.className });
+    }
+
+    return props.length ? stringify(props) : "";
+}
+
+function escapeText(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function escapeAttributeValue(str) {
+    return escapeText(str).replace(/"/g, "&quot;");
+}
+
+var htmlns = "http://www.w3.org/1999/xhtml";
+
+var domElement = DOMElement;
+
+function DOMElement(tagName, owner, namespace) {
+    if (!(this instanceof DOMElement)) {
+        return new DOMElement(tagName);
+    }
+
+    var ns = namespace === undefined ? htmlns : namespace || null;
+
+    this.tagName = ns === htmlns ? String(tagName).toUpperCase() : tagName;
+    this.nodeName = this.tagName;
+    this.className = "";
+    this.dataset = {};
+    this.childNodes = [];
+    this.parentNode = null;
+    this.style = {};
+    this.ownerDocument = owner || null;
+    this.namespaceURI = ns;
+    this._attributes = {};
+
+    if (this.tagName === 'INPUT') {
+        this.type = 'text';
+    }
+}
+
+DOMElement.prototype.type = "DOMElement";
+DOMElement.prototype.nodeType = 1;
+
+DOMElement.prototype.appendChild = function _Element_appendChild(child) {
+    if (child.parentNode) {
+        child.parentNode.removeChild(child);
+    }
+
+    this.childNodes.push(child);
+    child.parentNode = this;
+
+    return child;
+};
+
+DOMElement.prototype.replaceChild = function _Element_replaceChild(elem, needle) {
+    // TODO: Throw NotFoundError if needle.parentNode !== this
+
+    if (elem.parentNode) {
+        elem.parentNode.removeChild(elem);
+    }
+
+    var index = this.childNodes.indexOf(needle);
+
+    needle.parentNode = null;
+    this.childNodes[index] = elem;
+    elem.parentNode = this;
+
+    return needle;
+};
+
+DOMElement.prototype.removeChild = function _Element_removeChild(elem) {
+    // TODO: Throw NotFoundError if elem.parentNode !== this
+
+    var index = this.childNodes.indexOf(elem);
+    this.childNodes.splice(index, 1);
+
+    elem.parentNode = null;
+    return elem;
+};
+
+DOMElement.prototype.insertBefore = function _Element_insertBefore(elem, needle) {
+    // TODO: Throw NotFoundError if referenceElement is a dom node
+    // and parentNode !== this
+
+    if (elem.parentNode) {
+        elem.parentNode.removeChild(elem);
+    }
+
+    var index = needle === null || needle === undefined ? -1 : this.childNodes.indexOf(needle);
+
+    if (index > -1) {
+        this.childNodes.splice(index, 0, elem);
+    } else {
+        this.childNodes.push(elem);
+    }
+
+    elem.parentNode = this;
+    return elem;
+};
+
+DOMElement.prototype.setAttributeNS = function _Element_setAttributeNS(namespace, name, value) {
+    var prefix = null;
+    var localName = name;
+    var colonPosition = name.indexOf(":");
+    if (colonPosition > -1) {
+        prefix = name.substr(0, colonPosition);
+        localName = name.substr(colonPosition + 1);
+    }
+    if (this.tagName === 'INPUT' && name === 'type') {
+        this.type = value;
+    } else {
+        var attributes = this._attributes[namespace] || (this._attributes[namespace] = {});
+        attributes[localName] = { value: value, prefix: prefix };
+    }
+};
+
+DOMElement.prototype.getAttributeNS = function _Element_getAttributeNS(namespace, name) {
+    var attributes = this._attributes[namespace];
+    var value = attributes && attributes[name] && attributes[name].value;
+    if (this.tagName === 'INPUT' && name === 'type') {
+        return this.type;
+    }
+    if (typeof value !== "string") {
+        return null;
+    }
+    return value;
+};
+
+DOMElement.prototype.removeAttributeNS = function _Element_removeAttributeNS(namespace, name) {
+    var attributes = this._attributes[namespace];
+    if (attributes) {
+        delete attributes[name];
+    }
+};
+
+DOMElement.prototype.hasAttributeNS = function _Element_hasAttributeNS(namespace, name) {
+    var attributes = this._attributes[namespace];
+    return !!attributes && name in attributes;
+};
+
+DOMElement.prototype.setAttribute = function _Element_setAttribute(name, value) {
+    return this.setAttributeNS(null, name, value);
+};
+
+DOMElement.prototype.getAttribute = function _Element_getAttribute(name) {
+    return this.getAttributeNS(null, name);
+};
+
+DOMElement.prototype.removeAttribute = function _Element_removeAttribute(name) {
+    return this.removeAttributeNS(null, name);
+};
+
+DOMElement.prototype.hasAttribute = function _Element_hasAttribute(name) {
+    return this.hasAttributeNS(null, name);
+};
+
+DOMElement.prototype.removeEventListener = removeEventListener_1;
+DOMElement.prototype.addEventListener = addEventListener_1;
+DOMElement.prototype.dispatchEvent = dispatchEvent_1;
+
+// Un-implemented
+DOMElement.prototype.focus = function _Element_focus() {
+    return void 0;
+};
+
+DOMElement.prototype.toString = function _Element_toString() {
+    return serialize(this);
+};
+
+DOMElement.prototype.getElementsByClassName = function _Element_getElementsByClassName(classNames) {
+    var classes = classNames.split(" ");
+    var elems = [];
+
+    index$2(this, function (node) {
+        if (node.nodeType === 1) {
+            var nodeClassName = node.className || "";
+            var nodeClasses = nodeClassName.split(" ");
+
+            if (classes.every(function (item) {
+                return nodeClasses.indexOf(item) !== -1;
+            })) {
+                elems.push(node);
+            }
+        }
+    });
+
+    return elems;
+};
+
+DOMElement.prototype.getElementsByTagName = function _Element_getElementsByTagName(tagName) {
+    tagName = tagName.toLowerCase();
+    var elems = [];
+
+    index$2(this.childNodes, function (node) {
+        if (node.nodeType === 1 && (tagName === '*' || node.tagName.toLowerCase() === tagName)) {
+            elems.push(node);
+        }
+    });
+
+    return elems;
+};
+
+DOMElement.prototype.contains = function _Element_contains(element) {
+    return index$2(this, function (node) {
+        return element === node;
+    }) || false;
+};
+
+var domFragment = DocumentFragment;
+
+function DocumentFragment(owner) {
+    if (!(this instanceof DocumentFragment)) {
+        return new DocumentFragment();
+    }
+
+    this.childNodes = [];
+    this.parentNode = null;
+    this.ownerDocument = owner || null;
+}
+
+DocumentFragment.prototype.type = "DocumentFragment";
+DocumentFragment.prototype.nodeType = 11;
+DocumentFragment.prototype.nodeName = "#document-fragment";
+
+DocumentFragment.prototype.appendChild = domElement.prototype.appendChild;
+DocumentFragment.prototype.replaceChild = domElement.prototype.replaceChild;
+DocumentFragment.prototype.removeChild = domElement.prototype.removeChild;
+
+DocumentFragment.prototype.toString = function _DocumentFragment_toString() {
+    return this.childNodes.map(function (node) {
+        return String(node);
+    }).join("");
+};
+
+var event = Event;
+
+function Event(family) {}
+
+Event.prototype.initEvent = function _Event_initEvent(type, bubbles, cancelable) {
+    this.type = type;
+    this.bubbles = bubbles;
+    this.cancelable = cancelable;
+};
+
+Event.prototype.preventDefault = function _Event_preventDefault() {};
+
+var document$1 = Document;
+
+function Document() {
+    if (!(this instanceof Document)) {
+        return new Document();
+    }
+
+    this.head = this.createElement("head");
+    this.body = this.createElement("body");
+    this.documentElement = this.createElement("html");
+    this.documentElement.appendChild(this.head);
+    this.documentElement.appendChild(this.body);
+    this.childNodes = [this.documentElement];
+    this.nodeType = 9;
+}
+
+var proto = Document.prototype;
+proto.createTextNode = function createTextNode(value) {
+    return new domText(value, this);
+};
+
+proto.createElementNS = function createElementNS(namespace, tagName) {
+    var ns = namespace === null ? null : String(namespace);
+    return new domElement(tagName, this, ns);
+};
+
+proto.createElement = function createElement(tagName) {
+    return new domElement(tagName, this);
+};
+
+proto.createDocumentFragment = function createDocumentFragment() {
+    return new domFragment(this);
+};
+
+proto.createEvent = function createEvent(family) {
+    return new event(family);
+};
+
+proto.createComment = function createComment(data) {
+    return new domComment(data, this);
+};
+
+proto.getElementById = function getElementById(id) {
+    id = String(id);
+
+    var result = index$2(this.childNodes, function (node) {
+        if (String(node.id) === id) {
+            return node;
+        }
+    });
+
+    return result || null;
+};
+
+proto.getElementsByClassName = domElement.prototype.getElementsByClassName;
+proto.getElementsByTagName = domElement.prototype.getElementsByTagName;
+proto.contains = domElement.prototype.contains;
+
+proto.removeEventListener = removeEventListener_1;
+proto.addEventListener = addEventListener_1;
+proto.dispatchEvent = dispatchEvent_1;
+
+var index$1 = new document$1();
+
 var toString$1 = Object.prototype.toString;
 
-var doc = typeof document === 'undefined' ? minDocument : document;
+var doc = typeof document === 'undefined' ? index$1 : document;
 
-var isArray$2 = Array.isArray || function (arr) {
+var isArray = Array.isArray || function (arr) {
     return toString$1.call(arr) === '[object Array]';
 };
 
-function isObject$2(o) {
+function isObject$1(o) {
     return (typeof o === 'undefined' ? 'undefined' : _typeof(o)) === 'object' && o !== null;
 }
 
@@ -45,7 +642,7 @@ function isStringOrNumber(o) {
     return type === 'string' || type === 'number';
 }
 
-function isNullOrUndefined$1(o) {
+function isNullOrUndefined(o) {
     return o === null || o === undefined;
 }
 
@@ -53,7 +650,7 @@ function isComponentInstance(o) {
     return o && typeof o.init === 'function';
 }
 
-function isEventProp$1(propName) {
+function isEventProp(propName) {
     return propName.substr(0, 3) === 'ev-';
 }
 
@@ -195,7 +792,7 @@ var setTextContent = browser.isIE8 ? function (dom, text) {
  */
 
 var i = 0;
-var Type$1 = {
+var Type = {
     JS: i++,
     JSXText: i++,
     JSXElement: i++,
@@ -210,9 +807,9 @@ var Type$1 = {
 
     JSXDirective: i++
 };
-var TypeName$1 = [];
-for (var type in Type$1) {
-    TypeName$1[Type$1[type]] = type;
+var TypeName = [];
+for (var type in Type) {
+    TypeName[Type[type]] = type;
 }
 
 var SelfClosingTags = {
@@ -262,7 +859,7 @@ var Options = {
     skipWhitespace: false
 };
 
-var hasOwn$1 = Object.prototype.hasOwnProperty;
+var hasOwn = Object.prototype.hasOwnProperty;
 var noop = function noop() {};
 
 function isArrayLike(value) {
@@ -271,28 +868,28 @@ function isArrayLike(value) {
     return typeof length === 'number' && length > -1 && length % 1 === 0 && length <= 9007199254740991 && typeof value !== 'function';
 }
 
-function each$1(obj, iter, thisArg) {
+function each(obj, iter, thisArg) {
     if (isArrayLike(obj)) {
         for (var i = 0, l = obj.length; i < l; i++) {
             iter.call(thisArg, obj[i], i, obj);
         }
-    } else if (isObject$1(obj)) {
+    } else if (isObject$$1(obj)) {
         for (var key in obj) {
-            if (hasOwn$1.call(obj, key)) {
+            if (hasOwn.call(obj, key)) {
                 iter.call(thisArg, obj[key], key, obj);
             }
         }
     }
 }
 
-function isObject$1(obj) {
+function isObject$$1(obj) {
     var type = typeof obj === 'undefined' ? 'undefined' : _typeof(obj);
     return type === 'function' || type === 'object' && !!obj;
 }
 
 function map(obj, iter, thisArgs) {
     var ret = [];
-    each$1(obj, function (value, key, obj) {
+    each(obj, function (value, key, obj) {
         ret.push(iter.call(thisArgs, value, key, obj));
     });
     return ret;
@@ -303,7 +900,7 @@ function className(obj) {
     if (typeof obj === 'string') return obj;
     var ret = [];
     for (var key in obj) {
-        if (hasOwn$1.call(obj, key) && obj[key]) {
+        if (hasOwn.call(obj, key) && obj[key]) {
             ret.push(key);
         }
     }
@@ -317,7 +914,7 @@ function isWhiteSpace(charCode) {
 function trimRight(str) {
     var index = str.length;
 
-    while (index-- && Utils.isWhiteSpace(str.charCodeAt(index))) {}
+    while (index-- && isWhiteSpace(str.charCodeAt(index))) {}
 
     return str.slice(0, index + 1);
 }
@@ -326,13 +923,13 @@ function trimLeft(str) {
     var length = str.length,
         index = -1;
 
-    while (index++ < length && Utils.isWhiteSpace(str.charCodeAt(index))) {}
+    while (index++ < length && isWhiteSpace(str.charCodeAt(index))) {}
 
     return str.slice(index);
 }
 
 function setDelimiters(delimiters) {
-    if (isArray(delimiters)) {
+    if (!isArray(delimiters)) {
         throw new Error('The parameter must be an array like ["{{", "}}"]');
     }
     Options.delimiters = delimiters;
@@ -344,7 +941,7 @@ function getDelimiters() {
 
 function configure(options) {
     if (options !== undefined) {
-        extend$1(Options, options);
+        extend(Options, options);
     }
     return Options;
 }
@@ -358,10 +955,10 @@ function isTextTag(tag) {
 }
 
 function isDirective(name) {
-    return hasOwn$1.call(Directives, name);
+    return hasOwn.call(Directives, name);
 }
 
-function extend$1() {
+function extend() {
     for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
         args[_key] = arguments[_key];
     }
@@ -373,7 +970,7 @@ function extend$1() {
             var source = args[i];
             if (source) {
                 for (var key in source) {
-                    if (hasOwn$1.call(source, key)) {
+                    if (hasOwn.call(source, key)) {
                         dest[key] = source[key];
                     }
                 }
@@ -392,16 +989,19 @@ var error$1 = function () {
 
 
 
-var utils = (Object.freeze || Object)({
-	Type: Type$1,
-	TypeName: TypeName$1,
+var utils = Object.freeze({
+	isNullOrUndefined: isNullOrUndefined,
+	isArray: isArray,
+	Type: Type,
+	TypeName: TypeName,
 	SelfClosingTags: SelfClosingTags,
 	TextTags: TextTags,
 	Directives: Directives,
-	hasOwn: hasOwn$1,
+	Options: Options,
+	hasOwn: hasOwn,
 	noop: noop,
-	each: each$1,
-	isObject: isObject$1,
+	each: each,
+	isObject: isObject$$1,
 	map: map,
 	className: className,
 	isWhiteSpace: isWhiteSpace,
@@ -413,11 +1013,281 @@ var utils = (Object.freeze || Object)({
 	isSelfClosingTag: isSelfClosingTag,
 	isTextTag: isTextTag,
 	isDirective: isDirective,
-	extend: extend$1,
-	error: error$1,
-	isNullOrUndefined: isNullOrUndefined$1,
-	isArray: isArray$2
+	extend: extend,
+	error: error$1
 });
+
+/**
+ * inherit
+ * @param Parent
+ * @param prototype
+ * @returns {Function}
+ */
+function inherit(Parent, prototype) {
+    var Child = function Child() {
+        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+        }
+
+        if (!this || !(this instanceof Child || this.prototype instanceof Child)) {
+            return Parent.apply(Child, args);
+        }
+        return Parent.apply(this, args);
+    };
+
+    Child.prototype = create(Parent.prototype);
+    each(prototype, function (proto, name) {
+        if (name === 'displayName') {
+            Child.displayName = proto;
+        }
+        if (!isFunction(proto) || name === 'template') {
+            Child.prototype[name] = proto;
+            return;
+        }
+        Child.prototype[name] = function () {
+            var _super = function _super() {
+                for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+                    args[_key2] = arguments[_key2];
+                }
+
+                return Parent.prototype[name].apply(this, args);
+            },
+                _superApply = function _superApply(args) {
+                return Parent.prototype[name].apply(this, args);
+            };
+            return function () {
+                var self = this || {},
+                    __super = self._super,
+                    __superApply = self._superApply,
+                    returnValue = void 0;
+
+                self._super = _super;
+                self._superApply = _superApply;
+
+                for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+                    args[_key3] = arguments[_key3];
+                }
+
+                returnValue = proto.apply(this, args);
+
+                self._super = __super;
+                self._superApply = __superApply;
+
+                return returnValue;
+            };
+        }();
+    });
+    Child.__super = Parent.prototype;
+    Child.prototype.constructor = Child;
+
+    extend(Child, Parent);
+
+    return Child;
+}
+
+var nativeCreate = Object.create;
+function create(object) {
+    if (nativeCreate) {
+        return nativeCreate(object);
+    } else {
+        var fn = function fn() {};
+        fn.prototype = object;
+        return new fn();
+    }
+}
+
+function isFunction(obj) {
+    return typeof obj === 'function';
+}
+
+function result(obj, property, fallback) {
+    var value = isNullOrUndefined(obj) ? undefined : obj[property];
+    if (value === undefined) {
+        value = fallback;
+    }
+    return isFunction(value) ? value.call(obj) : value;
+}
+
+
+
+var toString = Object.prototype.toString;
+// Internal recursive comparison function for `isEqual`.
+var eq = function eq(a, b, aStack, bStack) {
+    // Identical objects are equal. `0 === -0`, but they aren't identical.
+    // See the [Harmony `egal` proposal](http://wiki.ecmascript.org/doku.php?id=harmony:egal).
+    if (a === b) return a !== 0 || 1 / a === 1 / b;
+    // A strict comparison is necessary because `null == undefined`.
+    if (isNullOrUndefined(a) || isNullOrUndefined(b)) return a === b;
+    // Compare `[[Class]]` names.
+    var className$$1 = toString.call(a);
+    if (className$$1 !== toString.call(b)) return false;
+    switch (className$$1) {
+        // Strings, numbers, regular expressions, dates, and booleans are compared by value.
+        case '[object RegExp]':
+        // RegExps are coerced to strings for comparison (Note: '' + /a/i === '/a/i')
+        case '[object String]':
+            // Primitives and their corresponding object wrappers are equivalent; thus, `"5"` is
+            // equivalent to `new String("5")`.
+            return '' + a === '' + b;
+        case '[object Number]':
+            // `NaN`s are equivalent, but non-reflexive.
+            // Object(NaN) is equivalent to NaN
+            if (+a !== +a) return +b !== +b;
+            // An `egal` comparison is performed for other numeric values.
+            return +a === 0 ? 1 / +a === 1 / b : +a === +b;
+        case '[object Date]':
+        case '[object Boolean]':
+            // Coerce dates and booleans to numeric primitive values. Dates are compared by their
+            // millisecond representations. Note that invalid dates with millisecond representations
+            // of `NaN` are not equivalent.
+            return +a === +b;
+    }
+
+    var areArrays = className$$1 === '[object Array]';
+    if (!areArrays) {
+        if ((typeof a === 'undefined' ? 'undefined' : _typeof(a)) != 'object' || (typeof b === 'undefined' ? 'undefined' : _typeof(b)) != 'object') return false;
+
+        // Objects with different constructors are not equivalent, but `Object`s or `Array`s
+        // from different frames are.
+        var aCtor = a.constructor,
+            bCtor = b.constructor;
+        if (aCtor !== bCtor && !(isFunction(aCtor) && aCtor instanceof aCtor && isFunction(bCtor) && bCtor instanceof bCtor) && 'constructor' in a && 'constructor' in b) {
+            return false;
+        }
+    }
+    // Assume equality for cyclic structures. The algorithm for detecting cyclic
+    // structures is adapted from ES 5.1 section 15.12.3, abstract operation `JO`.
+
+    // Initializing stack of traversed objects.
+    // It's done here since we only need them for objects and arrays comparison.
+    aStack = aStack || [];
+    bStack = bStack || [];
+    var length = aStack.length;
+    while (length--) {
+        // Linear search. Performance is inversely proportional to the number of
+        // unique nested structures.
+        if (aStack[length] === a) return bStack[length] === b;
+    }
+
+    // Add the first object to the stack of traversed objects.
+    aStack.push(a);
+    bStack.push(b);
+
+    // Recursively compare objects and arrays.
+    if (areArrays) {
+        // Compare array lengths to determine if a deep comparison is necessary.
+        length = a.length;
+        if (length !== b.length) return false;
+        // Deep compare the contents, ignoring non-numeric properties.
+        while (length--) {
+            if (!eq(a[length], b[length], aStack, bStack)) return false;
+        }
+    } else {
+        // Deep compare objects.
+        var aKeys = keys(a),
+            key;
+        length = aKeys.length;
+        // Ensure that both objects contain the same number of properties before comparing deep equality.
+        if (keys(b).length !== length) return false;
+        while (length--) {
+            // Deep compare each member
+            key = aKeys[length];
+            if (!(hasOwn.call(b, key) && eq(a[key], b[key], aStack, bStack))) return false;
+        }
+    }
+    // Remove the first object from the stack of traversed objects.
+    aStack.pop();
+    bStack.pop();
+    return true;
+};
+
+function isEqual(a, b) {
+    return eq(a, b);
+}
+
+var idCounter = 0;
+function uniqueId(prefix) {
+    var id = ++idCounter + '';
+    return prefix ? prefix + id : id;
+}
+
+var keys = Object.keys || function (obj) {
+    var ret = [];
+    each(obj, function (value, key) {
+        return ret.push(key);
+    });
+    return ret;
+};
+
+function values(obj) {
+    var ret = [];
+    each(obj, function (value) {
+        return ret.push(value);
+    });
+    return ret;
+}
+
+var pathMap = {};
+var reLeadingDot = /^\./;
+var rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g;
+var reEscapeChar = /\\(\\)?/g;
+var reIsUint = /^(?:0|[1-9]\d*)$/;
+function castPath(path) {
+    if (typeof path !== 'string') return path;
+    if (pathMap[path]) return pathMap[path];
+
+    var ret = [];
+    if (reLeadingDot.test(path)) {
+        result.push('');
+    }
+    path.replace(rePropName, function (match, number, quote, string) {
+        ret.push(quote ? path.replace(reEscapeChar, '$1') : number || match);
+    });
+    pathMap[path] = ret;
+
+    return ret;
+}
+function isIndex(value) {
+    return (typeof value === 'number' || reIsUint.test(value)) && value > -1 && value % 1 === 0;
+}
+function get$$1(object, path, defaultValue) {
+    if (hasOwn.call(object, path)) return object[path];
+    path = castPath(path);
+
+    var index = 0,
+        length = path.length;
+
+    while (!isNullOrUndefined(object) && index < length) {
+        object = object[path[index++]];
+    }
+
+    return index && index === length ? object : defaultValue;
+}
+function set$$1(object, path, value) {
+    if (hasOwn.call(object, path)) {
+        object[path] = value;
+        return object;
+    }
+
+    path = castPath(path);
+
+    var index = -1,
+        length = path.length,
+        lastIndex = length - 1,
+        nested = object;
+    while (!isNullOrUndefined(nested) && ++index < length) {
+        var key = path[index],
+            newValue = value;
+        if (index !== lastIndex) {
+            var objValue = nested[key];
+            newValue = isObject$$1(objValue) ? objValue : isIndex(path[index + 1]) ? [] : {};
+        }
+        nested[key] = newValue;
+        nested = nested[key];
+    }
+
+    return object;
+}
 
 /**
  * @fileoverview parse jsx to ast
@@ -425,8 +1295,8 @@ var utils = (Object.freeze || Object)({
  * @date 15-4-22
  */
 
-var Type$$1 = Type$1;
-var TypeName$$1 = TypeName$1;
+var Type$1 = Type;
+var TypeName$1 = TypeName;
 
 var elementNameRegexp = /^<\w+:?\s*[\w\/>]/;
 
@@ -453,7 +1323,7 @@ Parser.prototype = {
         this.column = 1;
         this.length = this.source.length;
 
-        this.options = extend$1({}, configure(), options);
+        this.options = extend({}, configure(), options);
 
         return this._parseTemplate();
     },
@@ -504,7 +1374,7 @@ Parser.prototype = {
             }
         }
 
-        return this._type(Type$$1.JS, {
+        return this._type(Type$1.JS, {
             value: this.source.slice(start, this.index)
         });
     },
@@ -535,7 +1405,7 @@ Parser.prototype = {
             this._error('Unclosed quote');
         }
 
-        return this._type(Type$$1.StringLiteral, {
+        return this._type(Type$1.StringLiteral, {
             value: this.source.slice(start, this.index)
         });
     },
@@ -571,7 +1441,7 @@ Parser.prototype = {
             this._updateIndex();
         }
 
-        return start === this.index ? null : this._type(Type$$1.JSXText, {
+        return start === this.index ? null : this._type(Type$1.JSXText, {
             value: this.source.slice(start, this.index)
         });
     },
@@ -594,7 +1464,7 @@ Parser.prototype = {
             flag = this._charCode();
         if (flag >= 65 && flag <= 90 /* upper case */) {
                 // is a widget
-                this._type(Type$$1.JSXWidget, ret);
+                this._type(Type$1.JSXWidget, ret);
             } else if (this._isExpect('!--')) {
             // is html comment
             return this._parseJSXComment();
@@ -604,11 +1474,11 @@ Parser.prototype = {
                 switch (flag) {
                     case 116:
                         // t
-                        this._type(Type$$1.JSXVdt, ret);
+                        this._type(Type$1.JSXVdt, ret);
                         break;
                     case 98:
                         // b
-                        this._type(Type$$1.JSXBlock, ret);
+                        this._type(Type$1.JSXBlock, ret);
                         break;
                     default:
                         this._error('Unknown directive ' + String.fromCharCode(flag) + ':');
@@ -616,7 +1486,7 @@ Parser.prototype = {
                 this._updateIndex(2);
             } else {
             // is an element
-            this._type(Type$$1.JSXElement, ret);
+            this._type(Type$1.JSXElement, ret);
         }
 
         while (this.index < this.length) {
@@ -633,14 +1503,14 @@ Parser.prototype = {
 
     _parseAttributeAndChildren: function _parseAttributeAndChildren(ret) {
         var attrs = this._parseJSXAttribute();
-        extend$1(ret, {
+        extend(ret, {
             attributes: attrs.attributes,
             directives: attrs.directives,
             children: []
         });
         if (!ret.directives.length) delete ret.directives;
 
-        if (ret.type === Type$$1.JSXElement && isSelfClosingTag(ret.value)) {
+        if (ret.type === Type$1.JSXElement && isSelfClosingTag(ret.value)) {
             // self closing tag
             if (this._char() === '/') {
                 this._updateIndex();
@@ -673,7 +1543,7 @@ Parser.prototype = {
                     this._updateIndex();
                     attr.value = this._parseJSXAttributeValue();
                 }
-                ret[attr.type === Type$$1.JSXAttribute ? 'attributes' : 'directives'].push(attr);
+                ret[attr.type === Type$1.JSXAttribute ? 'attributes' : 'directives'].push(attr);
             }
         }
 
@@ -695,10 +1565,10 @@ Parser.prototype = {
 
         var name = this.source.slice(start, this.index);
         if (isDirective(name)) {
-            return this._type(Type$$1.JSXDirective, { name: name });
+            return this._type(Type$1.JSXDirective, { name: name });
         }
 
-        return this._type(Type$$1.JSXAttribute, { name: name });
+        return this._type(Type$1.JSXAttribute, { name: name });
     },
 
     _parseJSXAttributeValue: function _parseJSXAttributeValue() {
@@ -723,11 +1593,11 @@ Parser.prototype = {
         }
         this._expect(Delimiters[1]);
 
-        return this._type(Type$$1.JSXExpressionContainer, { value: expression });
+        return this._type(Type$1.JSXExpressionContainer, { value: expression });
     },
 
     _parseJSXEmptyExpression: function _parseJSXEmptyExpression() {
-        return this._type(Type$$1.JSXEmptyExpression, { value: null });
+        return this._type(Type$1.JSXEmptyExpression, { value: null });
     },
 
     _parseExpression: function _parseExpression() {
@@ -740,13 +1610,13 @@ Parser.prototype = {
             current = null;
 
         switch (element.type) {
-            case Type$$1.JSXBlock:
+            case Type$1.JSXBlock:
                 endTag = '</b:' + endTag;
                 break;
-            case Type$$1.JSXVdt:
+            case Type$1.JSXVdt:
                 endTag = '</t:' + endTag;
                 break;
-            case Type$$1.JSXElement:
+            case Type$1.JSXElement:
             default:
                 endTag = '</' + endTag;
                 break;
@@ -818,7 +1688,7 @@ Parser.prototype = {
             }
             this._updateIndex();
         }
-        var ret = this._type(Type$$1.JSXComment, {
+        var ret = this._type(Type$1.JSXComment, {
             value: this.source.slice(start, this.index)
         });
         this._expect('-->');
@@ -867,7 +1737,7 @@ Parser.prototype = {
     _type: function _type(type, ret) {
         ret || (ret = {});
         ret.type = type;
-        ret.typeName = TypeName$$1[type];
+        ret.typeName = TypeName$1[type];
         ret.line = this.line;
         ret.column = this.column;
         return ret;
@@ -897,8 +1767,8 @@ Parser.prototype = {
  * @date 15-4-22
  */
 
-var Type$2 = Type$1;
-var TypeName$2 = TypeName$1;
+var Type$2 = Type;
+var TypeName$2 = TypeName;
 
 
 var attrMap = function () {
@@ -938,7 +1808,7 @@ Stringifier.prototype = {
     _visitJSXExpressionContainer: function _visitJSXExpressionContainer(ast, isRoot) {
         var str = '',
             length = ast.length;
-        each$1(ast, function (element, i) {
+        each(ast, function (element, i) {
             // if is root, add `return` keyword
             if (this.autoReturn && isRoot && i === length - 1) {
                 str += 'return ' + this._visit(element, isRoot);
@@ -1011,7 +1881,7 @@ Stringifier.prototype = {
 
     _visitJSXChildren: function _visitJSXChildren(children) {
         var ret = [];
-        each$1(children, function (child) {
+        each(children, function (child) {
             // if this.element has be handled return directly
             if (child._skip) return;
             ret.push(this._visit(child));
@@ -1026,7 +1896,7 @@ Stringifier.prototype = {
             value: 'value',
             key: 'key'
         };
-        each$1(element.directives, function (directive) {
+        each(element.directives, function (directive) {
             switch (directive.name) {
                 case 'v-if':
                     ret = this._visitJSXDirectiveIf(directive, ret, element);
@@ -1063,17 +1933,17 @@ Stringifier.prototype = {
             emptyTextNodes = [],
             // persist empty text node, skip them if find v-else-if or v-else
         skipNodes = function skipNodes() {
-            each$1(emptyTextNodes, function (item) {
+            each(emptyTextNodes, function (item) {
                 item._skip = true;
             });
             emptyTextNodes = [];
         };
         while (next = next.next) {
-            if (next.type === Type$1.JSXText) {
+            if (next.type === Type.JSXText) {
                 if (!/^\s*$/.test(next.value)) break;
                 // is not the last text node, mark as handled
                 else emptyTextNodes.push(next);
-            } else if (next.type === Type$1.JSXElement || next.type === Type$1.JSXWidget) {
+            } else if (next.type === Type.JSXElement || next.type === Type.JSXWidget) {
                 if (!next.directives || !next.directives.length) break;
                 var isContinue = false;
                 for (var i = 0, l = next.directives.length; i < l; i++) {
@@ -1111,7 +1981,7 @@ Stringifier.prototype = {
     _visitJSXChildrenAsString: function _visitJSXChildrenAsString(children) {
         var ret = [];
         this.enterStringExpression = true;
-        each$1(children, function (child) {
+        each(children, function (child) {
             ret.push(this._visit(child));
         }, this);
         this.enterStringExpression = false;
@@ -1123,7 +1993,7 @@ Stringifier.prototype = {
             className$$1,
             key,
             ref;
-        each$1(attributes, function (attr) {
+        each(attributes, function (attr) {
             var name = attrMap(attr.name),
                 value = this._visitJSXAttributeValue(attr.value);
             if (name === 'widget' && attr.value.type === Type$2.JSXText) {
@@ -1160,7 +2030,7 @@ Stringifier.prototype = {
     },
 
     _visitJSXAttributeValue: function _visitJSXAttributeValue(value) {
-        return isArray$2(value) ? this._visitJSXChildren(value) : this._visit(value);
+        return isArray(value) ? this._visitJSXChildren(value) : this._visit(value);
     },
 
     _visitJSXText: function _visitJSXText(element, noQuotes) {
@@ -1189,7 +2059,7 @@ Stringifier.prototype = {
         var ret = ['(function(blocks) {', 'var _blocks = {}, __blocks = extend({}, blocks), _obj = ' + this._visitJSXAttribute(element.attributes, false, false).props + ' || {};', 'if (_obj.hasOwnProperty("arguments")) { extend(_obj, _obj.arguments === null ? obj : _obj.arguments); delete _obj.arguments; }', 'return ' + element.value + '.call(this, _obj, _Vdt, '].join('\n'),
             blocks = [];
 
-        each$1(element.children, function (child) {
+        each(element.children, function (child) {
             if (child.type === Type$2.JSXBlock) {
                 blocks.push(this._visitJSXBlock(child, false));
             }
@@ -1220,7 +2090,7 @@ Types.ComponentClassOrInstance = Types.ComponentClass | Types.ComponentInstance;
 Types.TextElement = Types.Text | Types.HtmlComment;
 
 var EMPTY_OBJ = {};
-if ('production' !== 'production' && !browser.isIE) {
+if (process.env.NODE_ENV !== 'production' && !browser.isIE) {
     Object.freeze(EMPTY_OBJ);
 }
 
@@ -1275,7 +2145,7 @@ function createComponentInstanceVNode(instance) {
 }
 
 function normalizeChildren(vNodes) {
-    if (isArray$2(vNodes)) {
+    if (isArray(vNodes)) {
         var childNodes = addChild(vNodes, { index: 0 });
         return childNodes.length ? childNodes : null;
     } else if (isComponentInstance(vNodes)) {
@@ -1285,7 +2155,7 @@ function normalizeChildren(vNodes) {
 }
 
 function applyKey(vNode, reference) {
-    if (isNullOrUndefined$1(vNode.key)) {
+    if (isNullOrUndefined(vNode.key)) {
         vNode.key = '.$' + reference.index++;
     }
     return vNode;
@@ -1295,11 +2165,11 @@ function addChild(vNodes, reference) {
     var newVNodes = void 0;
     for (var i = 0; i < vNodes.length; i++) {
         var n = vNodes[i];
-        if (isNullOrUndefined$1(n)) {
+        if (isNullOrUndefined(n)) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
             }
-        } else if (isArray$2(n)) {
+        } else if (isArray(n)) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
             }
@@ -1331,7 +2201,7 @@ var MOUSE_PROPS = ["button", "buttons", "clientX", "clientY", "layerX", "layerY"
 var rkeyEvent = /^key|input/;
 var rmouseEvent = /^(?:mouse|pointer|contextmenu)|click/;
 
-function Event(e) {
+function Event$2(e) {
     for (var i = 0; i < ALL_PROPS.length; i++) {
         var propKey = ALL_PROPS[i];
         this[propKey] = e[propKey];
@@ -1343,7 +2213,7 @@ function Event(e) {
 
     this._rawEvent = e;
 }
-Event.prototype.preventDefault = function () {
+Event$2.prototype.preventDefault = function () {
     var e = this._rawEvent;
     if (e.preventDefault) {
         e.preventDefault();
@@ -1351,30 +2221,30 @@ Event.prototype.preventDefault = function () {
         e.returnValue = false;
     }
 };
-Event.prototype.stopPropagation = function () {
+Event$2.prototype.stopPropagation = function () {
     var e = this._rawEvent;
     e.cancelBubble = true;
     e.stopImmediatePropagation && e.stopImmediatePropagation();
 };
 
 function MouseEvent(e) {
-    Event.call(this, e);
+    Event$2.call(this, e);
     for (var j = 0; j < MOUSE_PROPS.length; j++) {
         var mousePropKey = MOUSE_PROPS[j];
         this[mousePropKey] = e[mousePropKey];
     }
 }
-MouseEvent.prototype = createObject(Event.prototype);
+MouseEvent.prototype = createObject(Event$2.prototype);
 MouseEvent.prototype.constructor = MouseEvent;
 
 function KeyEvent(e) {
-    Event.call(this, e);
+    Event$2.call(this, e);
     for (var j = 0; j < KEY_PROPS.length; j++) {
         var keyPropKey = KEY_PROPS[j];
         this[keyPropKey] = e[keyPropKey];
     }
 }
-KeyEvent.prototype = createObject(Event.prototype);
+KeyEvent.prototype = createObject(Event$2.prototype);
 KeyEvent.prototype.constructor = KeyEvent;
 
 function proxyEvent(e) {
@@ -1383,26 +2253,26 @@ function proxyEvent(e) {
     } else if (rmouseEvent.test(e.type)) {
         return new MouseEvent(e);
     } else {
-        return new Event(e);
+        return new Event$2(e);
     }
 }
 
-var addEventListener$1 = void 0;
-var removeEventListener$1 = void 0;
+var addEventListener$3 = void 0;
+var removeEventListener$3 = void 0;
 if ('addEventListener' in doc) {
-    addEventListener$1 = function addEventListener(name, fn) {
+    addEventListener$3 = function addEventListener(name, fn) {
         doc.addEventListener(name, fn, false);
     };
 
-    removeEventListener$1 = function removeEventListener(name, fn) {
+    removeEventListener$3 = function removeEventListener(name, fn) {
         doc.removeEventListener(name, fn);
     };
 } else {
-    addEventListener$1 = function addEventListener(name, fn) {
+    addEventListener$3 = function addEventListener(name, fn) {
         doc.attachEvent("on" + name, fn);
     };
 
-    removeEventListener$1 = function removeEventListener(name, fn) {
+    removeEventListener$3 = function removeEventListener(name, fn) {
         doc.detachEvent("on" + name, fn);
     };
 }
@@ -1423,14 +2293,14 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
         var items = delegatedRoots.items;
         if (items.delete(dom)) {
             if (items.size === 0) {
-                removeEventListener$1(name, delegatedRoots.docEvent);
+                removeEventListener$3(name, delegatedRoots.docEvent);
                 delete delegatedRoots[name];
             }
         }
     }
 }
 
-function dispatchEvent(event, target, items, count, isClick) {
+function dispatchEvent$2(event, target, items, count, isClick) {
     var eventToTrigger = items.get(target);
     if (eventToTrigger) {
         count--;
@@ -1442,10 +2312,10 @@ function dispatchEvent(event, target, items, count, isClick) {
     }
     if (count > 0) {
         var parentDom = target.parentNode;
-        if (isNullOrUndefined$1(parentDom) || isClick && parentDom.nodeType === 1 && parentDom.disabled) {
+        if (isNullOrUndefined(parentDom) || isClick && parentDom.nodeType === 1 && parentDom.disabled) {
             return;
         }
-        dispatchEvent(event, parentDom, items, count, isClick);
+        dispatchEvent$2(event, parentDom, items, count, isClick);
     }
 }
 
@@ -1455,18 +2325,24 @@ function attachEventToDocument(name, delegatedRoots) {
         event || (event = window.event);
         if (count > 0) {
             event = proxyEvent(event);
-            dispatchEvent(event, event.target, delegatedRoots.items, count, event.type === 'click');
+            dispatchEvent$2(event, event.target, delegatedRoots.items, count, event.type === 'click');
         }
     };
-    addEventListener$1(name, docEvent);
+    addEventListener$3(name, docEvent);
     return docEvent;
 }
 
-function render(vNode, parentDom) {
-    if (isNullOrUndefined$1(vNode)) return;
-    var mountedQueue = new MountedQueue();
+function render(vNode, parentDom, mountedQueue) {
+    if (isNullOrUndefined(vNode)) return;
+    var isTrigger = false;
+    if (parentDom || !mountedQueue) {
+        mountedQueue = new MountedQueue();
+        isTrigger = true;
+    }
     var dom = createElement(vNode, parentDom, mountedQueue);
-    mountedQueue.trigger();
+    if (isTrigger) {
+        mountedQueue.trigger();
+    }
     return dom;
 }
 
@@ -1498,11 +2374,11 @@ function createHtmlElement(vNode, parentDom, mountedQueue) {
 
     vNode.dom = dom;
 
-    if (!isNullOrUndefined$1(children)) {
+    if (!isNullOrUndefined(children)) {
         createElements(children, dom, mountedQueue);
     }
 
-    if (!isNullOrUndefined$1(className)) {
+    if (!isNullOrUndefined(className)) {
         dom.className = className;
     }
 
@@ -1512,7 +2388,7 @@ function createHtmlElement(vNode, parentDom, mountedQueue) {
         }
     }
 
-    if (!isNullOrUndefined$1(ref)) {
+    if (!isNullOrUndefined(ref)) {
         createRef(dom, ref, mountedQueue);
     }
 
@@ -1537,6 +2413,8 @@ function createTextElement(vNode, parentDom) {
 function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode) {
     var props = vNode.props;
     var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
+    instance.parentDom = null;
+    instance.mountedQueue = mountedQueue;
     var dom = instance.init(lastVNode, vNode);
     var ref = vNode.ref;
 
@@ -1559,29 +2437,6 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
 
     return dom;
 }
-
-// export function createComponentInstance(vNode, parentDom, mountedQueue, lastVNode) {
-// const props = vNode.props;
-// const instance = vNode.children;
-// const dom = instance.init(lastVNode, vNode);
-// const ref = vNode.ref;
-
-// vNode.dom = dom;
-
-// if (parentDom) {
-// parentDom.appendChild(dom);
-// }
-
-// if (typeof instance.mount === 'function') {
-// mountedQueue.push(() => instance.mount(lastVNode, vNode));
-// }
-
-// if (typeof ref === 'function') {
-// ref(instance);
-// }
-
-// return dom;
-// }
 
 function createComponentFunction(vNode, parentDom, mountedQueue) {
     var props = vNode.props;
@@ -1616,7 +2471,7 @@ function createCommentElement(vNode, parentDom) {
 
 function createComponentFunctionVNode(vNode) {
     var result = vNode.tag(vNode.props);
-    if (isArray$2(result)) {
+    if (isArray(result)) {
         throw new Error('ComponentFunction ' + vNode.tag.name + ' returned a invalid vNode');
     } else if (isStringOrNumber(result)) {
         result = createTextVNode(result);
@@ -1630,7 +2485,7 @@ function createComponentFunctionVNode(vNode) {
 function createElements(vNodes, parentDom, mountedQueue) {
     if (isStringOrNumber(vNodes)) {
         setTextContent(parentDom, vNodes);
-    } else if (isArray$2(vNodes)) {
+    } else if (isArray(vNodes)) {
         for (var i = 0; i < vNodes.length; i++) {
             createElement(vNodes[i], parentDom, mountedQueue);
         }
@@ -1640,9 +2495,9 @@ function createElements(vNodes, parentDom, mountedQueue) {
 }
 
 function removeElements(vNodes, parentDom) {
-    if (isNullOrUndefined$1(vNodes)) {
+    if (isNullOrUndefined(vNodes)) {
         return;
-    } else if (isArray$2(vNodes)) {
+    } else if (isArray(vNodes)) {
         for (var i = 0; i < vNodes.length; i++) {
             removeElement(vNodes[i], parentDom);
         }
@@ -1678,7 +2533,7 @@ function removeHtmlElement(vNode, parentDom) {
     // remove event
     for (var name in props) {
         var prop = props[name];
-        if (!isNullOrUndefined$1(prop) && isEventProp$1(name)) {
+        if (!isNullOrUndefined(prop) && isEventProp(name)) {
             handleEvent(name.substr(0, 3), prop, null, dom);
         }
     }
@@ -1714,7 +2569,8 @@ function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
         ref(null);
     }
 
-    removeElements(vNode.props.children, null);
+    // instance destroy method will remove everything
+    // removeElements(vNode.props.children, null);
 
     if (parentDom) {
         parentDom.removeChild(vNode.dom);
@@ -1812,14 +2668,14 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue) {
         }
 
         if (lastClassName !== nextClassName) {
-            if (isNullOrUndefined$1(nextClassName)) {
+            if (isNullOrUndefined(nextClassName)) {
                 dom.removeAttribute('class');
             } else {
                 dom.className = nextClassName;
             }
         }
 
-        if (!isNullOrUndefined$1(nextRef) && lastVNode.ref !== nextRef) {
+        if (!isNullOrUndefined(nextRef) && lastVNode.ref !== nextRef) {
             createRef(dom, nextRef, mountedQueue);
         }
     }
@@ -1883,11 +2739,11 @@ function patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue) {
 }
 
 function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
-    if (isNullOrUndefined$1(lastChildren)) {
-        if (!isNullOrUndefined$1(nextChildren)) {
+    if (isNullOrUndefined(lastChildren)) {
+        if (!isNullOrUndefined(nextChildren)) {
             createElements(nextChildren, parentDom, mountedQueue);
         }
-    } else if (isNullOrUndefined$1(nextChildren)) {
+    } else if (isNullOrUndefined(nextChildren)) {
         removeElements(lastChildren, parentDom);
     } else if (isStringOrNumber(nextChildren)) {
         if (isStringOrNumber(lastChildren)) {
@@ -1896,14 +2752,14 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
             removeElements(lastChildren, parentDom);
             setTextContent(parentDom, nextChildren);
         }
-    } else if (isArray$2(lastChildren)) {
-        if (isArray$2(nextChildren)) {
+    } else if (isArray(lastChildren)) {
+        if (isArray(nextChildren)) {
             patchChildrenByKey(lastChildren, nextChildren, parentDom, mountedQueue);
         } else {
             removeElements(lastChildren, parentDom);
             createElement(nextChildren, parentDom, mountedQueue);
         }
-    } else if (isArray$2(nextChildren)) {
+    } else if (isArray(nextChildren)) {
         removeElement(lastChildren, parentDom);
         createElements(nextChildren, parentDom, mountedQueue);
     } else if (isStringOrNumber(lastChildren)) {
@@ -2185,15 +3041,15 @@ function patchProp(prop, lastValue, nextValue, dom) {
         } else if (booleanProps[prop]) {
             dom[prop] = !!nextValue;
         } else if (strictProps[prop]) {
-            var value = isNullOrUndefined$1(nextValue) ? '' : nextValue;
+            var value = isNullOrUndefined(nextValue) ? '' : nextValue;
             if (dom[prop] !== value) {
                 dom[prop] = value;
             }
-        } else if (isNullOrUndefined$1(nextValue)) {
+        } else if (isNullOrUndefined(nextValue)) {
             removeProp(prop, lastValue, dom);
-        } else if (isEventProp$1(prop)) {
+        } else if (isEventProp(prop)) {
             handleEvent(prop.substr(3), lastValue, nextValue, dom);
-        } else if (isObject$2(nextValue)) {
+        } else if (isObject$1(nextValue)) {
             patchPropByObject(prop, lastValue, nextValue, dom);
         } else if (prop === 'innerHTML') {
             dom.innerHTML = nextValue;
@@ -2204,7 +3060,7 @@ function patchProp(prop, lastValue, nextValue, dom) {
 }
 
 function removeProp(prop, lastValue, dom) {
-    if (!isNullOrUndefined$1(lastValue)) {
+    if (!isNullOrUndefined(lastValue)) {
         switch (prop) {
             case 'value':
                 dom.value = '';
@@ -2226,9 +3082,9 @@ function removeProp(prop, lastValue, dom) {
 
         if (booleanProps[prop]) {
             dom[prop] = false;
-        } else if (isEventProp$1(prop)) {
+        } else if (isEventProp(prop)) {
             handleEvent(prop.substr(3), lastValue, null, dom);
-        } else if (isObject$2(lastValue)) {
+        } else if (isObject$1(lastValue)) {
             var domProp = dom[prop];
             try {
                 dom[prop] = undefined;
@@ -2256,7 +3112,7 @@ var removeDataset = browser.isIE ? function (lastValue, dom) {
 };
 
 function patchPropByObject(prop, lastValue, nextValue, dom) {
-    if (lastValue && !isObject$2(lastValue) && !isNullOrUndefined$1(lastValue)) {
+    if (lastValue && !isObject$1(lastValue) && !isNullOrUndefined(lastValue)) {
         removeProp(prop, lastValue, dom);
         lastValue = null;
     }
@@ -2280,7 +3136,7 @@ var patchDataset = browser.isIE ? function patchDataset(prop, lastValue, nextVal
     for (key in nextValue) {
         var dataKey = 'data-' + kebabCase(key);
         value = nextValue[key];
-        if (isNullOrUndefined$1(value)) {
+        if (isNullOrUndefined(value)) {
             dom.removeAttribute(dataKey);
             hasRemoved[key] = true;
         } else {
@@ -2288,9 +3144,9 @@ var patchDataset = browser.isIE ? function patchDataset(prop, lastValue, nextVal
         }
     }
 
-    if (!isNullOrUndefined$1(lastValue)) {
+    if (!isNullOrUndefined(lastValue)) {
         for (key in lastValue) {
-            if (isNullOrUndefined$1(nextValue[key]) && !hasRemoved[key]) {
+            if (isNullOrUndefined(nextValue[key]) && !hasRemoved[key]) {
                 dom.removeAttribute('data-' + kebabCase(key));
             }
         }
@@ -2309,7 +3165,7 @@ function kebabCase(word) {
 
 function patchObject(prop, lastValue, nextValue, dom) {
     var domProps = dom[prop];
-    if (isNullOrUndefined$1(domProps)) {
+    if (isNullOrUndefined(domProps)) {
         domProps = dom[prop] = {};
     }
     var key = void 0;
@@ -2317,9 +3173,9 @@ function patchObject(prop, lastValue, nextValue, dom) {
     for (key in nextValue) {
         domProps[key] = nextValue[key];
     }
-    if (!isNullOrUndefined$1(lastValue)) {
+    if (!isNullOrUndefined(lastValue)) {
         for (key in lastValue) {
-            if (isNullOrUndefined$1(nextValue[key])) {
+            if (isNullOrUndefined(nextValue[key])) {
                 delete domProps[key];
             }
         }
@@ -2332,16 +3188,16 @@ function patchAttributes(lastValue, nextValue, dom) {
     var value = void 0;
     for (key in nextValue) {
         value = nextValue[key];
-        if (isNullOrUndefined$1(value)) {
+        if (isNullOrUndefined(value)) {
             dom.removeAttribute(key);
             hasRemoved[key] = true;
         } else {
             dom.setAttribute(key, value);
         }
     }
-    if (!isNullOrUndefined$1(lastValue)) {
+    if (!isNullOrUndefined(lastValue)) {
         for (key in lastValue) {
-            if (isNullOrUndefined$1(nextValue[key]) && !hasRemoved[key]) {
+            if (isNullOrUndefined(nextValue[key]) && !hasRemoved[key]) {
                 dom.removeAttribute(key);
             }
         }
@@ -2355,16 +3211,16 @@ function patchStyle(lastValue, nextValue, dom) {
     var value = void 0;
     for (key in nextValue) {
         value = nextValue[key];
-        if (isNullOrUndefined$1(value)) {
+        if (isNullOrUndefined(value)) {
             domStyle[key] = '';
             hasRemoved[key] = true;
         } else {
             domStyle[key] = value;
         }
     }
-    if (!isNullOrUndefined$1(lastValue)) {
+    if (!isNullOrUndefined(lastValue)) {
         for (key in lastValue) {
-            if (isNullOrUndefined$1(nextValue[key]) && !hasRemoved[key]) {
+            if (isNullOrUndefined(nextValue[key]) && !hasRemoved[key]) {
                 domStyle[key] = '';
             }
         }
@@ -2373,11 +3229,13 @@ function patchStyle(lastValue, nextValue, dom) {
 
 
 
-var miss = (Object.freeze || Object)({
+var miss = Object.freeze({
 	h: createVNode,
 	patch: patch,
 	render: render,
-	hc: createCommentVNode
+	hc: createCommentVNode,
+	remove: removeElement,
+	MountedQueue: MountedQueue
 });
 
 var parser = new Parser();
@@ -2395,9 +3253,9 @@ function Vdt$1(source, options) {
 Vdt$1.prototype = {
     constructor: Vdt$1,
 
-    render: function render$$1(data) {
+    render: function render$$1(data, parentDom, queue) {
         this.renderVNode(data);
-        this.node = render(this.vNode);
+        this.node = render(this.vNode, parentDom, queue);
 
         return this.node;
     },
@@ -2420,6 +3278,9 @@ Vdt$1.prototype = {
         this.node = patch(oldVNode, this.vNode);
 
         return this.node;
+    },
+    destroy: function destroy() {
+        removeElement(this.vNode);
     }
 };
 
@@ -2431,14 +3292,14 @@ function compile(source, options) {
         options = { autoReturn: options };
     }
 
-    options = extend$1({}, configure(), options);
+    options = extend({}, configure(), options);
 
     switch (typeof source === 'undefined' ? 'undefined' : _typeof(source)) {
         case 'string':
             var ast = parser.parse(source, { delimiters: options.delimiters }),
                 hscript = stringifier.stringify(ast, options.autoReturn);
 
-            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', 'extend = _Vdt.utils.extend, _e = _Vdt.utils.error,' + (options.server ? 'require = function(file) { return _Vdt.utils.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj;', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
+            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', 'extend = _Vdt.utils.extend, _e = _Vdt.utils.error,' + (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj;', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
             templateFn = options.onlySource ? function () {} : new Function('obj', '_Vdt', 'blocks', hscript);
             templateFn.source = 'function(obj, _Vdt, blocks) {\n' + hscript + '\n}';
             break;
@@ -2462,286 +3323,6 @@ Vdt$1.getDelimiters = getDelimiters;
 
 // for compatibility v1.0
 Vdt$1.virtualDom = miss;
-
-var extend = Vdt$1.utils.extend;
-var isArray$1 = Vdt$1.utils.isArray;
-var each = Vdt$1.utils.each;
-var isObject = Vdt$1.utils.isObject;
-
-/**
- * inherit
- * @param Parent
- * @param prototype
- * @returns {Function}
- */
-function inherit(Parent, prototype) {
-    var Child = function Child() {
-        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-            args[_key] = arguments[_key];
-        }
-
-        if (!this || !(this instanceof Child || this.prototype instanceof Child)) {
-            return Parent.apply(Child, args);
-        }
-        return Parent.apply(this, args);
-    };
-
-    Child.prototype = create(Parent.prototype);
-    each(prototype, function (proto, name) {
-        if (name === 'displayName') {
-            Child.displayName = proto;
-        }
-        if (!isFunction(proto) || name === 'template') {
-            return Child.prototype[name] = proto;
-        }
-        Child.prototype[name] = function () {
-            var _super = function _super() {
-                for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-                    args[_key2] = arguments[_key2];
-                }
-
-                return Parent.prototype[name].apply(this, args);
-            },
-                _superApply = function _superApply(args) {
-                return Parent.prototype[name].apply(this, args);
-            };
-            return function () {
-                var self = this || {},
-                    __super = self._super,
-                    __superApply = self._superApply,
-                    returnValue = void 0;
-
-                self._super = _super;
-                self._superApply = _superApply;
-
-                for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-                    args[_key3] = arguments[_key3];
-                }
-
-                returnValue = proto.apply(this, args);
-
-                self._super = __super;
-                self._superApply = __superApply;
-
-                return returnValue;
-            };
-        }();
-    });
-    Child.__super = Parent.prototype;
-    Child.prototype.constructor = Child;
-
-    extend(Child, Parent);
-
-    return Child;
-}
-
-var nativeCreate = Object.create;
-function create(object) {
-    if (nativeCreate) {
-        return nativeCreate(object);
-    } else {
-        var fn = function fn() {};
-        fn.prototype = object;
-        return new fn();
-    }
-}
-
-var hasOwn = Object.prototype.hasOwnProperty;
-
-function isFunction(obj) {
-    return typeof obj === 'function';
-}
-
-function result(obj, property, fallback) {
-    var value = obj == null ? undefined : obj[property];
-    if (value === undefined) {
-        value = fallback;
-    }
-    return isFunction(value) ? value.call(obj) : value;
-}
-
-
-
-var toString = Object.prototype.toString;
-// Internal recursive comparison function for `isEqual`.
-var eq = function eq(a, b, aStack, bStack) {
-    // Identical objects are equal. `0 === -0`, but they aren't identical.
-    // See the [Harmony `egal` proposal](http://wiki.ecmascript.org/doku.php?id=harmony:egal).
-    if (a === b) return a !== 0 || 1 / a === 1 / b;
-    // A strict comparison is necessary because `null == undefined`.
-    if (a == null || b == null) return a === b;
-    // Compare `[[Class]]` names.
-    var className = toString.call(a);
-    if (className !== toString.call(b)) return false;
-    switch (className) {
-        // Strings, numbers, regular expressions, dates, and booleans are compared by value.
-        case '[object RegExp]':
-        // RegExps are coerced to strings for comparison (Note: '' + /a/i === '/a/i')
-        case '[object String]':
-            // Primitives and their corresponding object wrappers are equivalent; thus, `"5"` is
-            // equivalent to `new String("5")`.
-            return '' + a === '' + b;
-        case '[object Number]':
-            // `NaN`s are equivalent, but non-reflexive.
-            // Object(NaN) is equivalent to NaN
-            if (+a !== +a) return +b !== +b;
-            // An `egal` comparison is performed for other numeric values.
-            return +a === 0 ? 1 / +a === 1 / b : +a === +b;
-        case '[object Date]':
-        case '[object Boolean]':
-            // Coerce dates and booleans to numeric primitive values. Dates are compared by their
-            // millisecond representations. Note that invalid dates with millisecond representations
-            // of `NaN` are not equivalent.
-            return +a === +b;
-    }
-
-    var areArrays = className === '[object Array]';
-    if (!areArrays) {
-        if ((typeof a === 'undefined' ? 'undefined' : _typeof(a)) != 'object' || (typeof b === 'undefined' ? 'undefined' : _typeof(b)) != 'object') return false;
-
-        // Objects with different constructors are not equivalent, but `Object`s or `Array`s
-        // from different frames are.
-        var aCtor = a.constructor,
-            bCtor = b.constructor;
-        if (aCtor !== bCtor && !(isFunction(aCtor) && aCtor instanceof aCtor && isFunction(bCtor) && bCtor instanceof bCtor) && 'constructor' in a && 'constructor' in b) {
-            return false;
-        }
-    }
-    // Assume equality for cyclic structures. The algorithm for detecting cyclic
-    // structures is adapted from ES 5.1 section 15.12.3, abstract operation `JO`.
-
-    // Initializing stack of traversed objects.
-    // It's done here since we only need them for objects and arrays comparison.
-    aStack = aStack || [];
-    bStack = bStack || [];
-    var length = aStack.length;
-    while (length--) {
-        // Linear search. Performance is inversely proportional to the number of
-        // unique nested structures.
-        if (aStack[length] === a) return bStack[length] === b;
-    }
-
-    // Add the first object to the stack of traversed objects.
-    aStack.push(a);
-    bStack.push(b);
-
-    // Recursively compare objects and arrays.
-    if (areArrays) {
-        // Compare array lengths to determine if a deep comparison is necessary.
-        length = a.length;
-        if (length !== b.length) return false;
-        // Deep compare the contents, ignoring non-numeric properties.
-        while (length--) {
-            if (!eq(a[length], b[length], aStack, bStack)) return false;
-        }
-    } else {
-        // Deep compare objects.
-        var aKeys = keys(a),
-            key;
-        length = aKeys.length;
-        // Ensure that both objects contain the same number of properties before comparing deep equality.
-        if (keys(b).length !== length) return false;
-        while (length--) {
-            // Deep compare each member
-            key = aKeys[length];
-            if (!(hasOwn.call(b, key) && eq(a[key], b[key], aStack, bStack))) return false;
-        }
-    }
-    // Remove the first object from the stack of traversed objects.
-    aStack.pop();
-    bStack.pop();
-    return true;
-};
-
-function isEqual(a, b) {
-    return eq(a, b);
-}
-
-var idCounter = 0;
-function uniqueId(prefix) {
-    var id = ++idCounter + '';
-    return prefix ? prefix + id : id;
-}
-
-var keys = Object.keys || function (obj) {
-    var ret = [];
-    each(obj, function (value, key) {
-        return ret.push(key);
-    });
-    return ret;
-};
-
-function values(obj) {
-    var ret = [];
-    each(obj, function (value) {
-        return ret.push(value);
-    });
-    return ret;
-}
-
-var pathMap = {};
-var reLeadingDot = /^\./;
-var rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g;
-var reEscapeChar = /\\(\\)?/g;
-var reIsUint = /^(?:0|[1-9]\d*)$/;
-function castPath(path) {
-    if (typeof path !== 'string') return path;
-    if (pathMap[path]) return pathMap[path];
-
-    var ret = [];
-    if (reLeadingDot.test(path)) {
-        result.push('');
-    }
-    path.replace(rePropName, function (match, number, quote, string) {
-        ret.push(quote ? path.replace(reEscapeChar, '$1') : number || match);
-    });
-    pathMap[path] = ret;
-
-    return ret;
-}
-function isIndex(value) {
-    return (typeof value === 'number' || reIsUint.test(value)) && value > -1 && value % 1 === 0;
-}
-function get$$1(object, path, defaultValue) {
-    if (hasOwn.call(object, path)) return object[path];
-    path = castPath(path);
-
-    var index = 0,
-        length = path.length;
-
-    while (object != null && index < length) {
-        object = object[path[index++]];
-    }
-
-    return index && index === length ? object : defaultValue;
-}
-function set$$1(object, path, value) {
-    if (hasOwn.call(object, path)) {
-        object[path] = value;
-        return object;
-    }
-
-    path = castPath(path);
-
-    var index = -1,
-        length = path.length,
-        lastIndex = length - 1,
-        nested = object;
-    while (nested != null && ++index < length) {
-        var key = path[index],
-            newValue = value;
-        if (index !== lastIndex) {
-            var objValue = nested[key];
-            newValue = isObject(objValue) ? objValue : isIndex(path[index + 1]) ? [] : {};
-        }
-        nested[key] = newValue;
-        nested = nested[key];
-    }
-
-    return object;
-}
-
-var EMPTY_OBJ$1 = {};
 
 var Intact$1 = function () {
     function Intact(props) {
@@ -2778,8 +3359,9 @@ var Intact$1 = function () {
 
         var inited = function inited() {
             _this.inited = true;
-            _this.on('change', function () {
-                return _this.update();
+            // 为了兼容之前change事件必update的用法
+            _this.on('change', function (c, nouse, noUpdate) {
+                return !noUpdate && _this.update();
             });
             _this.trigger('inited', _this);
         };
@@ -2791,180 +3373,296 @@ var Intact$1 = function () {
         }
     }
 
-    Intact.prototype.addEvents = function addEvents() {
-        var _this2 = this;
+    createClass(Intact, [{
+        key: 'addEvents',
+        value: function addEvents() {
+            var _this2 = this;
 
-        var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.props;
+            var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.props;
 
-        each(props, function (value, key) {
-            if (key.substr(0, 3) === 'ev-' && isFunction(value)) {
-                _this2.on(key.substr(3), value);
-            }
-        });
-    };
-
-    Intact.prototype._init = function _init(props) {};
-
-    Intact.prototype._create = function _create(lastVNode, nextVNode) {};
-
-    Intact.prototype._mount = function _mount(lastVNode, nextVNode) {};
-
-    Intact.prototype._beforeUpdate = function _beforeUpdate(lastVNode, nextVNode) {};
-
-    Intact.prototype._update = function _update(lastVNode, nextVNode) {};
-
-    Intact.prototype._destroy = function _destroy(lastVNode, nextVNode) {};
-
-    Intact.prototype.init = function init(lastVNode, nextVNode) {
-        var _this3 = this;
-
-        if (!this.inited) {
-            // 支持异步组件
-            var placeholder = document.createComment('placeholder');
-            this.one('inited', function () {
-                var parent = placeholder.parentNode;
-                if (parent) {
-                    parent.replaceChild(_this3.init(), placeholder);
+            each(props, function (value, key) {
+                if (isEventProp(key) && isFunction(value)) {
+                    _this2.on(key.substr(3), value);
                 }
             });
-            return placeholder;
         }
-        this.element = this.vdt.render(this);
-        this.rendered = true;
-        this.trigger('rendered', this);
-        this._create(lastVNode, nextVNode);
+    }, {
+        key: '_init',
+        value: function _init(props) {}
+    }, {
+        key: '_create',
+        value: function _create(lastVNode, nextVNode) {}
+    }, {
+        key: '_mount',
+        value: function _mount(lastVNode, nextVNode) {}
+    }, {
+        key: '_beforeUpdate',
+        value: function _beforeUpdate(lastVNode, nextVNode) {}
+    }, {
+        key: '_update',
+        value: function _update(lastVNode, nextVNode) {}
+    }, {
+        key: '_destroy',
+        value: function _destroy(lastVNode, nextVNode) {}
+    }, {
+        key: 'init',
+        value: function init(lastVNode, nextVNode) {
+            var _this3 = this;
 
-        return this.element;
-    };
-
-    Intact.prototype.mount = function mount(lastVNode, nextVNode) {
-        this.mounted = true;
-        this.trigger('mounted', this);
-        this._mount(lastVNode, nextVNode);
-    };
-
-    Intact.prototype.update = function update(lastVNode, nextVNode) {
-        // 如果还没有渲染，则不去更新
-        if (!this.rendered) return;
-
-        ++this._updateCount;
-        if (this._updateCount > 1) return this.element;
-        if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
-    };
-
-    Intact.prototype.__update = function __update(lastVNode, nextVNode) {
-        // 如果不存在nextVNode，则为直接调用update方法更新自己
-        // 否则则是父组件触发的子组件更新，此时需要更新一些状态
-        if (nextVNode) {
-            this._patchProps(lastVNode, nextVNode);
-        }
-
-        this._beforeUpdate(lastVNode, nextVNode);
-        this.element = this.vdt.update(this);
-        this._update(lastVNode, nextVNode);
-
-        if (--this._updateCount > 0) {
-            // 如果更新完成，发现还有更新，则是在更新过程中又触发了更新
-            // 此时直接将_updateCount置为0，因为所有数据都已更新，只做最后一次模板更新即可
-            this._updateCount = 0;
-            return this.__update();
-        }
-
-        return this.element;
-    };
-
-    Intact.prototype._patchProps = function _patchProps(lastProps, nextProps) {
-        lastProps = lastProps || EMPTY_OBJ$1;
-        nextProps = nextProps || EMPTY_OBJ$1;
-        if (lastProps !== nextProps) {
-            if (nextProps !== EMPTY_OBJ$1) {
-                for (var prop in nextProps) {}
+            if (!this.inited) {
+                // 支持异步组件
+                var placeholder = document.createComment('placeholder');
+                this.one('inited', function () {
+                    var parent = placeholder.parentNode;
+                    if (parent) {
+                        parent.replaceChild(_this3.init(lastVNode, nextVNode), placeholder);
+                    }
+                });
+                return placeholder;
             }
-            this.set(nextProps, { global: false });
-            for (var _prop in lastProps) {
-                if (!hasOwn.call(nextProps, _prop)) {
-                    this.set(_prop, undefined, { global: false });
-                    var lastValue = lastProps[_prop];
-                    if (isEventProp(_prop) && isFunction(lastValue)) {
-                        // 如果是事件，则要解绑事件
-                        this.off(_prop.substr(3), lastValue);
+            this.element = this.vdt.render(this, this.parentDom, this.moutedQueue);
+            this.rendered = true;
+            this.trigger('rendered', this);
+            this._create(lastVNode, nextVNode);
+
+            return this.element;
+        }
+    }, {
+        key: 'mount',
+        value: function mount(lastVNode, nextVNode) {
+            this.mounted = true;
+            this.trigger('mounted', this);
+            this._mount(lastVNode, nextVNode);
+        }
+    }, {
+        key: 'update',
+        value: function update(lastVNode, nextVNode) {
+            // 如果还没有渲染，则不去更新
+            if (!this.rendered) return;
+
+            ++this._updateCount;
+            if (this._updateCount > 1) return this.element;
+            if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
+        }
+    }, {
+        key: '__update',
+        value: function __update(lastVNode, nextVNode) {
+            // 如果不存在nextVNode，则为直接调用update方法更新自己
+            // 否则则是父组件触发的子组件更新，此时需要更新一些状态
+            if (nextVNode) {
+                this._patchProps(lastVNode.props, nextVNode.props);
+            }
+
+            this._beforeUpdate(lastVNode, nextVNode);
+            this.element = this.vdt.update(this);
+            this._update(lastVNode, nextVNode);
+
+            if (--this._updateCount > 0) {
+                // 如果更新完成，发现还有更新，则是在更新过程中又触发了更新
+                // 此时直接将_updateCount置为0，因为所有数据都已更新，只做最后一次模板更新即可
+                this._updateCount = 0;
+                return this.__update();
+            }
+
+            return this.element;
+        }
+    }, {
+        key: '_patchProps',
+        value: function _patchProps(lastProps, nextProps) {
+            lastProps = lastProps || EMPTY_OBJ;
+            nextProps = nextProps || EMPTY_OBJ;
+            var lastValue = void 0;
+            var nextValue = void 0;
+            if (lastProps !== nextProps) {
+                // 需要先处理事件，因为prop变更可能触发相应的事件
+                var lastPropsWithoutEvents = void 0;
+                var nextPropsWithoutEvents = void 0;
+                if (nextProps !== EMPTY_OBJ) {
+                    for (var prop in nextProps) {
+                        nextValue = nextProps[prop];
+                        if (isEventProp(prop)) {
+                            this.set(prop, nextValue, { silent: true });
+                            lastValue = lastProps[prop];
+                            if (isFunction(nextValue)) {
+                                // 更换事件监听函数
+                                var eventName = prop.substr(3);
+                                if (isFunction(lastValue)) {
+                                    this.off(eventName, lastValue);
+                                }
+                                this.on(eventName, nextValue);
+                            } else if (isFunction(lastValue)) {
+                                // 解绑事件监听函数
+                                this.off(prop.substr(3), lastValue);
+                            }
+                        } else {
+                            if (!nextPropsWithoutEvents) {
+                                nextPropsWithoutEvents = {};
+                            }
+                            nextPropsWithoutEvents[prop] = nextValue;
+                        }
+                    }
+                    if (lastProps !== EMPTY_OBJ) {
+                        for (var _prop in lastProps) {
+                            if (!hasOwn.call(nextProps, _prop)) {
+                                lastValue = lastProps[_prop];
+                                if (isEventProp(_prop) && isFunction(lastValue)) {
+                                    this.set(_prop, undefined, { silent: true });
+                                    // 如果是事件，则要解绑事件
+                                    this.off(_prop.substr(3), lastValue);
+                                } else {
+                                    if (!lastPropsWithoutEvents) {
+                                        lastPropsWithoutEvents = {};
+                                    }
+                                    lastPropsWithoutEvents[_prop] = lastValue;
+                                }
+                            }
+                        }
+                    }
+
+                    if (nextPropsWithoutEvents) {
+                        this.set(nextPropsWithoutEvents, { update: false });
+                    }
+                } else {
+                    for (var _prop2 in lastProps) {
+                        lastValue = lastProps[_prop2];
+                        if (isEventProp(_prop2) && isFunction(lastValue)) {
+                            this.set(_prop2, undefined, { silent: true });
+                            // 如果是事件，则要解绑事件
+                            this.off(_prop2.substr(3), lastValue);
+                        } else {
+                            if (!lastPropsWithoutEvents) {
+                                lastPropsWithoutEvents = {};
+                            }
+                            lastPropsWithoutEvents[_prop2] = lastValue;
+                        }
+                    }
+                }
+
+                // 将不存在nextProps中，但存在lastProps中的属性，统统置为空
+                if (lastPropsWithoutEvents) {
+                    for (var _prop3 in lastPropsWithoutEvents) {
+                        this.set(_prop3, undefined, { update: false });
                     }
                 }
             }
         }
-    };
-
-    Intact.prototype.destroy = function destroy(lastVNode, nextVNode) {
-        this.off();
-        this._destroy(lastVNode, nextVNode);
-    };
-
-    Intact.prototype.get = function get$$2(key, defaultValue) {
-        if (key === undefined) return this.props;
-
-        return get$$1(this.props, key, defaultValue);
-    };
-
-    Intact.prototype.set = function set$$2(key, val, options) {
-        var _this4 = this;
-
-        if (key == null) return this;
-
-        var current = this.props,
-            changes = [];
-
-        if ((typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object') {
-            options = val;
-            for (var attr in key) {
-                val = key[attr];
-                if (!isEqual(current[attr], val)) {
-                    changes.push(attr);
-                }
-                current[attr] = val;
-            }
-        } else {
-            // support set value by path like 'a.b.c'
-            if (!isEqual(get$$1(current, key), val)) {
-                var path = castPath(key);
-                // trigger `change:a.b.c` and `change:a` events
-                changes.push(key);
-                if (path.length > 1) changes.push(path[0]);
-            }
-            set$$1(current, key, val);
+    }, {
+        key: 'destroy',
+        value: function destroy(lastVNode, nextVNode) {
+            this.off();
+            this.vdt.destroy();
+            this._destroy(lastVNode, nextVNode);
         }
+    }, {
+        key: 'get',
+        value: function get$$2(key, defaultValue) {
+            if (key === undefined) return this.props;
 
-        options = extend({
-            silent: false,
-            global: true,
-            async: false
-        }, options);
+            return get$$1(this.props, key, defaultValue);
+        }
+    }, {
+        key: 'set',
+        value: function set$$2(key, val, options) {
+            var _this4 = this;
 
-        if (changes.length) {
-            // trigger `change` event
-            for (var i = 0, l = changes.length; i < l; i++) {
-                var _attr = changes[i],
-                    value = get$$1(current, _attr),
-                    eventName = 'change:' + _attr;
-                options[eventName] && options[eventName].call(this, value);
-                !options.silent && this.trigger(eventName, this, value);
+            if (isNullOrUndefined(key)) return this;
+
+            var isSetByObject = false;
+            if ((typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object') {
+                options = val;
+                isSetByObject = true;
+            }
+            options = extend({
+                silent: false,
+                update: true,
+                async: false
+            }, options);
+            // 兼容老版本
+            if (hasOwn.call(options, 'global')) {
+                options.update = options.global;
             }
 
-            if (options.change) options.change.call(this, changes);
-            if (!options.silent) {
-                this.trigger('beforeChange', this, changes);
-                if (options.global) {
+            var props = this.props;
+            var changes = {};
+
+            var hasChanged = false;
+
+            // 前面做了undefined的判断，这里不可能为undefined了
+            if (isSetByObject) {
+                if (!options.silent) {
+                    for (var prop in key) {
+                        var nextValue = key[prop];
+                        var lastValue = props[prop];
+                        if (!isEqual(lastValue, nextValue)) {
+                            changes[prop] = [lastValue, nextValue];
+                            hasChanged = true;
+                        }
+                        // 即使相等，也要重新复制，因为有可能引用地址变更
+                        props[prop] = nextValue;
+                    }
+                } else {
+                    // 如果静默更新，则直接赋值
+                    extend(props, key);
+                }
+            } else {
+                if (!options.silent) {
+                    var _lastValue2 = get$$1(props, key);
+                    if (!isEqual(_lastValue2, val)) {
+                        if (!hasOwn.call(props, key)) {
+                            changes[key] = [_lastValue2, val];
+                            var path = castPath(key);
+                            // 如果是像'a.b.c'这样设置属性，而该属性不存在
+                            // 依次触发change:a.b.c、change:a.b、change:a这样的事件
+                            // 先不设置props，去取老值
+                            var _props = [];
+                            for (var i = path.length - 1; i > 0; i--) {
+                                var _prop4 = path.slice(0, i).join('.');
+                                var _lastValue = get$$1(props, _prop4);
+                                changes[_prop4] = [_lastValue];
+                                _props.push(_prop4);
+                            }
+                            // 设置props后，去取新值
+                            // 对于引用数据类型，新老值可能一样
+                            set$$1(props, key, val);
+                            for (var _i = 0; _i < _props.length; _i++) {
+                                var _prop5 = _props[_i];
+                                changes[_prop5].push(get$$1(props, _prop5));
+                            }
+                        } else {
+                            // 否则，只触发change:a.b.c
+                            changes[key] = [_lastValue2, val];
+                            set$$1(props, key, val);
+                        }
+
+                        hasChanged = true;
+                    } else {
+                        set$$1(props, key, val);
+                    }
+                } else {
+                    set$$1(props, key, val);
+                }
+            }
+
+            if (hasChanged) {
+                // trigger `change*` events
+                for (var _prop6 in changes) {
+                    var values$$1 = changes[_prop6];
+                    this.trigger('change:' + _prop6, this, values$$1[1], values$$1[0]);
+                }
+                var changeKeys = keys(changes);
+                // 之前存在触发change就会调用update的用法，这里传入true做兼容
+                // 如果第三个参数为true，则不update
+                this.trigger('change', this, changeKeys, true);
+
+                if (options.update && this.rendered) {
                     clearTimeout(this._asyncUpdate);
                     var triggerChange = function triggerChange() {
-                        _this4.trigger('change', _this4, changes);
-                        // trigger `changed` event
-                        for (var _i = 0, _l = changes.length; _i < _l; _i++) {
-                            var _attr2 = changes[_i],
-                                _value = get$$1(current, _attr2),
-                                _eventName = 'changed:' + _attr2;
-
-                            if (options[_eventName]) options[_eventName].call(_this4, _value);
-                            _this4.trigger(_eventName, _this4, _value);
+                        _this4.update();
+                        for (var _prop7 in changes) {
+                            var _values = changes[_prop7];
+                            _this4.trigger('changed:' + _prop7, _this4, _values[1], _values[0]);
                         }
+                        _this4.trigger('changed', _this4, changeKeys);
                     };
                     if (options.async) {
                         this._asyncUpdate = setTimeout(triggerChange);
@@ -2973,74 +3671,77 @@ var Intact$1 = function () {
                     }
                 }
             }
-        }
 
-        return this;
-    };
-
-    Intact.prototype.on = function on(name, callback) {
-        (this._events[name] || (this._events[name] = [])).push(callback);
-
-        return this;
-    };
-
-    Intact.prototype.one = function one(name, callback) {
-        var _this5 = this;
-
-        var fn = function fn() {
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            callback.apply(_this5, args);
-            _this5.off(name, fn);
-        };
-        this.on(name, fn);
-
-        return this;
-    };
-
-    Intact.prototype.off = function off(name, callback) {
-        if (name === undefined) {
-            this._events = {};
             return this;
         }
+    }, {
+        key: 'on',
+        value: function on(name, callback) {
+            (this._events[name] || (this._events[name] = [])).push(callback);
 
-        var callbacks = this._events[name];
-        if (!callbacks) return this;
-
-        if (callback === undefined) {
-            delete this._events[name];
             return this;
         }
+    }, {
+        key: 'one',
+        value: function one(name, callback) {
+            var _this5 = this;
 
-        for (var cb, i = 0; i < callbacks.length; i++) {
-            cb = callbacks[i];
-            if (cb === callback) {
-                callbacks.splice(i, 1);
-                i--;
-            }
+            var fn = function fn() {
+                for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+                    args[_key] = arguments[_key];
+                }
+
+                callback.apply(_this5, args);
+                _this5.off(name, fn);
+            };
+            this.on(name, fn);
+
+            return this;
         }
-
-        return this;
-    };
-
-    Intact.prototype.trigger = function trigger(name) {
-        var callbacks = this._events[name];
-
-        if (callbacks) {
-            for (var _len2 = arguments.length, args = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-                args[_key2 - 1] = arguments[_key2];
+    }, {
+        key: 'off',
+        value: function off(name, callback) {
+            if (name === undefined) {
+                this._events = {};
+                return this;
             }
 
-            for (var i = 0, l = callbacks.length; i < l; i++) {
-                callbacks[i].apply(this, args);
+            var callbacks = this._events[name];
+            if (!callbacks) return this;
+
+            if (callback === undefined) {
+                delete this._events[name];
+                return this;
             }
+
+            for (var cb, i = 0; i < callbacks.length; i++) {
+                cb = callbacks[i];
+                if (cb === callback) {
+                    callbacks.splice(i, 1);
+                    i--;
+                }
+            }
+
+            return this;
         }
+    }, {
+        key: 'trigger',
+        value: function trigger(name) {
+            var callbacks = this._events[name];
 
-        return this;
-    };
+            if (callbacks) {
+                for (var _len2 = arguments.length, args = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+                    args[_key2 - 1] = arguments[_key2];
+                }
 
+                for (var i = 0, l = callbacks.length; i < l; i++) {
+                    callbacks[i].apply(this, args);
+                }
+            }
+
+            return this;
+        }
+    }]);
     return Intact;
 }();
 
@@ -3053,23 +3754,23 @@ Intact$1.extend = function () {
 
 /**
  * 挂载组件到dom中
- * @param widget {Intact} Intact类或子类，也可以是实例化的对象
+ * @param Component {Intact} Intact类或子类
  * @param node {Node} html节点
  */
-Intact$1.mount = function (widget, node) {
-    if (widget.prototype && (widget.prototype instanceof Intact$1 || widget === Intact$1)) {
-        widget = new widget();
+Intact$1.mount = function (Component, node) {
+    if (!Component || !(Component.prototype instanceof Intact$1 || Component === Intact$1)) {
+        throw new Error('expect for a class component');
     }
-    if (widget.rendered) {
-        node.appendChild(widget.element);
-    } else if (widget.inited) {
-        node.appendChild(widget.init());
+    var c = new Component();
+    c.parentDom = node;
+    if (c.inited) {
+        c.init();
     } else {
-        widget.one('inited', function () {
-            return node.appendChild(widget.init());
+        c.one('inited', function () {
+            return c.init();
         });
     }
-    return widget;
+    return c;
 };
 
 // Animate Widget for animation
@@ -3081,11 +3782,10 @@ var Animate = Intact$1.extend({
         transition: 'animate'
     },
 
-    template: Vdt$1.compile('return h(self.get("tagName"), self.extend({}, self.get()), self.values(self.childrenMap))', { autoReturn: false, noWith: true }),
+    template: Vdt$1.compile('\n        var tagName = self.get(\'tagName\'),\n            isComponent = typeof tagName === \'function\',\n            props = {}, \n            allProps = self.get(),\n            children = self.values(self.childrenMap);\n        for (var prop in allProps) {\n            if (prop === \'tagName\' || prop === \'transition\') continue;\n            props[prop] = allProps[prop];\n        }\n\n        if (isComponent) {\n            props.children = children;\n            return h(tagName, props);\n        } else {\n            return h(tagName, props, children);\n        }', { autoReturn: false, noWith: true }),
 
     _init: function _init() {
-        this.key = this.get('key');
-        this.childrenMap = getChildMap(this.children);
+        this.childrenMap = getChildMap(this.get('children'));
         this.currentKeys = {};
         this.keysToEnter = [];
         this.keysToLeave = [];
@@ -3095,27 +3795,27 @@ var Animate = Intact$1.extend({
     extend: extend,
     values: values,
 
-    _beforeUpdate: function _beforeUpdate(prevWidget) {
-        if (!prevWidget) return;
+    _beforeUpdate: function _beforeUpdate(lastVNode, nextVNode) {
+        if (!nextVNode) return;
 
-        var nextMap = getChildMap(this.children),
-            prevMap = prevWidget.childrenMap;
+        var nextMap = getChildMap(this.get('children'));
+        var prevMap = this.childrenMap;
         this.childrenMap = mergeChildren(prevMap, nextMap);
 
         each(nextMap, function (value, key) {
-            if (nextMap[key] && !prevMap.hasOwnProperty(key) && !this.currentKeys[key]) {
+            if (nextMap[key] && (!prevMap || !prevMap.hasOwnProperty(key)) && !this.currentKeys[key]) {
                 this.keysToEnter.push(key);
             }
         }, this);
 
         each(prevMap, function (value, key) {
-            if (prevMap[key] && !nextMap.hasOwnProperty(key) && !this.currentKeys[key]) {
+            if (prevMap[key] && (!nextMap || !nextMap.hasOwnProperty(key)) && !this.currentKeys[key]) {
                 this.keysToLeave.push(key);
             }
         }, this);
     },
-    _update: function _update(prevWidget) {
-        if (!prevWidget) return;
+    _update: function _update(lastVNode, nextVNode) {
+        if (!nextVNode) return;
 
         var keysToEnter = this.keysToEnter;
         this.keysToEnter = [];
@@ -3128,10 +3828,10 @@ var Animate = Intact$1.extend({
     performEnter: function performEnter(key) {
         var _this = this;
 
-        var widget = this.childrenMap[key].widget;
+        var component = this.childrenMap[key].children;
         this.currentKeys[key] = true;
-        if (widget && widget.enter) {
-            widget.enter(function () {
+        if (component && component.enter) {
+            component.enter(function () {
                 return _this._doneEntering(key);
             });
         } else {
@@ -3141,10 +3841,10 @@ var Animate = Intact$1.extend({
     performLeave: function performLeave(key) {
         var _this2 = this;
 
-        var widget = this.childrenMap[key].widget;
+        var component = this.childrenMap[key].children;
         this.currentKeys[key] = true;
-        if (widget && widget.leave) {
-            widget.leave(function () {
+        if (component && component.leave) {
+            component.leave(function () {
                 return _this2._doneLeaving(key);
             });
         } else {
@@ -3205,22 +3905,16 @@ var Animate = Intact$1.extend({
  * @param index
  * @returns {*}
  */
-function getChildMap(children, ret, index) {
-    if (!children) {
-        return children;
+function getChildMap(children) {
+    if (!children) return children;
+    if (!isArray(children)) {
+        return defineProperty({}, children.key || '$', children);
     }
-    ret = ret || {};
-    index = index || '$0';
-    each(children, function (child, _index) {
-        _index = '$' + _index;
-        if (child && (child.type === 'Widget' || child.type === 'Thunk')) {
-            ret[child.key || _index] = child;
-        } else if (isArray$1(child)) {
-            getChildMap(child, ret, '' + index + _index);
-        } else {
-            ret['' + index + _index] = child;
-        }
-    });
+    var ret = {};
+    for (var i = 0; i < children.length; i++) {
+        var vNode = children[i];
+        ret[vNode.key] = vNode;
+    }
     return ret;
 }
 
@@ -3400,6 +4094,4 @@ Intact$1.prototype.Animate = Animate;
 Intact$1.Animate = Animate;
 Intact$1.Vdt = Vdt$1;
 
-return Intact$1;
-
-})));
+module.exports = Intact$1;

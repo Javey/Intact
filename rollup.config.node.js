@@ -1,28 +1,23 @@
 var commonjs = require('rollup-plugin-commonjs'),
     nodeResolve = require('rollup-plugin-node-resolve'),
-    replace = require('rollup-plugin-replace'),
     babel = require('rollup-plugin-babel');
 
 module.exports = {
     entry: 'src/index.js',
-    dest: 'dist/intact.js',
-    format: 'umd',
-    moduleName: 'Intact',
-    legacy: true,
+    dest: 'dist/index.js',
+    format: 'cjs',
     plugins: [
+        nodeResolve({module: true, jsnext: true, main: true}),
+        commonjs(),
         babel({
+            exclude: 'node_modules/**',
             presets: [
-                ['es2015', {modules: false, loose: true}]
+                ['es2015', {modules: false}]
             ],
             plugins: [
                 'external-helpers'
             ],
             babelrc: false
         }),
-        nodeResolve({module: true, jsnext: true, main: true, browser: true}),
-        commonjs(),
-        replace({
-            'process.env.NODE_ENV': "'production'"
-        })
     ]
 };

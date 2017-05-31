@@ -1,6 +1,7 @@
 import {
     inherit, extend, result, each, isFunction, 
-    isEqual, uniqueId, get, set, castPath, hasOwn
+    isEqual, uniqueId, get, set, castPath, hasOwn,
+    keys
 } from './utils';
 import Vdt from 'vdt';
 import {EMPTY_OBJ} from 'miss/src/vnode';
@@ -37,7 +38,8 @@ export default class Intact {
 
         const inited = () => {
             this.inited = true;
-            this.on('change', () => this.update());
+            // 为了兼容之前change事件必update的用法
+            this.on('change', (c, nouse, noUpdate) => !noUpdate && this.update());
             this.trigger('inited', this);
         };
         const ret = this._init();
@@ -70,12 +72,12 @@ export default class Intact {
             this.one('inited', () => {
                 const parent = placeholder.parentNode;
                 if (parent) {
-                    parent.replaceChild(this.init(), placeholder);
+                    parent.replaceChild(this.init(lastVNode, nextVNode), placeholder);
                 }
             });
             return placeholder;
         }
-        this.element = this.vdt.render(this);
+        this.element = this.vdt.render(this, this.parentDom, this.moutedQueue);
         this.rendered = true;
         this.trigger('rendered', this);
         this._create(lastVNode, nextVNode);
@@ -213,29 +215,11 @@ export default class Intact {
     set(key, val, options) {
         if (isNullOrUndefined(key)) return this;
 
-        let current = this.props,
-            changes = [];
-
+        let isSetByObject = false;
         if (typeof key === 'object') {
             options = val;
-            for (let attr in key) {
-                val = key[attr];
-                if (!isEqual(current[attr], val)) {
-                    changes.push(attr);
-                }
-                current[attr] = val;
-            }
-        } else {
-            // support set value by path like 'a.b.c'
-            if (!isEqual(get(current, key), val)) {
-                let path = castPath(key);
-                // trigger `change:a.b.c` and `change:a` events
-                changes.push(key);
-                if (path.length > 1) changes.push(path[0]);
-            }
-            set(current, key, val);
+            isSetByObject = true;
         }
-
         options = extend({
             silent: false,
             update: true,
@@ -246,31 +230,87 @@ export default class Intact {
             options.update = options.global;
         }
 
-        if (!options.silent && changes.length) {
-            // trigger `change` event
-            for (let i = 0, l = changes.length; i < l; i++) {
-                let attr = changes[i],
-                    value = get(current, attr),
-                    eventName = `change:${attr}`;
-                // options[eventName] && options[eventName].call(this, value);
-                this.trigger(eventName, this, value);
-            }
+        const props = this.props;
+        const changes = {};
 
-            // if (options.change) options.change.call(this, changes);
-            if (!options.silent && options.update) {
-                this.trigger('beforeChange', this, changes);
+        let hasChanged = false;
+
+        // 前面做了undefined的判断，这里不可能为undefined了
+        if (isSetByObject) {
+            if (!options.silent) {
+                for (let prop in key) {
+                    let nextValue = key[prop];
+                    let lastValue = props[prop];
+                    if (!isEqual(lastValue, nextValue)) {
+                        changes[prop] = [lastValue, nextValue];
+                        hasChanged = true;
+                    }
+                    // 即使相等，也要重新复制，因为有可能引用地址变更
+                    props[prop] = nextValue;
+                }
+            } else {
+                // 如果静默更新，则直接赋值
+                extend(props, key);
+            }
+        } else {
+            if (!options.silent) {
+                let lastValue = get(props, key);
+                if (!isEqual(lastValue, val)) {
+                    if (!hasOwn.call(props, key)) {
+                        changes[key] = [lastValue, val];
+                        let path = castPath(key);
+                        // 如果是像'a.b.c'这样设置属性，而该属性不存在
+                        // 依次触发change:a.b.c、change:a.b、change:a这样的事件
+                        // 先不设置props，去取老值
+                        let _props = [];
+                        for (let i = path.length - 1; i > 0; i--) {
+                            let prop = path.slice(0, i).join('.');
+                            let _lastValue = get(props, prop);
+                            changes[prop] = [_lastValue];
+                            _props.push(prop);
+                        }
+                        // 设置props后，去取新值
+                        // 对于引用数据类型，新老值可能一样
+                        set(props, key, val);
+                        for (let i = 0; i < _props.length; i++) {
+                            let prop = _props[i];
+                            changes[prop].push(get(props, prop));
+                        }
+                    } else {
+                        // 否则，只触发change:a.b.c
+                        changes[key] = [lastValue, val];
+                        set(props, key, val);
+                    }
+
+                    hasChanged = true;
+                } else {
+                    set(props, key, val);
+                }
+            } else {
+                set(props, key, val);
+            }
+        }
+
+        if (hasChanged) {
+            // trigger `change*` events
+            for (let prop in changes) {
+                let values = changes[prop];
+                this.trigger(`change:${prop}`, this, values[1], values[0]);
+            }
+            const changeKeys = keys(changes);
+            // 之前存在触发change就会调用update的用法，这里传入true做兼容
+            // 如果第三个参数为true，则不update
+            this.trigger('change', this, changeKeys, true);
+
+            if (options.update && this.rendered) {
                 clearTimeout(this._asyncUpdate);
                 let triggerChange = () => {
-                    this.trigger('change', this, changes);
-                    // trigger `changed` event
-                    for (let i = 0, l = changes.length; i < l; i++) {
-                        let attr = changes[i],
-                            value = get(current, attr),
-                            eventName = `changed:${attr}`;
-
-                        // if (options[eventName]) options[eventName].call(this, value);
-                        this.trigger(eventName, this, value);
+                    this.update();
+                    for (let prop in changes) {
+                        let values = changes[prop];
+                        this.trigger(`changed:${prop}`, this, values[1], values[0]);
                     }
+                    this.trigger('changed', this, changeKeys);
                 };
                 if (options.async) {
                     this._asyncUpdate = setTimeout(triggerChange);
@@ -349,19 +389,19 @@ Intact.extend = function(prototype = {}) {
 
 /**
  * 挂载组件到dom中
- * @param widget {Intact} Intact类或子类，也可以是实例化的对象
+ * @param Component {Intact} Intact类或子类
  * @param node {Node} html节点
  */
-Intact.mount = function(widget, node) {
-    if (widget.prototype && (widget.prototype instanceof Intact || widget === Intact)) {
-        widget = new widget();
+Intact.mount = function(Component, node) {
+    if (!Component || !(Component.prototype instanceof Intact || Component === Intact)) {
+        throw new Error('expect for a class component');
     }
-    if (widget.rendered) {
-        node.appendChild(widget.element);
-    } else if (widget.inited) {
-        node.appendChild(widget.init()); 
+    const c = new Component();
+    c.parentDom = node;
+    if (c.inited) {
+        c.init(); 
     } else {
-        widget.one('inited', () => node.appendChild(widget.init()));
+        c.one('inited', () => c.init());
     }
-    return widget;
+    return c;
 };
