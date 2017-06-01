@@ -11,9 +11,6 @@ export {extend, isArray, each, isObject, hasOwn};
  */
 export function inherit(Parent, prototype) {
     let Child = function(...args) {
-        if (!this || !(this instanceof Child || this.prototype instanceof Child)) {
-            return Parent.apply(Child, args);
-        }
         return Parent.apply(this, args);
     };
 

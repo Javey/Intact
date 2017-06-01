@@ -95,7 +95,7 @@ export default Intact.extend({
 
     _doneEntering(key) {
         delete this.currentKeys[key];
-        let map = getChildMap(this.children);
+        let map = getChildMap(this.get('children'));
         if (!map[key]) {
             this.performLeave(key);
         }
@@ -103,7 +103,7 @@ export default Intact.extend({
 
     _doneLeaving(key) {
         delete this.currentKeys[key];
-        let map = getChildMap(this.children);
+        let map = getChildMap(this.get('children'));
         if (map && map[key]) {
             this.performEnter(key);
         } else {

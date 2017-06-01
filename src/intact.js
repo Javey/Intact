@@ -7,48 +7,50 @@ import Vdt from 'vdt';
 import {EMPTY_OBJ} from 'miss/src/vnode';
 import {isNullOrUndefined, isEventProp} from 'miss/src/utils';
 
-export default class Intact {
-    constructor(props) {
-        if (!this.template) {
-            throw new Error('Can not instantiate when this.template does not exist.');
-        }
-        
-        props = extend({}, result(this, 'defaults'), props);
-
-        this._events = {};
-        this.props = {};
-        this.vdt = Vdt(this.template);
-        this.set(props, {silent: true});
-
-        // for compatibility v1.0
-        this.widgets = this.vdt.widgets || {};
-        this._widget = this.props.widget || uniqueId('widget');
-        this.attributes = this.props;
-
-        this.inited = false;
-        this.rendered = false;
-        this.mounted = false;
-
-        // for debug
-        this.displayName = this.displayName;
-
-        this.addEvents();
-
-        this._updateCount = 0;
-
-        const inited = () => {
-            this.inited = true;
-            // 为了兼容之前change事件必update的用法
-            this.on('change', (c, nouse, noUpdate) => !noUpdate && this.update());
-            this.trigger('inited', this);
-        };
-        const ret = this._init();
-        if (ret && ret.then) {
-            ret.then(inited);
-        } else {
-            inited();
-        }
+export default function Intact(props) {
+    if (!this.template) {
+        throw new Error('Can not instantiate when this.template does not exist.');
     }
+    
+    props = extend({}, result(this, 'defaults'), props);
+
+    this._events = {};
+    this.props = {};
+    this.vdt = Vdt(this.template);
+    this.set(props, {silent: true});
+
+    // for compatibility v1.0
+    this.widgets = this.vdt.widgets || {};
+    this._widget = this.props.widget || uniqueId('widget');
+    this.attributes = this.props;
+
+    this.inited = false;
+    this.rendered = false;
+    this.mounted = false;
+
+    // for debug
+    this.displayName = this.displayName;
+
+    this.addEvents();
+
+    this._updateCount = 0;
+
+    const inited = () => {
+        this.inited = true;
+        // 为了兼容之前change事件必update的用法
+        this.on('change', (c, nouse, noUpdate) => !noUpdate && this.update());
+        this.trigger('inited', this);
+    };
+    const ret = this._init();
+    if (ret && ret.then) {
+        ret.then(inited);
+    } else {
+        inited();
+    }
+}
+
+Intact.prototype = {
+    constructor: Intact,
 
     addEvents(props = this.props) {
         each(props , (value, key) => {
@@ -56,14 +58,14 @@ export default class Intact {
                 this.on(key.substr(3), value);
             }
         });
-    }
+    },
 
-    _init(props) {}
-    _create(lastVNode, nextVNode) {}
-    _mount(lastVNode, nextVNode) {}
-    _beforeUpdate(lastVNode, nextVNode) {}
-    _update(lastVNode, nextVNode) {}
-    _destroy(lastVNode, nextVNode) {}
+    _init(props) {},
+    _create(lastVNode, nextVNode) {},
+    _mount(lastVNode, nextVNode) {},
+    _beforeUpdate(lastVNode, nextVNode) {},
+    _update(lastVNode, nextVNode) {},
+    _destroy(lastVNode, nextVNode) {},
 
     init(lastVNode, nextVNode) {
         if (!this.inited) {
@@ -83,13 +85,13 @@ export default class Intact {
         this._create(lastVNode, nextVNode);
 
         return this.element;
-    }
+    },
 
     mount(lastVNode, nextVNode) {
         this.mounted = true;
         this.trigger('mounted', this);
         this._mount(lastVNode, nextVNode);
-    }
+    },
 
     update(lastVNode, nextVNode) {
         // 如果还没有渲染，则不去更新
@@ -98,7 +100,7 @@ export default class Intact {
         ++this._updateCount;
         if (this._updateCount > 1) return this.element;
         if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
-    }
+    },
 
     __update(lastVNode, nextVNode) {
         // 如果不存在nextVNode，则为直接调用update方法更新自己
@@ -119,7 +121,7 @@ export default class Intact {
         }
 
         return this.element;       
-    }
+    },
 
     _patchProps(lastProps, nextProps) {
         lastProps = lastProps || EMPTY_OBJ;
@@ -198,19 +200,19 @@ export default class Intact {
                 }
             }
         }
-    }
+    },
 
     destroy(lastVNode, nextVNode) {
         this.off();
         this.vdt.destroy();
         this._destroy(lastVNode, nextVNode);
-    }
+    },
 
     get(key, defaultValue) {
         if (key === undefined) return this.props;
 
         return get(this.props, key, defaultValue);
-    }
+    },
 
     set(key, val, options) {
         if (isNullOrUndefined(key)) return this;
@@ -321,13 +323,13 @@ export default class Intact {
         }
 
         return this;
-    }
+    },
 
     on(name, callback) {
         (this._events[name] || (this._events[name] = [])).push(callback);
 
         return this;
-    }
+    },
 
     one(name, callback) {
         const fn = (...args) => {
@@ -337,7 +339,7 @@ export default class Intact {
         this.on(name, fn);
 
         return this;
-    }
+    },
 
     off(name, callback) {
         if (name === undefined) {
@@ -362,7 +364,7 @@ export default class Intact {
         }
 
         return this;
-    }
+    },
 
     trigger(name, ...args) {
         let callbacks = this._events[name];
@@ -374,8 +376,8 @@ export default class Intact {
         }
 
         return this;
-    }
-}
+    },
+};
 
 /**
  * @brief 继承某个组件

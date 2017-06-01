@@ -159,29 +159,9 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 
 
-var classCallCheck = function (instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-};
 
-var createClass = function () {
-  function defineProperties(target, props) {
-    for (var i = 0; i < props.length; i++) {
-      var descriptor = props[i];
-      descriptor.enumerable = descriptor.enumerable || false;
-      descriptor.configurable = true;
-      if ("value" in descriptor) descriptor.writable = true;
-      Object.defineProperty(target, descriptor.key, descriptor);
-    }
-  }
 
-  return function (Constructor, protoProps, staticProps) {
-    if (protoProps) defineProperties(Constructor.prototype, protoProps);
-    if (staticProps) defineProperties(Constructor, staticProps);
-    return Constructor;
-  };
-}();
+
 
 
 
@@ -1029,9 +1009,6 @@ function inherit(Parent, prototype) {
             args[_key] = arguments[_key];
         }
 
-        if (!this || !(this instanceof Child || this.prototype instanceof Child)) {
-            return Parent.apply(Child, args);
-        }
         return Parent.apply(this, args);
     };
 
@@ -2045,7 +2022,7 @@ Stringifier.prototype = {
         if (element.children.length) {
             element.attributes.push({ name: 'children', value: element.children });
         }
-        var attributes = this._visitJSXAttribute(element.attributes, false, true);
+        var attributes = this._visitJSXAttribute(element.attributes, false, false);
         return this._visitJSXDirective(element, 'h(' + normalizeArgs([element.value, attributes.props, 'null', 'null', attributes.key, attributes.ref]) + ')');
     },
 
@@ -2115,7 +2092,8 @@ function createVNode(tag, props, children, className, key, ref) {
             if (tag.prototype.init) {
                 type = Types.ComponentClass;
             } else {
-                type = Types.ComponentFunction;
+                return tag(props);
+                // type = Types.ComponentFunction;
             }
             break;
         default:
@@ -2444,12 +2422,22 @@ function createComponentFunction(vNode, parentDom, mountedQueue) {
 
     createComponentFunctionVNode(vNode);
 
-    var dom = createElement(vNode.children, null, mountedQueue);
+    var children = vNode.children;
+    var dom = void 0;
+    // support ComponentFunction return an array for macro usage
+    if (isArray(children)) {
+        dom = [];
+        for (var i = 0; i < children.length; i++) {
+            dom.push(createElement(children[i], parentDom, mountedQueue));
+        }
+    } else {
+        dom = createElement(vNode.children, parentDom, mountedQueue);
+    }
     vNode.dom = dom;
 
-    if (parentDom) {
-        parentDom.appendChild(dom);
-    }
+    // if (parentDom) {
+    // parentDom.appendChild(dom);
+    // }
 
     if (ref) {
         createRef(dom, ref, mountedQueue);
@@ -2471,10 +2459,12 @@ function createCommentElement(vNode, parentDom) {
 
 function createComponentFunctionVNode(vNode) {
     var result = vNode.tag(vNode.props);
-    if (isArray(result)) {
-        throw new Error('ComponentFunction ' + vNode.tag.name + ' returned a invalid vNode');
-    } else if (isStringOrNumber(result)) {
+    if (isStringOrNumber(result)) {
         result = createTextVNode(result);
+    } else if (process.env.NODE_ENV !== 'production') {
+        if (isArray(result)) {
+            throw new Error('ComponentFunction ' + vNode.tag.name + ' returned a invalid vNode');
+        }
     }
 
     vNode.children = result;
@@ -2729,12 +2719,12 @@ function patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue) {
     var nextTag = nextVNode.tag;
 
     if (lastVNode.key !== nextVNode.key) {
-        removeElement(lastVNode.children, parentDom);
+        removeElements(lastVNode.children, parentDom);
         createComponentFunction(nextVNode, parentDom, mountedQueue);
     } else {
         nextVNode.dom = lastVNode.dom;
         createComponentFunctionVNode(nextVNode);
-        patchVNode(lastVNode.children, nextVNode.children, parentDom, mountedQueue);
+        patchChildren(lastVNode.children, nextVNode.children, parentDom, mountedQueue);
     }
 }
 
@@ -2764,7 +2754,7 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
         createElements(nextChildren, parentDom, mountedQueue);
     } else if (isStringOrNumber(lastChildren)) {
         setTextContent(parentDom, '');
-        createElement(nextChildren, parentDom);
+        createElement(nextChildren, parentDom, mountedQueue);
     } else {
         patchVNode(lastChildren, nextChildren, parentDom, mountedQueue);
     }
@@ -3296,7 +3286,7 @@ function compile(source, options) {
 
     switch (typeof source === 'undefined' ? 'undefined' : _typeof(source)) {
         case 'string':
-            var ast = parser.parse(source, { delimiters: options.delimiters }),
+            var ast = parser.parse(source, options),
                 hscript = stringifier.stringify(ast, options.autoReturn);
 
             hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', 'extend = _Vdt.utils.extend, _e = _Vdt.utils.error,' + (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj;', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
@@ -3320,431 +3310,397 @@ Vdt$1.compile = compile;
 Vdt$1.utils = utils;
 Vdt$1.setDelimiters = setDelimiters;
 Vdt$1.getDelimiters = getDelimiters;
+Vdt$1.configure = configure;
 
 // for compatibility v1.0
 Vdt$1.virtualDom = miss;
 
-var Intact$1 = function () {
-    function Intact(props) {
-        var _this = this;
+function Intact$1(props) {
+    var _this = this;
 
-        classCallCheck(this, Intact);
-
-        if (!this.template) {
-            throw new Error('Can not instantiate when this.template does not exist.');
-        }
-
-        props = extend({}, result(this, 'defaults'), props);
-
-        this._events = {};
-        this.props = {};
-        this.vdt = Vdt$1(this.template);
-        this.set(props, { silent: true });
-
-        // for compatibility v1.0
-        this.widgets = this.vdt.widgets || {};
-        this._widget = this.props.widget || uniqueId('widget');
-        this.attributes = this.props;
-
-        this.inited = false;
-        this.rendered = false;
-        this.mounted = false;
-
-        // for debug
-        this.displayName = this.displayName;
-
-        this.addEvents();
-
-        this._updateCount = 0;
-
-        var inited = function inited() {
-            _this.inited = true;
-            // 为了兼容之前change事件必update的用法
-            _this.on('change', function (c, nouse, noUpdate) {
-                return !noUpdate && _this.update();
-            });
-            _this.trigger('inited', _this);
-        };
-        var ret = this._init();
-        if (ret && ret.then) {
-            ret.then(inited);
-        } else {
-            inited();
-        }
+    if (!this.template) {
+        throw new Error('Can not instantiate when this.template does not exist.');
     }
 
-    createClass(Intact, [{
-        key: 'addEvents',
-        value: function addEvents() {
-            var _this2 = this;
+    props = extend({}, result(this, 'defaults'), props);
 
-            var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.props;
+    this._events = {};
+    this.props = {};
+    this.vdt = Vdt$1(this.template);
+    this.set(props, { silent: true });
 
-            each(props, function (value, key) {
-                if (isEventProp(key) && isFunction(value)) {
-                    _this2.on(key.substr(3), value);
+    // for compatibility v1.0
+    this.widgets = this.vdt.widgets || {};
+    this._widget = this.props.widget || uniqueId('widget');
+    this.attributes = this.props;
+
+    this.inited = false;
+    this.rendered = false;
+    this.mounted = false;
+
+    // for debug
+    this.displayName = this.displayName;
+
+    this.addEvents();
+
+    this._updateCount = 0;
+
+    var inited = function inited() {
+        _this.inited = true;
+        // 为了兼容之前change事件必update的用法
+        _this.on('change', function (c, nouse, noUpdate) {
+            return !noUpdate && _this.update();
+        });
+        _this.trigger('inited', _this);
+    };
+    var ret = this._init();
+    if (ret && ret.then) {
+        ret.then(inited);
+    } else {
+        inited();
+    }
+}
+
+Intact$1.prototype = {
+    constructor: Intact$1,
+
+    addEvents: function addEvents() {
+        var _this2 = this;
+
+        var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.props;
+
+        each(props, function (value, key) {
+            if (isEventProp(key) && isFunction(value)) {
+                _this2.on(key.substr(3), value);
+            }
+        });
+    },
+    _init: function _init(props) {},
+    _create: function _create(lastVNode, nextVNode) {},
+    _mount: function _mount(lastVNode, nextVNode) {},
+    _beforeUpdate: function _beforeUpdate(lastVNode, nextVNode) {},
+    _update: function _update(lastVNode, nextVNode) {},
+    _destroy: function _destroy(lastVNode, nextVNode) {},
+    init: function init(lastVNode, nextVNode) {
+        var _this3 = this;
+
+        if (!this.inited) {
+            // 支持异步组件
+            var placeholder = document.createComment('placeholder');
+            this.one('inited', function () {
+                var parent = placeholder.parentNode;
+                if (parent) {
+                    parent.replaceChild(_this3.init(lastVNode, nextVNode), placeholder);
                 }
             });
+            return placeholder;
         }
-    }, {
-        key: '_init',
-        value: function _init(props) {}
-    }, {
-        key: '_create',
-        value: function _create(lastVNode, nextVNode) {}
-    }, {
-        key: '_mount',
-        value: function _mount(lastVNode, nextVNode) {}
-    }, {
-        key: '_beforeUpdate',
-        value: function _beforeUpdate(lastVNode, nextVNode) {}
-    }, {
-        key: '_update',
-        value: function _update(lastVNode, nextVNode) {}
-    }, {
-        key: '_destroy',
-        value: function _destroy(lastVNode, nextVNode) {}
-    }, {
-        key: 'init',
-        value: function init(lastVNode, nextVNode) {
-            var _this3 = this;
+        this.element = this.vdt.render(this, this.parentDom, this.moutedQueue);
+        this.rendered = true;
+        this.trigger('rendered', this);
+        this._create(lastVNode, nextVNode);
 
-            if (!this.inited) {
-                // 支持异步组件
-                var placeholder = document.createComment('placeholder');
-                this.one('inited', function () {
-                    var parent = placeholder.parentNode;
-                    if (parent) {
-                        parent.replaceChild(_this3.init(lastVNode, nextVNode), placeholder);
-                    }
-                });
-                return placeholder;
-            }
-            this.element = this.vdt.render(this, this.parentDom, this.moutedQueue);
-            this.rendered = true;
-            this.trigger('rendered', this);
-            this._create(lastVNode, nextVNode);
+        return this.element;
+    },
+    mount: function mount(lastVNode, nextVNode) {
+        this.mounted = true;
+        this.trigger('mounted', this);
+        this._mount(lastVNode, nextVNode);
+    },
+    update: function update(lastVNode, nextVNode) {
+        // 如果还没有渲染，则不去更新
+        if (!this.rendered) return;
 
-            return this.element;
+        ++this._updateCount;
+        if (this._updateCount > 1) return this.element;
+        if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
+    },
+    __update: function __update(lastVNode, nextVNode) {
+        // 如果不存在nextVNode，则为直接调用update方法更新自己
+        // 否则则是父组件触发的子组件更新，此时需要更新一些状态
+        if (nextVNode) {
+            this._patchProps(lastVNode.props, nextVNode.props);
         }
-    }, {
-        key: 'mount',
-        value: function mount(lastVNode, nextVNode) {
-            this.mounted = true;
-            this.trigger('mounted', this);
-            this._mount(lastVNode, nextVNode);
+
+        this._beforeUpdate(lastVNode, nextVNode);
+        this.element = this.vdt.update(this);
+        this._update(lastVNode, nextVNode);
+
+        if (--this._updateCount > 0) {
+            // 如果更新完成，发现还有更新，则是在更新过程中又触发了更新
+            // 此时直接将_updateCount置为0，因为所有数据都已更新，只做最后一次模板更新即可
+            this._updateCount = 0;
+            return this.__update();
         }
-    }, {
-        key: 'update',
-        value: function update(lastVNode, nextVNode) {
-            // 如果还没有渲染，则不去更新
-            if (!this.rendered) return;
 
-            ++this._updateCount;
-            if (this._updateCount > 1) return this.element;
-            if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
-        }
-    }, {
-        key: '__update',
-        value: function __update(lastVNode, nextVNode) {
-            // 如果不存在nextVNode，则为直接调用update方法更新自己
-            // 否则则是父组件触发的子组件更新，此时需要更新一些状态
-            if (nextVNode) {
-                this._patchProps(lastVNode.props, nextVNode.props);
-            }
-
-            this._beforeUpdate(lastVNode, nextVNode);
-            this.element = this.vdt.update(this);
-            this._update(lastVNode, nextVNode);
-
-            if (--this._updateCount > 0) {
-                // 如果更新完成，发现还有更新，则是在更新过程中又触发了更新
-                // 此时直接将_updateCount置为0，因为所有数据都已更新，只做最后一次模板更新即可
-                this._updateCount = 0;
-                return this.__update();
-            }
-
-            return this.element;
-        }
-    }, {
-        key: '_patchProps',
-        value: function _patchProps(lastProps, nextProps) {
-            lastProps = lastProps || EMPTY_OBJ;
-            nextProps = nextProps || EMPTY_OBJ;
-            var lastValue = void 0;
-            var nextValue = void 0;
-            if (lastProps !== nextProps) {
-                // 需要先处理事件，因为prop变更可能触发相应的事件
-                var lastPropsWithoutEvents = void 0;
-                var nextPropsWithoutEvents = void 0;
-                if (nextProps !== EMPTY_OBJ) {
-                    for (var prop in nextProps) {
-                        nextValue = nextProps[prop];
-                        if (isEventProp(prop)) {
-                            this.set(prop, nextValue, { silent: true });
-                            lastValue = lastProps[prop];
-                            if (isFunction(nextValue)) {
-                                // 更换事件监听函数
-                                var eventName = prop.substr(3);
-                                if (isFunction(lastValue)) {
-                                    this.off(eventName, lastValue);
-                                }
-                                this.on(eventName, nextValue);
-                            } else if (isFunction(lastValue)) {
-                                // 解绑事件监听函数
-                                this.off(prop.substr(3), lastValue);
+        return this.element;
+    },
+    _patchProps: function _patchProps(lastProps, nextProps) {
+        lastProps = lastProps || EMPTY_OBJ;
+        nextProps = nextProps || EMPTY_OBJ;
+        var lastValue = void 0;
+        var nextValue = void 0;
+        if (lastProps !== nextProps) {
+            // 需要先处理事件，因为prop变更可能触发相应的事件
+            var lastPropsWithoutEvents = void 0;
+            var nextPropsWithoutEvents = void 0;
+            if (nextProps !== EMPTY_OBJ) {
+                for (var prop in nextProps) {
+                    nextValue = nextProps[prop];
+                    if (isEventProp(prop)) {
+                        this.set(prop, nextValue, { silent: true });
+                        lastValue = lastProps[prop];
+                        if (isFunction(nextValue)) {
+                            // 更换事件监听函数
+                            var eventName = prop.substr(3);
+                            if (isFunction(lastValue)) {
+                                this.off(eventName, lastValue);
                             }
-                        } else {
-                            if (!nextPropsWithoutEvents) {
-                                nextPropsWithoutEvents = {};
-                            }
-                            nextPropsWithoutEvents[prop] = nextValue;
+                            this.on(eventName, nextValue);
+                        } else if (isFunction(lastValue)) {
+                            // 解绑事件监听函数
+                            this.off(prop.substr(3), lastValue);
                         }
-                    }
-                    if (lastProps !== EMPTY_OBJ) {
-                        for (var _prop in lastProps) {
-                            if (!hasOwn.call(nextProps, _prop)) {
-                                lastValue = lastProps[_prop];
-                                if (isEventProp(_prop) && isFunction(lastValue)) {
-                                    this.set(_prop, undefined, { silent: true });
-                                    // 如果是事件，则要解绑事件
-                                    this.off(_prop.substr(3), lastValue);
-                                } else {
-                                    if (!lastPropsWithoutEvents) {
-                                        lastPropsWithoutEvents = {};
-                                    }
-                                    lastPropsWithoutEvents[_prop] = lastValue;
-                                }
-                            }
+                    } else {
+                        if (!nextPropsWithoutEvents) {
+                            nextPropsWithoutEvents = {};
                         }
+                        nextPropsWithoutEvents[prop] = nextValue;
                     }
-
-                    if (nextPropsWithoutEvents) {
-                        this.set(nextPropsWithoutEvents, { update: false });
-                    }
-                } else {
-                    for (var _prop2 in lastProps) {
-                        lastValue = lastProps[_prop2];
-                        if (isEventProp(_prop2) && isFunction(lastValue)) {
-                            this.set(_prop2, undefined, { silent: true });
-                            // 如果是事件，则要解绑事件
-                            this.off(_prop2.substr(3), lastValue);
-                        } else {
-                            if (!lastPropsWithoutEvents) {
-                                lastPropsWithoutEvents = {};
+                }
+                if (lastProps !== EMPTY_OBJ) {
+                    for (var _prop in lastProps) {
+                        if (!hasOwn.call(nextProps, _prop)) {
+                            lastValue = lastProps[_prop];
+                            if (isEventProp(_prop) && isFunction(lastValue)) {
+                                this.set(_prop, undefined, { silent: true });
+                                // 如果是事件，则要解绑事件
+                                this.off(_prop.substr(3), lastValue);
+                            } else {
+                                if (!lastPropsWithoutEvents) {
+                                    lastPropsWithoutEvents = {};
+                                }
+                                lastPropsWithoutEvents[_prop] = lastValue;
                             }
-                            lastPropsWithoutEvents[_prop2] = lastValue;
                         }
                     }
                 }
 
-                // 将不存在nextProps中，但存在lastProps中的属性，统统置为空
-                if (lastPropsWithoutEvents) {
-                    for (var _prop3 in lastPropsWithoutEvents) {
-                        this.set(_prop3, undefined, { update: false });
-                    }
-                }
-            }
-        }
-    }, {
-        key: 'destroy',
-        value: function destroy(lastVNode, nextVNode) {
-            this.off();
-            this.vdt.destroy();
-            this._destroy(lastVNode, nextVNode);
-        }
-    }, {
-        key: 'get',
-        value: function get$$2(key, defaultValue) {
-            if (key === undefined) return this.props;
-
-            return get$$1(this.props, key, defaultValue);
-        }
-    }, {
-        key: 'set',
-        value: function set$$2(key, val, options) {
-            var _this4 = this;
-
-            if (isNullOrUndefined(key)) return this;
-
-            var isSetByObject = false;
-            if ((typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object') {
-                options = val;
-                isSetByObject = true;
-            }
-            options = extend({
-                silent: false,
-                update: true,
-                async: false
-            }, options);
-            // 兼容老版本
-            if (hasOwn.call(options, 'global')) {
-                options.update = options.global;
-            }
-
-            var props = this.props;
-            var changes = {};
-
-            var hasChanged = false;
-
-            // 前面做了undefined的判断，这里不可能为undefined了
-            if (isSetByObject) {
-                if (!options.silent) {
-                    for (var prop in key) {
-                        var nextValue = key[prop];
-                        var lastValue = props[prop];
-                        if (!isEqual(lastValue, nextValue)) {
-                            changes[prop] = [lastValue, nextValue];
-                            hasChanged = true;
-                        }
-                        // 即使相等，也要重新复制，因为有可能引用地址变更
-                        props[prop] = nextValue;
-                    }
-                } else {
-                    // 如果静默更新，则直接赋值
-                    extend(props, key);
+                if (nextPropsWithoutEvents) {
+                    this.set(nextPropsWithoutEvents, { update: false });
                 }
             } else {
-                if (!options.silent) {
-                    var _lastValue2 = get$$1(props, key);
-                    if (!isEqual(_lastValue2, val)) {
-                        if (!hasOwn.call(props, key)) {
-                            changes[key] = [_lastValue2, val];
-                            var path = castPath(key);
-                            // 如果是像'a.b.c'这样设置属性，而该属性不存在
-                            // 依次触发change:a.b.c、change:a.b、change:a这样的事件
-                            // 先不设置props，去取老值
-                            var _props = [];
-                            for (var i = path.length - 1; i > 0; i--) {
-                                var _prop4 = path.slice(0, i).join('.');
-                                var _lastValue = get$$1(props, _prop4);
-                                changes[_prop4] = [_lastValue];
-                                _props.push(_prop4);
-                            }
-                            // 设置props后，去取新值
-                            // 对于引用数据类型，新老值可能一样
-                            set$$1(props, key, val);
-                            for (var _i = 0; _i < _props.length; _i++) {
-                                var _prop5 = _props[_i];
-                                changes[_prop5].push(get$$1(props, _prop5));
-                            }
-                        } else {
-                            // 否则，只触发change:a.b.c
-                            changes[key] = [_lastValue2, val];
-                            set$$1(props, key, val);
-                        }
-
-                        hasChanged = true;
+                for (var _prop2 in lastProps) {
+                    lastValue = lastProps[_prop2];
+                    if (isEventProp(_prop2) && isFunction(lastValue)) {
+                        this.set(_prop2, undefined, { silent: true });
+                        // 如果是事件，则要解绑事件
+                        this.off(_prop2.substr(3), lastValue);
                     } else {
+                        if (!lastPropsWithoutEvents) {
+                            lastPropsWithoutEvents = {};
+                        }
+                        lastPropsWithoutEvents[_prop2] = lastValue;
+                    }
+                }
+            }
+
+            // 将不存在nextProps中，但存在lastProps中的属性，统统置为空
+            if (lastPropsWithoutEvents) {
+                for (var _prop3 in lastPropsWithoutEvents) {
+                    this.set(_prop3, undefined, { update: false });
+                }
+            }
+        }
+    },
+    destroy: function destroy(lastVNode, nextVNode) {
+        this.off();
+        this.vdt.destroy();
+        this._destroy(lastVNode, nextVNode);
+    },
+    get: function get$$2(key, defaultValue) {
+        if (key === undefined) return this.props;
+
+        return get$$1(this.props, key, defaultValue);
+    },
+    set: function set$$2(key, val, options) {
+        var _this4 = this;
+
+        if (isNullOrUndefined(key)) return this;
+
+        var isSetByObject = false;
+        if ((typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object') {
+            options = val;
+            isSetByObject = true;
+        }
+        options = extend({
+            silent: false,
+            update: true,
+            async: false
+        }, options);
+        // 兼容老版本
+        if (hasOwn.call(options, 'global')) {
+            options.update = options.global;
+        }
+
+        var props = this.props;
+        var changes = {};
+
+        var hasChanged = false;
+
+        // 前面做了undefined的判断，这里不可能为undefined了
+        if (isSetByObject) {
+            if (!options.silent) {
+                for (var prop in key) {
+                    var nextValue = key[prop];
+                    var lastValue = props[prop];
+                    if (!isEqual(lastValue, nextValue)) {
+                        changes[prop] = [lastValue, nextValue];
+                        hasChanged = true;
+                    }
+                    // 即使相等，也要重新复制，因为有可能引用地址变更
+                    props[prop] = nextValue;
+                }
+            } else {
+                // 如果静默更新，则直接赋值
+                extend(props, key);
+            }
+        } else {
+            if (!options.silent) {
+                var _lastValue2 = get$$1(props, key);
+                if (!isEqual(_lastValue2, val)) {
+                    if (!hasOwn.call(props, key)) {
+                        changes[key] = [_lastValue2, val];
+                        var path = castPath(key);
+                        // 如果是像'a.b.c'这样设置属性，而该属性不存在
+                        // 依次触发change:a.b.c、change:a.b、change:a这样的事件
+                        // 先不设置props，去取老值
+                        var _props = [];
+                        for (var i = path.length - 1; i > 0; i--) {
+                            var _prop4 = path.slice(0, i).join('.');
+                            var _lastValue = get$$1(props, _prop4);
+                            changes[_prop4] = [_lastValue];
+                            _props.push(_prop4);
+                        }
+                        // 设置props后，去取新值
+                        // 对于引用数据类型，新老值可能一样
+                        set$$1(props, key, val);
+                        for (var _i = 0; _i < _props.length; _i++) {
+                            var _prop5 = _props[_i];
+                            changes[_prop5].push(get$$1(props, _prop5));
+                        }
+                    } else {
+                        // 否则，只触发change:a.b.c
+                        changes[key] = [_lastValue2, val];
                         set$$1(props, key, val);
                     }
+
+                    hasChanged = true;
                 } else {
                     set$$1(props, key, val);
                 }
+            } else {
+                set$$1(props, key, val);
             }
+        }
 
-            if (hasChanged) {
-                // trigger `change*` events
-                for (var _prop6 in changes) {
-                    var values$$1 = changes[_prop6];
-                    this.trigger('change:' + _prop6, this, values$$1[1], values$$1[0]);
-                }
-                var changeKeys = keys(changes);
-                // 之前存在触发change就会调用update的用法，这里传入true做兼容
-                // 如果第三个参数为true，则不update
-                this.trigger('change', this, changeKeys, true);
+        if (hasChanged) {
+            // trigger `change*` events
+            for (var _prop6 in changes) {
+                var values$$1 = changes[_prop6];
+                this.trigger('change:' + _prop6, this, values$$1[1], values$$1[0]);
+            }
+            var changeKeys = keys(changes);
+            // 之前存在触发change就会调用update的用法，这里传入true做兼容
+            // 如果第三个参数为true，则不update
+            this.trigger('change', this, changeKeys, true);
 
-                if (options.update && this.rendered) {
-                    clearTimeout(this._asyncUpdate);
-                    var triggerChange = function triggerChange() {
-                        _this4.update();
-                        for (var _prop7 in changes) {
-                            var _values = changes[_prop7];
-                            _this4.trigger('changed:' + _prop7, _this4, _values[1], _values[0]);
-                        }
-                        _this4.trigger('changed', _this4, changeKeys);
-                    };
-                    if (options.async) {
-                        this._asyncUpdate = setTimeout(triggerChange);
-                    } else {
-                        triggerChange();
+            if (options.update && this.rendered) {
+                clearTimeout(this._asyncUpdate);
+                var triggerChange = function triggerChange() {
+                    _this4.update();
+                    for (var _prop7 in changes) {
+                        var _values = changes[_prop7];
+                        _this4.trigger('changed:' + _prop7, _this4, _values[1], _values[0]);
                     }
+                    _this4.trigger('changed', _this4, changeKeys);
+                };
+                if (options.async) {
+                    this._asyncUpdate = setTimeout(triggerChange);
+                } else {
+                    triggerChange();
                 }
             }
-
-            return this;
         }
-    }, {
-        key: 'on',
-        value: function on(name, callback) {
-            (this._events[name] || (this._events[name] = [])).push(callback);
 
-            return this;
-        }
-    }, {
-        key: 'one',
-        value: function one(name, callback) {
-            var _this5 = this;
+        return this;
+    },
+    on: function on(name, callback) {
+        (this._events[name] || (this._events[name] = [])).push(callback);
 
-            var fn = function fn() {
-                for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                    args[_key] = arguments[_key];
-                }
+        return this;
+    },
+    one: function one(name, callback) {
+        var _this5 = this;
 
-                callback.apply(_this5, args);
-                _this5.off(name, fn);
-            };
-            this.on(name, fn);
-
-            return this;
-        }
-    }, {
-        key: 'off',
-        value: function off(name, callback) {
-            if (name === undefined) {
-                this._events = {};
-                return this;
+        var fn = function fn() {
+            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+                args[_key] = arguments[_key];
             }
 
-            var callbacks = this._events[name];
-            if (!callbacks) return this;
+            callback.apply(_this5, args);
+            _this5.off(name, fn);
+        };
+        this.on(name, fn);
 
-            if (callback === undefined) {
-                delete this._events[name];
-                return this;
-            }
-
-            for (var cb, i = 0; i < callbacks.length; i++) {
-                cb = callbacks[i];
-                if (cb === callback) {
-                    callbacks.splice(i, 1);
-                    i--;
-                }
-            }
-
+        return this;
+    },
+    off: function off(name, callback) {
+        if (name === undefined) {
+            this._events = {};
             return this;
         }
-    }, {
-        key: 'trigger',
-        value: function trigger(name) {
-            var callbacks = this._events[name];
 
-            if (callbacks) {
-                for (var _len2 = arguments.length, args = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-                    args[_key2 - 1] = arguments[_key2];
-                }
+        var callbacks = this._events[name];
+        if (!callbacks) return this;
 
-                for (var i = 0, l = callbacks.length; i < l; i++) {
-                    callbacks[i].apply(this, args);
-                }
-            }
-
+        if (callback === undefined) {
+            delete this._events[name];
             return this;
         }
-    }]);
-    return Intact;
-}();
 
+        for (var cb, i = 0; i < callbacks.length; i++) {
+            cb = callbacks[i];
+            if (cb === callback) {
+                callbacks.splice(i, 1);
+                i--;
+            }
+        }
+
+        return this;
+    },
+    trigger: function trigger(name) {
+        var callbacks = this._events[name];
+
+        if (callbacks) {
+            for (var _len2 = arguments.length, args = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+                args[_key2 - 1] = arguments[_key2];
+            }
+
+            for (var i = 0, l = callbacks.length; i < l; i++) {
+                callbacks[i].apply(this, args);
+            }
+        }
+
+        return this;
+    }
+};
+
+/**
+ * @brief 继承某个组件
+ *
+ * @param prototype
+ */
 Intact$1.extend = function () {
     var prototype = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
@@ -3853,14 +3809,14 @@ var Animate = Intact$1.extend({
     },
     _doneEntering: function _doneEntering(key) {
         delete this.currentKeys[key];
-        var map = getChildMap(this.children);
+        var map = getChildMap(this.get('children'));
         if (!map[key]) {
             this.performLeave(key);
         }
     },
     _doneLeaving: function _doneLeaving(key) {
         delete this.currentKeys[key];
-        var map = getChildMap(this.children);
+        var map = getChildMap(this.get('children'));
         if (map && map[key]) {
             this.performEnter(key);
         } else {

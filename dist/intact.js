@@ -12,22 +12,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
   return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
 };
 
-
-
-
-
-
-
-
-
-
-
-var classCallCheck = function (instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-};
-
 var toString$1 = Object.prototype.toString;
 
 var doc = typeof document === 'undefined' ? minDocument : document;
@@ -432,9 +416,6 @@ function inherit(Parent, prototype) {
             args[_key] = arguments[_key];
         }
 
-        if (!this || !(this instanceof Child || this.prototype instanceof Child)) {
-            return Parent.apply(Child, args);
-        }
         return Parent.apply(this, args);
     };
 
@@ -1448,7 +1429,7 @@ Stringifier.prototype = {
         if (element.children.length) {
             element.attributes.push({ name: 'children', value: element.children });
         }
-        var attributes = this._visitJSXAttribute(element.attributes, false, true);
+        var attributes = this._visitJSXAttribute(element.attributes, false, false);
         return this._visitJSXDirective(element, 'h(' + normalizeArgs([element.value, attributes.props, 'null', 'null', attributes.key, attributes.ref]) + ')');
     },
 
@@ -1518,7 +1499,8 @@ function createVNode(tag, props, children, className, key, ref) {
             if (tag.prototype.init) {
                 type = Types.ComponentClass;
             } else {
-                type = Types.ComponentFunction;
+                return tag(props);
+                // type = Types.ComponentFunction;
             }
             break;
         default:
@@ -1847,12 +1829,22 @@ function createComponentFunction(vNode, parentDom, mountedQueue) {
 
     createComponentFunctionVNode(vNode);
 
-    var dom = createElement(vNode.children, null, mountedQueue);
+    var children = vNode.children;
+    var dom = void 0;
+    // support ComponentFunction return an array for macro usage
+    if (isArray(children)) {
+        dom = [];
+        for (var i = 0; i < children.length; i++) {
+            dom.push(createElement(children[i], parentDom, mountedQueue));
+        }
+    } else {
+        dom = createElement(vNode.children, parentDom, mountedQueue);
+    }
     vNode.dom = dom;
 
-    if (parentDom) {
-        parentDom.appendChild(dom);
-    }
+    // if (parentDom) {
+    // parentDom.appendChild(dom);
+    // }
 
     if (ref) {
         createRef(dom, ref, mountedQueue);
@@ -1874,11 +1866,9 @@ function createCommentElement(vNode, parentDom) {
 
 function createComponentFunctionVNode(vNode) {
     var result = vNode.tag(vNode.props);
-    if (isArray(result)) {
-        throw new Error('ComponentFunction ' + vNode.tag.name + ' returned a invalid vNode');
-    } else if (isStringOrNumber(result)) {
+    if (isStringOrNumber(result)) {
         result = createTextVNode(result);
-    }
+    } else {}
 
     vNode.children = result;
 
@@ -2132,12 +2122,12 @@ function patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue) {
     var nextTag = nextVNode.tag;
 
     if (lastVNode.key !== nextVNode.key) {
-        removeElement(lastVNode.children, parentDom);
+        removeElements(lastVNode.children, parentDom);
         createComponentFunction(nextVNode, parentDom, mountedQueue);
     } else {
         nextVNode.dom = lastVNode.dom;
         createComponentFunctionVNode(nextVNode);
-        patchVNode(lastVNode.children, nextVNode.children, parentDom, mountedQueue);
+        patchChildren(lastVNode.children, nextVNode.children, parentDom, mountedQueue);
     }
 }
 
@@ -2167,7 +2157,7 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
         createElements(nextChildren, parentDom, mountedQueue);
     } else if (isStringOrNumber(lastChildren)) {
         setTextContent(parentDom, '');
-        createElement(nextChildren, parentDom);
+        createElement(nextChildren, parentDom, mountedQueue);
     } else {
         patchVNode(lastChildren, nextChildren, parentDom, mountedQueue);
     }
@@ -2699,7 +2689,7 @@ function compile(source, options) {
 
     switch (typeof source === 'undefined' ? 'undefined' : _typeof(source)) {
         case 'string':
-            var ast = parser.parse(source, { delimiters: options.delimiters }),
+            var ast = parser.parse(source, options),
                 hscript = stringifier.stringify(ast, options.autoReturn);
 
             hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', 'extend = _Vdt.utils.extend, _e = _Vdt.utils.error,' + (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj;', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
@@ -2723,60 +2713,61 @@ Vdt$1.compile = compile;
 Vdt$1.utils = utils;
 Vdt$1.setDelimiters = setDelimiters;
 Vdt$1.getDelimiters = getDelimiters;
+Vdt$1.configure = configure;
 
 // for compatibility v1.0
 Vdt$1.virtualDom = miss;
 
-var Intact$1 = function () {
-    function Intact(props) {
-        var _this = this;
+function Intact$1(props) {
+    var _this = this;
 
-        classCallCheck(this, Intact);
-
-        if (!this.template) {
-            throw new Error('Can not instantiate when this.template does not exist.');
-        }
-
-        props = extend({}, result(this, 'defaults'), props);
-
-        this._events = {};
-        this.props = {};
-        this.vdt = Vdt$1(this.template);
-        this.set(props, { silent: true });
-
-        // for compatibility v1.0
-        this.widgets = this.vdt.widgets || {};
-        this._widget = this.props.widget || uniqueId('widget');
-        this.attributes = this.props;
-
-        this.inited = false;
-        this.rendered = false;
-        this.mounted = false;
-
-        // for debug
-        this.displayName = this.displayName;
-
-        this.addEvents();
-
-        this._updateCount = 0;
-
-        var inited = function inited() {
-            _this.inited = true;
-            // 为了兼容之前change事件必update的用法
-            _this.on('change', function (c, nouse, noUpdate) {
-                return !noUpdate && _this.update();
-            });
-            _this.trigger('inited', _this);
-        };
-        var ret = this._init();
-        if (ret && ret.then) {
-            ret.then(inited);
-        } else {
-            inited();
-        }
+    if (!this.template) {
+        throw new Error('Can not instantiate when this.template does not exist.');
     }
 
-    Intact.prototype.addEvents = function addEvents() {
+    props = extend({}, result(this, 'defaults'), props);
+
+    this._events = {};
+    this.props = {};
+    this.vdt = Vdt$1(this.template);
+    this.set(props, { silent: true });
+
+    // for compatibility v1.0
+    this.widgets = this.vdt.widgets || {};
+    this._widget = this.props.widget || uniqueId('widget');
+    this.attributes = this.props;
+
+    this.inited = false;
+    this.rendered = false;
+    this.mounted = false;
+
+    // for debug
+    this.displayName = this.displayName;
+
+    this.addEvents();
+
+    this._updateCount = 0;
+
+    var inited = function inited() {
+        _this.inited = true;
+        // 为了兼容之前change事件必update的用法
+        _this.on('change', function (c, nouse, noUpdate) {
+            return !noUpdate && _this.update();
+        });
+        _this.trigger('inited', _this);
+    };
+    var ret = this._init();
+    if (ret && ret.then) {
+        ret.then(inited);
+    } else {
+        inited();
+    }
+}
+
+Intact$1.prototype = {
+    constructor: Intact$1,
+
+    addEvents: function addEvents() {
         var _this2 = this;
 
         var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.props;
@@ -2786,21 +2777,14 @@ var Intact$1 = function () {
                 _this2.on(key.substr(3), value);
             }
         });
-    };
-
-    Intact.prototype._init = function _init(props) {};
-
-    Intact.prototype._create = function _create(lastVNode, nextVNode) {};
-
-    Intact.prototype._mount = function _mount(lastVNode, nextVNode) {};
-
-    Intact.prototype._beforeUpdate = function _beforeUpdate(lastVNode, nextVNode) {};
-
-    Intact.prototype._update = function _update(lastVNode, nextVNode) {};
-
-    Intact.prototype._destroy = function _destroy(lastVNode, nextVNode) {};
-
-    Intact.prototype.init = function init(lastVNode, nextVNode) {
+    },
+    _init: function _init(props) {},
+    _create: function _create(lastVNode, nextVNode) {},
+    _mount: function _mount(lastVNode, nextVNode) {},
+    _beforeUpdate: function _beforeUpdate(lastVNode, nextVNode) {},
+    _update: function _update(lastVNode, nextVNode) {},
+    _destroy: function _destroy(lastVNode, nextVNode) {},
+    init: function init(lastVNode, nextVNode) {
         var _this3 = this;
 
         if (!this.inited) {
@@ -2820,24 +2804,21 @@ var Intact$1 = function () {
         this._create(lastVNode, nextVNode);
 
         return this.element;
-    };
-
-    Intact.prototype.mount = function mount(lastVNode, nextVNode) {
+    },
+    mount: function mount(lastVNode, nextVNode) {
         this.mounted = true;
         this.trigger('mounted', this);
         this._mount(lastVNode, nextVNode);
-    };
-
-    Intact.prototype.update = function update(lastVNode, nextVNode) {
+    },
+    update: function update(lastVNode, nextVNode) {
         // 如果还没有渲染，则不去更新
         if (!this.rendered) return;
 
         ++this._updateCount;
         if (this._updateCount > 1) return this.element;
         if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
-    };
-
-    Intact.prototype.__update = function __update(lastVNode, nextVNode) {
+    },
+    __update: function __update(lastVNode, nextVNode) {
         // 如果不存在nextVNode，则为直接调用update方法更新自己
         // 否则则是父组件触发的子组件更新，此时需要更新一些状态
         if (nextVNode) {
@@ -2856,9 +2837,8 @@ var Intact$1 = function () {
         }
 
         return this.element;
-    };
-
-    Intact.prototype._patchProps = function _patchProps(lastProps, nextProps) {
+    },
+    _patchProps: function _patchProps(lastProps, nextProps) {
         lastProps = lastProps || EMPTY_OBJ;
         nextProps = nextProps || EMPTY_OBJ;
         var lastValue = void 0;
@@ -2935,21 +2915,18 @@ var Intact$1 = function () {
                 }
             }
         }
-    };
-
-    Intact.prototype.destroy = function destroy(lastVNode, nextVNode) {
+    },
+    destroy: function destroy(lastVNode, nextVNode) {
         this.off();
         this.vdt.destroy();
         this._destroy(lastVNode, nextVNode);
-    };
-
-    Intact.prototype.get = function get$$2(key, defaultValue) {
+    },
+    get: function get$$2(key, defaultValue) {
         if (key === undefined) return this.props;
 
         return get$$1(this.props, key, defaultValue);
-    };
-
-    Intact.prototype.set = function set$$2(key, val, options) {
+    },
+    set: function set$$2(key, val, options) {
         var _this4 = this;
 
         if (isNullOrUndefined(key)) return this;
@@ -3060,15 +3037,13 @@ var Intact$1 = function () {
         }
 
         return this;
-    };
-
-    Intact.prototype.on = function on(name, callback) {
+    },
+    on: function on(name, callback) {
         (this._events[name] || (this._events[name] = [])).push(callback);
 
         return this;
-    };
-
-    Intact.prototype.one = function one(name, callback) {
+    },
+    one: function one(name, callback) {
         var _this5 = this;
 
         var fn = function fn() {
@@ -3082,9 +3057,8 @@ var Intact$1 = function () {
         this.on(name, fn);
 
         return this;
-    };
-
-    Intact.prototype.off = function off(name, callback) {
+    },
+    off: function off(name, callback) {
         if (name === undefined) {
             this._events = {};
             return this;
@@ -3107,9 +3081,8 @@ var Intact$1 = function () {
         }
 
         return this;
-    };
-
-    Intact.prototype.trigger = function trigger(name) {
+    },
+    trigger: function trigger(name) {
         var callbacks = this._events[name];
 
         if (callbacks) {
@@ -3123,11 +3096,14 @@ var Intact$1 = function () {
         }
 
         return this;
-    };
+    }
+};
 
-    return Intact;
-}();
-
+/**
+ * @brief 继承某个组件
+ *
+ * @param prototype
+ */
 Intact$1.extend = function () {
     var prototype = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
@@ -3236,14 +3212,14 @@ var Animate = Intact$1.extend({
     },
     _doneEntering: function _doneEntering(key) {
         delete this.currentKeys[key];
-        var map = getChildMap(this.children);
+        var map = getChildMap(this.get('children'));
         if (!map[key]) {
             this.performLeave(key);
         }
     },
     _doneLeaving: function _doneLeaving(key) {
         delete this.currentKeys[key];
-        var map = getChildMap(this.children);
+        var map = getChildMap(this.get('children'));
         if (map && map[key]) {
             this.performEnter(key);
         } else {
