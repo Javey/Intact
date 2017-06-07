@@ -137,7 +137,9 @@ var booleanProps = {
 
 var strictProps = {
     volume: true,
-    defaultChecked: true
+    defaultChecked: true,
+    value: true,
+    defaultValue: true
 };
 
 function MountedQueue() {
@@ -243,7 +245,16 @@ var Options = {
     // whether rendering on server or not
     server: false,
     // skip all whitespaces in template
-    skipWhitespace: false
+    skipWhitespace: false,
+    setModel: function setModel(data, key, value) {
+
+        // return function(e) {
+        data[key] = value; //typeof e === 'boolean' ? e : e.target.value;
+        // };
+    },
+    getModel: function getModel(data, key) {
+        return data[key];
+    }
 };
 
 var hasOwn = Object.prototype.hasOwnProperty;
@@ -367,6 +378,63 @@ function extend() {
     return dest;
 }
 
+function setCheckboxModel(data, key, trueValue, falseValue, e) {
+    var value = Options.getModel(data, key),
+        checked = e.target.checked;
+    if (isArray(value)) {
+        value = value.slice(0);
+        if (checked) {
+            value.push(trueValue);
+        } else {
+            var index = value.indexOf(trueValue);
+            if (~index) {
+                value.splice(index, 1);
+            }
+        }
+    } else {
+        value = checked ? trueValue : falseValue;
+    }
+    Options.setModel(data, key, value);
+}
+
+function detectCheckboxChecked(data, key, trueValue) {
+    var value = Options.getModel(data, key);
+    if (isArray(value)) {
+        return ~value.indexOf(trueValue);
+    } else {
+        return value === trueValue;
+    }
+}
+
+function setSelectModel(data, key, e) {
+    var target = e.target,
+        multiple = target.multiple,
+        value,
+        i,
+        opt,
+        options = target.options;
+
+    if (multiple) {
+        value = [];
+        for (i = 0; i < options.length; i++) {
+            opt = options[i];
+            if (opt.selected) {
+                value.push(isNullOrUndefined(opt._value) ? opt.value : opt._value);
+            }
+        }
+    } else {
+        for (i = 0; i < options.length; i++) {
+            opt = options[i];
+            if (opt.selected) {
+                console.log(opt._value);
+                value = isNullOrUndefined(opt._value) ? opt.value : opt._value;
+                break;
+            }
+        }
+    }
+    Options.setModel(data, key, value);
+}
+
 var error$1 = function () {
     var hasConsole = typeof console !== 'undefined';
     return hasConsole ? function (e) {
@@ -401,15 +469,12 @@ var utils = (Object.freeze || Object)({
 	isTextTag: isTextTag,
 	isDirective: isDirective,
 	extend: extend,
+	setCheckboxModel: setCheckboxModel,
+	detectCheckboxChecked: detectCheckboxChecked,
+	setSelectModel: setSelectModel,
 	error: error$1
 });
 
-/**
- * inherit
- * @param Parent
- * @param prototype
- * @returns {Function}
- */
 function inherit(Parent, prototype) {
     var Child = function Child() {
         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
@@ -802,20 +867,15 @@ Parser.prototype = {
         var start = this.index,
             l = stopChars.length,
             i,
-            charCode,
-            skipped = false;
+            charCode;
+
         loop: while (this.index < this.length) {
             charCode = this._charCode();
             if (isWhiteSpace(charCode)) {
                 if (charCode === 10) {
                     this._updateLine();
                 }
-                // skip whitespace chars
-                if (this.options.skipWhitespace && !skipped) {
-                    start++;
-                }
             } else {
-                skipped = true;
                 for (i = 0; i < l; i++) {
                     if (typeof stopChars[i] === 'function' && stopChars[i].call(this) || this._isExpect(stopChars[i])) {
                         break loop;
@@ -825,7 +885,7 @@ Parser.prototype = {
             this._updateIndex();
         }
 
-        return start === this.index ? null : this._type(Type$1.JSXText, {
+        return this._type(Type$1.JSXText, {
             value: this.source.slice(start, this.index)
         });
     },
@@ -1006,14 +1066,13 @@ Parser.prototype = {
                 break;
         }
 
+        this._skipWhitespaceBetweenElements(endTag);
         while (this.index < this.length) {
             if (this._isExpect(endTag)) {
                 break;
             }
             current = this._parseJSXChild(element, endTag, current);
-            if (current) {
-                children.push(current);
-            }
+            children.push(current);
         }
         this._parseJSXClosingElement();
         return children;
@@ -1029,19 +1088,18 @@ Parser.prototype = {
             ret = this._scanJSXText([endTag, Delimiters[0]]);
         } else if (this._isElementStart()) {
             ret = this._parseJSXElement();
+            this._skipWhitespaceBetweenElements(endTag);
         } else {
             ret = this._scanJSXText([function () {
                 return this._isExpect(endTag) || this._isElementStart();
             }, Delimiters[0]]);
         }
 
-        if (ret) {
-            ret.prev = undefined;
-            ret.next = undefined;
-            if (prev) {
-                prev.next = ret;
-                ret.prev = prev;
-            }
+        ret.prev = undefined;
+        ret.next = undefined;
+        if (prev) {
+            prev.next = ret;
+            ret.prev = prev;
         }
 
         return ret;
@@ -1080,14 +1138,33 @@ Parser.prototype = {
         return ret;
     },
 
-    _char: function _char(index) {
-        arguments.length === 0 && (index = this.index);
+    _char: function _char() {
+        var index = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.index;
+
         return this.source.charAt(index);
     },
 
-    _charCode: function _charCode(index) {
-        arguments.length === 0 && (index = this.index);
+    _charCode: function _charCode() {
+        var index = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.index;
+
         return this.source.charCodeAt(index);
+    },
+
+    _skipWhitespaceBetweenElements: function _skipWhitespaceBetweenElements(endTag) {
+        if (!this.options.skipWhitespace) return;
+
+        var start = this.index;
+        while (start < this.length) {
+            var code = this._charCode(start);
+            if (isWhiteSpace(code)) {
+                start++;
+            } else if (this._isExpect(endTag, start) || this._isElementStart(start)) {
+                this._skipWhitespace();
+                break;
+            } else {
+                break;
+            }
+        }
     },
 
     _skipWhitespace: function _skipWhitespace() {
@@ -1111,11 +1188,15 @@ Parser.prototype = {
     },
 
     _isExpect: function _isExpect(str) {
-        return this.source.slice(this.index, this.index + str.length) === str;
+        var index = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.index;
+
+        return this.source.slice(index, index + str.length) === str;
     },
 
     _isElementStart: function _isElementStart() {
-        return this._char() === '<' && (this._isExpect('<!--') || elementNameRegexp.test(this.source.slice(this.index)));
+        var index = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.index;
+
+        return this._char(index) === '<' && (this._isExpect('<!--') || elementNameRegexp.test(this.source.slice(index)));
     },
 
     _type: function _type(type, ret) {
@@ -1259,7 +1340,7 @@ Stringifier.prototype = {
     },
 
     _visitJSXElement: function _visitJSXElement(element) {
-        var attributes = this._visitJSXAttribute(element.attributes, true, true);
+        var attributes = this._visitJSXAttribute(element, true, true);
         return "h(" + normalizeArgs(["'" + element.value + "'", attributes.props, this._visitJSXChildren(element.children), attributes.className, attributes.key, attributes.ref]) + ')';
     },
 
@@ -1372,11 +1453,15 @@ Stringifier.prototype = {
         return ret.join('+');
     },
 
-    _visitJSXAttribute: function _visitJSXAttribute(attributes, individualClassName, individualKeyAndRef) {
+    _visitJSXAttribute: function _visitJSXAttribute(element, individualClassName, individualKeyAndRef) {
         var ret = [],
+            attributes = element.attributes,
             className$$1,
             key,
-            ref;
+            ref,
+            type = 'text',
+            hasModel = false,
+            addition = { trueValue: true, falseValue: false };
         each(attributes, function (attr) {
             var name = attrMap(attr.name),
                 value = this._visitJSXAttributeValue(attr.value);
@@ -1389,7 +1474,7 @@ Stringifier.prototype = {
                 // process className individually
                 if (attr.value.type === Type$2.JSXExpressionContainer) {
                     // for class={ {active: true} }
-                    value = '_Vdt.utils.className(' + value + ')';
+                    value = '_className(' + value + ')';
                 }
                 if (individualClassName) {
                     className$$1 = value;
@@ -1401,9 +1486,27 @@ Stringifier.prototype = {
             } else if (name === 'ref' && individualKeyAndRef) {
                 ref = value;
                 return;
+            } else if (name === 'v-model') {
+                hasModel = value;
+                return;
+            } else if (name === 'v-model-true') {
+                addition.trueValue = value;
+                return;
+            } else if (name === 'v-model-false') {
+                addition.falseValue = value;
+                return;
+            } else if (name === 'type') {
+                // save the type value for v-model of input element
+                type = value;
+            } else if (name === 'value') {
+                addition.value = value;
             }
             ret.push("'" + name + "': " + value);
         }, this);
+
+        if (hasModel) {
+            this._visitJSXAttributeModel(element, hasModel, ret, type, addition);
+        }
 
         return {
             props: ret.length ? '{' + ret.join(', ') + '}' : 'null',
@@ -1411,6 +1514,55 @@ Stringifier.prototype = {
             ref: ref || 'null',
             key: key || 'null'
         };
+    },
+
+    _visitJSXAttributeModel: function _visitJSXAttributeModel(element, value, ret, type, addition) {
+        var valueName = 'value',
+            eventName = 'change';
+        if (element.type === Type$2.JSXElement) {
+            switch (element.value) {
+                case 'input':
+                    valueName = 'value';
+                    switch (type) {
+                        case "'file'":
+                            eventName = 'change';
+                            break;
+                        case "'radio'":
+                        case "'checkbox'":
+                            var trueValue = addition.trueValue,
+                                falseValue = addition.falseValue,
+                                inputValue = addition.value;
+                            if (isNullOrUndefined(inputValue)) {
+                                ret.push('checked: _getModel(self, ' + value + ') === ' + trueValue);
+                                ret.push('\'ev-change\': function(__e) {\n                                    _setModel(self, ' + value + ', __e.target.checked ? ' + trueValue + ' : ' + falseValue + ');\n                                }');
+                            } else {
+                                if (type === "'radio'") {
+                                    ret.push('checked: _getModel(self, ' + value + ') === ' + inputValue);
+                                    ret.push('\'ev-change\': function(__e) { \n                                        _setModel(self, ' + value + ', __e.target.checked ? ' + inputValue + ' : ' + falseValue + ');\n                                    }');
+                                } else {
+                                    ret.push('checked: _detectCheckboxChecked(self, ' + value + ', ' + inputValue + ')');
+                                    ret.push('\'ev-change\': function(__e) { \n                                        _setCheckboxModel(self, ' + value + ', ' + inputValue + ', ' + falseValue + ', __e);\n                                    }');
+                                }
+                            }
+                            return;
+                        default:
+                            eventName = 'input';
+                            break;
+                    }
+                    break;
+                case 'select':
+                    ret.push('value: _getModel(self, ' + value + ')');
+                    ret.push('\'ev-change\': function(__e) {\n                        _setSelectModel(self, ' + value + ', __e);\n                    }');
+                    return;
+                default:
+                    break;
+            }
+            ret.push(valueName + ': _getModel(self, ' + value + ')');
+            ret.push('\'ev-' + eventName + '\': function(__e) { _setModel(self, ' + value + ', __e.target.value) }');
+        } else if (element.type === Type$2.JSXWidget) {
+            ret.push('value: _getModel(self, ' + value + ')');
+            ret.push('\'ev-change:value\': function(__c, __n) { _setModel(self, ' + value + ', __n) }');
+        }
     },
 
     _visitJSXAttributeValue: function _visitJSXAttributeValue(value) {
@@ -1429,7 +1581,7 @@ Stringifier.prototype = {
         if (element.children.length) {
             element.attributes.push({ name: 'children', value: element.children });
         }
-        var attributes = this._visitJSXAttribute(element.attributes, false, false);
+        var attributes = this._visitJSXAttribute(element, false, false);
         return this._visitJSXDirective(element, 'h(' + normalizeArgs([element.value, attributes.props, 'null', 'null', attributes.key, attributes.ref]) + ')');
     },
 
@@ -1440,7 +1592,7 @@ Stringifier.prototype = {
     },
 
     _visitJSXVdt: function _visitJSXVdt(element, isRoot) {
-        var ret = ['(function(blocks) {', 'var _blocks = {}, __blocks = extend({}, blocks), _obj = ' + this._visitJSXAttribute(element.attributes, false, false).props + ' || {};', 'if (_obj.hasOwnProperty("arguments")) { extend(_obj, _obj.arguments === null ? obj : _obj.arguments); delete _obj.arguments; }', 'return ' + element.value + '.call(this, _obj, _Vdt, '].join('\n'),
+        var ret = ['(function(blocks) {', 'var _blocks = {}, __blocks = extend({}, blocks), _obj = ' + this._visitJSXAttribute(element, false, false).props + ' || {};', 'if (_obj.hasOwnProperty("arguments")) { extend(_obj, _obj.arguments === null ? obj : _obj.arguments); delete _obj.arguments; }', 'return ' + element.value + '.call(this, _obj, _Vdt, '].join('\n'),
             blocks = [];
 
         each(element.children, function (child) {
@@ -1467,9 +1619,13 @@ var Types = {
     ComponentFunction: 1 << 3,
     ComponentInstance: 1 << 4,
 
-    HtmlComment: 1 << 5
+    HtmlComment: 1 << 5,
+
+    InputElement: 1 << 6,
+    SelectElement: 1 << 7,
+    TextareaElement: 1 << 8
 };
-Types.Element = Types.HtmlElement;
+Types.Element = Types.HtmlElement | Types.InputElement | Types.SelectElement | Types.TextareaElement;
 Types.ComponentClassOrInstance = Types.ComponentClass | Types.ComponentInstance;
 Types.TextElement = Types.Text | Types.HtmlComment;
 
@@ -1493,7 +1649,15 @@ function createVNode(tag, props, children, className, key, ref) {
     props || (props = EMPTY_OBJ);
     switch (typeof tag === 'undefined' ? 'undefined' : _typeof(tag)) {
         case 'string':
-            type = Types.HtmlElement;
+            if (tag === 'input') {
+                type = Types.InputElement;
+            } else if (tag === 'select') {
+                type = Types.SelectElement;
+            } else if (tag === 'textarea') {
+                type = Types.TextareaElement;
+            } else {
+                type = Types.HtmlElement;
+            }
             break;
         case 'function':
             if (tag.prototype.init) {
@@ -1717,6 +1881,68 @@ function attachEventToDocument(name, delegatedRoots) {
     return docEvent;
 }
 
+function processSelect(vNode, dom, nextProps, isRender) {
+    var multiple = nextProps.multiple;
+    if (multiple !== dom.multiple) {
+        dom.multiple = multiple;
+    }
+    var children = vNode.children;
+
+    if (!isNullOrUndefined(children)) {
+        var value = nextProps.value;
+        if (isRender && isNullOrUndefined(value)) {
+            value = nextProps.defaultValue;
+        }
+
+        var flag = { hasSelected: false };
+        if (isArray(children)) {
+            for (var i = 0; i < children.length; i++) {
+                updateChildOptionGroup(children[i], value, flag);
+            }
+        } else {
+            updateChildOptionGroup(children, value, flag);
+        }
+        if (!flag.hasSelected) {
+            dom.value = '';
+        }
+    }
+}
+
+function updateChildOptionGroup(vNode, value, flag) {
+    var tag = vNode.tag;
+
+    if (tag === 'optgroup') {
+        var children = vNode.children;
+
+        if (isArray(children)) {
+            for (var i = 0; i < children.length; i++) {
+                updateChildOption(children[i], value, flag);
+            }
+        } else {
+            updateChildOption(children, value, flag);
+        }
+    } else {
+        updateChildOption(vNode, value, flag);
+    }
+}
+
+function updateChildOption(vNode, value, flag) {
+    // skip text and comment node
+    if (vNode.type & Types.HtmlElement) {
+        var props = vNode.props;
+        var dom = vNode.dom;
+
+        if (isArray(value) && indexOf(value, props.value) !== -1 || props.value === value) {
+            dom.selected = true;
+            if (!flag.hasSelected) flag.hasSelected = true;
+        } else if (!isNullOrUndefined(value) || !isNullOrUndefined(props.selected)) {
+            var selected = !!props.selected;
+            if (!flag.hasSelected && selected) flag.hasSelected = true;
+            dom.selected = selected;
+        }
+    }
+}
+
 function render(vNode, parentDom, mountedQueue) {
     if (isNullOrUndefined(vNode)) return;
     var isTrigger = false;
@@ -1733,7 +1959,7 @@ function render(vNode, parentDom, mountedQueue) {
 
 function createElement(vNode, parentDom, mountedQueue) {
     var type = vNode.type;
-    if (type & Types.HtmlElement) {
+    if (type & Types.Element) {
         return createHtmlElement(vNode, parentDom, mountedQueue);
     } else if (type & Types.Text) {
         return createTextElement(vNode, parentDom);
@@ -1768,8 +1994,12 @@ function createHtmlElement(vNode, parentDom, mountedQueue) {
     }
 
     if (props !== EMPTY_OBJ) {
+        var isSelectElement = (vNode.type & Types.SelectElement) > 0;
         for (var prop in props) {
-            patchProp(prop, null, props[prop], dom);
+            patchProp(prop, null, props[prop], dom, isSelectElement);
+        }
+        if (isSelectElement) {
+            processSelect(vNode, dom, props, true);
         }
     }
 
@@ -2414,8 +2644,12 @@ function patchProps(lastVNode, nextVNode) {
     var dom = nextVNode.dom;
     var prop = void 0;
     if (nextProps !== EMPTY_OBJ) {
+        var isSelectElement = (nextVNode.type & Types.SelectElement) > 0;
         for (prop in nextProps) {
-            patchProp(prop, lastProps[prop], nextProps[prop], dom);
+            patchProp(prop, lastProps[prop], nextProps[prop], dom, isSelectElement);
+        }
+        if (isSelectElement) {
+            processSelect(nextVNode, dom, nextProps);
         }
     }
     if (lastProps !== EMPTY_OBJ) {
@@ -2427,9 +2661,9 @@ function patchProps(lastVNode, nextVNode) {
     }
 }
 
-function patchProp(prop, lastValue, nextValue, dom) {
+function patchProp(prop, lastValue, nextValue, dom, isSelectElement) {
     if (lastValue !== nextValue) {
-        if (skipProps[prop]) {
+        if (skipProps[prop] || isSelectElement && prop === 'value') {
             return;
         } else if (booleanProps[prop]) {
             dom[prop] = !!nextValue;
@@ -2437,6 +2671,10 @@ function patchProp(prop, lastValue, nextValue, dom) {
             var value = isNullOrUndefined(nextValue) ? '' : nextValue;
             if (dom[prop] !== value) {
                 dom[prop] = value;
+            }
+            // add a private property _value for select an object
+            if (prop === 'value') {
+                dom._value = value;
             }
         } else if (isNullOrUndefined(nextValue)) {
             removeProp(prop, lastValue, dom);
@@ -2692,7 +2930,7 @@ function compile(source, options) {
             var ast = parser.parse(source, options),
                 hscript = stringifier.stringify(ast, options.autoReturn);
 
-            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', 'extend = _Vdt.utils.extend, _e = _Vdt.utils.error,' + (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj;', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
+            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', '__u = _Vdt.utils, extend = __u.extend, _e = __u.error, _className = __u.className,', '__o = __u.Options, _getModel = __o.getModel, _setModel = __o.setModel,', '_setCheckboxModel = __u.setCheckboxModel, _detectCheckboxChecked = __u.detectCheckboxChecked,', '_setSelectModel = __u.setSelectModel,', (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj;', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
             templateFn = options.onlySource ? function () {} : new Function('obj', '_Vdt', 'blocks', hscript);
             templateFn.source = 'function(obj, _Vdt, blocks) {\n' + hscript + '\n}';
             break;
@@ -2798,7 +3036,7 @@ Intact$1.prototype = {
             });
             return placeholder;
         }
-        this.element = this.vdt.render(this, this.parentDom, this.moutedQueue);
+        this.element = this.vdt.render(this, this.parentDom, this.mountedQueue);
         this.rendered = true;
         this.trigger('rendered', this);
         this._create(lastVNode, nextVNode);
@@ -3132,7 +3370,6 @@ Intact$1.mount = function (Component, node) {
     return c;
 };
 
-// Animate Widget for animation
 var Animate = Intact$1.extend({
     displayName: 'Animate',
 
@@ -3454,6 +3691,14 @@ var TransitionEvents = {
 Intact$1.prototype.Animate = Animate;
 Intact$1.Animate = Animate;
 Intact$1.Vdt = Vdt$1;
+Vdt$1.configure({
+    getModel: function getModel(self, key) {
+        return self.get(key);
+    },
+    setModel: function setModel(self, key, value) {
+        self.set(key, value, { async: true });
+    }
+});
 
 return Intact$1;
 

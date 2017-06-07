@@ -354,4 +354,104 @@ describe('Simple Test', function() {
             // instance.rendered.should.be.true; 
         // });
     });
+
+    describe('v-model', function() {
+        it('should handle v-model for input correctly', function() {
+            var Component = Intact.extend({
+                template: '<input v-model="a" />'
+            });
+
+            var instance = new Component();
+            var dom = instance.init();
+            document.body.appendChild(dom);
+            instance.set('a', '1');
+            dom.value.should.eql('1');
+
+            dom.value = '123';
+            var event = new Event('input', {bubbles: true});
+            dom.dispatchEvent(event);
+            instance.get('a').should.eql('123');
+
+            document.body.removeChild(dom);
+        });
+
+        it('should handle v-model for single select correctly', function() {
+            var Component = Intact.extend({
+                defaults: {
+                    list: [1, '2', '3']
+                },
+                template: '<select v-model="a"><option v-for={self.get("list")} value={value}>{value}</option></select>'
+            });
+
+            var instance = new Component();
+            var dom = instance.init();
+            document.body.appendChild(dom);
+
+            dom.value.should.eql('');
+
+            instance.set('a', '2');
+            dom.value.should.eql('2');
+
+            dom.value = '1';
+            var event = new Event('change', {bubbles: true});
+            dom.dispatchEvent(event);
+            instance.get('a').should.eql(1);
+
+            document.body.removeChild(dom);
+        });
+
+        it('should handle v-model for multiple select correctly', function() {
+            var Component = Intact.extend({
+                defaults: {
+                    list: [1, '2', '3']
+                },
+                template: '<select v-model="a" multiple={true}><option v-for={self.get("list")} value={value}>{value}</option></select>'
+            });
+
+            var instance = new Component();
+            var dom = instance.init();
+            document.body.appendChild(dom);
+            window._i = instance;
+
+            dom.value.should.eql('');
+
+            instance.set('a', [1, '2', 3]);
+            dom.options[0].selected.should.eql(true);
+            dom.options[1].selected.should.eql(true);
+            dom.options[2].selected.should.eql(false);
+
+            dom.options[0].selected = true;
+            dom.options[1].selected = false;
+            dom.options[2].selected = true;
+            var event = new Event('change', {bubbles: true});
+            dom.dispatchEvent(event);
+            instance.get('a').should.eql([1, '3']);
+
+            document.body.removeChild(dom);
+        });
+
+        it('should handle v-model for component correctly', function() {
+            var SubComponent = Intact.extend({
+                template: '<div>{self.get("value")}</div>'
+            });
+            var Component = Intact.extend({
+                template: '<SubComponent v-model="a" ref={function(i) {self.sub = i}}/>',
+                _init: function() {
+                    this.SubComponent = SubComponent;
+                }
+            });
+
+            var instance = Intact.mount(Component, document.body);
+            var dom = instance.element;
+
+            instance.set('a', 1);
+            dom.firstChild.nodeValue.should.eql('1');
+            instance.sub.get('value').should.eql(1);
+
+            instance.sub.set('value', 2);
+            instance.get('a').should.eql(2);
+
+            document.body.removeChild(dom);
+        });
+    });
 });

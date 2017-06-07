@@ -79,7 +79,7 @@ Intact.prototype = {
             });
             return placeholder;
         }
-        this.element = this.vdt.render(this, this.parentDom, this.moutedQueue);
+        this.element = this.vdt.render(this, this.parentDom, this.mountedQueue);
         this.rendered = true;
         this.trigger('rendered', this);
         this._create(lastVNode, nextVNode);
