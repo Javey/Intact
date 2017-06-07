@@ -28,6 +28,9 @@ export default function Intact(props) {
     this.rendered = false;
     this.mounted = false;
 
+    // if the flag is false, every set operation will not lead to update 
+    this._startRender = false;
+
     // for debug
     this.displayName = this.displayName;
 
@@ -38,8 +41,8 @@ export default function Intact(props) {
     const inited = () => {
         this.inited = true;
         // 为了兼容之前change事件必update的用法
-        this.on('change', (c, nouse, noUpdate) => !noUpdate && this.update());
-        this.trigger('inited', this);
+        // this.on('change', () => this.update());
+        this.trigger('$inited', this);
     };
     const ret = this._init();
     if (ret && ret.then) {
@@ -71,7 +74,7 @@ Intact.prototype = {
         if (!this.inited) {
             // 支持异步组件
             const placeholder = document.createComment('placeholder');
-            this.one('inited', () => {
+            this.one('$inited', () => {
                 const parent = placeholder.parentNode;
                 if (parent) {
                     parent.replaceChild(this.init(lastVNode, nextVNode), placeholder);
@@ -79,9 +82,17 @@ Intact.prototype = {
             });
             return placeholder;
         }
-        this.element = this.vdt.render(this, this.parentDom, this.mountedQueue);
+        this._startRender = true;
+        if (lastVNode) {
+            // make the dom not be replaced, but update the last one
+            this.vdt.vNode = lastVNode.children.vdt.vNode;
+            this.element = this.vdt.update(this);
+        } else {
+            this.element = this.vdt.render(this, this.parentDom, this.mountedQueue);
+        }
         this.rendered = true;
-        this.trigger('rendered', this);
+        if (this._pendingUpdate) this._pendingUpdate();
+        this.trigger('$rendered', this);
         this._create(lastVNode, nextVNode);
 
         return this.element;
@@ -89,13 +100,18 @@ Intact.prototype = {
 
     mount(lastVNode, nextVNode) {
         this.mounted = true;
-        this.trigger('mounted', this);
+        this.trigger('$mounted', this);
         this._mount(lastVNode, nextVNode);
     },
 
     update(lastVNode, nextVNode) {
-        // 如果还没有渲染，则不去更新
-        if (!this.rendered) return;
+        // 如果还没有渲染，则等待结束再去更新
+        if (!this.rendered) {
+            this._pendingUpdate = function() {
+                this.update(lastVNode, nextVNode);
+            };
+            return;
+        }
 
         ++this._updateCount;
         if (this._updateCount > 1) return this.element;
@@ -297,22 +313,22 @@ Intact.prototype = {
             // trigger `change*` events
             for (let prop in changes) {
                 let values = changes[prop];
-                this.trigger(`change:${prop}`, this, values[1], values[0]);
+                this.trigger(`$change:${prop}`, this, values[1], values[0]);
             }
             const changeKeys = keys(changes);
             // 之前存在触发change就会调用update的用法，这里传入true做兼容
             // 如果第三个参数为true，则不update
-            this.trigger('change', this, changeKeys, true);
+            this.trigger('$change', this, changeKeys);
 
-            if (options.update && this.rendered) {
+            if (options.update && this._startRender) {
                 clearTimeout(this._asyncUpdate);
                 let triggerChange = () => {
                     this.update();
                     for (let prop in changes) {
                         let values = changes[prop];
-                        this.trigger(`changed:${prop}`, this, values[1], values[0]);
+                        this.trigger(`$changed:${prop}`, this, values[1], values[0]);
                     }
-                    this.trigger('changed', this, changeKeys);
+                    this.trigger('$changed', this, changeKeys);
                 };
                 if (options.async) {
                     this._asyncUpdate = setTimeout(triggerChange);
@@ -377,6 +393,14 @@ Intact.prototype = {
 
         return this;
     },
+
+    _initMountedQueue() {
+        this.mountedQueue = new Vdt.miss.MountedQueue();
+    },
+
+    _triggerMountedQueue() {
+        this.mountedQueue.trigger();
+    }
 };
 
 /**
@@ -403,7 +427,7 @@ Intact.mount = function(Component, node) {
     if (c.inited) {
         c.init(); 
     } else {
-        c.one('inited', () => c.init());
+        c.one('$inited', () => c.init());
     }
     return c;
 };

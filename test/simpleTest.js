@@ -59,8 +59,8 @@ describe('Simple Test', function() {
             instance.inited.should.be.eql(true);
             instance.rendered.should.be.eql(false);
             // instance._hasCalledInit.should.be.eql(false);
-            instance._events.should.have.keys('change');
-            instance._events.change.length.should.be.eql(1);
+            // instance._events.should.have.keys('change');
+            // instance._events.change.length.should.be.eql(1);
             (instance.get('children') === undefined).should.be.true;
             // instance._updateCount.should.be.eql(0);
         });
@@ -253,8 +253,8 @@ describe('Simple Test', function() {
                 changeAFn = sinon.spy(),
                 instance = new Component();
 
-            instance.on('change', changeFn);
-            instance.on('change:a', changeAFn);
+            instance.on('$change', changeFn);
+            instance.on('$change:a', changeAFn);
             instance.set('a', 2);
             changeAFn.calledOnce.should.be.true;
             changeFn.calledOnce.should.be.true;
@@ -280,8 +280,8 @@ describe('Simple Test', function() {
 
             var changePathAAFn = sinon.spy(),
                 changePathAAAFn = sinon.spy();
-            instance.on('change:aa', changePathAAFn);
-            instance.on('change:aa.a', changePathAAAFn);
+            instance.on('$change:aa', changePathAAFn);
+            instance.on('$change:aa.a', changePathAAAFn);
             instance.set('aa.a', 1);
             changePathAAFn.calledOnce.should.be.true;
             changePathAAAFn.calledOnce.should.be.true;
@@ -295,7 +295,7 @@ describe('Simple Test', function() {
             var testFn = sinon.spy(),
                 changeFn = sinon.spy(),
                 instance = new Component({
-                    'ev-change': changeFn,
+                    'ev-$change': changeFn,
                     'ev-test': testFn
                 }),
                 test2Fn = sinon.spy();
@@ -313,14 +313,14 @@ describe('Simple Test', function() {
             test2Fn.calledOnce.should.be.true;
             
             instance.off();
-            instance.trigger('change');
+            instance.trigger('$change');
             changeFn.called.should.be.false;
         });
 
         it('should trigger inited event when instantiate', function() {
             var testFn = sinon.spy(),
                 instance = new Component({
-                    'ev-inited': testFn
+                    'ev-$inited': testFn
                 });
             testFn.calledOnce.should.be.true;
             testFn.calledWith(instance).should.be.true;
@@ -332,7 +332,7 @@ describe('Simple Test', function() {
         it('should trigger rendered event when init', function() {
             var testFn = sinon.spy(),
                 instance = new Component();
-            instance.on('rendered', testFn);
+            instance.on('$rendered', testFn);
             instance.init();
             testFn.calledOnce.should.be.true;
             testFn.calledWith(instance).should.be.true;

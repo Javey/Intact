@@ -110,7 +110,10 @@ var skipProps = {
     key: true,
     ref: true,
     children: true,
-    className: true
+    className: true,
+    checked: true,
+    multiple: true,
+    defaultValue: true
 };
 
 var booleanProps = {
@@ -138,8 +141,7 @@ var booleanProps = {
 var strictProps = {
     volume: true,
     defaultChecked: true,
-    value: true,
-    defaultValue: true
+    value: true
 };
 
 function MountedQueue() {
@@ -426,7 +428,6 @@ function setSelectModel(data, key, e) {
         for (i = 0; i < options.length; i++) {
             opt = options[i];
             if (opt.selected) {
-                console.log(opt._value);
                 value = isNullOrUndefined(opt._value) ? opt.value : opt._value;
                 break;
             }
@@ -750,7 +751,7 @@ var TypeName$1 = TypeName;
 var elementNameRegexp = /^<\w+:?\s*[\w\/>]/;
 
 function isJSXIdentifierPart(ch) {
-    return ch === 58 || ch === 95 || ch === 45 || // : and _ (underscore) and -
+    return ch === 58 || ch === 95 || ch === 45 || ch === 36 || // : and _ (underscore) and - $
     ch >= 65 && ch <= 90 || // A..Z
     ch >= 97 && ch <= 122 || // a..z
     ch >= 48 && ch <= 57; // 0..9
@@ -1561,7 +1562,7 @@ Stringifier.prototype = {
             ret.push('\'ev-' + eventName + '\': function(__e) { _setModel(self, ' + value + ', __e.target.value) }');
         } else if (element.type === Type$2.JSXWidget) {
             ret.push('value: _getModel(self, ' + value + ')');
-            ret.push('\'ev-change:value\': function(__c, __n) { _setModel(self, ' + value + ', __n) }');
+            ret.push('\'ev-$change:value\': function(__c, __n) { _setModel(self, ' + value + ', __n) }');
         }
     },
 
@@ -1625,7 +1626,8 @@ var Types = {
     SelectElement: 1 << 7,
     TextareaElement: 1 << 8
 };
-Types.Element = Types.HtmlElement | Types.InputElement | Types.SelectElement | Types.TextareaElement;
+Types.FormElement = Types.InputElement | Types.SelectElement | Types.TextareaElement;
+Types.Element = Types.HtmlElement | Types.FormElement;
 Types.ComponentClassOrInstance = Types.ComponentClass | Types.ComponentInstance;
 Types.TextElement = Types.Text | Types.HtmlComment;
 
@@ -1829,6 +1831,12 @@ if ('addEventListener' in doc) {
 var delegatedEvents = {};
 
 function handleEvent(name, lastEvent, nextEvent, dom) {
+    if (name === 'blur') {
+        name = 'focusout';
+    } else if (name === 'focus') {
+        name = 'focusin';
+    }
+
     var delegatedRoots = delegatedEvents[name];
 
     if (nextEvent) {
@@ -1943,6 +1951,73 @@ function updateChildOption(vNode, value, flag) {
     }
 }
 
+function processInput(vNode, dom, nextProps) {
+    var type = nextProps.type;
+    var value = nextProps.value;
+    var checked = nextProps.checked;
+    var defaultValue = nextProps.defaultValue;
+    var multiple = nextProps.multiple;
+    var hasValue = !isNullOrUndefined(value);
+
+    if (multiple && multiple !== dom.multiple) {
+        dom.multiple = multiple;
+    }
+    if (!isNullOrUndefined(defaultValue) && !hasValue) {
+        dom.defaultValue = defaultValue + '';
+    }
+    if (isCheckedType(type)) {
+        if (hasValue) {
+            dom.value = value;
+        }
+        if (!isNullOrUndefined(checked)) {
+            dom.checked = checked;
+        }
+    } else {
+        if (hasValue && dom.value !== value) {
+            dom.value = value;
+        } else if (!isNullOrUndefined(checked)) {
+            dom.checked = checked;
+        }
+    }
+}
+
+function isCheckedType(type) {
+    return type === 'checkbox' || type === 'radio';
+}
+
+function processTextarea(vNode, dom, nextProps, isRender) {
+    var value = nextProps.value;
+    var domValue = dom.value;
+
+    if (isNullOrUndefined(value)) {
+        if (isRender) {
+            var defaultValue = nextProps.defaultValue;
+            if (!isNullOrUndefined(defaultValue)) {
+                if (defaultValue !== domValue) {
+                    dom.value = defaultValue;
+                }
+            } else if (domValue !== '') {
+                dom.value = '';
+            }
+        }
+    } else {
+        if (domValue !== value) {
+            dom.value = value;
+        }
+    }
+}
+
+function processForm(vNode, dom, nextProps, isRender) {
+    var type = vNode.type;
+    if (type & Types.InputElement) {
+        processInput(vNode, dom, nextProps, isRender);
+    } else if (type & Types.TextareaElement) {
+        processTextarea(vNode, dom, nextProps, isRender);
+    } else if (type & Types.SelectElement) {
+        processSelect(vNode, dom, nextProps, isRender);
+    }
+}
+
 function render(vNode, parentDom, mountedQueue) {
     if (isNullOrUndefined(vNode)) return;
     var isTrigger = false;
@@ -1994,12 +2069,12 @@ function createHtmlElement(vNode, parentDom, mountedQueue) {
     }
 
     if (props !== EMPTY_OBJ) {
-        var isSelectElement = (vNode.type & Types.SelectElement) > 0;
+        var isFormElement = (vNode.type & Types.FormElement) > 0;
         for (var prop in props) {
-            patchProp(prop, null, props[prop], dom, isSelectElement);
+            patchProp(prop, null, props[prop], dom, isFormElement);
         }
-        if (isSelectElement) {
-            processSelect(vNode, dom, props, true);
+        if (isFormElement) {
+            processForm(vNode, dom, props, true);
         }
     }
 
@@ -2322,7 +2397,7 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue) {
         nextVNode.children = instance;
     }
 
-    if (dom !== newDom) {
+    if (dom !== newDom && !newDom.parentNode) {
         replaceChild(parentDom, newDom, dom);
     }
 }
@@ -2342,7 +2417,7 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue) {
         nextVNode.dom = newDom;
     }
 
-    if (dom !== newDom) {
+    if (dom !== newDom && !newDom.parentNode) {
         replaceChild(parentDom, newDom, dom);
     }
 }
@@ -2644,12 +2719,12 @@ function patchProps(lastVNode, nextVNode) {
     var dom = nextVNode.dom;
     var prop = void 0;
     if (nextProps !== EMPTY_OBJ) {
-        var isSelectElement = (nextVNode.type & Types.SelectElement) > 0;
+        var isFormElement = (nextVNode.type & Types.FormElement) > 0;
         for (prop in nextProps) {
-            patchProp(prop, lastProps[prop], nextProps[prop], dom, isSelectElement);
+            patchProp(prop, lastProps[prop], nextProps[prop], dom, isFormElement);
         }
-        if (isSelectElement) {
-            processSelect(nextVNode, dom, nextProps);
+        if (isFormElement) {
+            processForm(nextVNode, dom, nextProps, false);
         }
     }
     if (lastProps !== EMPTY_OBJ) {
@@ -2661,9 +2736,9 @@ function patchProps(lastVNode, nextVNode) {
     }
 }
 
-function patchProp(prop, lastValue, nextValue, dom, isSelectElement) {
+function patchProp(prop, lastValue, nextValue, dom, isFormElement) {
     if (lastValue !== nextValue) {
-        if (skipProps[prop] || isSelectElement && prop === 'value') {
+        if (skipProps[prop] || isFormElement && prop === 'value') {
             return;
         } else if (booleanProps[prop]) {
             dom[prop] = !!nextValue;
@@ -2979,6 +3054,9 @@ function Intact$1(props) {
     this.rendered = false;
     this.mounted = false;
 
+    // if the flag is false, every set operation will not lead to update 
+    this._startRender = false;
+
     // for debug
     this.displayName = this.displayName;
 
@@ -2989,10 +3067,8 @@ function Intact$1(props) {
     var inited = function inited() {
         _this.inited = true;
         // 为了兼容之前change事件必update的用法
-        _this.on('change', function (c, nouse, noUpdate) {
-            return !noUpdate && _this.update();
-        });
-        _this.trigger('inited', _this);
+        // this.on('change', () => this.update());
+        _this.trigger('$inited', _this);
     };
     var ret = this._init();
     if (ret && ret.then) {
@@ -3028,7 +3104,7 @@ Intact$1.prototype = {
         if (!this.inited) {
             // 支持异步组件
             var placeholder = document.createComment('placeholder');
-            this.one('inited', function () {
+            this.one('$inited', function () {
                 var parent = placeholder.parentNode;
                 if (parent) {
                     parent.replaceChild(_this3.init(lastVNode, nextVNode), placeholder);
@@ -3036,21 +3112,34 @@ Intact$1.prototype = {
             });
             return placeholder;
         }
-        this.element = this.vdt.render(this, this.parentDom, this.mountedQueue);
+        this._startRender = true;
+        if (lastVNode) {
+            // make the dom not be replaced, but update the last one
+            this.vdt.vNode = lastVNode.children.vdt.vNode;
+            this.element = this.vdt.update(this);
+        } else {
+            this.element = this.vdt.render(this, this.parentDom, this.mountedQueue);
+        }
         this.rendered = true;
-        this.trigger('rendered', this);
+        if (this._pendingUpdate) this._pendingUpdate();
+        this.trigger('$rendered', this);
         this._create(lastVNode, nextVNode);
 
         return this.element;
     },
     mount: function mount(lastVNode, nextVNode) {
         this.mounted = true;
-        this.trigger('mounted', this);
+        this.trigger('$mounted', this);
         this._mount(lastVNode, nextVNode);
     },
     update: function update(lastVNode, nextVNode) {
-        // 如果还没有渲染，则不去更新
-        if (!this.rendered) return;
+        // 如果还没有渲染，则等待结束再去更新
+        if (!this.rendered) {
+            this._pendingUpdate = function () {
+                this.update(lastVNode, nextVNode);
+            };
+            return;
+        }
 
         ++this._updateCount;
         if (this._updateCount > 1) return this.element;
@@ -3249,22 +3338,22 @@ Intact$1.prototype = {
             // trigger `change*` events
             for (var _prop6 in changes) {
                 var values$$1 = changes[_prop6];
-                this.trigger('change:' + _prop6, this, values$$1[1], values$$1[0]);
+                this.trigger('$change:' + _prop6, this, values$$1[1], values$$1[0]);
             }
             var changeKeys = keys(changes);
             // 之前存在触发change就会调用update的用法，这里传入true做兼容
             // 如果第三个参数为true，则不update
-            this.trigger('change', this, changeKeys, true);
+            this.trigger('$change', this, changeKeys);
 
-            if (options.update && this.rendered) {
+            if (options.update && this._startRender) {
                 clearTimeout(this._asyncUpdate);
                 var triggerChange = function triggerChange() {
                     _this4.update();
                     for (var _prop7 in changes) {
                         var _values = changes[_prop7];
-                        _this4.trigger('changed:' + _prop7, _this4, _values[1], _values[0]);
+                        _this4.trigger('$changed:' + _prop7, _this4, _values[1], _values[0]);
                     }
-                    _this4.trigger('changed', _this4, changeKeys);
+                    _this4.trigger('$changed', _this4, changeKeys);
                 };
                 if (options.async) {
                     this._asyncUpdate = setTimeout(triggerChange);
@@ -3334,6 +3423,12 @@ Intact$1.prototype = {
         }
 
         return this;
+    },
+    _initMountedQueue: function _initMountedQueue() {
+        this.mountedQueue = new Vdt$1.miss.MountedQueue();
+    },
+    _triggerMountedQueue: function _triggerMountedQueue() {
+        this.mountedQueue.trigger();
     }
 };
 
@@ -3363,7 +3458,7 @@ Intact$1.mount = function (Component, node) {
     if (c.inited) {
         c.init();
     } else {
-        c.one('inited', function () {
+        c.one('$inited', function () {
             return c.init();
         });
     }
@@ -3696,7 +3791,8 @@ Vdt$1.configure({
         return self.get(key);
     },
     setModel: function setModel(self, key, value) {
-        self.set(key, value, { async: true });
+        // self.set(key, value, {async: true});
+        self.set(key, value);
     }
 });
 

@@ -129,7 +129,7 @@ describe('Component Test', function() {
                 this.widgets.b.should.be.instanceOf(B);
             },
 
-            template: '<div><B a={self.get("a")} ev-change:a={self.changeData.bind(self)}/><B widget="b" /></div>',
+            template: '<div><B a={self.get("a")} ev-$change:a={self.changeData.bind(self)}/><B widget="b" /></div>',
 
             changeData: function() {
                 this.set('a', 3);
@@ -157,7 +157,7 @@ describe('Component Test', function() {
     it('should remove events', function() {
         var changeData = sinon.spy();
         var A = Intact.extend({
-            template: '<B a={self.get("a")} ev-change:a={self.get("a") === 1 ? self.changeData.bind(self) : undefined} />',
+            template: '<B a={self.get("a")} ev-$change:a={self.get("a") === 1 ? self.changeData.bind(self) : undefined} />',
             changeData: changeData,
             _init: function() {
                 this.B = B;
@@ -200,6 +200,6 @@ describe('Component Test', function() {
             done();
         });
 
-        a.on('inited', inited);
+        a.on('$inited', inited);
     });
 });

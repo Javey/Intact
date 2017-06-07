@@ -10,7 +10,8 @@ Vdt.configure({
         return self.get(key);
     },
     setModel(self, key, value) {
-        self.set(key, value, {async: true});
+        // self.set(key, value, {async: true});
+        self.set(key, value);
     }
 });
 
