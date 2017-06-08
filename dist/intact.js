@@ -182,9 +182,7 @@ var setTextContent = browser.isIE8 ? function (dom, text) {
  * @date 15-4-22
  */
 
-var i = 0;
-var Type = {
-    JS: i++,
+var i = 0;var Type = { JS: i++,
     JSXText: i++,
     JSXElement: i++,
     JSXExpressionContainer: i++,
@@ -388,7 +386,7 @@ function setCheckboxModel(data, key, trueValue, falseValue, e) {
         if (checked) {
             value.push(trueValue);
         } else {
-            var index = value.indexOf(trueValue);
+            var index = indexOf(value, trueValue);
             if (~index) {
                 value.splice(index, 1);
             }
@@ -402,7 +400,7 @@ function setCheckboxModel(data, key, trueValue, falseValue, e) {
 function detectCheckboxChecked(data, key, trueValue) {
     var value = Options.getModel(data, key);
     if (isArray(value)) {
-        return ~value.indexOf(trueValue);
+        return indexOf(value, trueValue) > -1;
     } else {
         return value === trueValue;
     }
@@ -448,6 +446,7 @@ var error$1 = function () {
 var utils = (Object.freeze || Object)({
 	isNullOrUndefined: isNullOrUndefined,
 	isArray: isArray,
+	indexOf: indexOf,
 	Type: Type,
 	TypeName: TypeName,
 	SelfClosingTags: SelfClosingTags,
@@ -476,6 +475,12 @@ var utils = (Object.freeze || Object)({
 	error: error$1
 });
 
+/**
+ * inherit
+ * @param Parent
+ * @param prototype
+ * @returns {Function}
+ */
 function inherit(Parent, prototype) {
     var Child = function Child() {
         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
@@ -3158,8 +3163,8 @@ Intact$1.prototype = {
 
         if (--this._updateCount > 0) {
             // 如果更新完成，发现还有更新，则是在更新过程中又触发了更新
-            // 此时直接将_updateCount置为0，因为所有数据都已更新，只做最后一次模板更新即可
-            this._updateCount = 0;
+            // 此时直接将_updateCount置为1，因为所有数据都已更新，只做最后一次模板更新即可
+            this._updateCount = 1;
             return this.__update();
         }
 
@@ -3465,6 +3470,7 @@ Intact$1.mount = function (Component, node) {
     return c;
 };
 
+// Animate Widget for animation
 var Animate = Intact$1.extend({
     displayName: 'Animate',
 

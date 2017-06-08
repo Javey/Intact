@@ -131,8 +131,8 @@ Intact.prototype = {
 
         if (--this._updateCount > 0) {
             // 如果更新完成，发现还有更新，则是在更新过程中又触发了更新
-            // 此时直接将_updateCount置为0，因为所有数据都已更新，只做最后一次模板更新即可
-            this._updateCount = 0;
+            // 此时直接将_updateCount置为1，因为所有数据都已更新，只做最后一次模板更新即可
+            this._updateCount = 1;
             return this.__update();
         }
 
