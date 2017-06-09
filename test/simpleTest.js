@@ -1,15 +1,27 @@
+import Intact from '../src';
+import assert from 'assert';
+import _ from 'lodash';
+
+const sEql = assert.strictEqual;
+const dEql = assert.deepStrictEqual;
+
+function isFunction(o) {
+    sEql(typeof o, 'function');
+}
+
+
 describe('Simple Test', function() {
     it('Intact object test', function() {
-        Intact.should.be.a.Function;
-        Intact.mount.should.be.a.Function;
-        Intact.extend.should.be.a.Function;
-        (Intact.extend()).should.be.a.Function;
+        isFunction(Intact);
+        isFunction(Intact.mount);
+        isFunction(Intact.extend);
+        isFunction(Intact.extend());
     });
 
     it('Should throw error when instantiate component which has not template', function() {
-        (function() { new Intact(); }).should.throw();
-        var Component = Intact.extend();
-        (function() { new Component(); }).should.throw();
+        assert.throws(function() { new Intact(); });
+        const Component = Intact.extend();
+        assert.throws(function() { new Component(); });
     });
 
     describe('Intact.extend', function() {
@@ -35,43 +47,34 @@ describe('Simple Test', function() {
         });
 
         it('properties', function() {
-            Component.prototype.defaults.a.should.be.eql(1);
-            SubComponent.prototype.defaults.a.should.be.eql(2);
-            SubComponent.prototype.defaults.b.should.be.eql(1);
-            SubComponent.prototype.template.should.be.type('string');
+            sEql(Component.prototype.defaults.a, 1);
+            sEql(SubComponent.prototype.defaults.a, 2);
+            sEql(SubComponent.prototype.defaults.b, 1);
+            sEql(typeof SubComponent.prototype.template, 'string');
             
             // displayName
-            Component.prototype.displayName.should.be.eql('Component');
-            Component.displayName.should.be.eql('Component');
-            SubComponent.prototype.displayName.should.be.eql('Component');
-            SubComponent.displayName.should.be.eql('Component');
+            sEql(Component.prototype.displayName, 'Component');
+            sEql(Component.displayName, 'Component');
+            sEql(SubComponent.prototype.displayName, 'Component');
+            sEql(SubComponent.displayName, 'Component');
         });
 
         it('instantiate', function() {
-            (new Component()).get('a').should.be.eql(1);
-            (new Component({a: 2})).get('a').should.be.eql(2);
-            (new SubComponent()).get('a').should.be.eql(2);
-            (new SubComponent({c: 3})).get().should.be.eql({a: 2, b: 1, c: 3});
+            sEql((new Component()).get('a'), 1);
+            sEql((new Component({a: 2})).get('a'), 2);
+            sEql((new SubComponent()).get('a'), 2);
+            dEql((new SubComponent({c: 3})).get(), {a: 2, b: 1, c: 3});
 
             var instance = new SubComponent();
-            instance.vdt.should.be.type('object');
-            instance.vdt.template.should.be.a.Function;
-            instance.inited.should.be.eql(true);
-            instance.rendered.should.be.eql(false);
-            // instance._hasCalledInit.should.be.eql(false);
-            // instance._events.should.have.keys('change');
-            // instance._events.change.length.should.be.eql(1);
-            (instance.get('children') === undefined).should.be.true;
-            // instance._updateCount.should.be.eql(0);
+            sEql(typeof instance.vdt, 'object');
+            isFunction(instance.vdt.template);
+            sEql(instance.inited, true);
+            sEql(instance.rendered, false);
+            sEql(instance.mounted, false);
+            sEql(instance.get('children'), undefined);
+            sEql(instance._updateCount, 0);
         });
 
-        // it('call constructor directly should return a thunk', function() {
-            // var thunk = Component();
-            // thunk.type.should.be.eql('Thunk');
-            // thunk.Widget.should.be.eql(Component);
-            // (SubComponent()).type.should.be.eql('Thunk');
-        // });
-        
         it('widgets reference', function() {
             var TestComponent = Intact.extend({
                 template: '<Component widget="test" />',
@@ -80,10 +83,78 @@ describe('Simple Test', function() {
                 }
             });
             var instance = new TestComponent();
-            instance.widgets.should.be.eql({});
+            dEql(instance.widgets, {});
             instance.init();
-            instance.widgets.should.have.keys('test');
-            instance.widgets.test.should.be.instanceOf(Component);
+            sEql(instance.widgets.test instanceof Component, true);
+
+            TestComponent = Intact.extend({
+                template: '<Component ref={function(i) {self._i = i;}} />',
+                _init: function() {
+                    this.Component = Component;
+                }
+            });
+            instance = new TestComponent();
+            sEql(instance._i, undefined);
+            instance.init();
+            sEql(instance._i instanceof Component, true);
+        });
+
+        it('es6 class extend', () => {
+            class TestComponent extends Intact {
+                get defaults() { return {a: 1}; }
+                get template() { return '<div>{self.get("a")}</div>'; }
+            }
+            let i = new TestComponent();
+            i.init();
+            sEql(i.element.outerHTML, '<div>1</div>');
+
+            class SubComponent extends TestComponent {
+                get defaults() { return Intact.Vdt.utils.extend({}, super.defaults, {a: 2}); }
+            }
+            i = new SubComponent();
+            i.init();
+            sEql(i.element.outerHTML, '<div>2</div>');
+        });
+    });
+
+    describe('Intact.mount', function() {
+        let container;
+        let Component;
+        let html = '<div>a</div>';
+        let mount;
+
+        beforeEach(() => {
+            container = document.createElement('div');
+            document.body.appendChild(container);
+
+            mount = sinon.spy();
+            Component = Intact.extend({
+                template: html,
+                _mount: mount
+            });
+        });
+
+        afterEach(() => {
+            document.body.removeChild(container);
+        });
+
+        function reset() {
+            container.innerHTML = '';
+        }
+
+        it('should mount component', () => {
+            let instance = Intact.mount(Component, container);
+            sEql(container.innerHTML, html);
+            sEql(mount.callCount, 1);
+            sEql(instance.mounted, true);
+        });
+
+        it('should mount sub-component', () => {
+            let SubComponent = Component.extend();
+            let instance = Intact.mount(SubComponent, container);
+            sEql(container.innerHTML, html);
+            sEql(mount.callCount, 1);
+            sEql(instance.mounted, true);
         });
     });
 
@@ -110,57 +181,58 @@ describe('Simple Test', function() {
 
         it('init', function() {
             var element = instance.init();
-            element.tagName.toLowerCase().should.be.eql('div');
-            instance.element.should.be.eql(element);
-            instance.inited.should.be.eql(true);
-            instance.rendered.should.be.eql(true);
-            // instance._hasCalledInit.should.be.eql(true);
+            sEql(instance.element, element);
+            sEql(instance.element.outerHTML, '<div>1</div>');
+            sEql(instance.inited, true);
+            sEql(instance.rendered, true);
+            sEql(instance.mounted, false);
         });
 
         it('update', function() {
             instance.init(); 
             instance.set({a: 3}, {silent: true});
-            $(instance.element).text().should.be.eql('1');
+            sEql(instance.element.innerHTML, '1');
             instance.update();
-            $(instance.element).text().should.be.eql('3');
+            sEql(instance.element.innerHTML, '3');
             instance.set({a: 4});
-            $(instance.element).text().should.be.eql('4');
+            sEql(instance.element.innerHTML, '4');
         });
 
         it('get', function() {
-            instance.get('a').should.be.eql(1);
-            (instance.get('aa') === undefined).should.be.true;
-            instance.get().should.have.properties({a: 1, c: 3});
-            instance.get('bb.bb').should.be.eql(2);
-            instance.get('cc[0].cc').should.be.eql(2);
-            (instance.get('aa.aa.aa') === undefined).should.be.true;
-            instance.get('aa.aa.aa', 'a').should.be.eql('a');
-            instance.get('a.a').should.be.eql(1);
+            sEql(instance.get('a'), 1);
+            sEql(instance.get('aa'), undefined);
+            sEql(instance.get().hasOwnProperty('c'), true);
+            sEql(instance.get('bb.bb'), 2);
+            sEql(instance.get('cc[0].cc'), 2);
+            sEql(instance.get('aa.aa.aa'), undefined);
+            sEql(instance.get('aa.aa.aa', 'a'), 'a');
+            sEql(instance.get('a.a'), 1);
         });
 
         it('set', function() {
             instance.set('a', 1);
-            instance.get('a').should.be.eql(1);
+            sEql(instance.get('a'), 1);
             instance.set({a: 11});
-            instance.get('a').should.be.eql(11);
-            instance.defaults.a.should.be.eql(1);
+            sEql(instance.get('a'), 11);
+            sEql(instance.defaults.a, 1);
             instance.set({'aa.a': 1});
-            instance.get('aa.a').should.be.eql(1);
-            (instance.get('aa') === undefined).should.be.true;
+            sEql(instance.get('aa.a'), 1);
+            sEql(instance.get('aa'), undefined);
             instance.set('aa.a', 2);
-            (instance.get('aa') === undefined).should.be.true;
-            instance.get('aa.a').should.be.eql(2);
+            sEql(instance.get('aa'), undefined);
+            sEql(instance.get('aa.a'), 2);
             instance.set('aaa.a', 1);
-            instance.get('aaa').should.be.eql({a: 1});
+            dEql(instance.get('aaa'), {a: 1});
         });
     });
 
     describe('Life cycle', function() {
-        var _init, _create, _update, _beforeUpdate, _destroy,
+        var _init, _create, _mount, _update, _beforeUpdate, _destroy,
             Component, instance;
         beforeEach(function() {
             _init = sinon.spy();
             _create = sinon.spy();
+            _mount = sinon.spy();
             _update = sinon.spy();
             _beforeUpdate = sinon.spy();
             _destroy = sinon.spy();
@@ -168,51 +240,55 @@ describe('Simple Test', function() {
                 template: '<i></i>',
                 _init: _init,
                 _create: _create,
+                _mount: _mount,
                 _update: _update,
                 _beforeUpdate: _beforeUpdate,
                 _destroy: _destroy
             });
         });
-        var assert = function(a, b, c, d, e) {
-            _init.callCount.should.be.eql(a);
-            _create.callCount.should.be.eql(b);
-            _beforeUpdate.callCount.should.be.eql(c);
-            _update.callCount.should.be.eql(d);
-            _destroy.callCount.should.be.eql(e);
+        var assert = function(a, b, c, d, e, f) {
+            sEql(_init.callCount, a);
+            sEql(_create.callCount, b);
+            sEql(_beforeUpdate.callCount, c);
+            sEql(_update.callCount, d);
+            sEql(_destroy.callCount, e);
+            sEql(_mount.callCount, f);
         };
 
         it('_init', function() {
             var instance = new Component();
-            assert(1, 0, 0, 0, 0);
+            assert(1, 0, 0, 0, 0, 0);
         });
 
         it('_create', function() {
             var instance = new Component();
             instance.init();
-            assert(1, 1, 0, 0, 0);
+            assert(1, 1, 0, 0, 0, 0);
+        });
 
-            // instance = new Component();
-            // instance.vdt.render(instance);
-            // instance.update();
-            // assert(2, 2, 1, 1, 0);
+        it('_mount', function() {
+            var instance = new Component();
+            instance.init();
+            instance.mount();
+            assert(1, 1, 0, 0, 0, 1);
         });
 
         it('_udpate', function() {
             var instance = new Component();
             instance.init();
             instance.set({a: 1});
-            assert(1, 1, 1, 1, 0);
+            assert(1, 1, 1, 1, 0, 0);
             instance.set({a: 2});
-            assert(1, 1, 2, 2, 0);
+            assert(1, 1, 2, 2, 0, 0);
             instance.set({a: 3}, {silent: true});
-            assert(1, 1, 2, 2, 0);
+            assert(1, 1, 2, 2, 0, 0);
         });
 
         it('_destroy', function() {
             var instance = new Component();
             instance.init();
             instance.destroy();
-            assert(1, 1, 0, 0, 1);
+            assert(1, 1, 0, 0, 1, 0);
         });
     });
 
@@ -231,9 +307,9 @@ describe('Simple Test', function() {
 
             instance.on('test', testFn);
             instance.trigger('test', 1, 2, [3]);
-            testFn.callCount.should.be.eql(1);
-            testFn.calledWith(1, 2, [3]).should.be.true;
-            testFn.calledOn(instance).should.be.true;
+            sEql(testFn.callCount, 1);
+            sEql(testFn.calledWith(1, 2, [3]), true);
+            sEql(testFn.calledOn(instance), true);
         });
 
         it('add event listener by `ev-*` property', function() {
@@ -243,9 +319,9 @@ describe('Simple Test', function() {
                 });
 
             instance.trigger('test', 1, 2, [3]);
-            testFn.callCount.should.be.eql(1);
-            testFn.calledWith(1, 2, [3]).should.be.true;
-            testFn.calledOn(instance).should.be.true;
+            sEql(testFn.callCount, 1);
+            sEql(testFn.calledWith(1, 2, [3]), true);
+            sEql(testFn.calledOn(instance), true);
         });
 
         it('change attributes to trigger change event', function() {
@@ -256,39 +332,43 @@ describe('Simple Test', function() {
             instance.on('$change', changeFn);
             instance.on('$change:a', changeAFn);
             instance.set('a', 2);
-            changeAFn.calledOnce.should.be.true;
-            changeFn.calledOnce.should.be.true;
-            changeAFn.calledBefore(changeFn).should.be.true;
-            changeAFn.calledWith(instance, 2).should.be.true;
-            changeFn.calledWith(instance).should.be.true;
+            sEql(changeAFn.calledOnce, true);
+            sEql(changeFn.calledOnce, true);
+            sEql(changeAFn.calledBefore(changeFn), true);
+            sEql(changeAFn.calledWith(instance, 2), true);
+            sEql(changeFn.calledWith(instance), true);
 
             instance.set('a', 2);
-            changeAFn.calledOnce.should.be.true;
-            changeFn.calledOnce.should.be.true;
+            sEql(changeAFn.calledOnce, true);
+            sEql(changeFn.calledOnce, true);
 
             instance.set('a', 3, {silent: true});
-            changeAFn.calledOnce.should.be.true;
-            changeFn.calledOnce.should.be.true;
+            sEql(changeAFn.calledOnce, true);
+            sEql(changeFn.calledOnce, true);
 
             instance.set('a', 4, {global: false});
-            changeAFn.calledTwice.should.be.true;
-            changeFn.calledTwice.should.be.true;
+            sEql(changeAFn.callCount, 2);
+            sEql(changeFn.callCount, 2);
 
             instance.set({a: 5}, {silent: true, global: true});
-            changeAFn.calledTwice.should.be.true;
-            changeFn.calledTwice.should.be.true;
+            sEql(changeAFn.callCount, 2);
+            sEql(changeFn.callCount, 2);
 
+            instance.set({a: 6}, {update: false});
+            sEql(changeAFn.callCount, 3);
+            sEql(changeFn.callCount, 3);
+            
             var changePathAAFn = sinon.spy(),
                 changePathAAAFn = sinon.spy();
             instance.on('$change:aa', changePathAAFn);
             instance.on('$change:aa.a', changePathAAAFn);
             instance.set('aa.a', 1);
-            changePathAAFn.calledOnce.should.be.true;
-            changePathAAAFn.calledOnce.should.be.true;
-            changePathAAAFn.calledBefore(changePathAAFn).should.be.true;
-            changeFn.callCount.should.be.eql(3);
-            changePathAAAFn.calledWith(instance, 1).should.be.true;
-            changePathAAFn.calledWith(instance, {a: 1}).should.be.true;
+            sEql(changePathAAFn.callCount, 1);
+            sEql(changePathAAAFn.callCount, 1);
+            sEql(changePathAAAFn.calledBefore(changePathAAFn), true);
+            sEql(changeFn.callCount, 4);
+            sEql(changePathAAAFn.calledWith(instance, 1), true);
+            sEql(changePathAAFn.calledWith(instance, {a: 1}), true);
         });
 
         it('off event', function() {
@@ -304,55 +384,38 @@ describe('Simple Test', function() {
 
             instance.off('test', testFn);
             instance.trigger('test');
-            testFn.called.should.be.false;
-            test2Fn.calledOnce.should.be.true;
+            sEql(testFn.called, false);
+            sEql(test2Fn.calledOnce, true);
 
             instance.off('test');
             instance.trigger('test');
-            testFn.called.should.be.false;
-            test2Fn.calledOnce.should.be.true;
+            sEql(testFn.called, false);
+            sEql(test2Fn.calledOnce, true);
             
             instance.off();
             instance.trigger('$change');
-            changeFn.called.should.be.false;
+            sEql(changeFn.called, false);
         });
 
-        it('should trigger inited event when instantiate', function() {
+        it('should trigger $inited event when instantiate', function() {
             var testFn = sinon.spy(),
                 instance = new Component({
                     'ev-$inited': testFn
                 });
-            testFn.calledOnce.should.be.true;
-            testFn.calledWith(instance).should.be.true;
-            testFn.calledOn(instance).should.be.true;
-            instance.inited.should.be.true;
-            instance.rendered.should.be.false;
+            sEql(testFn.calledOnce, true);
+            sEql(testFn.calledWith(instance), true);
+            sEql(testFn.calledOn(instance), true);
         });
 
-        it('should trigger rendered event when init', function() {
+        it('should trigger $rendered event when init', function() {
             var testFn = sinon.spy(),
                 instance = new Component();
             instance.on('$rendered', testFn);
             instance.init();
-            testFn.calledOnce.should.be.true;
-            testFn.calledWith(instance).should.be.true;
-            testFn.calledOn(instance).should.be.true;
-            instance.inited.should.be.true;
-            instance.rendered.should.be.true;
+            sEql(testFn.calledOnce, true);
+            sEql(testFn.calledWith(instance), true);
+            sEql(testFn.calledOn(instance), true);
         });
-
-        // it('should trigger rendered event when update without init', function() {
-            // var testFn = sinon.spy(),
-                // instance = new Component();
-            // instance.on('rendered', testFn);
-            // instance.vdt.render(instance);
-            // instance.update();
-            // testFn.calledOnce.should.be.true;
-            // testFn.calledWith(instance).should.be.true;
-            // testFn.calledOn(instance).should.be.true;
-            // instance.inited.should.be.true;
-            // instance.rendered.should.be.true; 
-        // });
     });
 
     describe('v-model', function() {
@@ -365,12 +428,12 @@ describe('Simple Test', function() {
             var dom = instance.init();
             document.body.appendChild(dom);
             instance.set('a', '1');
-            dom.value.should.eql('1');
+            sEql(dom.value, '1');
 
             dom.value = '123';
             var event = new Event('input', {bubbles: true});
             dom.dispatchEvent(event);
-            instance.get('a').should.eql('123');
+            sEql(instance.get('a'), '123');
 
             document.body.removeChild(dom);
         });
@@ -387,15 +450,15 @@ describe('Simple Test', function() {
             var dom = instance.init();
             document.body.appendChild(dom);
 
-            dom.value.should.eql('');
+            sEql(dom.value, '');
 
             instance.set('a', '2');
-            dom.value.should.eql('2');
+            sEql(dom.value, '2');
 
             dom.value = '1';
             var event = new Event('change', {bubbles: true});
             dom.dispatchEvent(event);
-            instance.get('a').should.eql(1);
+            sEql(instance.get('a'), 1);
 
             document.body.removeChild(dom);
         });
@@ -413,19 +476,19 @@ describe('Simple Test', function() {
             document.body.appendChild(dom);
             window._i = instance;
 
-            dom.value.should.eql('');
+            sEql(dom.value, '');
 
             instance.set('a', [1, '2', 3]);
-            dom.options[0].selected.should.eql(true);
-            dom.options[1].selected.should.eql(true);
-            dom.options[2].selected.should.eql(false);
+            _.each([true, true, false], (item, index) => {
+                sEql(dom.options[index].selected, item);
+            });
 
             dom.options[0].selected = true;
             dom.options[1].selected = false;
             dom.options[2].selected = true;
             var event = new Event('change', {bubbles: true});
             dom.dispatchEvent(event);
-            instance.get('a').should.eql([1, '3']);
+            dEql(instance.get('a'), [1, '3']);
 
             document.body.removeChild(dom);
         });
@@ -445,11 +508,11 @@ describe('Simple Test', function() {
             var dom = instance.element;
 
             instance.set('a', 1);
-            dom.firstChild.nodeValue.should.eql('1');
-            instance.sub.get('value').should.eql(1);
+            sEql(dom.firstChild.nodeValue, '1');
+            sEql(instance.sub.get('value'), 1);
 
             instance.sub.set('value', 2);
-            instance.get('a').should.eql(2);
+            sEql(instance.get('a'), 2);
 
             document.body.removeChild(dom);
         });

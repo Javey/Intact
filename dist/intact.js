@@ -475,12 +475,6 @@ var utils = (Object.freeze || Object)({
 	error: error$1
 });
 
-/**
- * inherit
- * @param Parent
- * @param prototype
- * @returns {Function}
- */
 function inherit(Parent, prototype) {
     var Child = function Child() {
         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
@@ -3462,15 +3456,16 @@ Intact$1.mount = function (Component, node) {
     c.parentDom = node;
     if (c.inited) {
         c.init();
+        c.mount();
     } else {
         c.one('$inited', function () {
-            return c.init();
+            c.init();
+            c.mount();
         });
     }
     return c;
 };
 
-// Animate Widget for animation
 var Animate = Intact$1.extend({
     displayName: 'Animate',
 

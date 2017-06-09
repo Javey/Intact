@@ -426,8 +426,12 @@ Intact.mount = function(Component, node) {
     c.parentDom = node;
     if (c.inited) {
         c.init(); 
+        c.mount();
     } else {
-        c.one('$inited', () => c.init());
+        c.one('$inited', () => {
+            c.init();
+            c.mount();
+        });
     }
     return c;
 };
