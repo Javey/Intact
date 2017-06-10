@@ -33,19 +33,19 @@ describe('Component Test', function() {
         sEql(b.element.outerHTML, '<b><a>1</a>1</b>');
     });
 
-    it('component self-update', function() {
+    it('child component update self', function() {
         var b = new B();
         b.init();
 
         b.set('b', 2);
-        b.element.outerHTML.should.be.eql('<b><a>1</a>2</b>');
+        sEql(b.element.outerHTML, '<b><a>1</a>2</b>');
+        sEql(b.widgets.a instanceof A, true);
 
-        b.widgets.a.should.be.instanceOf(A);
         b.widgets.a.set('a', 2);
-        b.element.outerHTML.should.be.eql('<b><a>2</a>2</b>');
+        sEql(b.element.outerHTML, '<b><a>2</a>2</b>');
 
         b.set('b', 3);
-        b.element.outerHTML.should.be.eql('<b><a>2</a>3</b>');
+        sEql(b.element.outerHTML, '<b><a>2</a>3</b>');
     });
 
     it('pass props to child', function() {
@@ -61,12 +61,7 @@ describe('Component Test', function() {
         var html = '<span><a>3</a></span>';
         var c = new C();
         c.init();
-        c.element.outerHTML.should.be.eql(html);
-
-        // C.prototype.template = '<span><A arguments={{a: self.get("c")}} /></span>';
-        // c = new C();
-        // c.init();
-        // c.element.outerHTML.should.be.eql(html);
+        sEql(c.element.outerHTML, html);
     });
 
     it('parent component update', function() {
@@ -83,15 +78,15 @@ describe('Component Test', function() {
 
         c.init();
         c.set('c', 2);
-        c.element.outerHTML.should.be.eql('<span><a>2</a></span>');
+        sEql(c.element.outerHTML, '<span><a>2</a></span>');
 
         c.widgets.a.set('a', 4);
-        c.element.outerHTML.should.be.eql('<span><a>4</a></span>');
+        sEql(c.element.outerHTML, '<span><a>4</a></span>');
         c.update();
-        c.element.outerHTML.should.be.eql('<span><a>2</a></span>');
+        sEql(c.element.outerHTML, '<span><a>2</a></span>');
     });
 
-    it('update child component', function() {
+    it('update child component instance', function() {
         var C = Intact.extend({
             defaults: {
                 component: undefined
@@ -103,22 +98,26 @@ describe('Component Test', function() {
             b = new B(),
             destroyAFn = sinon.spy(),
             destroyBFn = sinon.spy();
+        a._destroy = destroyAFn;
+        b._destroy = destroyBFn;
 
         c.init();
-        c.element.outerHTML.should.be.eql('<div></div>');
+        sEql(c.element.outerHTML, '<div></div>');
 
         c.set('component', a);
-        a.inited.should.be.true;
-        a.rendered.should.be.true;
-        c.element.outerHTML.should.be.eql('<div><a>1</a></div>');
+        sEql(a.inited, true);
+        sEql(a.rendered, true);
+        sEql(a.mounted, true);
+        sEql(c.element.outerHTML, '<div><a>1</a></div>');
 
         c.set('component', b);
-        b.inited.should.be.true;
-        b.rendered.should.be.true;
-        c.element.outerHTML.should.be.eql('<div><b><a>1</a>1</b></div>');
+        sEql(b.inited, true);
+        sEql(b.rendered, true);
+        sEql(b.mounted, true);
+        sEql(c.element.outerHTML, '<div><b><a>1</a>1</b></div>');
 
-        destroyAFn.called.should.be.false;
-        destroyBFn.called.should.be.false;
+        sEql(destroyAFn.callCount, 1);
+        sEql(destroyBFn.callCount, 0);
     });
 
     it('update when updating', function() {
@@ -134,14 +133,14 @@ describe('Component Test', function() {
             },
 
             _create: function() {
-                this.widgets.b.should.be.instanceOf(B);
+                sEql(this.widgets.b instanceof B, true);
             },
 
             _update: function() {
-                this.widgets.b.should.be.instanceOf(B);
+                sEql(this.widgets.b instanceof B, true);
             },
 
-            template: '<div><B a={self.get("a")} ev-$change:a={self.changeData.bind(self)}/><B widget="b" /></div>',
+            template: '<div><B a={self.get("a")} ev-$change:a={self.changeData.bind(self)} widget="aa"/><B widget="b" /></div>',
 
             changeData: function() {
                 this.set('a', 3);
@@ -159,11 +158,15 @@ describe('Component Test', function() {
 
         var a = new A();
         a.init();
-        a.element.outerHTML.should.be.eql('<div><b>1</b><b>1</b></div>');
+        sEql(a.element.outerHTML, '<div><b>1</b><b>1</b></div>');
 
         a.set('a', 2);
-        a.widgets.b.should.be.instanceOf(B);
-        a.element.outerHTML.should.be.eql('<div><b>3</b><b>1</b></div>');
+        sEql(a.widgets.b instanceof B, true);
+        sEql(a.element.outerHTML, '<div><b>3</b><b>1</b></div>');
+
+        a.set('a', 4);
+        console.log(a)
+        sEql(a.element.outerHTML, '<div><b>3</b><b>1</b></div>');
     });
 
     it('should remove events', function() {
@@ -182,33 +185,32 @@ describe('Component Test', function() {
         a.init();
 
         a.set('a', 1);
-        changeData.calledOnce.should.be.true;
+        sEql(changeData.calledOnce, true);
         a.set('a', 2);
-        changeData.calledOnce.should.be.true;
+        sEql(changeData.calledOnce, true);
         a.set('a', 1);
-        changeData.calledTwice.should.be.true;
+        sEql(changeData.calledTwice, true);
     });
 
     it('with promise', function(done) {
         var A = Intact.extend({
             template: '<a>{self.get("a")}</a>',
             _init: function() {
-                var self = this,
-                    def = $.Deferred();
-                setTimeout(function() {
-                    self.set('a', 1);
-                    def.resolve();
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        this.set('a', 1);
+                        resolve();
+                    });
                 });
-                return def.promise();
             }
         });
         var a = new A();
-        a.inited.should.be.false;
-        a.rendered.should.be.false;
-        // a._hasCalledInit.should.be.false;
+        sEql(a.inited, false);
+        sEql(a.rendered, false);
+        sEql(a.mounted, false);
 
         var inited = sinon.spy(function() {
-            a.init().outerHTML.should.be.eql('<a>1</a>');
+            sEql(a.init().outerHTML, '<a>1</a>');
             done();
         });
 

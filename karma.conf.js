@@ -6,7 +6,8 @@ module.exports = function(config) {
         files: [
             'node_modules/sinon/pkg/sinon.js',
             'test/simpleTest.js',
-            'test/componentTest.js'
+            'test/componentTest.js',
+            'test/animateTest.js',
         ],
         preprocessors: {
             'test/**/*.js': ['webpack'],
@@ -18,6 +19,10 @@ module.exports = function(config) {
                         test: /\.js$/,
                         loader: 'babel-loader',
                         exclude: /node_modules/
+                    },
+                    {
+                        test: /\.css$/,
+                        use: ['style-loader', 'css-loader']
                     }
                 ]
             }
