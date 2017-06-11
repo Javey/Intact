@@ -23,6 +23,10 @@ module.exports = function(config) {
                     {
                         test: /\.css$/,
                         use: ['style-loader', 'css-loader']
+                    },
+                    {
+                        test: /\.vdt$/,
+                        loader: 'vdt-loader?skipWhitespace'
                     }
                 ]
             }

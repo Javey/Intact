@@ -3,7 +3,8 @@ import Intact from './intact';
 import Vdt from 'vdt';
 
 // Animate Widget for animation
-export default Intact.extend({
+let Animate;
+export default Animate = Intact.extend({
     displayName: 'Animate',
 
     defaults: {
@@ -13,7 +14,8 @@ export default Intact.extend({
 
     template: Vdt.compile(`
         var tagName = self.get('tagName'),
-            isComponent = typeof tagName === 'function',
+            type = typeof tagName,
+            isComponent = type === 'function' || type === 'object',
             props = {}, 
             allProps = self.get(),
             children = self.values(self.childrenMap);
@@ -48,17 +50,25 @@ export default Intact.extend({
         const prevMap = this.childrenMap;
         this.childrenMap = mergeChildren(prevMap, nextMap);
 
-        each(nextMap, function(value, key) {
-            if (nextMap[key] && (!prevMap || !prevMap.hasOwnProperty(key)) && !this.currentKeys[key]) {
+        each(nextMap, (next, key) => {
+            if (
+                next && next.tag === Animate &&
+                (!prevMap || !prevMap.hasOwnProperty(key)) && 
+                !this.currentKeys[key]
+            ) {
                 this.keysToEnter.push(key);
             }
-        }, this);
+        });
 
-        each(prevMap, function(value, key) {
-            if (prevMap[key] && (!nextMap || !nextMap.hasOwnProperty(key)) && !this.currentKeys[key]) {
+        each(prevMap, (prev, key) => {
+            if (
+                prev && prev.tag === Animate && 
+                (!nextMap || !nextMap.hasOwnProperty(key)) && 
+                !this.currentKeys[key]
+            ) {
                 this.keysToLeave.push(key);
             }
-        }, this);
+        });
     },
 
     _update(lastVNode, nextVNode) {
@@ -76,7 +86,7 @@ export default Intact.extend({
     performEnter(key) {
         let component = this.childrenMap[key].children;
         this.currentKeys[key] = true;
-        if (component && component.enter) {
+        if (component) {
             component.enter(() => this._doneEntering(key));
         } else {
             this._doneEntering(key);
@@ -86,7 +96,7 @@ export default Intact.extend({
     performLeave(key) {
         let component = this.childrenMap[key].children;
         this.currentKeys[key] = true;
-        if (component && component.leave) {
+        if (component) {
             component.leave(() => this._doneLeaving(key));
         } else {
             this._doneLeaving(key);

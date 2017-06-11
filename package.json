@@ -36,6 +36,7 @@
     "sinon": "^1.17.3",
     "style-loader": "^0.18.2",
     "vdt": "^0.10.2",
+    "vdt-loader": "^1.0.0",
     "webpack": "^2.6.1"
   },
   "presets": [

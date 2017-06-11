@@ -7,3 +7,12 @@
     opacity: 0;
 }
 
+.animate-enter {
+    opacity: 0;
+}
+.animate-enter.animate-enter-active {
+    -webkit-transition: opacity cubic-bezier(0.250, 0.460, 0.450, 0.940) 200ms;
+    transition: opacity cubic-bezier(0.250, 0.460, 0.450, 0.940) 200ms;
+    opacity: 1;
+}
+

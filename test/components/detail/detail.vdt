@@ -1,0 +1,10 @@
+const Animate = self.Animate;
+
+<Animate>
+    <Animate key="detail-header"> 
+        detail-header
+    </Animate>
+    <Animate key="detail-body">
+        detail-body
+    </Animate>
+</Animate>

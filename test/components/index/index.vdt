@@ -1,0 +1,12 @@
+const Animate = self.Animate;
+
+<Animate>
+    <Animate key="index-header"> 
+        index-header
+    </Animate>
+    <Animate key="index-body">
+        index-body
+        {self.get('Component')}
+        <Animate>content</Animate>
+    </Animate>
+</Animate>

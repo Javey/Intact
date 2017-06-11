@@ -1,7 +1,10 @@
 import Intact from '../src';
 import assert from 'assert';
 import _ from 'lodash';
-import css from './animate.css';
+import css from './css/animate.css';
+import Index from './components/index';
+import Detail from './components/detail';
+import App from './components/app';
 
 const sEql = assert.strictEqual;
 const dEql = assert.deepStrictEqual;
@@ -33,5 +36,33 @@ describe('Animate Test', function() {
             sEql(a.element.outerHTML, '<div></div>');
             done();
         }, 500);
+    });
+
+    it('animate cross component', (done) => {
+        const app = Intact.mount(App, document.body);
+        app.load(Index);
+        app.load(Detail);
+        setTimeout(() => {
+            const children = app.element.firstChild.children;
+            sEql(children.length, 2);
+            sEql(children[0].innerHTML.indexOf('detail-header') > -1, true);
+            sEql(children[0].className, '');
+            sEql(children[1].innerHTML.indexOf('detail-body') > -1, true);
+            sEql(children[1].className, '');
+            done();
+        }, 500);
+    });
+
+    it('should destroy component when leaving', (done) => {
+        const app = Intact.mount(App, document.body);
+        const C = Intact.extend({
+            template: '<span>c</span>',
+            _destroy() {
+                console.log('aaa')
+            }
+        });
+        app.load(Index, {Component: new C()});
+        // app.load(Detail);
+        done();
     });
 });

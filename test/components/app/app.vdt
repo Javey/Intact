@@ -1,0 +1,5 @@
+const Animate = self.Animate;
+
+<Animate>
+    <Animate tagName={self.get('view')} v-if={self.get('view')}/>
+</Animate>
