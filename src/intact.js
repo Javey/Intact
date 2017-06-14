@@ -147,7 +147,6 @@ Intact.prototype = {
     update(lastVNode, nextVNode) {
         // 如果该组件已被销毁，则不更新
         if (this.destroyed) {
-            console.log('update',lastVNode ? lastVNode.dom : undefined);
             return lastVNode ? lastVNode.dom : undefined;
         }
         // 如果还没有渲染，则等待结束再去更新
@@ -265,7 +264,9 @@ Intact.prototype = {
     },
 
     destroy(lastVNode, nextVNode) {
-        if (this.destroyed) debugger;
+        if (this.destroyed) {
+            return console.warn('destroyed multiple times');
+        }
         const vdt = this.vdt;
         // 异步组件，可能还没有渲染
         if (!this.rendered) {
@@ -276,13 +277,7 @@ Intact.prototype = {
                 removeComponentClassOrInstance(this.lastVNode, null, nextVNode);
             }
         } else if (!nextVNode || nextVNode.key !== lastVNode.key) {
-            // debugger;
             vdt.destroy();
-        // } else if (vdt.vNode.tag !== Animate) {
-            // 因为所有的组件都是更新上一个vNode，所以
-            // vdt.destroy();
-        } else {
-            // debugger;
         }
         this._destroy(lastVNode, nextVNode);
         this.off();

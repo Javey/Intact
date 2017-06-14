@@ -2109,14 +2109,6 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
     instance.parentDom = null;
     instance.mountedQueue = mountedQueue;
     var dom = instance.init(lastVNode, vNode);
-    // let isSyncComponent = true;
-
-    // if (!dom) {
-    // isSyncComponent = false;
-    // dom = lastVNode ? lastVNode.dom : document.createComment('');
-    // // instance.parentDom = parentDom;
-    // }
-
     var ref = vNode.ref;
 
     vNode.dom = dom;
@@ -2126,7 +2118,6 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
         parentDom.appendChild(dom);
     }
 
-    // if (isSyncComponent && typeof instance.mount === 'function') {
     if (typeof instance.mount === 'function') {
         mountedQueue.push(function () {
             return instance.mount(lastVNode, vNode);
@@ -3186,7 +3177,6 @@ Intact$1.prototype = {
     update: function update(lastVNode, nextVNode) {
         // 如果该组件已被销毁，则不更新
         if (this.destroyed) {
-            console.log('update', lastVNode ? lastVNode.dom : undefined);
             return lastVNode ? lastVNode.dom : undefined;
         }
         // 如果还没有渲染，则等待结束再去更新
@@ -3301,7 +3291,9 @@ Intact$1.prototype = {
         }
     },
     destroy: function destroy(lastVNode, nextVNode) {
-        if (this.destroyed) debugger;
+        if (this.destroyed) {
+            return console.warn('destroyed multiple times');
+        }
         var vdt = this.vdt;
         // 异步组件，可能还没有渲染
         if (!this.rendered) {
@@ -3312,14 +3304,8 @@ Intact$1.prototype = {
                 removeComponentClassOrInstance(this.lastVNode, null, nextVNode);
             }
         } else if (!nextVNode || nextVNode.key !== lastVNode.key) {
-            // debugger;
             vdt.destroy();
-            // } else if (vdt.vNode.tag !== Animate) {
-            // 因为所有的组件都是更新上一个vNode，所以
-            // vdt.destroy();
-        } else {
-                // debugger;
-            }
+        }
         this._destroy(lastVNode, nextVNode);
         this.off();
         this.destroyed = true;
