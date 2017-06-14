@@ -9,7 +9,9 @@ export default Intact.extend({
     template: template,
 
     load(Page, data) {
-        this.set('view', new Page(data));
+        const page = new Page(data);
+        this.set('view', page);
+        return page;
     }
 });
 

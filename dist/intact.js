@@ -1668,6 +1668,10 @@ function createVNode(tag, props, children, className, key, ref) {
                 // type = Types.ComponentFunction;
             }
             break;
+        case 'object':
+            if (tag.init) {
+                return createComponentInstanceVNode(tag);
+            }
         default:
             throw new Error('unknown vNode type: ' + tag);
     }
@@ -1733,7 +1737,7 @@ function addChild(vNodes, reference) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
             }
-            newVNodes.push(applyKey(createComponentInstanceVNode(n)), reference);
+            newVNodes.push(applyKey(createComponentInstanceVNode(n), reference));
         } else if (n.type) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
@@ -2105,6 +2109,14 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
     instance.parentDom = null;
     instance.mountedQueue = mountedQueue;
     var dom = instance.init(lastVNode, vNode);
+    // let isSyncComponent = true;
+
+    // if (!dom) {
+    // isSyncComponent = false;
+    // dom = lastVNode ? lastVNode.dom : document.createComment('');
+    // // instance.parentDom = parentDom;
+    // }
+
     var ref = vNode.ref;
 
     vNode.dom = dom;
@@ -2114,6 +2126,7 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
         parentDom.appendChild(dom);
     }
 
+    // if (isSyncComponent && typeof instance.mount === 'function') {
     if (typeof instance.mount === 'function') {
         mountedQueue.push(function () {
             return instance.mount(lastVNode, vNode);
@@ -2387,7 +2400,9 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue) {
     var newDom = void 0;
 
     if (lastTag !== nextTag || lastVNode.key !== nextVNode.key) {
-        removeComponentClassOrInstance(lastVNode, null, nextVNode);
+        // we should call this function in component's init method
+        // because it should be destroyed before async component has rendered
+        // removeComponentClassOrInstance(lastVNode, null, nextVNode);
         newDom = createComponentClassOrInstance(nextVNode, null, mountedQueue, lastVNode);
     } else {
         instance = lastVNode.children;
@@ -2409,7 +2424,7 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue) {
     var newDom = void 0;
 
     if (lastInstance !== nextInstance) {
-        removeComponentClassOrInstance(lastVNode, null, nextVNode);
+        // removeComponentClassOrInstance(lastVNode, null, nextVNode);
         newDom = createComponentClassOrInstance(nextVNode, null, mountedQueue, lastVNode);
     } else {
         newDom = lastInstance.update(lastVNode, nextVNode);
@@ -3052,6 +3067,7 @@ function Intact$1(props) {
     this.inited = false;
     this.rendered = false;
     this.mounted = false;
+    this.destroyed = false;
 
     // if the flag is false, every set operation will not lead to update 
     this._startRender = false;
@@ -3100,44 +3116,85 @@ Intact$1.prototype = {
     init: function init(lastVNode, nextVNode) {
         var _this3 = this;
 
+        var vdt = this.vdt;
+        this.lastVNode = lastVNode;
         if (!this.inited) {
             // 支持异步组件
-            var placeholder = document.createComment('placeholder');
-            this.one('$inited', function () {
-                var parent = placeholder.parentNode;
-                if (parent) {
-                    parent.replaceChild(_this3.init(lastVNode, nextVNode), placeholder);
+            var placeholder = void 0;
+            if (lastVNode) {
+                placeholder = lastVNode.dom;
+                var lastInstance = lastVNode.children;
+                vdt.vNode = lastInstance.vdt.vNode;
+                // 如果上一个组件是异步组件，并且也还没渲染完成，则直接destroy掉
+                // 让它不再渲染了
+                if (!lastInstance.inited) {
+                    removeComponentClassOrInstance(lastVNode, null, nextVNode);
                 }
+            } else {
+                var vNode = createCommentVNode('');
+                placeholder = render(vNode);
+                vdt.vNode = vNode;
+            }
+            this.one('$inited', function () {
+                var element = _this3.init(lastVNode, nextVNode);
+                var dom = nextVNode.dom;
+                if (!lastVNode || lastVNode.key !== nextVNode.key) {
+                    nextVNode.dom = element;
+                    dom.parentNode.replaceChild(element, dom);
+                    _this3._triggerMountedQueue();
+                }
+                _this3.mount(lastVNode, nextVNode);
             });
+            vdt.node = placeholder;
             return placeholder;
         }
+
         this._startRender = true;
-        if (lastVNode) {
+        // 如果key不相同，则不复用dom，直接返回新dom来替换
+        if (lastVNode && lastVNode.key === nextVNode.key) {
+            // destroy the last component
+            if (!lastVNode.children.destroyed) {
+                removeComponentClassOrInstance(lastVNode, null, nextVNode);
+            }
+
             // make the dom not be replaced, but update the last one
-            this.vdt.vNode = lastVNode.children.vdt.vNode;
-            this.element = this.vdt.update(this);
+            vdt.vNode = lastVNode.children.vdt.vNode;
+            this.element = vdt.update(this);
         } else {
-            this.element = this.vdt.render(this, this.parentDom, this.mountedQueue);
+            if (lastVNode) {
+                removeComponentClassOrInstance(lastVNode, null, nextVNode);
+            }
+            this.element = vdt.render(this, this.parentDom, this.mountedQueue);
         }
         this.rendered = true;
-        if (this._pendingUpdate) this._pendingUpdate();
+        if (this._pendingUpdate) {
+            this._pendingUpdate();
+            this._pendingUpdate = null;
+        }
         this.trigger('$rendered', this);
         this._create(lastVNode, nextVNode);
 
         return this.element;
     },
     mount: function mount(lastVNode, nextVNode) {
+        // 异步组件，直接返回
+        if (!this.inited) return;
         this.mounted = true;
         this.trigger('$mounted', this);
         this._mount(lastVNode, nextVNode);
     },
     update: function update(lastVNode, nextVNode) {
+        // 如果该组件已被销毁，则不更新
+        if (this.destroyed) {
+            console.log('update', lastVNode ? lastVNode.dom : undefined);
+            return lastVNode ? lastVNode.dom : undefined;
+        }
         // 如果还没有渲染，则等待结束再去更新
         if (!this.rendered) {
             this._pendingUpdate = function () {
                 this.update(lastVNode, nextVNode);
             };
-            return;
+            return lastVNode ? lastVNode.dom : undefined;
         }
 
         ++this._updateCount;
@@ -3158,6 +3215,7 @@ Intact$1.prototype = {
         if (--this._updateCount > 0) {
             // 如果更新完成，发现还有更新，则是在更新过程中又触发了更新
             // 此时直接将_updateCount置为1，因为所有数据都已更新，只做最后一次模板更新即可
+            // --this._updateCount会将该值设为0，所以这里设为1
             this._updateCount = 1;
             return this.__update();
         }
@@ -3243,9 +3301,28 @@ Intact$1.prototype = {
         }
     },
     destroy: function destroy(lastVNode, nextVNode) {
-        this.off();
-        this.vdt.destroy();
+        if (this.destroyed) debugger;
+        var vdt = this.vdt;
+        // 异步组件，可能还没有渲染
+        if (!this.rendered) {
+            // 异步组件，只有开始渲染时才销毁上一个组件
+            // 如果没有渲染当前异步组件就被销毁了，则要
+            // 在这里销毁上一个组件
+            if (this.lastVNode && !this.lastVNode.children.destroyed) {
+                removeComponentClassOrInstance(this.lastVNode, null, nextVNode);
+            }
+        } else if (!nextVNode || nextVNode.key !== lastVNode.key) {
+            // debugger;
+            vdt.destroy();
+            // } else if (vdt.vNode.tag !== Animate) {
+            // 因为所有的组件都是更新上一个vNode，所以
+            // vdt.destroy();
+        } else {
+                // debugger;
+            }
         this._destroy(lastVNode, nextVNode);
+        this.off();
+        this.destroyed = true;
     },
     get: function get$$2(key, defaultValue) {
         if (key === undefined) return this.props;
@@ -3412,6 +3489,8 @@ Intact$1.prototype = {
         var callbacks = this._events[name];
 
         if (callbacks) {
+            callbacks = callbacks.slice();
+
             for (var _len2 = arguments.length, args = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
                 args[_key2 - 1] = arguments[_key2];
             }
@@ -3466,7 +3545,8 @@ Intact$1.mount = function (Component, node) {
     return c;
 };
 
-var Animate = Intact$1.extend({
+var Animate = void 0;
+var Animate$1 = Animate = Intact$1.extend({
     displayName: 'Animate',
 
     defaults: {
@@ -3474,7 +3554,7 @@ var Animate = Intact$1.extend({
         transition: 'animate'
     },
 
-    template: Vdt$1.compile('\n        var tagName = self.get(\'tagName\'),\n            isComponent = typeof tagName === \'function\',\n            props = {}, \n            allProps = self.get(),\n            children = self.values(self.childrenMap);\n        for (var prop in allProps) {\n            if (prop === \'tagName\' || prop === \'transition\') continue;\n            props[prop] = allProps[prop];\n        }\n\n        if (isComponent) {\n            props.children = children;\n            return h(tagName, props);\n        } else {\n            return h(tagName, props, children);\n        }', { autoReturn: false, noWith: true }),
+    template: Vdt$1.compile('\n        var tagName = self.get(\'tagName\'),\n            type = typeof tagName,\n            isComponent = type === \'function\' || type === \'object\',\n            props = {}, \n            allProps = self.get(),\n            children = self.values(self.childrenMap);\n        for (var prop in allProps) {\n            if (prop === \'tagName\' || prop === \'transition\') continue;\n            props[prop] = allProps[prop];\n        }\n\n        if (isComponent) {\n            props.children = children;\n            return h(tagName, props);\n        } else {\n            return h(tagName, props, children);\n        }', { autoReturn: false, noWith: true }),
 
     _init: function _init() {
         this.childrenMap = getChildMap(this.get('children'));
@@ -3488,23 +3568,25 @@ var Animate = Intact$1.extend({
     values: values,
 
     _beforeUpdate: function _beforeUpdate(lastVNode, nextVNode) {
+        var _this = this;
+
         if (!nextVNode) return;
 
         var nextMap = getChildMap(this.get('children'));
         var prevMap = this.childrenMap;
         this.childrenMap = mergeChildren(prevMap, nextMap);
 
-        each(nextMap, function (value, key) {
-            if (nextMap[key] && (!prevMap || !prevMap.hasOwnProperty(key)) && !this.currentKeys[key]) {
-                this.keysToEnter.push(key);
+        each(nextMap, function (next, key) {
+            if (next && next.tag === Animate && (!prevMap || !prevMap.hasOwnProperty(key)) && !_this.currentKeys[key]) {
+                _this.keysToEnter.push(key);
             }
-        }, this);
+        });
 
-        each(prevMap, function (value, key) {
-            if (prevMap[key] && (!nextMap || !nextMap.hasOwnProperty(key)) && !this.currentKeys[key]) {
-                this.keysToLeave.push(key);
+        each(prevMap, function (prev, key) {
+            if (prev && prev.tag === Animate && (!nextMap || !nextMap.hasOwnProperty(key)) && !_this.currentKeys[key]) {
+                _this.keysToLeave.push(key);
             }
-        }, this);
+        });
     },
     _update: function _update(lastVNode, nextVNode) {
         if (!nextVNode) return;
@@ -3518,26 +3600,26 @@ var Animate = Intact$1.extend({
         each(keysToLeave, this.performLeave, this);
     },
     performEnter: function performEnter(key) {
-        var _this = this;
+        var _this2 = this;
 
         var component = this.childrenMap[key].children;
         this.currentKeys[key] = true;
-        if (component && component.enter) {
+        if (component) {
             component.enter(function () {
-                return _this._doneEntering(key);
+                return _this2._doneEntering(key);
             });
         } else {
             this._doneEntering(key);
         }
     },
     performLeave: function performLeave(key) {
-        var _this2 = this;
+        var _this3 = this;
 
         var component = this.childrenMap[key].children;
         this.currentKeys[key] = true;
-        if (component && component.leave) {
+        if (component) {
             component.leave(function () {
-                return _this2._doneLeaving(key);
+                return _this3._doneLeaving(key);
             });
         } else {
             this._doneLeaving(key);
@@ -3641,7 +3723,8 @@ function mergeChildren(prev, next) {
                 nextKeysPending[prevKey] = pendingKeys;
                 pendingKeys = [];
             }
-        } else {
+        } else if (prev[prevKey] && prev[prevKey].tag === Animate) {
+            // only add Animate child
             pendingKeys.push(prevKey);
         }
     }
@@ -3784,8 +3867,8 @@ var TransitionEvents = {
     }
 };
 
-Intact$1.prototype.Animate = Animate;
-Intact$1.Animate = Animate;
+Intact$1.prototype.Animate = Animate$1;
+Intact$1.Animate = Animate$1;
 Intact$1.Vdt = Vdt$1;
 Vdt$1.configure({
     getModel: function getModel(self, key) {

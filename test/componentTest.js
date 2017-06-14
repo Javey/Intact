@@ -1,6 +1,7 @@
 import Intact from '../src';
 import assert from 'assert';
 import _ from 'lodash';
+import App from './components/app';
 
 const sEql = assert.strictEqual;
 const dEql = assert.deepStrictEqual;
@@ -165,7 +166,6 @@ describe('Component Test', function() {
         sEql(a.element.outerHTML, '<div><b>3</b><b>1</b></div>');
 
         a.set('a', 4);
-        console.log(a)
         sEql(a.element.outerHTML, '<div><b>3</b><b>1</b></div>');
     });
 
@@ -215,5 +215,300 @@ describe('Component Test', function() {
         });
 
         a.on('$inited', inited);
+    });
+
+    it('should replace element when the key is different for the same components', () => {
+        const app = Intact.mount(App, document.body);
+        const C = Intact.extend({template: '<a>a</a>'});
+        const D = Intact.extend({
+            defaults: {key: 'a'},
+            template: '<span><C key={self.get("key")} /></span>',
+            _init() { this.C = C; }
+        });
+        app.load(D);
+        const element1 = app.element.firstChild;
+        app.load(D, {key: 'b'});
+        const element2 = app.element.firstChild;
+        sEql(element1 === element2, false);
+        app.load(D, {key: 'b'});
+        const element3 = app.element.firstChild;
+        sEql(element2 === element3, true);
+
+        document.body.removeChild(app.element);
+    });
+
+    describe('Async Component', () => {
+        let app;
+        beforeEach(function() {
+            this.enableTimeouts(false);
+            app = Intact.mount(App, document.body);
+        });
+
+        afterEach(function() {
+            document.body.removeChild(app.element);
+        });
+
+        function checkFunctionCallCount(p, counts) {
+            _.each(['_init', '_create', '_mount', '_update', '_destroy'], (item, index) => {
+                sEql(p[item].callCount, counts[index]);
+            });
+        }
+
+        it('should render async component correctly', function(done) {
+            this.enableTimeouts(false);
+            const p = {
+                template: '<a ref={(dom) => self.dom = dom}>a</a>',
+                _init: sinon.spy(() => {
+                    return new Promise((resolve) => {
+                        setTimeout(() => {
+                            resolve();
+                        });
+                    });
+                }),
+                _create: sinon.spy(() => {
+                    sEql(app.element.innerHTML, '<!---->');
+                }),
+                _mount: sinon.spy(() => {
+                    sEql(app.element.innerHTML, '<a>a</a>');
+                }),
+                _update: sinon.spy(),
+                _destroy: sinon.spy()
+            };
+            const Async = Intact.extend(p);
+
+            app.load(Async);
+
+            sEql(app.element.innerHTML, '<!---->');
+            checkFunctionCallCount(p, [1, 0, 0, 0, 0]);
+            sEql(app.get('view').dom, undefined);
+
+            setTimeout(() => {
+                sEql(app.element.innerHTML, '<a>a</a>');
+                checkFunctionCallCount(p, [1, 1, 1, 0, 0]);
+                sEql(app.get('view').dom, app.element.firstChild);
+                
+                done();
+            });
+        });
+
+        it('should render the last async component directly and ignore progress state', function(done) {
+            this.enableTimeouts(false);
+            function createAsyncComponent(index, time) {
+                return Intact.extend({
+                    template: `<a>${index}</a>`,
+                    _init() {
+                        this.i = index;
+                        return new Promise((resolve) => {
+                            setTimeout(() => resolve(), time);
+                        });
+                    }
+                });
+            }
+            const Async1 = createAsyncComponent(1, 100);
+            const Async2 = createAsyncComponent(2, 200);
+
+            app.load(Async1);
+            app.load(Async2);
+
+            setTimeout(() => {
+                sEql(app.element.innerHTML, '<!---->');
+            }, 150);
+            setTimeout(() => {
+                sEql(app.element.innerHTML, '<a>2</a>');
+                done();
+            }, 300);
+        });
+
+        it('should destroy async component correctly', function(done) {
+            this.enableTimeouts(false);
+            const p = {
+                template: '<a ref={(dom) => self.dom = dom}>a</a>',
+                _init: sinon.spy(function() {
+                    return new Promise((resolve) => {
+                        setTimeout(() => {
+                            this.update();
+                            resolve();
+                        });
+                    });
+                }),
+                _create: sinon.spy(),
+                _mount: sinon.spy(),
+                _update: sinon.spy(),
+                _destroy: sinon.spy()
+            };
+            const Async = Intact.extend(p);
+            const Sync = Intact.extend({template: '<b>b</b>'});
+
+            app.load(Async);
+            app.load(Sync);
+
+            sEql(app.element.innerHTML, '<b>b</b>');
+            checkFunctionCallCount(p, [1, 0, 0, 0, 1]);
+            sEql(app.get('view').dom, undefined);
+
+            setTimeout(() => {
+                sEql(app.element.innerHTML, '<b>b</b>');
+                checkFunctionCallCount(p, [1, 0, 0, 0, 1]);
+                sEql(app.get('view').dom, undefined);
+                
+                // the async component should be destroyed correctly,
+                // although it has be rendered
+                app.load(Async);
+                const lastView = app.get('view');
+
+                setTimeout(() => {
+                    app.load(Sync);
+                    sEql(lastView.dom , null);
+                    sEql(app.element.innerHTML, '<b>b</b>');
+                    lastView.update();
+                    sEql(app.element.innerHTML, '<b>b</b>');
+                    checkFunctionCallCount(p, [2, 1, 1, 1, 2]);
+                });
+                done();
+            });
+        });
+
+        it('should not run destroy until the next async component start to render', function(done) {
+            this.enableTimeouts(false);
+            const Async = Intact.extend({
+                template: '<a>a</a>',
+                _init() {
+                    return new Promise((resolve) => {
+                        setTimeout(() => {
+                            resolve();
+                        }, 500);
+                    });
+                }
+            });
+            const _destroy = sinon.spy(function() {
+                this.element.removeChild(this.text);
+            });
+            const Sync = Intact.extend({
+                defaults: {value: 'b'},
+                template: '<b>{self.get("value")}</b>',
+                _create() {
+                    this.text = document.createTextNode('c');
+                    this.element.appendChild(this.text);
+                },
+                _destroy: _destroy 
+            });
+            const sync = app.load(Sync);
+            app.load(Async);
+            app.update();
+            sEql(app.element.innerHTML, '<b>bc</b>');
+            sync.set('value', 'bb');
+            app.update();
+            
+            sEql(app.element.innerHTML, '<b>bbc</b>');
+            sEql(_destroy.callCount, 0);
+            setTimeout(() => {
+                sEql(_destroy.callCount, 1);
+                sEql(app.element.innerHTML, '<a>a</a>');
+                
+                app.load(Sync);
+                app.load(Async);
+                app.load(Sync);
+                sEql(_destroy.callCount, 2);
+                sEql(app.element.innerHTML, '<b>bc</b>');
+
+                done();
+            }, 600);
+        });
+
+        it('should render nested async component correctly', function(done) {
+            this.enableTimeouts(false);
+            const Async1 = Intact.extend({
+                template: '<a>a</a>',
+                _init() {
+                    return new Promise((resolve) => {
+                        setTimeout(() => resolve(), 100);
+                    });
+                }
+            });
+            const Async2 = Intact.extend({
+                template: '<span><Async1 /></span>',
+                _init() {
+                    this.Async1 = Async1;
+                    return new Promise((resolve) => {
+                        setTimeout(() => resolve(), 100);
+                    });
+                }
+            });
+            app.load(Async2);
+            sEql(app.element.innerHTML, '<!---->');
+            setTimeout(() => {
+                sEql(app.element.innerHTML, '<span><!----></span>');
+                app.load(Async2);
+                sEql(app.element.innerHTML, '<span><!----></span>');
+            }, 150);
+            setTimeout(() => {
+                sEql(app.element.innerHTML, '<span><a>a</a></span>');
+
+                // update
+                const sync = app.load(Async2);
+                sEql(app.element.innerHTML, '<span><a>a</a></span>');
+                sEql(sync.inited, false);
+                sEql(sync.rendered, false);
+
+                setTimeout(() => {
+                    sEql(app.element.innerHTML, '<span><a>a</a></span>');
+                    sEql(sync.inited, true);
+                    sEql(sync.rendered, true);
+
+                    done();
+                }, 300);
+            }, 300);
+        });
+
+        it('patch async component with sync component use the different tag', (done) => {
+            const Async = Intact.extend({
+                template: '<a>a</a>',
+                _init() {
+                    return new Promise((resolve) => {
+                        setTimeout(() => {
+                            resolve();
+                        });
+                    });
+                }
+            });
+            const Sync = Intact.extend({
+                template: '<b>b</b>'
+            });
+            app.load(Sync);
+            const syncElement = app.element.firstChild;
+            app.load(Async);
+            const asyncElement = app.element.firstChild;
+            sEql(syncElement, asyncElement);
+            setTimeout(() => {
+                sEql(app.element.innerHTML, '<a>a</a>');
+                done();
+            });
+        });
+
+        it('patch async component with sync component use the same tag', (done) => {
+            const Async = Intact.extend({
+                template: '<a>a</a>',
+                _init() {
+                    return new Promise((resolve) => {
+                        setTimeout(() => {
+                            resolve();
+                        });
+                    });
+                }
+            });
+            const Sync = Intact.extend({
+                template: '<a>b</a>'
+            });
+            app.load(Sync);
+            const syncElement = app.element.firstChild;
+            app.load(Async);
+            const asyncElement = app.element.firstChild;
+            sEql(syncElement, asyncElement);
+            setTimeout(() => {
+                sEql(app.element.innerHTML, '<a>a</a>');
+                sEql(syncElement, app.element.firstChild);
+                done();
+            });
+        });
     });
 });

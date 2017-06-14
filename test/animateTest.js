@@ -38,7 +38,7 @@ describe('Animate Test', function() {
         }, 500);
     });
 
-    it('animate cross component', (done) => {
+    it('animate cross components', (done) => {
         const app = Intact.mount(App, document.body);
         app.load(Index);
         app.load(Detail);
@@ -55,14 +55,40 @@ describe('Animate Test', function() {
 
     it('should destroy component when leaving', (done) => {
         const app = Intact.mount(App, document.body);
+        const _destroy = sinon.spy();
         const C = Intact.extend({
             template: '<span>c</span>',
-            _destroy() {
-                console.log('aaa')
-            }
+            _destroy: _destroy
         });
         app.load(Index, {Component: new C()});
-        // app.load(Detail);
+        app.load(Detail);
+        app.load(Index, {Component: new C()});
+        sEql(_destroy.callCount, 1);
+        done();
+    });
+
+    it('patch between Animate and non-Animate components', (done) => {
+        const app = Intact.mount(App, document.body);
+        const C = Intact.extend({
+            template: `var Animate = self.Animate;
+                <Animate>
+                    <div key="c-header">c header</div>
+                    <Animate key="c-body">c body</Animate>
+                </Animate>
+            `,
+            destroy() {}
+        });
+        const D = Intact.extend({
+            template: `var Animate = self.Animate;
+                <Animate>
+                    <div key="d-header">d header</div>
+                    <div key="d-body">d body</div>
+                </Animate>
+            `,
+            destroy() {}
+        });
+        app.load(C);
+        app.load(D);
         done();
     });
 });

@@ -1,7 +1,7 @@
 import {extend, isArray, each, isObject, hasOwn} from 'vdt/src/lib/utils';
 import {isNullOrUndefined} from 'miss/src/utils';
 
-export {extend, isArray, each, isObject, hasOwn};
+export {extend, isArray, each, isObject, hasOwn, isNullOrUndefined};
 
 /**
  * inherit

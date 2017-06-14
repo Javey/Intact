@@ -1,6 +1,7 @@
-import {each, isArray, bind, extend, values} from './utils';
+import {each, isArray, bind, extend, values, isNullOrUndefined} from './utils';
 import Intact from './intact';
 import Vdt from 'vdt';
+import {removeElement} from 'miss/src/vdom';
 
 // Animate Widget for animation
 let Animate;
@@ -202,7 +203,8 @@ function mergeChildren(prev, next) {
                 nextKeysPending[prevKey] = pendingKeys;
                 pendingKeys = [];
             }
-        } else {
+        } else if (prev[prevKey] && prev[prevKey].tag === Animate) {
+            // only add Animate child
             pendingKeys.push(prevKey);
         }
     }

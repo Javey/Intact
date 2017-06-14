@@ -4,8 +4,11 @@ import {
     keys
 } from './utils';
 import Vdt from 'vdt';
+import {hc, render} from 'miss';
+import {removeComponentClassOrInstance} from 'miss/src/vdom';
 import {EMPTY_OBJ} from 'miss/src/vnode';
 import {isNullOrUndefined, isEventProp} from 'miss/src/utils';
+import Animate from './animate';
 
 export default function Intact(props) {
     if (!this.template) {
@@ -27,6 +30,7 @@ export default function Intact(props) {
     this.inited = false;
     this.rendered = false;
     this.mounted = false;
+    this.destroyed = false;
 
     // if the flag is false, every set operation will not lead to update 
     this._startRender = false;
@@ -71,27 +75,61 @@ Intact.prototype = {
     _destroy(lastVNode, nextVNode) {},
 
     init(lastVNode, nextVNode) {
+        const vdt = this.vdt;
+        this.lastVNode = lastVNode;
         if (!this.inited) {
             // 支持异步组件
-            const placeholder = document.createComment('placeholder');
-            this.one('$inited', () => {
-                const parent = placeholder.parentNode;
-                if (parent) {
-                    parent.replaceChild(this.init(lastVNode, nextVNode), placeholder);
+            let placeholder;
+            if (lastVNode) {
+                placeholder = lastVNode.dom;
+                const lastInstance = lastVNode.children;
+                vdt.vNode = lastInstance.vdt.vNode;
+                // 如果上一个组件是异步组件，并且也还没渲染完成，则直接destroy掉
+                // 让它不再渲染了
+                if (!lastInstance.inited) {
+                    removeComponentClassOrInstance(lastVNode, null, nextVNode);
                 }
+            } else {
+                const vNode = hc('');
+                placeholder = render(vNode);
+                vdt.vNode = vNode;
+            }
+            this.one('$inited', () => {
+                const element = this.init(lastVNode, nextVNode);
+                const dom = nextVNode.dom;
+                if (!lastVNode || lastVNode.key !== nextVNode.key) {
+                    nextVNode.dom = element;
+                    dom.parentNode.replaceChild(element, dom);
+                    this._triggerMountedQueue();
+                }
+                this.mount(lastVNode, nextVNode);
             });
+            vdt.node = placeholder;
             return placeholder;
         }
+
         this._startRender = true;
-        if (lastVNode) {
+        // 如果key不相同，则不复用dom，直接返回新dom来替换
+        if (lastVNode && lastVNode.key === nextVNode.key) {
+            // destroy the last component
+            if (!lastVNode.children.destroyed) {
+                removeComponentClassOrInstance(lastVNode, null, nextVNode);
+            }
+        
             // make the dom not be replaced, but update the last one
-            this.vdt.vNode = lastVNode.children.vdt.vNode;
-            this.element = this.vdt.update(this);
+            vdt.vNode = lastVNode.children.vdt.vNode;
+            this.element = vdt.update(this);
         } else {
-            this.element = this.vdt.render(this, this.parentDom, this.mountedQueue);
+            if (lastVNode) {
+                removeComponentClassOrInstance(lastVNode, null, nextVNode);
+            }
+            this.element = vdt.render(this, this.parentDom, this.mountedQueue);
         }
         this.rendered = true;
-        if (this._pendingUpdate) this._pendingUpdate();
+        if (this._pendingUpdate) {
+            this._pendingUpdate();
+            this._pendingUpdate = null;
+        }
         this.trigger('$rendered', this);
         this._create(lastVNode, nextVNode);
 
@@ -99,18 +137,25 @@ Intact.prototype = {
     },
 
     mount(lastVNode, nextVNode) {
+        // 异步组件，直接返回
+        if (!this.inited) return;
         this.mounted = true;
         this.trigger('$mounted', this);
         this._mount(lastVNode, nextVNode);
     },
 
     update(lastVNode, nextVNode) {
+        // 如果该组件已被销毁，则不更新
+        if (this.destroyed) {
+            console.log('update',lastVNode ? lastVNode.dom : undefined);
+            return lastVNode ? lastVNode.dom : undefined;
+        }
         // 如果还没有渲染，则等待结束再去更新
         if (!this.rendered) {
             this._pendingUpdate = function() {
                 this.update(lastVNode, nextVNode);
             };
-            return;
+            return lastVNode ? lastVNode.dom : undefined;
         }
 
         ++this._updateCount;
@@ -220,9 +265,28 @@ Intact.prototype = {
     },
 
     destroy(lastVNode, nextVNode) {
-        this.off();
-        this.vdt.destroy();
+        if (this.destroyed) debugger;
+        const vdt = this.vdt;
+        // 异步组件，可能还没有渲染
+        if (!this.rendered) {
+            // 异步组件，只有开始渲染时才销毁上一个组件
+            // 如果没有渲染当前异步组件就被销毁了，则要
+            // 在这里销毁上一个组件
+            if (this.lastVNode && !this.lastVNode.children.destroyed) {
+                removeComponentClassOrInstance(this.lastVNode, null, nextVNode);
+            }
+        } else if (!nextVNode || nextVNode.key !== lastVNode.key) {
+            // debugger;
+            vdt.destroy();
+        // } else if (vdt.vNode.tag !== Animate) {
+            // 因为所有的组件都是更新上一个vNode，所以
+            // vdt.destroy();
+        } else {
+            // debugger;
+        }
         this._destroy(lastVNode, nextVNode);
+        this.off();
+        this.destroyed = true;
     },
 
     get(key, defaultValue) {
@@ -387,6 +451,7 @@ Intact.prototype = {
         let callbacks = this._events[name];
 
         if (callbacks) {
+            callbacks = callbacks.slice();
             for (let i = 0, l = callbacks.length; i < l; i++) {
                 callbacks[i].apply(this, args);
             }
