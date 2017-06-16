@@ -27,6 +27,8 @@ export default function Intact(props) {
     this._widget = this.props.widget || uniqueId('widget');
     this.attributes = this.props;
 
+    this.uniqueId = this._widget;
+
     this.inited = false;
     this.rendered = false;
     this.mounted = false;
@@ -76,7 +78,7 @@ Intact.prototype = {
 
     init(lastVNode, nextVNode) {
         const vdt = this.vdt;
-        this.lastVNode = lastVNode;
+        this._lastVNode = lastVNode;
         if (!this.inited) {
             // 支持异步组件
             let placeholder;
@@ -273,8 +275,9 @@ Intact.prototype = {
             // 异步组件，只有开始渲染时才销毁上一个组件
             // 如果没有渲染当前异步组件就被销毁了，则要
             // 在这里销毁上一个组件
-            if (this.lastVNode && !this.lastVNode.children.destroyed) {
-                removeComponentClassOrInstance(this.lastVNode, null, nextVNode);
+            const _lastVNode = this._lastVNode;
+            if (_lastVNode && !_lastVNode.children.destroyed) {
+                removeComponentClassOrInstance(_lastVNode, null, lastVNode);
             }
         } else if (!nextVNode || nextVNode.key !== lastVNode.key) {
             vdt.destroy();
@@ -485,12 +488,16 @@ Intact.mount = function(Component, node) {
     }
     const c = new Component();
     c.parentDom = node;
+    // c._initMountedQueue();
+    let dom;
     if (c.inited) {
-        c.init(); 
+        dom = c.init();
+        // node.appendChild(dom);
         c.mount();
     } else {
         c.one('$inited', () => {
-            c.init();
+            dom = c.init();
+            // node.appendChild(dom);
             c.mount();
         });
     }

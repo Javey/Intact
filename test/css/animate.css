@@ -1,18 +1,16 @@
-.animate-leave {
-    opacity: 1;
-}
-.animate-leave.animate-leave-active {
-    -webkit-transition: opacity cubic-bezier(0.250, 0.460, 0.450, 0.940) 200ms;
-    transition: opacity cubic-bezier(0.250, 0.460, 0.450, 0.940) 200ms;
-    opacity: 0;
+/* .animate-leave { */
+    /* opacity: 1; */
+/* } */
+
+.animate-enter, .animate-leave {
+    -webkit-transition: opacity cubic-bezier(0.250, 0.460, 0.450, 0.940) 20000ms;
+    /* transition: opacity cubic-bezier(0.250, 0.460, 0.450, 0.940) 200ms; */
 }
 
-.animate-enter {
+.animate-enter, .animate-leave-active {
     opacity: 0;
 }
-.animate-enter.animate-enter-active {
-    -webkit-transition: opacity cubic-bezier(0.250, 0.460, 0.450, 0.940) 200ms;
-    transition: opacity cubic-bezier(0.250, 0.460, 0.450, 0.940) 200ms;
+.animate-enter-active {
     opacity: 1;
 }
 

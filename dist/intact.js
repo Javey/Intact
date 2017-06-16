@@ -2023,28 +2023,29 @@ function processForm(vNode, dom, nextProps, isRender) {
 
 function render(vNode, parentDom, mountedQueue) {
     if (isNullOrUndefined(vNode)) return;
-    var isTrigger = false;
-    if (parentDom || !mountedQueue) {
+    var isTrigger = true;
+    if (mountedQueue) {
+        isTrigger = false;
+    } else {
         mountedQueue = new MountedQueue();
-        isTrigger = true;
     }
-    var dom = createElement(vNode, parentDom, mountedQueue);
+    var dom = createElement(vNode, parentDom, mountedQueue, !isTrigger /* isNotAppendChild */);
     if (isTrigger) {
         mountedQueue.trigger();
     }
     return dom;
 }
 
-function createElement(vNode, parentDom, mountedQueue) {
+function createElement(vNode, parentDom, mountedQueue, isNotAppendChild) {
     var type = vNode.type;
     if (type & Types.Element) {
-        return createHtmlElement(vNode, parentDom, mountedQueue);
+        return createHtmlElement(vNode, parentDom, mountedQueue, isNotAppendChild);
     } else if (type & Types.Text) {
         return createTextElement(vNode, parentDom);
     } else if (type & Types.ComponentClassOrInstance) {
-        return createComponentClassOrInstance(vNode, parentDom, mountedQueue);
+        return createComponentClassOrInstance(vNode, parentDom, mountedQueue, null, isNotAppendChild);
     } else if (type & Types.ComponentFunction) {
-        return createComponentFunction(vNode, parentDom, mountedQueue);
+        return createComponentFunction(vNode, parentDom, mountedQueue, isNotAppendChild);
         // } else if (type & Types.ComponentInstance) {
         // return createComponentInstance(vNode, parentDom, mountedQueue);
     } else if (type & Types.HtmlComment) {
@@ -2054,7 +2055,7 @@ function createElement(vNode, parentDom, mountedQueue) {
     }
 }
 
-function createHtmlElement(vNode, parentDom, mountedQueue) {
+function createHtmlElement(vNode, parentDom, mountedQueue, isNotAppendChild) {
     var dom = doc.createElement(vNode.tag);
     var children = vNode.children;
     var ref = vNode.ref;
@@ -2064,7 +2065,7 @@ function createHtmlElement(vNode, parentDom, mountedQueue) {
     vNode.dom = dom;
 
     if (!isNullOrUndefined(children)) {
-        createElements(children, dom, mountedQueue);
+        createElements(children, dom, mountedQueue, isNotAppendChild);
     }
 
     if (!isNullOrUndefined(className)) {
@@ -2085,7 +2086,7 @@ function createHtmlElement(vNode, parentDom, mountedQueue) {
         createRef(dom, ref, mountedQueue);
     }
 
-    if (parentDom) {
+    if (parentDom && !isNotAppendChild) {
         parentDom.appendChild(dom);
     }
 
@@ -2103,10 +2104,10 @@ function createTextElement(vNode, parentDom) {
     return dom;
 }
 
-function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode) {
+function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isNotAppendChild) {
     var props = vNode.props;
     var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
-    instance.parentDom = null;
+    instance.parentDom = parentDom;
     instance.mountedQueue = mountedQueue;
     var dom = instance.init(lastVNode, vNode);
     var ref = vNode.ref;
@@ -2114,8 +2115,9 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
     vNode.dom = dom;
     vNode.children = instance;
 
-    if (parentDom) {
-        parentDom.appendChild(dom);
+    if (parentDom && !isNotAppendChild) {
+        appendChild(parentDom, vNode);
+        // parentDom.appendChild(dom);
     }
 
     if (typeof instance.mount === 'function') {
@@ -2183,15 +2185,15 @@ function createComponentFunctionVNode(vNode) {
     return vNode;
 }
 
-function createElements(vNodes, parentDom, mountedQueue) {
+function createElements(vNodes, parentDom, mountedQueue, isNotAppendChild) {
     if (isStringOrNumber(vNodes)) {
         setTextContent(parentDom, vNodes);
     } else if (isArray(vNodes)) {
         for (var i = 0; i < vNodes.length; i++) {
-            createElement(vNodes[i], parentDom, mountedQueue);
+            createElement(vNodes[i], parentDom, mountedQueue, isNotAppendChild);
         }
     } else {
-        createElement(vNodes, parentDom, mountedQueue);
+        createElement(vNodes, parentDom, mountedQueue, isNotAppendChild);
     }
 }
 
@@ -2274,7 +2276,8 @@ function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
     // removeElements(vNode.props.children, null);
 
     if (parentDom) {
-        parentDom.removeChild(vNode.dom);
+        removeChild(parentDom, vNode);
+        // parentDom.removeChild(vNode.dom);
     }
 }
 
@@ -2286,6 +2289,23 @@ function removeAllChildren(dom, vNodes) {
 function replaceChild(parentDom, nextDom, lastDom) {
     if (!parentDom) parentDom = lastDom.parentNode;
     parentDom.replaceChild(nextDom, lastDom);
+}
+
+function removeChild(parentDom, vNode) {
+    var dom = vNode.dom;
+    if (dom._umount) {
+        dom._umount(vNode, parentDom);
+    } else {
+        parentDom.removeChild(dom);
+    }
+}
+
+function appendChild(parentDom, vNode) {
+    var dom = vNode.dom;
+    parentDom.appendChild(dom);
+    if (dom._mount) {
+        dom._mount(vNode, parentDom);
+    }
 }
 
 function createRef(dom, ref, mountedQueue) {
@@ -2402,7 +2422,8 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue) {
         nextVNode.children = instance;
     }
 
-    if (dom !== newDom && !newDom.parentNode) {
+    // perhaps the dom has be replaced
+    if (dom !== newDom && dom.parentNode) {
         replaceChild(parentDom, newDom, dom);
     }
 }
@@ -2422,7 +2443,7 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue) {
         nextVNode.dom = newDom;
     }
 
-    if (dom !== newDom && !newDom.parentNode) {
+    if (dom !== newDom && dom.parentNode) {
         replaceChild(parentDom, newDom, dom);
     }
 }
@@ -2698,7 +2719,7 @@ function insertOrAppend(pos, length, newDom, nodes, dom) {
     if (nextPos < length) {
         dom.insertBefore(newDom, nodes[nextPos].dom);
     } else {
-        dom.appendChild(newDom);
+        appendChild(dom, newDom);
     }
 }
 
@@ -3055,6 +3076,8 @@ function Intact$1(props) {
     this._widget = this.props.widget || uniqueId('widget');
     this.attributes = this.props;
 
+    this.uniqueId = this._widget;
+
     this.inited = false;
     this.rendered = false;
     this.mounted = false;
@@ -3108,7 +3131,7 @@ Intact$1.prototype = {
         var _this3 = this;
 
         var vdt = this.vdt;
-        this.lastVNode = lastVNode;
+        this._lastVNode = lastVNode;
         if (!this.inited) {
             // 支持异步组件
             var placeholder = void 0;
@@ -3300,8 +3323,9 @@ Intact$1.prototype = {
             // 异步组件，只有开始渲染时才销毁上一个组件
             // 如果没有渲染当前异步组件就被销毁了，则要
             // 在这里销毁上一个组件
-            if (this.lastVNode && !this.lastVNode.children.destroyed) {
-                removeComponentClassOrInstance(this.lastVNode, null, nextVNode);
+            var _lastVNode = this._lastVNode;
+            if (_lastVNode && !_lastVNode.children.destroyed) {
+                removeComponentClassOrInstance(_lastVNode, null, lastVNode);
             }
         } else if (!nextVNode || nextVNode.key !== lastVNode.key) {
             vdt.destroy();
@@ -3519,12 +3543,16 @@ Intact$1.mount = function (Component, node) {
     }
     var c = new Component();
     c.parentDom = node;
+    // c._initMountedQueue();
+    var dom = void 0;
     if (c.inited) {
-        c.init();
+        dom = c.init();
+        // node.appendChild(dom);
         c.mount();
     } else {
         c.one('$inited', function () {
-            c.init();
+            dom = c.init();
+            // node.appendChild(dom);
             c.mount();
         });
     }

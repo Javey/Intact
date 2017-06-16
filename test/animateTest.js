@@ -5,6 +5,7 @@ import css from './css/animate.css';
 import Index from './components/index';
 import Detail from './components/detail';
 import App from './components/app';
+import Animate from '../src/A';
 
 const sEql = assert.strictEqual;
 const dEql = assert.deepStrictEqual;
@@ -22,6 +23,23 @@ describe('Animate Test', function() {
         _mount: function() {
             this.set('show', false);
         }
+    });
+
+    it('test', () => {
+        const app = Intact.mount(App, document.body);
+        const C = Intact.extend({
+            template: '<Animate a:tag="span"><a>test</a></Animate>',
+            _init() {
+                this.Animate = Animate;
+            }
+        });
+        app.load(C);
+        setTimeout(() => {
+            app.set('view', undefined);
+        }, 5000);
+        setTimeout(() => {
+            app.load(C);
+        }, 6000);
     });
 
     it('Animate component render correctly', function() {
