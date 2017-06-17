@@ -1,9 +1,11 @@
-import Animate from './animate';
+// import Animate from './animate';
 import Intact from './intact';
 import Vdt from 'vdt';
+import A from './A';
 
-Intact.prototype.Animate = Animate;
-Intact.Animate = Animate;
+Intact.prototype.Animate = A;
+// Intact.Animate = Animate;
+Intact.Animate = A;
 Intact.Vdt = Vdt;
 Vdt.configure({
     getModel(self, key) {

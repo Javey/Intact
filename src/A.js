@@ -1,11 +1,13 @@
 import Intact from './intact';
 import {isNullOrUndefined} from 'miss/src/utils';
+import {Types} from 'miss/src/vnode';
 import Vdt from 'vdt';
 
 export default Intact.extend({
     defaults: {
         'a:tag': 'div',
-        'a:transition': 'animate'
+        'a:transition': 'animate',
+        'a:appear': false
     },
 
     template() {
@@ -23,144 +25,123 @@ export default Intact.extend({
     },
 
     init(lastVNode, nextVNode) {
-        console.log(arguments);
-        console.log(this.parentDom && this.parentDom._reserve);
-        if (this.parentDom && this.parentDom._reserve) {
-            lastVNode = this.parentDom._reserve[nextVNode.key];
+        const parentDom = this.parentDom;
+        if (parentDom && parentDom._reserve) {
+            lastVNode = parentDom._reserve[nextVNode.key];
         }
         return this._super(lastVNode, nextVNode);
     },
 
-    _create() {
-        console.log('create', this.element);
-
-        const element = this.element;
-        if (element.mount) return;
-
-        const mount = function(vNode, parentDom) {
-            const instance = vNode.children.vdt.vNode.children;
-
-            mount.done = function() {
-                // element.mountCancelled = false;
-                // element.mountDone = true;
-                mount.cancelled = false;
-                mount.isRunning = false;
-            };
-
-            mount.callback = function(e) {
-                e && e.stopPropagation();
-                removeClass(element, `${transition}-enter`);
-                removeClass(element, `${transition}-enter-active`);
-                unmount.done();
-            };
-
-            mount.cancelled = false;
-            mount.isRunning = false;
-
-            instance._performEnter(vNode, parentDom);
-        };
-        const unmount = function(vNode, parentDom) {
-            // const instance = vNode.children;
-            const instance = vNode.children.vdt.vNode.children;
-            const transition = instance.get('a:transition');
-
-            if (!parentDom._reserve) {
-                parentDom._reserve = {};
+    _mount(lastVNode, vNode) {
+        let isAppear = false;
+        if (this.isRender) {
+            let parent;
+            if (
+                this.get('a:appear') && 
+                (
+                    this.parentDom ||
+                    (parent = this.parentVNode) &&
+                    parent.type & Types.ComponentClassOrInstance &&
+                    !parent.children.isRender
+                )
+            ) {
+                isAppear = true;
             }
-            parentDom._reserve[vNode.key] = instance.vdt.vNode;
-
-            unmount.done = function() {
-                if (!unmount.cancelled) {
-                    parentDom.removeChild(element);
-                }
-                unmount.cancelled = false;
-                unmount.isRunning = false;
-                parentDom._reserve[vNode.key] = null;
-            };
-
-            unmount.callback = function(e) {
-                e && e.stopPropagation();
-                removeClass(element, `${transition}-leave`);
-                removeClass(element, `${transition}-leave-active`);
-                unmount.done();
-            };
-    
-            unmount.cancelled = false;
-            unmount.isRunning = false;
-
-            instance._performLeave(vNode, parentDom);
-        };
-
-        element._mount = mount;
-        element._unmount = unmount;
-    },
-
-    _performEnter(vNode, parentDom) {
-        const element = this.element;
-        const mount = element._mount;
-        if (mount.cancelled) {
-            TransitionEvents.off(element, mount.callback);
-            mount.callback();
-            return; 
         }
-        const unmount = element._unmount;
-        mount.isRunning = true;
-        if (unmount.isRunning) {
-            unmount.cancelled = true;
-            unmount(vNode, parentDom);
-        }
-        this._enter(mount.callback);
-    },
 
-    _performLeave(vNode, parentDom) {
-        const element = this.element;
-        const unmount = element._unmount;
-        if (unmount.cancelled) {
-            TransitionEvents.off(element, unmount.callback);
-            unmount.callback();
-            // element._isunmountCancelled = true;
-            return;
-        }
-        const mount = element._mount;
-        unmount.isRunning = true;
-        if (mount.isRunning) {
-            mount.cancelled = true;
-            mount(vNode, parentDom);
-        }
-        this._leave(unmount.callback);
-    },
-
-    _enter(done) {
         const transition = this.get('a:transition');
         const element = this.element;
 
-        // console.log('aaaaa', element._isunmountCancelled);
-        // if (!element._isunmountCancelled) {
-            addClass(element, `${transition}-enter`);
-        // }
-        TransitionEvents.one(element, done);
-        element.offsetWidth;
-        // nextFrame(() => {
-            addClass(element, `${transition}-enter-active`);
-        // });
+        let enterClass;
+        let enterActiveClass;
+        if (isAppear) {
+            enterClass = `${transition}-appear`;
+            enterActiveClass = `${transition}-appear-active`;
+        } else {
+            enterClass = `${transition}-enter`;
+            enterActiveClass = `${transition}-enter-active`;
+        }
+
+        this._enterEnd = (e) => {
+            e && e.stopPropagation();
+            removeClass(element, enterClass);
+            removeClass(element, enterActiveClass);
+            this._entering = false;
+            TransitionEvents.off(element, this._enterEnd);
+        }
+
+        if (this._lastVNode) {
+            const lastInstance = this._lastVNode.children;
+            if (lastInstance._leaving) {
+                TransitionEvents.off(element, lastInstance._leaveEnd);
+                lastInstance._unmountCancelled = true;
+                lastInstance._leaveEnd();
+            }
+        }
+
+        if (isAppear || !this.isRender) {
+            this._entering = true;
+            this._enter(this._enterEnd, enterClass, enterActiveClass);
+        }
+
+        element._unmount = (nouse, parentDom) => {
+            this._unmount(lastVNode, vNode, parentDom);
+        }
+    },
+
+    _unmount(lastVNode, vNode, parentDom) {
+        const element = this.element;
+        const transition = this.get('a:transition');
+
+        if (!parentDom._reserve) {
+            parentDom._reserve = {};
+        }
+        parentDom._reserve[vNode.key] = vNode;
+
+        this._leaving = true;
+
+        if (this._entering) {
+            TransitionEvents.off(element, this._enterEnd);
+            this._enterEnd();
+        }
+
+        this._leaveEnd = (e) => {
+            e && e.stopPropagation();
+            removeClass(element, `${transition}-leave`);
+            removeClass(element, `${transition}-leave-active`);
+            if (!this._unmountCancelled) {
+                parentDom.removeChild(element);
+            }
+            this._leaving = false;
+            delete parentDom._reserve[vNode.key];
+            TransitionEvents.off(element, this._leaveEnd);
+        }
+
+        this._leave(this._leaveEnd);
+    },
+
+    _enter(done, enterClass, enterActiveClass) {
+        const element = this.element;
+
+        addClass(element, enterClass);
+        TransitionEvents.on(element, done);
+        // element.offsetWidth;
+        nextFrame(() => {
+            addClass(element, enterActiveClass);
+        });
     },
 
     _leave(done) {
         const transition = this.get('a:transition');
         const element = this.element;
         addClass(element, `${transition}-leave`);
-        TransitionEvents.one(element, done);
-        element.offsetWidth;
-        // nextFrame(() => {
+        TransitionEvents.on(element, done);
+        // element.offsetWidth;
+        nextFrame(() => {
             addClass(element, `${transition}-leave-active`);
-        // });
+        });
     }
 });
-
-function mount(instance, vNode, parentDom) {
-    const element = instance.element;
-    
-}
 
 const raf = window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : setTimeout;
 export function nextFrame(fn) {

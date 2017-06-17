@@ -8,7 +8,6 @@ import {hc, render} from 'miss';
 import {removeComponentClassOrInstance} from 'miss/src/vdom';
 import {EMPTY_OBJ} from 'miss/src/vnode';
 import {isNullOrUndefined, isEventProp} from 'miss/src/utils';
-import Animate from './animate';
 
 export default function Intact(props) {
     if (!this.template) {
@@ -75,6 +74,7 @@ Intact.prototype = {
     _beforeUpdate(lastVNode, nextVNode) {},
     _update(lastVNode, nextVNode) {},
     _destroy(lastVNode, nextVNode) {},
+    _unmount(lastVNode, nextVNode, parentDom) { return true; },
 
     init(lastVNode, nextVNode) {
         const vdt = this.vdt;
@@ -120,12 +120,12 @@ Intact.prototype = {
         
             // make the dom not be replaced, but update the last one
             vdt.vNode = lastVNode.children.vdt.vNode;
-            this.element = vdt.update(this);
+            this.element = vdt.update(this, this.parentDom, nextVNode);
         } else {
             if (lastVNode) {
                 removeComponentClassOrInstance(lastVNode, null, nextVNode);
             }
-            this.element = vdt.render(this, this.parentDom, this.mountedQueue);
+            this.element = vdt.render(this, this.parentDom, this.mountedQueue, nextVNode);
         }
         this.rendered = true;
         if (this._pendingUpdate) {
@@ -287,13 +287,18 @@ Intact.prototype = {
         this.destroyed = true;
     },
 
-    get(key, defaultValue) {
+    unmount(lastVNode, nextVNode, parentDom) {
+        return this._unmount(lastVNode, nextVNode, parentDom);
+    },
+
+    // function name conflict with utils.get
+    get: function _get(key, defaultValue) {
         if (key === undefined) return this.props;
 
         return get(this.props, key, defaultValue);
     },
 
-    set(key, val, options) {
+    set: function _set(key, val, options) {
         if (isNullOrUndefined(key)) return this;
 
         let isSetByObject = false;
