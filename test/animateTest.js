@@ -101,6 +101,26 @@ describe('Animate Test', function() {
 
     });
 
+    it('Animate mode', function(done) {
+        this.enableTimeouts(false);
+        const app = Intact.mount(App, document.body);
+        const C = Intact.extend({
+            template: `<Animate>
+                <Animate key="c1">c1</Animate>
+                <Animate key="c2">c2</Animate>
+            </Animate>`
+        });
+        const D = Intact.extend({
+            template: `<Animate>
+                <Animate key="d2">d2</Animate>
+                <Animate key="d2">d2</Animate>
+            </Animate>`
+        });
+        app.load(C);
+        app.load(D);
+        done();
+    });
+
     it('Animate component render correctly', function() {
         var a = new A();
         a.init();

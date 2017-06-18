@@ -7,7 +7,8 @@ export default Intact.extend({
     defaults: {
         'a:tag': 'div',
         'a:transition': 'animate',
-        'a:appear': false
+        'a:appear': false,
+        'a:mode': 'both', // out-in | in-out
     },
 
     template() {
@@ -34,6 +35,7 @@ export default Intact.extend({
 
     _mount(lastVNode, vNode) {
         let isAppear = false;
+        console.log('lastVNode', lastVNode);
         if (this.isRender) {
             let parent;
             if (
@@ -70,7 +72,7 @@ export default Intact.extend({
             TransitionEvents.off(element, this._enterEnd);
         }
 
-        if (this._lastVNode) {
+        if (this._lastVNode && this._lastVNode !== lastVNode) {
             const lastInstance = this._lastVNode.children;
             if (lastInstance._leaving) {
                 TransitionEvents.off(element, lastInstance._leaveEnd);
