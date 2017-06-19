@@ -1,5 +1,5 @@
 import Intact from './intact';
-import {isNullOrUndefined} from 'miss/src/utils';
+import {isNullOrUndefined, MountedQueue as Queue} from 'miss/src/utils';
 import {Types} from 'miss/src/vnode';
 import Vdt from 'vdt';
 
@@ -35,7 +35,6 @@ export default Intact.extend({
 
     _mount(lastVNode, vNode) {
         let isAppear = false;
-        console.log('lastVNode', lastVNode);
         if (this.isRender) {
             let parent;
             if (
@@ -54,6 +53,17 @@ export default Intact.extend({
         const transition = this.get('a:transition');
         const element = this.element;
 
+        // const parentDom = this.parentDom;
+        // if (!parentDom._queue) {
+            // parentDom._queue = {};
+        // }
+        // if (!parentDom._queue.mountedQueue) {
+            // parentDom._queue.mountedQueue = new Queue();
+        // }
+        // parentDom._queue.mountedQueue.push(() => {
+            // this.position = element.getBoundingClientRect();
+        // });
+
         let enterClass;
         let enterActiveClass;
         if (isAppear) {
@@ -70,7 +80,7 @@ export default Intact.extend({
             removeClass(element, enterActiveClass);
             this._entering = false;
             TransitionEvents.off(element, this._enterEnd);
-        }
+        };
 
         if (this._lastVNode && this._lastVNode !== lastVNode) {
             const lastInstance = this._lastVNode.children;
@@ -88,7 +98,9 @@ export default Intact.extend({
 
         element._unmount = (nouse, parentDom) => {
             this._unmount(lastVNode, vNode, parentDom);
-        }
+        };
+
+        this.position = element.getBoundingClientRect();
     },
 
     _unmount(lastVNode, vNode, parentDom) {
@@ -117,31 +129,78 @@ export default Intact.extend({
             this._leaving = false;
             delete parentDom._reserve[vNode.key];
             TransitionEvents.off(element, this._leaveEnd);
-        }
+            // this.__destroyVNode(vNode);
+            this.destroy(vNode);
+        };
 
         this._leave(this._leaveEnd);
+    },
+
+    _update(lastVNode, vNode) {
+        return;
+        // nextFrame(() => {
+
+        if (this._moving) this._moveEnd();
+        if (this._entering) this._enterEnd();
+
+        const element = this.element;
+        const oldPosition = this.position;
+        const newPosition = this.position = element.getBoundingClientRect();
+        // const oldPosition = newPosition;
+        const dx = oldPosition.left - newPosition.left;
+        const dy = oldPosition.top - newPosition.top;
+        if (dx || dy) {
+            this._moving = true;
+            const s = element.style;
+            s.transform = s.WebkitTransform = `translate(${dx}px, ${dy}px)`;
+            s.transitionDuration = '0s';
+            const className = `${this.get('a:transition')}-move`;
+            addClass(element, className);
+            document.body.offsetWidth;
+            s.transform = s.WebkitTransform = s.transitionDuration = '';
+            this._moveEnd = (e) => {
+                e && e.stopPropagation();
+                if (!e || /transform$/.test(e.propertyName)) {
+                    TransitionEvents.off(element, this._moveEnd);
+                    removeClass(element, className);
+                    this._moving = false;
+                }
+            };
+            TransitionEvents.on(element, this._moveEnd);
+        }
+        // })
     },
 
     _enter(done, enterClass, enterActiveClass) {
         const element = this.element;
 
         addClass(element, enterClass);
-        TransitionEvents.on(element, done);
+        addClass(element, enterActiveClass);
         // element.offsetWidth;
+        TransitionEvents.on(element, done);
         nextFrame(() => {
-            addClass(element, enterActiveClass);
+        // setTimeout(() => {
+            // addClass(element, enterActiveClass);
+            removeClass(element, enterClass);
         });
     },
 
     _leave(done) {
         const transition = this.get('a:transition');
         const element = this.element;
-        addClass(element, `${transition}-leave`);
+        // addClass(element, `${transition}-leave`);
+        addClass(element, `${transition}-leave-active`);
         TransitionEvents.on(element, done);
         // element.offsetWidth;
         nextFrame(() => {
-            addClass(element, `${transition}-leave-active`);
+            // addClass(element, `${transition}-leave-active`);
+            addClass(element, `${transition}-leave`);
         });
+    },
+
+    destroy(lastVNode, nextVNode) {
+        if (this._leaving !== false) return;
+        this._super(lastVNode, nextVNode);
     }
 });
 

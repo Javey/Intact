@@ -89,7 +89,7 @@ Intact.prototype = {
                 // 如果上一个组件是异步组件，并且也还没渲染完成，则直接destroy掉
                 // 让它不再渲染了
                 if (!lastInstance.inited) {
-                    removeComponentClassOrInstance(lastVNode, null, nextVNode);
+                    this.__destroyVNode(lastVNode, nextVNode);
                 }
             } else {
                 const vNode = hc('');
@@ -102,8 +102,8 @@ Intact.prototype = {
                 if (!lastVNode || lastVNode.key !== nextVNode.key) {
                     nextVNode.dom = element;
                     dom.parentNode.replaceChild(element, dom);
-                    this._triggerMountedQueue();
                 }
+                this._triggerMountedQueue();
                 this.mount(lastVNode, nextVNode);
             });
             vdt.node = placeholder;
@@ -115,15 +115,15 @@ Intact.prototype = {
         if (lastVNode && lastVNode.key === nextVNode.key) {
             // destroy the last component
             if (!lastVNode.children.destroyed) {
-                removeComponentClassOrInstance(lastVNode, null, nextVNode);
+                this.__destroyVNode(lastVNode, nextVNode);
             }
         
             // make the dom not be replaced, but update the last one
             vdt.vNode = lastVNode.children.vdt.vNode;
-            this.element = vdt.update(this, this.parentDom, nextVNode);
+            this.element = vdt.update(this, this.parentDom, this.mountedQueue, nextVNode);
         } else {
             if (lastVNode) {
-                removeComponentClassOrInstance(lastVNode, null, nextVNode);
+                this.__destroyVNode(lastVNode, nextVNode);
             }
             this.element = vdt.render(this, this.parentDom, this.mountedQueue, nextVNode);
         }
@@ -136,6 +136,10 @@ Intact.prototype = {
         this._create(lastVNode, nextVNode);
 
         return this.element;
+    },
+
+    __destroyVNode(lastVNode, nextVNode) {
+        removeComponentClassOrInstance(lastVNode, null, nextVNode);
     },
 
     mount(lastVNode, nextVNode) {
@@ -172,9 +176,15 @@ Intact.prototype = {
         }
 
         this._beforeUpdate(lastVNode, nextVNode);
-        this.element = this.vdt.update(this);
-        this._update(lastVNode, nextVNode);
-
+        this.element = this.vdt.update(this, this.parentDom, this.mountedQueue, this.parentVNode);
+        // 让整个更新完成，才去触发_update生命周期函数
+        if (this.mountedQueue) {
+            this.mountedQueue.push(() => {
+                this._update(lastVNode, nextVNode);
+            });
+        } else {
+            this._update(lastVNode, nextVNode);
+        }
         if (--this._updateCount > 0) {
             // 如果更新完成，发现还有更新，则是在更新过程中又触发了更新
             // 此时直接将_updateCount置为1，因为所有数据都已更新，只做最后一次模板更新即可

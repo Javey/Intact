@@ -15,21 +15,20 @@
         border: 1px solid #666;
         box-sizing: border-box;
       }
-      .fade-enter, .fade-leave {
-        transition: all .5s cubic-bezier(.55,0,.1,1);
+      .fade-enter-active, .fade-leave-active, .fade-move {
+        transition: all 5s cubic-bezier(.55,0,.1,1);
       }
-      .fade-enter, .fade-leave-active {
+      .fade-enter, .fade-leave {
         opacity: 0;
         transform: scaleY(0.01) translate(30px, 0);
       }
-      .fade-enter-active {
-        opacity: 1;
-        transform: scaleY(1) translate(0, 0);
-      }
-      <!-- .fade-leave { -->
-        <!-- position: absolute; -->
+      <!-- .fade-enter-active { -->
+        <!-- opacity: 1; -->
+        <!-- transform: scaleY(1) translate(0, 0); -->
       <!-- } -->
-
+      .fade-leave-active {
+        position: absolute;
+      }
     </style>
     <script src="https://cdn.jsdelivr.net/lodash/4.3.0/lodash.min.js"></script>
     <!-- Delete ".min" for console warnings in development -->
@@ -61,6 +60,8 @@
                 var items = this.get('items');
                 var i = Math.round(Math.random() * items.length);
                 items.splice(i, 0, id++);
+                i = Math.round(Math.random() * items.length);
+                items.splice(i, 0, id++);
                 this.update();
             },
             reset() {
@@ -75,7 +76,7 @@
                 this.update();
             }
         });
-        Intact.mount(App, document.body);
+        var app = Intact.mount(App, document.body);
     </script>
   </body>
 </html>

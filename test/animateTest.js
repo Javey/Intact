@@ -121,6 +121,27 @@ describe('Animate Test', function() {
         done();
     });
 
+    it('Animate move', function(done) {
+        this.enableTimeouts(false);
+        const app = Intact.mount(App, document.body);
+        const C = Intact.extend({
+            template: `<ul>
+                <Animate a:tag="li" key="1">1</Animate> 
+                <Animate a:tag="li" key="2">2</Animate> 
+            </ul>`
+        });
+        const D = Intact.extend({
+            template: `<ul>
+                <Animate a:tag="li" key="1">1</Animate> 
+                <Animate a:tag="li" key="3">3</Animate> 
+                <Animate a:tag="li" key="2">2</Animate> 
+            </ul>`
+        });
+        app.load(C);
+        app.load(D);
+        done();
+    });
+
     it('Animate component render correctly', function() {
         var a = new A();
         a.init();

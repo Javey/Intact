@@ -150,6 +150,9 @@ function MountedQueue() {
 MountedQueue.prototype.push = function (fn) {
     this.queue.push(fn);
 };
+MountedQueue.prototype.unshift = function (fn) {
+    this.queue.unshift(fn);
+};
 MountedQueue.prototype.trigger = function () {
     var queue = this.queue;
     var callback = void 0;
@@ -245,7 +248,7 @@ var Options = {
     // whether rendering on server or not
     server: false,
     // skip all whitespaces in template
-    skipWhitespace: false,
+    skipWhitespace: true,
     setModel: function setModel(data, key, value) {
 
         // return function(e) {
@@ -475,12 +478,6 @@ var utils = (Object.freeze || Object)({
 	error: error$1
 });
 
-/**
- * inherit
- * @param Parent
- * @param prototype
- * @returns {Function}
- */
 function inherit(Parent, prototype) {
     var Child = function Child() {
         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
@@ -2058,7 +2055,6 @@ function createElement(vNode, parentDom, mountedQueue, isRender, parentVNode) {
 function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode) {
     var dom = doc.createElement(vNode.tag);
     var children = vNode.children;
-    var ref = vNode.ref;
     var props = vNode.props;
     var className = vNode.className;
 
@@ -2082,12 +2078,13 @@ function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode
         }
     }
 
+    var ref = vNode.ref;
     if (!isNullOrUndefined(ref)) {
         createRef(dom, ref, mountedQueue);
     }
 
-    if (parentDom && !dom.parentNode) {
-        parentDom.appendChild(dom);
+    if (parentDom) {
+        appendChild(parentDom, dom);
     }
 
     return dom;
@@ -2118,7 +2115,7 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
     vNode.children = instance;
 
     if (parentDom) {
-        appendChild(parentDom, vNode);
+        appendChild(parentDom, dom);
         // parentDom.appendChild(dom);
     }
 
@@ -2278,15 +2275,11 @@ function removeChild(parentDom, vNode) {
     }
 }
 
-function appendChild(parentDom, vNode) {
-    var dom = vNode.dom;
+function appendChild(parentDom, dom) {
     // for animation the dom will not be moved
     if (!dom.parentNode) {
         parentDom.appendChild(dom);
     }
-    // if (dom._mount) {
-    // dom._mount(vNode, parentDom);
-    // }
 }
 
 function createRef(dom, ref, mountedQueue) {
@@ -2299,10 +2292,17 @@ function createRef(dom, ref, mountedQueue) {
     }
 }
 
-function patch(lastVNode, nextVNode, parentDom, parentVNode) {
-    var mountedQueue = new MountedQueue();
+function patch(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode) {
+    var isTrigger = true;
+    if (mountedQueue) {
+        isTrigger = false;
+    } else {
+        mountedQueue = new MountedQueue();
+    }
     var dom = patchVNode(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode);
-    mountedQueue.trigger();
+    if (isTrigger) {
+        mountedQueue.trigger();
+    }
     return dom;
 }
 
@@ -2352,13 +2352,12 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode
     var nextProps = nextVNode.props;
     var lastChildren = lastVNode.children;
     var nextChildren = nextVNode.children;
-    var nextRef = nextVNode.ref;
     var lastClassName = lastVNode.className;
     var nextClassName = nextVNode.className;
 
     nextVNode.dom = dom;
 
-    if (lastVNode.tag !== nextVNode.tag) {
+    if (lastVNode.tag !== nextVNode.tag || lastVNode.key !== nextVNode.key) {
         replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode);
     } else {
         if (lastChildren !== nextChildren) {
@@ -2377,6 +2376,7 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode
             }
         }
 
+        var nextRef = nextVNode.ref;
         if (!isNullOrUndefined(nextRef) && lastVNode.ref !== nextRef) {
             createRef(dom, nextRef, mountedQueue);
         }
@@ -2398,6 +2398,8 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
         newDom = createComponentClassOrInstance(nextVNode, parentDom, mountedQueue, lastVNode, false, parentVNode);
     } else {
         instance = lastVNode.children;
+        instance.mountedQueue = mountedQueue;
+        instance.isRender = false;
         newDom = instance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
         nextVNode.children = instance;
@@ -2972,10 +2974,10 @@ Vdt$1.prototype = {
 
         return node.outerHTML || node.toString();
     },
-    update: function update(data, parentDom, parentVNode) {
+    update: function update(data, parentDom, queue, parentVNode) {
         var oldVNode = this.vNode;
         this.renderVNode(data);
-        this.node = patch(oldVNode, this.vNode, parentDom, parentVNode);
+        this.node = patch(oldVNode, this.vNode, parentDom, queue, parentVNode);
 
         return this.node;
     },
@@ -3113,7 +3115,7 @@ Intact$1.prototype = {
                 // 如果上一个组件是异步组件，并且也还没渲染完成，则直接destroy掉
                 // 让它不再渲染了
                 if (!lastInstance.inited) {
-                    removeComponentClassOrInstance(lastVNode, null, nextVNode);
+                    this.__destroyVNode(lastVNode, nextVNode);
                 }
             } else {
                 var vNode = createCommentVNode('');
@@ -3126,8 +3128,8 @@ Intact$1.prototype = {
                 if (!lastVNode || lastVNode.key !== nextVNode.key) {
                     nextVNode.dom = element;
                     dom.parentNode.replaceChild(element, dom);
-                    _this3._triggerMountedQueue();
                 }
+                _this3._triggerMountedQueue();
                 _this3.mount(lastVNode, nextVNode);
             });
             vdt.node = placeholder;
@@ -3139,15 +3141,15 @@ Intact$1.prototype = {
         if (lastVNode && lastVNode.key === nextVNode.key) {
             // destroy the last component
             if (!lastVNode.children.destroyed) {
-                removeComponentClassOrInstance(lastVNode, null, nextVNode);
+                this.__destroyVNode(lastVNode, nextVNode);
             }
 
             // make the dom not be replaced, but update the last one
             vdt.vNode = lastVNode.children.vdt.vNode;
-            this.element = vdt.update(this, this.parentDom, nextVNode);
+            this.element = vdt.update(this, this.parentDom, this.mountedQueue, nextVNode);
         } else {
             if (lastVNode) {
-                removeComponentClassOrInstance(lastVNode, null, nextVNode);
+                this.__destroyVNode(lastVNode, nextVNode);
             }
             this.element = vdt.render(this, this.parentDom, this.mountedQueue, nextVNode);
         }
@@ -3160,6 +3162,9 @@ Intact$1.prototype = {
         this._create(lastVNode, nextVNode);
 
         return this.element;
+    },
+    __destroyVNode: function __destroyVNode(lastVNode, nextVNode) {
+        removeComponentClassOrInstance(lastVNode, null, nextVNode);
     },
     mount: function mount(lastVNode, nextVNode) {
         // 异步组件，直接返回
@@ -3186,6 +3191,8 @@ Intact$1.prototype = {
         if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
     },
     __update: function __update(lastVNode, nextVNode) {
+        var _this4 = this;
+
         // 如果不存在nextVNode，则为直接调用update方法更新自己
         // 否则则是父组件触发的子组件更新，此时需要更新一些状态
         if (nextVNode) {
@@ -3193,9 +3200,15 @@ Intact$1.prototype = {
         }
 
         this._beforeUpdate(lastVNode, nextVNode);
-        this.element = this.vdt.update(this);
-        this._update(lastVNode, nextVNode);
-
+        this.element = this.vdt.update(this, this.parentDom, this.mountedQueue, this.parentVNode);
+        // 让整个更新完成，才去触发_update生命周期函数
+        if (this.mountedQueue) {
+            this.mountedQueue.push(function () {
+                _this4._update(lastVNode, nextVNode);
+            });
+        } else {
+            this._update(lastVNode, nextVNode);
+        }
         if (--this._updateCount > 0) {
             // 如果更新完成，发现还有更新，则是在更新过程中又触发了更新
             // 此时直接将_updateCount置为1，因为所有数据都已更新，只做最后一次模板更新即可
@@ -3310,6 +3323,7 @@ Intact$1.prototype = {
     },
 
 
+    // function name conflict with utils.get
     get: function _get(key, defaultValue) {
         if (key === undefined) return this.props;
 
@@ -3317,7 +3331,7 @@ Intact$1.prototype = {
     },
 
     set: function _set(key, val, options) {
-        var _this4 = this;
+        var _this5 = this;
 
         if (isNullOrUndefined(key)) return this;
 
@@ -3411,12 +3425,12 @@ Intact$1.prototype = {
             if (options.update && this._startRender) {
                 clearTimeout(this._asyncUpdate);
                 var triggerChange = function triggerChange() {
-                    _this4.update();
+                    _this5.update();
                     for (var _prop7 in changes) {
                         var _values = changes[_prop7];
-                        _this4.trigger('$changed:' + _prop7, _this4, _values[1], _values[0]);
+                        _this5.trigger('$changed:' + _prop7, _this5, _values[1], _values[0]);
                     }
-                    _this4.trigger('$changed', _this4, changeKeys);
+                    _this5.trigger('$changed', _this5, changeKeys);
                 };
                 if (options.async) {
                     this._asyncUpdate = setTimeout(triggerChange);
@@ -3435,15 +3449,15 @@ Intact$1.prototype = {
         return this;
     },
     one: function one(name, callback) {
-        var _this5 = this;
+        var _this6 = this;
 
         var fn = function fn() {
             for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
                 args[_key] = arguments[_key];
             }
 
-            callback.apply(_this5, args);
-            _this5.off(name, fn);
+            callback.apply(_this6, args);
+            _this6.off(name, fn);
         };
         this.on(name, fn);
 
@@ -3541,8 +3555,8 @@ var A = Intact$1.extend({
     defaults: {
         'a:tag': 'div',
         'a:transition': 'animate',
-        'a:appear': false
-    },
+        'a:appear': false,
+        'a:mode': 'both' },
 
     template: function template() {
         var h = Vdt$1.miss.h;
@@ -3578,6 +3592,17 @@ var A = Intact$1.extend({
         var transition = this.get('a:transition');
         var element = this.element;
 
+        // const parentDom = this.parentDom;
+        // if (!parentDom._queue) {
+        // parentDom._queue = {};
+        // }
+        // if (!parentDom._queue.mountedQueue) {
+        // parentDom._queue.mountedQueue = new Queue();
+        // }
+        // parentDom._queue.mountedQueue.push(() => {
+        // this.position = element.getBoundingClientRect();
+        // });
+
         var enterClass = void 0;
         var enterActiveClass = void 0;
         if (isAppear) {
@@ -3596,7 +3621,7 @@ var A = Intact$1.extend({
             TransitionEvents.off(element, _this._enterEnd);
         };
 
-        if (this._lastVNode) {
+        if (this._lastVNode && this._lastVNode !== lastVNode) {
             var lastInstance = this._lastVNode.children;
             if (lastInstance._leaving) {
                 TransitionEvents.off(element, lastInstance._leaveEnd);
@@ -3613,6 +3638,8 @@ var A = Intact$1.extend({
         element._unmount = function (nouse, parentDom) {
             _this._unmount(lastVNode, vNode, parentDom);
         };
+
+        this.position = element.getBoundingClientRect();
     },
     _unmount: function _unmount(lastVNode, vNode, parentDom) {
         var _this2 = this;
@@ -3642,29 +3669,76 @@ var A = Intact$1.extend({
             _this2._leaving = false;
             delete parentDom._reserve[vNode.key];
             TransitionEvents.off(element, _this2._leaveEnd);
+            // this.__destroyVNode(vNode);
+            _this2.destroy(vNode);
         };
 
         this._leave(this._leaveEnd);
+    },
+    _update: function _update(lastVNode, vNode) {
+        var _this3 = this;
+
+        return;
+        // nextFrame(() => {
+
+        if (this._moving) this._moveEnd();
+        if (this._entering) this._enterEnd();
+
+        var element = this.element;
+        var oldPosition = this.position;
+        var newPosition = this.position = element.getBoundingClientRect();
+        // const oldPosition = newPosition;
+        var dx = oldPosition.left - newPosition.left;
+        var dy = oldPosition.top - newPosition.top;
+        if (dx || dy) {
+            this._moving = true;
+            var s = element.style;
+            s.transform = s.WebkitTransform = 'translate(' + dx + 'px, ' + dy + 'px)';
+            s.transitionDuration = '0s';
+            var className = this.get('a:transition') + '-move';
+            addClass(element, className);
+            document.body.offsetWidth;
+            s.transform = s.WebkitTransform = s.transitionDuration = '';
+            this._moveEnd = function (e) {
+                e && e.stopPropagation();
+                if (!e || /transform$/.test(e.propertyName)) {
+                    TransitionEvents.off(element, _this3._moveEnd);
+                    removeClass(element, className);
+                    _this3._moving = false;
+                }
+            };
+            TransitionEvents.on(element, this._moveEnd);
+        }
+        // })
     },
     _enter: function _enter(done, enterClass, enterActiveClass) {
         var element = this.element;
 
         addClass(element, enterClass);
-        TransitionEvents.on(element, done);
+        addClass(element, enterActiveClass);
         // element.offsetWidth;
+        TransitionEvents.on(element, done);
         nextFrame(function () {
-            addClass(element, enterActiveClass);
+            // setTimeout(() => {
+            // addClass(element, enterActiveClass);
+            removeClass(element, enterClass);
         });
     },
     _leave: function _leave(done) {
         var transition = this.get('a:transition');
         var element = this.element;
-        addClass(element, transition + '-leave');
+        // addClass(element, `${transition}-leave`);
+        addClass(element, transition + '-leave-active');
         TransitionEvents.on(element, done);
         // element.offsetWidth;
         nextFrame(function () {
-            addClass(element, transition + '-leave-active');
+            // addClass(element, `${transition}-leave-active`);
+            addClass(element, transition + '-leave');
         });
+    },
+    destroy: function destroy(lastVNode, nextVNode) {
+        if (this._leaving !== false) return;
+        this._super(lastVNode, nextVNode);
     }
 });
 
