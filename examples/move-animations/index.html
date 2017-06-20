@@ -16,7 +16,7 @@
         box-sizing: border-box;
       }
       .fade-enter-active, .fade-leave-active, .fade-move {
-        transition: all 5s cubic-bezier(.55,0,.1,1);
+        transition: all .5s cubic-bezier(.55,0,.1,1);
       }
       .fade-enter, .fade-leave {
         opacity: 0;
@@ -40,11 +40,11 @@
           <button ev-click={self.insert.bind(self)}>insert at random index</button>
           <button ev-click={self.reset.bind(self)}>reset</button>
           <button ev-click={self.shuffle.bind(self)}>shuffle</button>
-          <ul class="container">
+          <Animate a:tag="ul" class="container">
             <Animate a:transition="fade" v-for={self.get('items')} class="item" key={value}>
                 {value} <button ev-click={self.remove.bind(self, key)}>x</button>
             </Animate>
-          </ul>
+          </Animate>
         </div>
     </script>
 
@@ -60,8 +60,8 @@
                 var items = this.get('items');
                 var i = Math.round(Math.random() * items.length);
                 items.splice(i, 0, id++);
-                i = Math.round(Math.random() * items.length);
-                items.splice(i, 0, id++);
+                <!-- i = Math.round(Math.random() * items.length); -->
+                <!-- items.splice(i, 0, id++); -->
                 this.update();
             },
             reset() {

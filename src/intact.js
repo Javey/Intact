@@ -176,7 +176,7 @@ Intact.prototype = {
         }
 
         this._beforeUpdate(lastVNode, nextVNode);
-        this.element = this.vdt.update(this, this.parentDom, this.mountedQueue, this.parentVNode);
+        this.element = this.vdt.update(this, this.parentDom, this.mountedQueue, nextVNode);
         // 让整个更新完成，才去触发_update生命周期函数
         if (this.mountedQueue) {
             this.mountedQueue.push(() => {

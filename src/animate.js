@@ -1,234 +1,267 @@
-import {each, isArray, bind, extend, values, isNullOrUndefined} from './utils';
 import Intact from './intact';
+import {Types} from 'miss/src/vnode';
 import Vdt from 'vdt';
-import {removeElement} from 'miss/src/vdom';
 
-// Animate Widget for animation
 let Animate;
 export default Animate = Intact.extend({
-    displayName: 'Animate',
-
     defaults: {
-        tagName: 'div',
-        transition: 'animate'
+        'a:tag': 'div',
+        'a:transition': 'animate',
+        'a:appear': false,
+        'a:mode': 'both', // out-in | in-out
     },
 
-    template: Vdt.compile(`
-        var tagName = self.get('tagName'),
-            type = typeof tagName,
-            isComponent = type === 'function' || type === 'object',
-            props = {}, 
-            allProps = self.get(),
-            children = self.values(self.childrenMap);
-        for (var prop in allProps) {
-            if (prop === 'tagName' || prop === 'transition') continue;
-            props[prop] = allProps[prop];
-        }
-
-        if (isComponent) {
-            props.children = children;
-            return h(tagName, props);
-        } else {
-            return h(tagName, props, children);
-        }`,
-        {autoReturn: false, noWith: true}
-    ),
-
-    _init() {
-        this.childrenMap = getChildMap(this.get('children'));
-        this.currentKeys = {};
-        this.keysToEnter = [];
-        this.keysToLeave = [];
-    },
-
-    extend: extend,
-    values: values,
-
-    _beforeUpdate(lastVNode, nextVNode) {
-        if (!nextVNode) return;
-
-        const nextMap = getChildMap(this.get('children'));
-        const prevMap = this.childrenMap;
-        this.childrenMap = mergeChildren(prevMap, nextMap);
-
-        each(nextMap, (next, key) => {
-            if (
-                next && next.tag === Animate &&
-                (!prevMap || !prevMap.hasOwnProperty(key)) && 
-                !this.currentKeys[key]
-            ) {
-                this.keysToEnter.push(key);
+    template() {
+        const h = Vdt.miss.h;
+        const data = this.data;
+        const tagName = data.get('a:tag');
+        const props = {};
+        const _props = data.get();
+        for (let key in data.get()) {
+            if (key[0] !== 'a' || key[1] !== ':') {
+                props[key] = _props[key];
             }
-        });
+        }
+        return h(tagName, props, data.get('children'));
+    },
 
-        each(prevMap, (prev, key) => {
+    init(lastVNode, nextVNode) {
+        this.mountChildren = [];
+        this.unmountChildren = [];
+        this.updateChildren = [];
+        this.children = [];
+        const parentDom = this.parentDom;
+        if (parentDom && parentDom._reserve) {
+            lastVNode = parentDom._reserve[nextVNode.key];
+        }
+        return this._super(lastVNode, nextVNode);
+    },
+
+    _mount(lastVNode, vNode) {
+        let isAppear = false;
+        if (this.isRender) {
+            let parent;
             if (
-                prev && prev.tag === Animate && 
-                (!nextMap || !nextMap.hasOwnProperty(key)) && 
-                !this.currentKeys[key]
+                this.get('a:appear') && 
+                (
+                    this.parentDom ||
+                    (parent = this.parentVNode) &&
+                    parent.type & Types.ComponentClassOrInstance &&
+                    !parent.children.isRender
+                )
             ) {
-                this.keysToLeave.push(key);
+                isAppear = true;
             }
-        });
-    },
+        }
 
-    _update(lastVNode, nextVNode) {
-        if (!nextVNode) return;
+        const transition = this.get('a:transition');
+        const element = this.element;
 
-        let keysToEnter = this.keysToEnter;
-        this.keysToEnter = [];
-        each(keysToEnter, this.performEnter, this);
-
-        let keysToLeave = this.keysToLeave;
-        this.keysToLeave = [];
-        each(keysToLeave, this.performLeave, this);
-    },
-
-    performEnter(key) {
-        let component = this.childrenMap[key].children;
-        this.currentKeys[key] = true;
-        if (component) {
-            component.enter(() => this._doneEntering(key));
+        let enterClass;
+        let enterActiveClass;
+        if (isAppear) {
+            enterClass = `${transition}-appear`;
+            enterActiveClass = `${transition}-appear-active`;
         } else {
-            this._doneEntering(key);
+            enterClass = `${transition}-enter`;
+            enterActiveClass = `${transition}-enter-active`;
         }
-    },
 
-    performLeave(key) {
-        let component = this.childrenMap[key].children;
-        this.currentKeys[key] = true;
-        if (component) {
-            component.leave(() => this._doneLeaving(key));
-        } else {
-            this._doneLeaving(key);
-        }
-    },
-
-    _doneEntering(key) {
-        delete this.currentKeys[key];
-        let map = getChildMap(this.get('children'));
-        if (!map[key]) {
-            this.performLeave(key);
-        }
-    },
-
-    _doneLeaving(key) {
-        delete this.currentKeys[key];
-        let map = getChildMap(this.get('children'));
-        if (map && map[key]) {
-            this.performEnter(key);
-        } else {
-            delete this.childrenMap[key];
-            this.vdt.update();
-        }
-    },
-
-    enter(done) {
-        let transition = this.get('transition'),
-            element = this.element;
-
-        addClass(element, `${transition}-enter`);
-        TransitionEvents.one(element, (e) => {
+        this.isAppear = isAppear;
+        this.enterClass = enterClass;
+        this.enterActiveClass = enterActiveClass;
+        this._enterEnd = (e) => {
             e && e.stopPropagation();
-            removeClass(element, `${transition}-enter`);
-            removeClass(element, `${transition}-enter-active`);
-            done();
-        });
-        element.offsetWidth;
-        addClass(element, `${transition}-enter-active`);
+            // removeClass(element, enterClass);
+            removeClass(element, enterActiveClass);
+            this._entering = false;
+            TransitionEvents.off(element, this._enterEnd);
+        };
+
+        if (this._lastVNode && this._lastVNode !== lastVNode) {
+            const lastInstance = this._lastVNode.children;
+            if (lastInstance._leaving) {
+                TransitionEvents.off(element, lastInstance._leaveEnd);
+                lastInstance._unmountCancelled = true;
+                lastInstance._leaveEnd();
+            }
+        }
+
+        element._unmount = (nouse, parentDom) => {
+            this._unmount(lastVNode, vNode, parentDom);
+        };
+        
+        const parentInstance = this._getParentAnimate();
+        if (parentInstance) {
+            if (isAppear || !this.isRender) {
+                parentInstance.mountChildren.push(this);
+            }
+            parentInstance.children.push(this);
+        } else if (isAppear || !this.isRender) {
+            this._enter();
+        }
     },
 
-    leave(done) {
-        let transition = this.get('transition'),
-            element = this.element;
+    _getParentAnimate() {
+        // this.parentVNode是animate的tag，所以要拿this.parentVNode.parentVNode
+        const parentVNode = this.parentVNode.parentVNode;
+        if (parentVNode) {
+            const parentInstance = parentVNode.children;
+            if (parentInstance instanceof Animate) {
+                return parentInstance;
+            }
+        }
+    },
 
-        addClass(element, `${transition}-leave`);
-        TransitionEvents.one(element, (e) => {
+    _unmount(lastVNode, vNode, parentDom) {
+        const element = this.element;
+        const transition = this.get('a:transition');
+
+        if (!parentDom._reserve) {
+            parentDom._reserve = {};
+        }
+        parentDom._reserve[vNode.key] = vNode;
+
+        this._leaving = true;
+
+        if (this._entering) {
+            TransitionEvents.off(element, this._enterEnd);
+            this._enterEnd();
+        }
+
+        this._leaveEnd = (e) => {
             e && e.stopPropagation();
-            removeClass(element, `${transition}-leave`);
+            // removeClass(element, `${transition}-leave`);
             removeClass(element, `${transition}-leave-active`);
-            done();
+            if (!this._unmountCancelled) {
+                parentDom.removeChild(element);
+            }
+            this._leaving = false;
+            delete parentDom._reserve[vNode.key];
+            TransitionEvents.off(element, this._leaveEnd);
+            this.destroy(vNode);
+        };
+
+        this._leave();
+    },
+
+    _beforeUpdate(lastVNode, vNode) {
+        const children = this.children;
+        for (let i = 0; i < children.length; i++) {
+            let instance = children[i];
+            instance.position = instance.element.getBoundingClientRect();
+        }
+    },
+
+    _update(lastVNode, vNode) {
+        const parentInstance = this._getParentAnimate();
+        if (parentInstance) {
+            parentInstance.updateChildren.push(this);
+        }
+
+        const mountChildren = this.mountChildren;
+        const updateChildren = this.updateChildren;
+            let i;
+            let instance;
+
+        for (i = 0; i < updateChildren.length; i++) {
+            instance = updateChildren[i];
+            if (instance._entering) {
+                instance._enterEnd();
+            }
+            if (instance._moving) {
+                instance._moveEnd();
+            }
+        }
+
+        for (let i = 0; i < mountChildren.length; i++) {
+            let instance = mountChildren[i];
+            instance._enter();
+        }
+
+        for (i = 0; i < updateChildren.length; i++) {
+            instance = updateChildren[i];
+            instance.newPosition = instance.element.getBoundingClientRect();
+        }
+
+        for (i = 0; i < updateChildren.length; i++) {
+            instance = updateChildren[i];
+            instance._move();
+        }
+
+        this.mountChildren = [];
+        this.updateChildren = [];
+    },
+
+    _move() {
+        const element = this.element;
+        const oldPosition = this.position;
+        const newPosition = this.newPosition;
+
+        this.position = newPosition;
+
+        const dx = oldPosition.left - newPosition.left;
+        const dy = oldPosition.top - newPosition.top;
+
+        if (dx || dy) {
+            this._moving = true;
+            const s = element.style;
+            s.transform = s.WebkitTransform = `translate(${dx}px, ${dy}px)`;
+            s.transitionDuration = '0s';
+            const className = `${this.get('a:transition')}-move`;
+            addClass(element, className);
+            document.body.offsetWidth;
+            s.transform = s.WebkitTransform = s.transitionDuration = '';
+            this._moveEnd = (e) => {
+                e && e.stopPropagation();
+                if (!e || /transform$/.test(e.propertyName)) {
+                    TransitionEvents.off(element, this._moveEnd);
+                    removeClass(element, className);
+                    this._moving = false;
+                }
+            };
+            TransitionEvents.on(element, this._moveEnd);
+        }
+    },
+
+    _enter(done) {
+        this._entering = true;
+        const element = this.element;
+        const enterClass = this.enterClass;
+        const enterActiveClass = this.enterActiveClass;
+
+        addClass(element, enterClass);
+        addClass(element, enterActiveClass);
+        // element.offsetWidth;
+        TransitionEvents.on(element, this._enterEnd);
+        nextFrame(() => {
+            removeClass(element, enterClass);
         });
-        element.offsetWidth;
+    },
+
+    _leave() {
+        const transition = this.get('a:transition');
+        const element = this.element;
+        // addClass(element, `${transition}-leave`);
         addClass(element, `${transition}-leave-active`);
+        TransitionEvents.on(element, this._leaveEnd);
+        // element.offsetWidth;
+        nextFrame(() => {
+            // addClass(element, `${transition}-leave-active`);
+            addClass(element, `${transition}-leave`);
+        });
+    },
+
+    destroy(lastVNode, nextVNode) {
+        if (this._leaving !== false) return;
+        this._super(lastVNode, nextVNode);
     }
 });
 
-/**
- * 将子元素数组转为map
- * @param children
- * @param ret
- * @param index
- * @returns {*}
- */
-function getChildMap(children) {
-    if (!children) return children;
-    if (!isArray(children)) {
-        return {[children.key || '$']: children};
-    }
-    const ret = {};
-    for (let i = 0; i < children.length; i++) {
-        let vNode = children[i];
-        ret[vNode.key] = vNode;
-    }
-    return ret;
-}
-
-/**
- * 合并两个子元素map
- * @param prev
- * @param next
- * @returns {*|{}}
- */
-function mergeChildren(prev, next) {
-    prev = prev || {};
-    next = next || {};
-
-    function getValueForKey(key) {
-        if (next.hasOwnProperty(key)) {
-            return next[key];
-        } else {
-            return prev[key];
-        }
-    }
-
-    // For each key of `next`, the list of keys to insert before that key in
-    // the combined list
-    let nextKeysPending = {};
-
-    let pendingKeys = [];
-    for (let prevKey in prev) {
-        if (next.hasOwnProperty(prevKey)) {
-            if (pendingKeys.length) {
-                nextKeysPending[prevKey] = pendingKeys;
-                pendingKeys = [];
-            }
-        } else if (prev[prevKey] && prev[prevKey].tag === Animate) {
-            // only add Animate child
-            pendingKeys.push(prevKey);
-        }
-    }
-
-    let childMapping = {};
-    for (let nextKey in next) {
-        if (nextKeysPending.hasOwnProperty(nextKey)) {
-            for (let i = 0; i < nextKeysPending[nextKey].length; i++) {
-                let pendingNextKey = nextKeysPending[nextKey][i];
-                let value = getValueForKey(pendingNextKey);
-                childMapping[nextKeysPending[nextKey][i]] = getValueForKey(
-                    pendingNextKey
-                );
-            }
-        }
-        childMapping[nextKey] = getValueForKey(nextKey);
-    }
-
-    // Finally, add the keys which didn't appear before any key in `next`
-    for (let i = 0; i < pendingKeys.length; i++) {
-        childMapping[pendingKeys[i]] = getValueForKey(pendingKeys[i]);
-    }
-
-    return childMapping;
+const raf = window.requestAnimationFrame ? 
+    window.requestAnimationFrame.bind(window) : setTimeout;
+export function nextFrame(fn) {
+    raf(() => raf(fn));
 }
 
 function addClass(element, className) {
