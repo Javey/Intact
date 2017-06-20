@@ -125,17 +125,17 @@ describe('Animate Test', function() {
         this.enableTimeouts(false);
         const app = Intact.mount(App, document.body);
         const C = Intact.extend({
-            template: `<Animate a:tag="ul">
+            template: `<ul>
                 <Animate a:tag="li" key="1">1</Animate> 
                 <Animate a:tag="li" key="2">2</Animate> 
-            </Animate>`
+            </ul>`
         });
         const D = Intact.extend({
-            template: `<Animate a:tag="ul">
+            template: `<ul>
                 <Animate a:tag="li" key="1">1</Animate> 
                 <Animate a:tag="li" key="3">3</Animate> 
                 <Animate a:tag="li" key="2">2</Animate> 
-            </Animate>`
+            </ul>`
         });
         app.load(C);
         app.load(D);

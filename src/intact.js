@@ -163,11 +163,6 @@ Intact.prototype = {
             return lastVNode ? lastVNode.dom : undefined;
         }
 
-        if (!nextVNode) {
-            // 如果直接调用update方法，则要清除mountedQueue
-            this.mountedQueue = null;
-        }
-
         ++this._updateCount;
         if (this._updateCount > 1) return this.element;
         if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
