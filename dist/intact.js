@@ -3651,7 +3651,6 @@ var Animate$1 = Animate = Intact$1.extend({
             _this.parentDom = parentDom;
             // this._unmount();
             if (parentInstance) {
-                // element.style.position = 'absolute';
                 parentInstance.unmountChildren.push(_this);
             } else {
                 _this._unmount();
@@ -3747,6 +3746,11 @@ var Animate$1 = Animate = Intact$1.extend({
             }
         }
 
+        for (var _i = 0; _i < mountChildren.length; _i++) {
+            var _instance = mountChildren[_i];
+            _instance._enter();
+        }
+
         for (i = 0; i < unmountChildren.length; i++) {
             instance = unmountChildren[i];
             instance.element.style.position = 'absolute';
@@ -3757,18 +3761,15 @@ var Animate$1 = Animate = Intact$1.extend({
             instance.newPosition = instance.element.getBoundingClientRect();
         }
 
-        for (i = 0; i < unmountChildren.length; i++) {
-            instance = unmountChildren[i];
-            instance._initMove(true);
-        }
+        // for (i = 0; i < unmountChildren.length; i++) {
+        // instance = unmountChildren[i];
+        // instance._initMove(true);
+        // }
 
-        document.body.offsetWidth;
-        for (i = 0; i < updateChildren.length; i++) {
-            instance = updateChildren[i];
-            instance._initMove(false);
+        for (i = 0; i < children.length; i++) {
+            instance = children[i];
+            instance._initMove();
         }
-
-        // document.body.offsetWidth;
 
         for (i = 0; i < unmountChildren.length; i++) {
             instance = unmountChildren[i];
@@ -3784,51 +3785,9 @@ var Animate$1 = Animate = Intact$1.extend({
             }
         }
 
-        for (var _i = 0; _i < mountChildren.length; _i++) {
-            var _instance = mountChildren[_i];
-            _instance._enter();
-        }
-
-        // for (i = 0; i < updateChildren.length; i++) {
-        // instance = updateChildren[i];
-        // instance.newPosition = instance.element.getBoundingClientRect();
-        // }
-
-        // for (i = 0; i < unmountChildren.length; i++) {
-        // instance = unmountChildren[i];
-        // instance.newPosition = instance.element.getBoundingClientRect();
-        // }
-
-        // for (i = 0; i < unmountChildren.length; i++) {
-        // instance = unmountChildren[i];
-        // instance._keepUnmountPosition();
-        // }
-
-
-        // for (i = 0; i < updateChildren.length; i++) {
-        // instance = updateChildren[i];
-        // instance._move();
-        // }
-
         this.mountChildren = [];
         this.updateChildren = [];
         this.unmountChildren = [];
-    },
-    _keepUnmountPosition: function _keepUnmountPosition() {
-        var element = this.element;
-        var oldPosition = this.position;
-        var newPosition = this.newPosition;
-
-        this.position = newPosition;
-
-        var dx = oldPosition.left - newPosition.left;
-        var dy = oldPosition.top - newPosition.top;
-
-        if (dx || dy) {
-            var s = element.style;
-            s.transform = s.WebkitTransform = 'translate(' + dx + 'px, ' + dy + 'px)';
-            s.transitionDuration = '0s';
-        }
     },
     _initMove: function _initMove(isUnmount) {
         var element = this.element;
@@ -3845,13 +3804,13 @@ var Animate$1 = Animate = Intact$1.extend({
         if (dx || dy) {
             this._needMove = true;
             var s = element.style;
-            if (isUnmount) {
-                s.marginTop = dy + 'px';
-                s.marginLeft = dx + 'px';
-            } else {
-                s.transform = s.WebkitTransform = 'translate(' + dx + 'px, ' + dy + 'px)';
-                s.transitionDuration = '0s';
-            }
+            // if (isUnmount) {
+            // s.marginTop = `${dy}px`;
+            // s.marginLeft = `${dx}px`;
+            // } else {
+            s.transform = s.WebkitTransform = 'translate(' + dx + 'px, ' + dy + 'px)';
+            s.transitionDuration = '0s';
+            // }
         } else {
             this._needMove = false;
         }
@@ -3866,7 +3825,7 @@ var Animate$1 = Animate = Intact$1.extend({
         addClass(element, className);
         nextFrame(function () {
             s.transform = s.WebkitTransform = s.transitionDuration = '';
-        }, 1000);
+        });
         this._moveEnd = function (e) {
             e && e.stopPropagation();
             if (!e || /transform$/.test(e.propertyName)) {
@@ -3896,14 +3855,14 @@ var Animate$1 = Animate = Intact$1.extend({
         var element = this.element;
         // addClass(element, `${transition}-leave`);
         addClass(element, transition + '-leave-active');
-        addClass(element, transition + '-leave');
+        // addClass(element, `${transition}-leave`);
         TransitionEvents.on(element, this._leaveEnd);
         // element.offsetWidth;
-        // nextFrame(() => {
-        // setTimeout(() => {
-        // // addClass(element, `${transition}-leave-active`);
-        // addClass(element, `${transition}-leave`);
-        // }, 2000);
+        nextFrame(function () {
+            // setTimeout(() => {
+            // addClass(element, `${transition}-leave-active`);
+            addClass(element, transition + '-leave');
+        }, 2000);
     },
     destroy: function destroy(lastVNode, nextVNode) {
         if (this._leaving !== false) return;
