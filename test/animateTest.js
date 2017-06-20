@@ -5,7 +5,7 @@ import css from './css/animate.css';
 import Index from './components/index';
 import Detail from './components/detail';
 import App from './components/app';
-import Animate from '../src/A';
+import Animate from '../src/animate';
 
 const sEql = assert.strictEqual;
 const dEql = assert.deepStrictEqual;
