@@ -9,6 +9,7 @@ export default Animate = Intact.extend({
         'a:transition': 'animate',
         'a:appear': false,
         'a:mode': 'both', // out-in | in-out
+        'a:disabled': false // 只做动画管理者，自己不进行动画
     },
 
     template() {
@@ -38,6 +39,8 @@ export default Animate = Intact.extend({
     },
 
     _mount(lastVNode, vNode) {
+        if (this.get('a:disabled')) return;
+
         let isAppear = false;
         if (this.isRender) {
             let parent;
@@ -87,11 +90,20 @@ export default Animate = Intact.extend({
             }
         }
 
-        element._unmount = (nouse, parentDom) => {
-            this._unmount(lastVNode, vNode, parentDom);
-        };
-        
         const parentInstance = this._getParentAnimate();
+
+        element._unmount = (nouse, parentDom) => {
+            this.vNode = vNode;
+            this.parentDom = parentDom;
+            // this._unmount();
+            if (parentInstance) {
+                // element.style.position = 'absolute';
+                parentInstance.unmountChildren.push(this);
+            } else {
+                this._unmount();
+            }
+        };
+       
         if (parentInstance) {
             if (isAppear || !this.isRender) {
                 parentInstance.mountChildren.push(this);
@@ -112,10 +124,14 @@ export default Animate = Intact.extend({
             }
         }
     },
+   
+    _unmount() {
+        if (this.get('a:disabled')) return;
 
-    _unmount(lastVNode, vNode, parentDom) {
         const element = this.element;
         const transition = this.get('a:transition');
+        const vNode = this.vNode;
+        const parentDom = this.parentDom;
 
         if (!parentDom._reserve) {
             parentDom._reserve = {};
@@ -131,7 +147,7 @@ export default Animate = Intact.extend({
 
         this._leaveEnd = (e) => {
             e && e.stopPropagation();
-            // removeClass(element, `${transition}-leave`);
+            removeClass(element, `${transition}-leave`);
             removeClass(element, `${transition}-leave-active`);
             if (!this._unmountCancelled) {
                 parentDom.removeChild(element);
@@ -154,18 +170,23 @@ export default Animate = Intact.extend({
     },
 
     _update(lastVNode, vNode) {
-        const parentInstance = this._getParentAnimate();
-        if (parentInstance) {
-            parentInstance.updateChildren.push(this);
+        if (!this.get('a:disabled')) {
+            const parentInstance = this._getParentAnimate();
+            if (parentInstance) {
+                parentInstance.updateChildren.push(this);
+            }
         }
 
         const mountChildren = this.mountChildren;
         const updateChildren = this.updateChildren;
-            let i;
-            let instance;
+        const unmountChildren = this.unmountChildren;
+        const children = this.children;
 
-        for (i = 0; i < updateChildren.length; i++) {
-            instance = updateChildren[i];
+        let i;
+        let instance;
+
+       for (i = 0; i < children.length; i++) {
+            instance = children[i];
             if (instance._entering) {
                 instance._enterEnd();
             }
@@ -174,26 +195,75 @@ export default Animate = Intact.extend({
             }
         }
 
+        for (i = 0; i < unmountChildren.length; i++) {
+            instance = unmountChildren[i];
+            instance.element.style.position = 'absolute';
+        }
+
+        for (i = 0; i < children.length; i++) {
+            instance = children[i];
+            instance.newPosition = instance.element.getBoundingClientRect();
+        }
+
+        for (i = 0; i < unmountChildren.length; i++) {
+            instance = unmountChildren[i];
+            instance._initMove(true);
+        }
+
+        document.body.offsetWidth;
+        for (i = 0; i < updateChildren.length; i++) {
+            instance = updateChildren[i];
+            instance._initMove(false);
+        }
+
+        // document.body.offsetWidth;
+
+        for (i = 0; i < unmountChildren.length; i++) {
+            instance = unmountChildren[i];
+            instance._unmount();
+        }
+        
+        // document.body.offsetWidth;
+
+        for (i = 0; i < children.length; i++) {
+            instance = children[i];
+            if (instance._needMove) {
+                instance._move();
+            }
+        }
+     
         for (let i = 0; i < mountChildren.length; i++) {
             let instance = mountChildren[i];
             instance._enter();
         }
 
-        for (i = 0; i < updateChildren.length; i++) {
-            instance = updateChildren[i];
-            instance.newPosition = instance.element.getBoundingClientRect();
-        }
+        // for (i = 0; i < updateChildren.length; i++) {
+            // instance = updateChildren[i];
+            // instance.newPosition = instance.element.getBoundingClientRect();
+        // }
+        
+        // for (i = 0; i < unmountChildren.length; i++) {
+            // instance = unmountChildren[i];
+            // instance.newPosition = instance.element.getBoundingClientRect();
+        // }
 
-        for (i = 0; i < updateChildren.length; i++) {
-            instance = updateChildren[i];
-            instance._move();
-        }
+        // for (i = 0; i < unmountChildren.length; i++) {
+            // instance = unmountChildren[i];
+            // instance._keepUnmountPosition();
+        // }
+
+
+        // for (i = 0; i < updateChildren.length; i++) {
+            // instance = updateChildren[i];
+            // instance._move();
+        // }
 
         this.mountChildren = [];
         this.updateChildren = [];
+        this.unmountChildren = [];
     },
 
-    _move() {
+    _keepUnmountPosition() {
         const element = this.element;
         const oldPosition = this.position;
         const newPosition = this.newPosition;
@@ -204,24 +274,57 @@ export default Animate = Intact.extend({
         const dy = oldPosition.top - newPosition.top;
 
         if (dx || dy) {
-            this._moving = true;
             const s = element.style;
             s.transform = s.WebkitTransform = `translate(${dx}px, ${dy}px)`;
             s.transitionDuration = '0s';
-            const className = `${this.get('a:transition')}-move`;
-            addClass(element, className);
-            document.body.offsetWidth;
-            s.transform = s.WebkitTransform = s.transitionDuration = '';
-            this._moveEnd = (e) => {
-                e && e.stopPropagation();
-                if (!e || /transform$/.test(e.propertyName)) {
-                    TransitionEvents.off(element, this._moveEnd);
-                    removeClass(element, className);
-                    this._moving = false;
-                }
-            };
-            TransitionEvents.on(element, this._moveEnd);
         }
+    },
+
+    _initMove(isUnmount) {
+        const element = this.element;
+        const oldPosition = this.position;
+        const newPosition = this.newPosition;
+
+        this.position = newPosition;
+        // mount的元素，不处理位置
+        if (!oldPosition) return;
+
+        const dx = oldPosition.left - newPosition.left;
+        const dy = oldPosition.top - newPosition.top;
+
+        if (dx || dy) {
+            this._needMove = true;
+            const s = element.style;
+            if (isUnmount) {
+                s.marginTop = `${dy}px`;
+                s.marginLeft = `${dx}px`;
+            } else {
+                s.transform = s.WebkitTransform = `translate(${dx}px, ${dy}px)`;
+                s.transitionDuration = '0s';
+            }
+        } else {
+            this._needMove = false;
+        }
+    },
+
+    _move() {
+        this._moving = true;
+        const element = this.element;
+        const s = element.style;
+        const className = `${this.get('a:transition')}-move`;
+        addClass(element, className);
+        nextFrame(() => {
+            s.transform = s.WebkitTransform = s.transitionDuration = '';
+        }, 1000)
+        this._moveEnd = (e) => {
+            e && e.stopPropagation();
+            if (!e || /transform$/.test(e.propertyName)) {
+                TransitionEvents.off(element, this._moveEnd);
+                removeClass(element, className);
+                this._moving = false;
+            }
+        };
+        TransitionEvents.on(element, this._moveEnd);
     },
 
     _enter(done) {
@@ -244,12 +347,14 @@ export default Animate = Intact.extend({
         const element = this.element;
         // addClass(element, `${transition}-leave`);
         addClass(element, `${transition}-leave-active`);
+            addClass(element, `${transition}-leave`);
         TransitionEvents.on(element, this._leaveEnd);
         // element.offsetWidth;
-        nextFrame(() => {
-            // addClass(element, `${transition}-leave-active`);
-            addClass(element, `${transition}-leave`);
-        });
+        // nextFrame(() => {
+        // setTimeout(() => {
+            // // addClass(element, `${transition}-leave-active`);
+            // addClass(element, `${transition}-leave`);
+        // }, 2000);
     },
 
     destroy(lastVNode, nextVNode) {

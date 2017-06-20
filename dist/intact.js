@@ -3194,6 +3194,11 @@ Intact$1.prototype = {
             return lastVNode ? lastVNode.dom : undefined;
         }
 
+        if (!nextVNode) {
+            // 如果直接调用update方法，则要清除mountedQueue
+            this.mountedQueue = null;
+        }
+
         ++this._updateCount;
         if (this._updateCount > 1) return this.element;
         if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
@@ -3565,7 +3570,9 @@ var Animate$1 = Animate = Intact$1.extend({
         'a:tag': 'div',
         'a:transition': 'animate',
         'a:appear': false,
-        'a:mode': 'both' },
+        'a:mode': 'both', // out-in | in-out
+        'a:disabled': false // 只做动画管理者，自己不进行动画
+    },
 
     template: function template() {
         var h = Vdt$1.miss.h;
@@ -3593,6 +3600,8 @@ var Animate$1 = Animate = Intact$1.extend({
     },
     _mount: function _mount(lastVNode, vNode) {
         var _this = this;
+
+        if (this.get('a:disabled')) return;
 
         var isAppear = false;
         if (this.isRender) {
@@ -3635,11 +3644,20 @@ var Animate$1 = Animate = Intact$1.extend({
             }
         }
 
+        var parentInstance = this._getParentAnimate();
+
         element._unmount = function (nouse, parentDom) {
-            _this._unmount(lastVNode, vNode, parentDom);
+            _this.vNode = vNode;
+            _this.parentDom = parentDom;
+            // this._unmount();
+            if (parentInstance) {
+                // element.style.position = 'absolute';
+                parentInstance.unmountChildren.push(_this);
+            } else {
+                _this._unmount();
+            }
         };
 
-        var parentInstance = this._getParentAnimate();
         if (parentInstance) {
             if (isAppear || !this.isRender) {
                 parentInstance.mountChildren.push(this);
@@ -3659,11 +3677,15 @@ var Animate$1 = Animate = Intact$1.extend({
             }
         }
     },
-    _unmount: function _unmount(lastVNode, vNode, parentDom) {
+    _unmount: function _unmount() {
         var _this2 = this;
+
+        if (this.get('a:disabled')) return;
 
         var element = this.element;
         var transition = this.get('a:transition');
+        var vNode = this.vNode;
+        var parentDom = this.parentDom;
 
         if (!parentDom._reserve) {
             parentDom._reserve = {};
@@ -3679,7 +3701,7 @@ var Animate$1 = Animate = Intact$1.extend({
 
         this._leaveEnd = function (e) {
             e && e.stopPropagation();
-            // removeClass(element, `${transition}-leave`);
+            removeClass(element, transition + '-leave');
             removeClass(element, transition + '-leave-active');
             if (!_this2._unmountCancelled) {
                 parentDom.removeChild(element);
@@ -3700,18 +3722,23 @@ var Animate$1 = Animate = Intact$1.extend({
         }
     },
     _update: function _update(lastVNode, vNode) {
-        var parentInstance = this._getParentAnimate();
-        if (parentInstance) {
-            parentInstance.updateChildren.push(this);
+        if (!this.get('a:disabled')) {
+            var parentInstance = this._getParentAnimate();
+            if (parentInstance) {
+                parentInstance.updateChildren.push(this);
+            }
         }
 
         var mountChildren = this.mountChildren;
         var updateChildren = this.updateChildren;
+        var unmountChildren = this.unmountChildren;
+        var children = this.children;
+
         var i = void 0;
         var instance = void 0;
 
-        for (i = 0; i < updateChildren.length; i++) {
-            instance = updateChildren[i];
+        for (i = 0; i < children.length; i++) {
+            instance = children[i];
             if (instance._entering) {
                 instance._enterEnd();
             }
@@ -3720,27 +3747,74 @@ var Animate$1 = Animate = Intact$1.extend({
             }
         }
 
+        for (i = 0; i < unmountChildren.length; i++) {
+            instance = unmountChildren[i];
+            instance.element.style.position = 'absolute';
+        }
+
+        for (i = 0; i < children.length; i++) {
+            instance = children[i];
+            instance.newPosition = instance.element.getBoundingClientRect();
+        }
+
+        for (i = 0; i < unmountChildren.length; i++) {
+            instance = unmountChildren[i];
+            instance._initMove(true);
+        }
+
+        document.body.offsetWidth;
+        for (i = 0; i < updateChildren.length; i++) {
+            instance = updateChildren[i];
+            instance._initMove(false);
+        }
+
+        // document.body.offsetWidth;
+
+        for (i = 0; i < unmountChildren.length; i++) {
+            instance = unmountChildren[i];
+            instance._unmount();
+        }
+
+        // document.body.offsetWidth;
+
+        for (i = 0; i < children.length; i++) {
+            instance = children[i];
+            if (instance._needMove) {
+                instance._move();
+            }
+        }
+
         for (var _i = 0; _i < mountChildren.length; _i++) {
             var _instance = mountChildren[_i];
             _instance._enter();
         }
 
-        for (i = 0; i < updateChildren.length; i++) {
-            instance = updateChildren[i];
-            instance.newPosition = instance.element.getBoundingClientRect();
-        }
+        // for (i = 0; i < updateChildren.length; i++) {
+        // instance = updateChildren[i];
+        // instance.newPosition = instance.element.getBoundingClientRect();
+        // }
 
-        for (i = 0; i < updateChildren.length; i++) {
-            instance = updateChildren[i];
-            instance._move();
-        }
+        // for (i = 0; i < unmountChildren.length; i++) {
+        // instance = unmountChildren[i];
+        // instance.newPosition = instance.element.getBoundingClientRect();
+        // }
+
+        // for (i = 0; i < unmountChildren.length; i++) {
+        // instance = unmountChildren[i];
+        // instance._keepUnmountPosition();
+        // }
+
+
+        // for (i = 0; i < updateChildren.length; i++) {
+        // instance = updateChildren[i];
+        // instance._move();
+        // }
 
         this.mountChildren = [];
         this.updateChildren = [];
+        this.unmountChildren = [];
     },
-    _move: function _move() {
-        var _this3 = this;
-
+    _keepUnmountPosition: function _keepUnmountPosition() {
         var element = this.element;
         var oldPosition = this.position;
         var newPosition = this.newPosition;
@@ -3751,24 +3825,57 @@ var Animate$1 = Animate = Intact$1.extend({
         var dy = oldPosition.top - newPosition.top;
 
         if (dx || dy) {
-            this._moving = true;
             var s = element.style;
             s.transform = s.WebkitTransform = 'translate(' + dx + 'px, ' + dy + 'px)';
             s.transitionDuration = '0s';
-            var className = this.get('a:transition') + '-move';
-            addClass(element, className);
-            document.body.offsetWidth;
-            s.transform = s.WebkitTransform = s.transitionDuration = '';
-            this._moveEnd = function (e) {
-                e && e.stopPropagation();
-                if (!e || /transform$/.test(e.propertyName)) {
-                    TransitionEvents.off(element, _this3._moveEnd);
-                    removeClass(element, className);
-                    _this3._moving = false;
-                }
-            };
-            TransitionEvents.on(element, this._moveEnd);
         }
+    },
+    _initMove: function _initMove(isUnmount) {
+        var element = this.element;
+        var oldPosition = this.position;
+        var newPosition = this.newPosition;
+
+        this.position = newPosition;
+        // mount的元素，不处理位置
+        if (!oldPosition) return;
+
+        var dx = oldPosition.left - newPosition.left;
+        var dy = oldPosition.top - newPosition.top;
+
+        if (dx || dy) {
+            this._needMove = true;
+            var s = element.style;
+            if (isUnmount) {
+                s.marginTop = dy + 'px';
+                s.marginLeft = dx + 'px';
+            } else {
+                s.transform = s.WebkitTransform = 'translate(' + dx + 'px, ' + dy + 'px)';
+                s.transitionDuration = '0s';
+            }
+        } else {
+            this._needMove = false;
+        }
+    },
+    _move: function _move() {
+        var _this3 = this;
+
+        this._moving = true;
+        var element = this.element;
+        var s = element.style;
+        var className = this.get('a:transition') + '-move';
+        addClass(element, className);
+        nextFrame(function () {
+            s.transform = s.WebkitTransform = s.transitionDuration = '';
+        }, 1000);
+        this._moveEnd = function (e) {
+            e && e.stopPropagation();
+            if (!e || /transform$/.test(e.propertyName)) {
+                TransitionEvents.off(element, _this3._moveEnd);
+                removeClass(element, className);
+                _this3._moving = false;
+            }
+        };
+        TransitionEvents.on(element, this._moveEnd);
     },
     _enter: function _enter(done) {
         this._entering = true;
@@ -3789,12 +3896,14 @@ var Animate$1 = Animate = Intact$1.extend({
         var element = this.element;
         // addClass(element, `${transition}-leave`);
         addClass(element, transition + '-leave-active');
+        addClass(element, transition + '-leave');
         TransitionEvents.on(element, this._leaveEnd);
         // element.offsetWidth;
-        nextFrame(function () {
-            // addClass(element, `${transition}-leave-active`);
-            addClass(element, transition + '-leave');
-        });
+        // nextFrame(() => {
+        // setTimeout(() => {
+        // // addClass(element, `${transition}-leave-active`);
+        // addClass(element, `${transition}-leave`);
+        // }, 2000);
     },
     destroy: function destroy(lastVNode, nextVNode) {
         if (this._leaving !== false) return;
@@ -3928,8 +4037,8 @@ var TransitionEvents = {
 };
 
 // import Animate from './animate';
+Intact$1.prototype.Animate = Animate$1;
 Intact$1.Animate = Animate$1;
-Intact$1.Animate = A;
 Intact$1.Vdt = Vdt$1;
 Vdt$1.configure({
     getModel: function getModel(self, key) {
