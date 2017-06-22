@@ -3592,7 +3592,8 @@ var Animate$1 = Animate = Intact$1.extend({
         this.unmountChildren = [];
         this.updateChildren = [];
         this.children = [];
-        var parentDom = this.parentDom;
+        // const parentDom = this.parentDom;
+        var parentDom = this.parentVNode.dom;
         if (parentDom && parentDom._reserve) {
             lastVNode = parentDom._reserve[nextVNode.key];
         }
@@ -3627,20 +3628,32 @@ var Animate$1 = Animate = Intact$1.extend({
         this.isAppear = isAppear;
         this.enterClass = enterClass;
         this.enterActiveClass = enterActiveClass;
+        this.leaveClass = transition + '-leave';
+        this.leaveActiveClass = transition + '-leave-active';
+        this.moveClass = transition + '-move';
+
         this._enterEnd = function (e) {
             e && e.stopPropagation();
-            // removeClass(element, enterClass);
+            removeClass(element, enterClass);
             removeClass(element, enterActiveClass);
-            _this._entering = false;
+            if (_this.lastInstance) {
+                element.style.position = '';
+                element.style.transform = element.style.WebkitTransform = '';
+                _this.clone.parentNode.removeChild(_this.clone);
+            }
             TransitionEvents.off(element, _this._enterEnd);
+            _this._entering = false;
         };
 
+        // 一个动画元素被删除后，会被保存，如果下次又出现了，则要清除
+        // 上一个动画状态
         if (this._lastVNode && this._lastVNode !== lastVNode) {
             var lastInstance = this._lastVNode.children;
             if (lastInstance._leaving) {
-                TransitionEvents.off(element, lastInstance._leaveEnd);
-                lastInstance._unmountCancelled = true;
-                lastInstance._leaveEnd();
+                this.lastInstance = lastInstance;
+                // this._isReserve = true;
+                // lastInstance._unmountCancelled = true;
+                // lastInstance._leaveEnd();
             }
         }
 
@@ -3649,7 +3662,6 @@ var Animate$1 = Animate = Intact$1.extend({
         element._unmount = function (nouse, parentDom) {
             _this.vNode = vNode;
             _this.parentDom = parentDom;
-            // this._unmount();
             if (parentInstance) {
                 parentInstance.unmountChildren.push(_this);
             } else {
@@ -3676,7 +3688,7 @@ var Animate$1 = Animate = Intact$1.extend({
             }
         }
     },
-    _unmount: function _unmount() {
+    _unmount: function _unmount(onlyInit) {
         var _this2 = this;
 
         if (this.get('a:disabled')) return;
@@ -3700,20 +3712,26 @@ var Animate$1 = Animate = Intact$1.extend({
 
         this._leaveEnd = function (e) {
             e && e.stopPropagation();
-            removeClass(element, transition + '-leave');
-            removeClass(element, transition + '-leave-active');
-            if (!_this2._unmountCancelled) {
-                parentDom.removeChild(element);
-            }
+            removeClass(element, _this2.leaveClass);
+            removeClass(element, _this2.leaveActiveClass);
+            var s = element.style;
+            s.position = 'absolute';
+            s.transform = s.WebkitTransform = _this2.transform;
             _this2._leaving = false;
             delete parentDom._reserve[vNode.key];
             TransitionEvents.off(element, _this2._leaveEnd);
-            _this2.destroy(vNode);
+            if (!_this2._unmountCancelled) {
+                parentDom.removeChild(element);
+                _this2.destroy(vNode);
+            }
         };
 
-        this._leave();
+        this._leave(onlyInit);
     },
     _beforeUpdate: function _beforeUpdate(lastVNode, vNode) {
+        // 更新之前，这里的children是上一份children
+        // 包括上一次的mount和update，不包括上次unmount，
+        // 但这里会有当前需要unmount的元素
         var children = this.children;
         for (var i = 0; i < children.length; i++) {
             var instance = children[i];
@@ -3728,6 +3746,8 @@ var Animate$1 = Animate = Intact$1.extend({
             }
         }
 
+        // 更新之后，这里的children是上一次与当前的合集
+        // 包括当前mount/update/unmount
         var mountChildren = this.mountChildren;
         var updateChildren = this.updateChildren;
         var unmountChildren = this.unmountChildren;
@@ -3736,54 +3756,117 @@ var Animate$1 = Animate = Intact$1.extend({
         var i = void 0;
         var instance = void 0;
 
-        for (i = 0; i < children.length; i++) {
-            instance = children[i];
+        // step1: 先将之前的动画清空
+        children.forEach(function (instance) {
             if (instance._entering) {
                 instance._enterEnd();
             }
             if (instance._moving) {
                 instance._moveEnd();
             }
-        }
+        });
 
-        for (var _i = 0; _i < mountChildren.length; _i++) {
-            var _instance = mountChildren[_i];
-            _instance._enter();
-        }
-
-        for (i = 0; i < unmountChildren.length; i++) {
-            instance = unmountChildren[i];
-            instance.element.style.position = 'absolute';
-        }
-
-        for (i = 0; i < children.length; i++) {
-            instance = children[i];
-            instance.newPosition = instance.element.getBoundingClientRect();
-        }
-
-        // for (i = 0; i < unmountChildren.length; i++) {
-        // instance = unmountChildren[i];
-        // instance._initMove(true);
-        // }
-
-        for (i = 0; i < children.length; i++) {
-            instance = children[i];
-            instance._initMove();
-        }
-
-        for (i = 0; i < unmountChildren.length; i++) {
-            instance = unmountChildren[i];
-            instance._unmount();
-        }
-
-        // document.body.offsetWidth;
-
-        for (i = 0; i < children.length; i++) {
-            instance = children[i];
-            if (instance._needMove) {
-                instance._move();
+        unmountChildren.forEach(function (instance) {
+            if (instance.originTransfrom === undefined) {
+                instance._needMoveLeaveClass = true;
+                addClass(instance.element, instance.leaveClass);
+            } else {
+                instance._needMoveLeaveClass = false;
             }
-        }
+        });
+        unmountChildren.forEach(function (instance) {
+            if (instance.originTransfrom === undefined) {
+                var element = instance.element;
+                var transform = getComputedStyle(element).transform;
+                instance.originTransfrom = transform === 'none' ? '' : transform;
+            }
+        });
+        unmountChildren.forEach(function (instance) {
+            if (instance._needMoveLeaveClass) {
+                removeClass(instance.element, instance.leaveClass);
+            }
+            instance.element.style.position = 'absolute';
+        });
+
+        // 被删除的元素，又重新进来了，需要把position还原
+        mountChildren.forEach(function (instance) {
+            if (instance.lastInstance) {
+                var clone = instance.element.cloneNode();
+                clone.style.position = '';
+                clone.style.transform = '';
+                instance.element.parentNode.insertBefore(clone, instance.element);
+                instance.clone = clone;
+                // instance.element.style.position = '';
+                // instance.element.style.transform = '';
+                // instance.element.style.transitionDuration = '0s';
+            }
+        });
+
+        // step3: 将unmount元素脱离文档流，用于计算移动元素
+        // unmountChildren.forEach(instance => {
+        // const element = instance.element;
+        // element.style.position = 'absolute';
+        // });
+
+        // step4: 获取元素最终位置
+        unmountChildren.forEach(function (instance) {
+            var element = instance.element;
+            // const transform = getComputedStyle(element).transform;  
+            instance.newPosition = element.getBoundingClientRect();
+            // instance.originTransfrom = transform === 'none' ? '' : transform;
+        });
+        updateChildren.forEach(function (instance) {
+            var element = instance.element;
+            // const transform = getComputedStyle(element).transform;  
+            instance.newPosition = element.getBoundingClientRect();
+            // instance.originTransfrom = transform === 'none' ? '' : transform;
+        });
+
+        // mountChildren.forEach(instance => {
+        // if (instance.lastInstance) {
+        // instance.element.style.position = 'absolute';
+        // }
+        // });
+
+
+        // step5: 判断元素是否需要移动，并还原到初始位置
+        unmountChildren.forEach(function (instance) {
+            return instance._initMove();
+        });
+        updateChildren.forEach(function (instance) {
+            return instance._initMove();
+        });
+
+        // step6: 移动元素添加初始类名
+        updateChildren.forEach(function (instance) {
+            if (instance._needMove) {
+                instance._move(true);
+            }
+        });
+
+        // step7: unmount元素初始化类名
+        unmountChildren.forEach(function (instance) {
+            return instance._unmount(true);
+        });
+
+        // step2: 设置mount元素的进入状态
+        mountChildren.forEach(function (instance) {
+            return instance._enter(true);
+        });
+
+        // step8: 所有动画都在下一帧处理
+        // setTimeout(() => {
+        nextFrame(function () {
+            mountChildren.forEach(function (instance) {
+                return instance._triggerEnter();
+            });
+            unmountChildren.forEach(function (instance) {
+                return instance._triggerLeave();
+            });
+            updateChildren.forEach(function (instance) {
+                return instance._triggerMove();
+            });
+        });
 
         this.mountChildren = [];
         this.updateChildren = [];
@@ -3794,75 +3877,102 @@ var Animate$1 = Animate = Intact$1.extend({
         var oldPosition = this.position;
         var newPosition = this.newPosition;
 
-        this.position = newPosition;
-        // mount的元素，不处理位置
-        if (!oldPosition) return;
+        // this.position = newPosition;
+        // // mount的元素，不处理位置
+        // if (!oldPosition) return;
 
         var dx = oldPosition.left - newPosition.left;
         var dy = oldPosition.top - newPosition.top;
 
+        this.transform = '';
+        // this.originTransfrom = '';
+
         if (dx || dy) {
             this._needMove = true;
             var s = element.style;
-            // if (isUnmount) {
-            // s.marginTop = `${dy}px`;
-            // s.marginLeft = `${dx}px`;
-            // } else {
-            s.transform = s.WebkitTransform = 'translate(' + dx + 'px, ' + dy + 'px)';
+            this.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+            s.transform = s.WebkitTransform = this.transform;
             s.transitionDuration = '0s';
-            // }
         } else {
             this._needMove = false;
         }
     },
-    _move: function _move() {
+    _move: function _move(onlyInit) {
         var _this3 = this;
 
         this._moving = true;
         var element = this.element;
         var s = element.style;
-        var className = this.get('a:transition') + '-move';
-        addClass(element, className);
-        nextFrame(function () {
-            s.transform = s.WebkitTransform = s.transitionDuration = '';
-        });
+        addClass(element, this.moveClass);
         this._moveEnd = function (e) {
             e && e.stopPropagation();
             if (!e || /transform$/.test(e.propertyName)) {
                 TransitionEvents.off(element, _this3._moveEnd);
-                removeClass(element, className);
+                removeClass(element, _this3.moveClass);
                 _this3._moving = false;
             }
         };
         TransitionEvents.on(element, this._moveEnd);
+        if (!onlyInit) {
+            nextFrame(function () {
+                return _this3._triggerMove();
+            });
+        }
     },
-    _enter: function _enter(done) {
-        this._entering = true;
+    _triggerMove: function _triggerMove() {
+        var s = this.element.style;
+        s.transform = s.WebkitTransform = s.transitionDuration = '';
+    },
+    _enter: function _enter(onlyInit) {
+        var _this4 = this;
+
+        // this._entering = true;
         var element = this.element;
         var enterClass = this.enterClass;
         var enterActiveClass = this.enterActiveClass;
 
-        addClass(element, enterClass);
-        addClass(element, enterActiveClass);
-        // element.offsetWidth;
+        // 如果这个元素是上一个删除的元素，则从当前状态回到原始状态
+        if (this.lastInstance) {
+            this.lastInstance._unmountCancelled = true;
+            this.lastInstance._leaveEnd();
+            element.style.transitionDuration = '';
+            addClass(element, this.enterActiveClass);
+        } else {
+            addClass(element, enterClass);
+        }
+        // addClass(this.element, this.enterActiveClass);
         TransitionEvents.on(element, this._enterEnd);
-        nextFrame(function () {
-            removeClass(element, enterClass);
-        });
+        if (!onlyInit) {
+            nextFrame(function () {
+                return _this4._triggerEnter();
+            });
+        }
     },
-    _leave: function _leave() {
-        var transition = this.get('a:transition');
+    _triggerEnter: function _triggerEnter() {
+        this._entering = true;
+        addClass(this.element, this.enterActiveClass);
+        removeClass(this.element, this.enterClass);
+    },
+    _leave: function _leave(onlyInit) {
+        var _this5 = this;
+
         var element = this.element;
-        // addClass(element, `${transition}-leave`);
-        addClass(element, transition + '-leave-active');
-        // addClass(element, `${transition}-leave`);
+        addClass(element, this.leaveActiveClass);
         TransitionEvents.on(element, this._leaveEnd);
-        // element.offsetWidth;
-        nextFrame(function () {
-            // setTimeout(() => {
-            // addClass(element, `${transition}-leave-active`);
-            addClass(element, transition + '-leave');
-        }, 2000);
+        if (!onlyInit) {
+            nextFrame(function () {
+                _this5._triggerLeave();
+            });
+        }
+    },
+    _triggerLeave: function _triggerLeave() {
+        var element = this.element;
+        var s = element.style;
+        if (this.transform !== undefined) {
+            s.transform = s.WebkitTransform = this.transform + ' ' + this.originTransfrom;
+            s.transitionDuration = '';
+        }
+        addClass(element, this.leaveClass);
     },
     destroy: function destroy(lastVNode, nextVNode) {
         if (this._leaving !== false) return;
