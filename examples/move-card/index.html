@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Move Card</title>
+    <style>
+        .container {
+            
+        } 
+        .item {
+            float: left;
+            margin: 0 10px 10px 0;
+            background: gray;
+            width: 200px;
+            height: 150px;
+            position: relative;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.5)
+            }
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: scale(1)
+            }
+            to {
+                opacity: 0;
+                transform: scale(0.5)
+            }
+        }
+
+        <!-- .fade-enter-active { -->
+            <!-- animation: fadeIn 100s; -->
+        <!-- } -->
+        <!-- .fade-leave-active { -->
+            <!-- animation: fadeOut 10s;  -->
+        <!-- } -->
+        <!-- .fade-move { -->
+            <!-- transition: all 10s cubic-bezier(.55,0,.1,1); -->
+        <!-- } -->
+      .fade-enter-active, .fade-leave-active, .fade-move {
+        transition: all 30s cubic-bezier(.55,0,.1,1);
+      }
+      .fade-enter, .fade-leave {
+        opacity: 0;
+        transform: scale(0.5);
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/lodash/4.3.0/lodash.min.js"></script>
+    <script src="../../dist/intact.js"></script>
+  </head>
+  <body>
+      <script type="text/vdt" id="template">
+        <div id="app">
+          <button ev-click={self.insert.bind(self)}>insert one card at random index</button>
+          <button ev-click={self.reset.bind(self)}>reset</button>
+          <button ev-click={self.shuffle.bind(self)}>shuffle</button>
+          <Animate a:tag="ul" class="container">
+            <Animate a:transition="fade" v-for={self.get('items')} class="item" key={value}>
+                {value} <button ev-click={self.remove.bind(self, key)}>x</button>
+            </Animate>
+          </Animate>
+        </div>
+    </script>
+
+    <script>
+        var id = 6;
+
+        var App = Intact.extend({
+            defaults: {
+                items: [1, 2, 3, 4, 5]
+            },
+            template: document.getElementById('template').innerHTML,
+            insert() {
+                var items = this.get('items');
+                var i = Math.round(Math.random() * items.length);
+                items.splice(i, 0, id++);
+                <!-- i = Math.round(Math.random() * items.length); -->
+                <!-- items.splice(i, 0, id++); -->
+                this.update();
+            },
+            reset() {
+                this.set('items',  [1, 2, 3, 4, 5]);
+            },
+            shuffle () {
+                this.set('items', _.shuffle(this.get('items')));
+            },
+            remove(index) {
+                var items = this.get('items');
+                items.splice(index, 1);
+                this.update();
+            }
+        });
+        var app = Intact.mount(App, document.body);
+    </script>
+  </body>
+</html>
