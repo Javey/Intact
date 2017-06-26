@@ -3763,6 +3763,10 @@ var Animate$1 = Animate = Intact$1.extend({
             return instance._enter();
         });
 
+        unmountChildren.forEach(function (instance) {
+            instance.element.style.position = 'absolute';
+        });
+
         // step1: 先将之前的动画清空
         children.forEach(function (instance) {
             // if (instance._entering) {
@@ -3780,28 +3784,27 @@ var Animate$1 = Animate = Intact$1.extend({
         // // instance.originTransfrom = transform === 'none' ? '' : transform;
         // });
 
-        unmountChildren.forEach(function (instance) {
-            if (instance.originTransfrom === undefined) {
-                instance._needMoveLeaveClass = true;
-                addClass(instance.element, instance.leaveClass);
-            } else {
-                instance._needMoveLeaveClass = false;
-            }
-        });
-        unmountChildren.forEach(function (instance) {
-            if (instance.originTransfrom === undefined) {
-                var element = instance.element;
-                var transform = getComputedStyle(element).transform;
-                instance.originTransfrom = transform === 'none' ? '' : transform;
-            }
-        });
-        unmountChildren.forEach(function (instance) {
-            if (instance._needMoveLeaveClass) {
-                removeClass(instance.element, instance.leaveClass);
-            }
-            instance.element.style.position = 'absolute';
-        });
-
+        // unmountChildren.forEach(instance => {
+        // if (instance.originTransfrom === undefined) {
+        // instance._needMoveLeaveClass = true;
+        // addClass(instance.element, instance.leaveClass);
+        // } else {
+        // instance._needMoveLeaveClass = false;
+        // }
+        // });
+        // unmountChildren.forEach(instance => {
+        // if (instance.originTransfrom === undefined) {
+        // const element = instance.element;
+        // const transform = getComputedStyle(element).transform;  
+        // instance.originTransfrom = transform === 'none' ? '' : transform;
+        // }
+        // });
+        // unmountChildren.forEach(instance => {
+        // if (instance._needMoveLeaveClass) {
+        // removeClass(instance.element, instance.leaveClass);
+        // }
+        // instance.element.style.position = 'absolute';
+        // });
         // 被删除的元素，又重新进来了，需要把position还原
         // mountChildren.forEach(instance => {
         // if (instance.lastInstance) {
@@ -3881,7 +3884,7 @@ var Animate$1 = Animate = Intact$1.extend({
 
         this.mountChildren = [];
         this.updateChildren = [];
-        this.unmountChildren = [];
+        // this.unmountChildren = [];
         // this.children = [];
     },
     _initMove: function _initMove(isUnmount) {
@@ -3902,14 +3905,15 @@ var Animate$1 = Animate = Intact$1.extend({
         this.dy = dy;
 
         if (dx || dy) {
-            this._needMove = true;
             var s = element.style;
             if (isUnmount) {
                 // this.transform = `translate(${dx}px, ${dy}px)`;
                 // s.transform = s.WebkitTransform = this.transform;
                 // s.transitionDuration = '0s';
                 s.position = '';
+                this._needMove = false;
             } else {
+                this._needMove = true;
                 // s.left = `${dx}px`;
                 // s.top = `${dy}px`;
             }

@@ -209,6 +209,10 @@ export default Animate = Intact.extend({
 
         mountChildren.forEach(instance => instance._enter());
 
+        unmountChildren.forEach(instance => {
+            instance.element.style.position = 'absolute';
+        });
+
         // step1: 先将之前的动画清空
         children.forEach(instance => {
             // if (instance._entering) {
@@ -247,10 +251,6 @@ export default Animate = Intact.extend({
             // }
             // instance.element.style.position = 'absolute';
         // });
-        unmountChildren.forEach(instance => {
-            instance.element.style.position = 'absolute';
-        });
-        
         // 被删除的元素，又重新进来了，需要把position还原
         // mountChildren.forEach(instance => {
             // if (instance.lastInstance) {
@@ -344,14 +344,15 @@ export default Animate = Intact.extend({
         this.dy = dy;
 
         if (dx || dy) {
-            this._needMove = true;
             const s = element.style;
             if (isUnmount) {
                 // this.transform = `translate(${dx}px, ${dy}px)`;
                 // s.transform = s.WebkitTransform = this.transform;
                 // s.transitionDuration = '0s';
                 s.position = '';
+                this._needMove = false;
             } else {
+                this._needMove = true;
                 // s.left = `${dx}px`;
                 // s.top = `${dy}px`;
             }
