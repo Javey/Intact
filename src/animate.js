@@ -226,25 +226,28 @@ export default Animate = Intact.extend({
             // // instance.originTransfrom = transform === 'none' ? '' : transform;
         // });
 
+        // unmountChildren.forEach(instance => {
+            // if (instance.originTransfrom === undefined) {
+                // instance._needMoveLeaveClass = true;
+                // addClass(instance.element, instance.leaveClass);
+            // } else {
+                // instance._needMoveLeaveClass = false;
+            // }
+        // });
+        // unmountChildren.forEach(instance => {
+            // if (instance.originTransfrom === undefined) {
+                // const element = instance.element;
+                // const transform = getComputedStyle(element).transform;  
+                // instance.originTransfrom = transform === 'none' ? '' : transform;
+            // }
+        // });
+        // unmountChildren.forEach(instance => {
+            // if (instance._needMoveLeaveClass) {
+                // removeClass(instance.element, instance.leaveClass);
+            // }
+            // instance.element.style.position = 'absolute';
+        // });
         unmountChildren.forEach(instance => {
-            if (instance.originTransfrom === undefined) {
-                instance._needMoveLeaveClass = true;
-                addClass(instance.element, instance.leaveClass);
-            } else {
-                instance._needMoveLeaveClass = false;
-            }
-        });
-        unmountChildren.forEach(instance => {
-            if (instance.originTransfrom === undefined) {
-                const element = instance.element;
-                const transform = getComputedStyle(element).transform;  
-                instance.originTransfrom = transform === 'none' ? '' : transform;
-            }
-        });
-        unmountChildren.forEach(instance => {
-            if (instance._needMoveLeaveClass) {
-                removeClass(instance.element, instance.leaveClass);
-            }
             instance.element.style.position = 'absolute';
         });
         
@@ -319,7 +322,7 @@ export default Animate = Intact.extend({
  
         this.mountChildren = [];
         this.updateChildren = [];
-        this.unmountChildren = [];
+        // this.unmountChildren = [];
         // this.children = [];
     },
 
