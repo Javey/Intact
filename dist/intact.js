@@ -2536,7 +2536,8 @@ function patchChildrenByKey(a, b, dom, mountedQueue, parentVNode) {
 
     if (aStart > aEnd) {
         while (bStart <= bEnd) {
-            insertOrAppend(bEnd, bLength, createElement(b[bStart], null, mountedQueue, false, parentVNode), b, dom);
+            insertOrAppend(bEnd, bLength, createElement(b[bStart], null, mountedQueue, false, parentVNode), b, dom, true /* detectParent: for animate, if the parentNode exists, then do nothing*/
+            );
             ++bStart;
         }
     } else if (bStart > bEnd) {
@@ -2631,7 +2632,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue, parentVNode) {
                 for (i = bLength - 1; i >= 0; i--) {
                     if (sources[i] === -1) {
                         pos = i + bStart;
-                        insertOrAppend(pos, b.length, createElement(b[pos], null, mountedQueue, false, parentVNode), b, dom);
+                        insertOrAppend(pos, b.length, createElement(b[pos], null, mountedQueue, false, parentVNode), b, dom, true);
                     }
                 }
             }
@@ -2693,9 +2694,11 @@ function lisAlgorithm(arr) {
     return result;
 }
 
-function insertOrAppend(pos, length, newDom, nodes, dom) {
+function insertOrAppend(pos, length, newDom, nodes, dom, detectParent) {
     var nextPos = pos + 1;
-    if (nextPos < length) {
+    if (detectParent && newDom.parentNode) {
+        return;
+    } else if (nextPos < length) {
         dom.insertBefore(newDom, nodes[nextPos].dom);
     } else {
         appendChild(dom, newDom);
@@ -3634,7 +3637,7 @@ var Animate$1 = Animate = Intact$1.extend({
 
         this._enterEnd = function (e) {
             e && e.stopPropagation();
-            // removeClass(element, enterClass);
+            removeClass(element, enterClass);
             removeClass(element, enterActiveClass);
             // if (this.lastInstance) {
             // element.style.position = '';
@@ -3651,6 +3654,7 @@ var Animate$1 = Animate = Intact$1.extend({
             var lastInstance = this._lastVNode.children;
             if (lastInstance._leaving) {
                 this.lastInstance = lastInstance;
+                // this.position = lastInstance.position;
                 // this._isReserve = true;
                 // lastInstance._unmountCancelled = true;
                 // lastInstance._leaveEnd();
@@ -3675,6 +3679,7 @@ var Animate$1 = Animate = Intact$1.extend({
                 parentInstance.mountChildren.push(this);
             }
             parentInstance.children.push(this);
+            this.position = this._getPosition();
         } else if (isAppear || !this.isRender) {
             this._enter();
         }
@@ -3716,8 +3721,9 @@ var Animate$1 = Animate = Intact$1.extend({
             removeClass(element, _this2.leaveClass);
             removeClass(element, _this2.leaveActiveClass);
             var s = element.style;
-            s.position = 'absolute';
-            s.transform = s.WebkitTransform = _this2.transform;
+            // s.position = 'absolute';
+            // s.transform = s.WebkitTransform = this.transform;
+            s.position = s.top = s.left = s.transform = s.WebkitTransform = '';
             _this2._leaving = false;
             delete parentDom._reserve[vNode.key];
             TransitionEvents.off(element, _this2._leaveEnd);
@@ -3736,9 +3742,22 @@ var Animate$1 = Animate = Intact$1.extend({
         var children = this.children;
         for (var i = 0; i < children.length; i++) {
             var instance = children[i];
-            instance.position = instance.element.getBoundingClientRect();
+            // if (!instance._entering) {
+            // instance.position = instance.element.getBoundingClientRect();
+            // } else {
+            instance.position = instance._getPosition();
+            // }
         }
         this.children = [];
+    },
+    _getPosition: function _getPosition() {
+        var element = this.element;
+        var transform = getComputedStyle(element).transform;
+        var matrix = new WebKitCSSMatrix(transform);
+        return {
+            top: element.offsetTop + matrix.m42,
+            left: element.offsetLeft + matrix.m41
+        };
     },
     _update: function _update(lastVNode, vNode) {
         if (!this.get('a:disabled')) {
@@ -3760,17 +3779,25 @@ var Animate$1 = Animate = Intact$1.extend({
         var instance = void 0;
 
         mountChildren.forEach(function (instance) {
-            return instance._enter();
+            console.log('p', instance.position);
+            instance._enter();
         });
 
-        unmountChildren.forEach(function (instance) {
-            instance.element.style.position = 'absolute';
-        });
+        // unmountChildren.forEach(instance => {
+        // instance.element.style.position = 'absolute';
+        // });
+
+        // unmountChildren.forEach(instance => {
+        // if (!instance._moving) {
+        // instance.position = instance._getPosition();
+        // }
+        // });
+
 
         // step1: 先将之前的动画清空
         children.forEach(function (instance) {
             // if (instance._entering) {
-            // // instance._enterEnd();
+            // instance._enterEnd();
             // }
             if (instance._moving) {
                 instance._moveEnd();
@@ -3799,12 +3826,15 @@ var Animate$1 = Animate = Intact$1.extend({
         // instance.originTransfrom = transform === 'none' ? '' : transform;
         // }
         // });
-        // unmountChildren.forEach(instance => {
-        // if (instance._needMoveLeaveClass) {
-        // removeClass(instance.element, instance.leaveClass);
-        // }
-        // instance.element.style.position = 'absolute';
-        // });
+        unmountChildren.forEach(function (instance) {
+            // if (instance._needMoveLeaveClass) {
+            // removeClass(instance.element, instance.leaveClass);
+            // }
+            var s = instance.element.style;
+            s.position = 'absolute';
+            // s.top = s.left = 0;
+        });
+        // updateChildren.forEach(instance => instance.element.style.position = 'relative');
         // 被删除的元素，又重新进来了，需要把position还原
         // mountChildren.forEach(instance => {
         // if (instance.lastInstance) {
@@ -3836,9 +3866,16 @@ var Animate$1 = Animate = Intact$1.extend({
         children.forEach(function (instance) {
             var element = instance.element;
             // const transform = getComputedStyle(element).transform;  
-            instance.newPosition = element.getBoundingClientRect();
+            // if (!instance._entering) {
+            // instance.newPosition = element.getBoundingClientRect();
+            // } else {
+            instance.newPosition = instance._getPosition();
+            // instance.position = instance._getPosition();
+            // }
             // instance.originTransfrom = transform === 'none' ? '' : transform;
         });
+
+        // mountChildren.forEach(instance => instance._enter());
 
         // mountChildren.forEach(instance => {
         // if (instance.lastInstance) {
@@ -3854,6 +3891,9 @@ var Animate$1 = Animate = Intact$1.extend({
         updateChildren.forEach(function (instance) {
             return instance._initMove();
         });
+        mountChildren.forEach(function (instance) {
+            return instance._initMove();
+        });
         // children.forEach(instance => instance._initMove());
 
         // step6: 移动元素添加初始类名
@@ -3866,25 +3906,23 @@ var Animate$1 = Animate = Intact$1.extend({
 
         // step7: unmount元素初始化类名
         unmountChildren.forEach(function (instance) {
-            return instance._unmount(true);
+            return instance._unmount();
         });
 
         // step2: 设置mount元素的进入状态
-        // mountChildren.forEach(instance => instance._enter(true));
+        // mountChildren.forEach(instance => instance._enter());
 
         // step8: 所有动画都在下一帧处理
         // setTimeout(() => {
-        nextFrame(function () {
-            // mountChildren.forEach(instance => instance._triggerEnter());
-            unmountChildren.forEach(function (instance) {
-                return instance._triggerLeave();
-            });
-            // updateChildren.forEach(instance => instance._triggerMove());
-        });
+        // nextFrame(() => {
+        // mountChildren.forEach(instance => instance._triggerEnter());
+        // unmountChildren.forEach(instance => instance._triggerLeave());
+        // updateChildren.forEach(instance => instance._triggerMove());
+        // });
 
         this.mountChildren = [];
         this.updateChildren = [];
-        // this.unmountChildren = [];
+        this.unmountChildren = [];
         // this.children = [];
     },
     _initMove: function _initMove(isUnmount) {
@@ -3899,7 +3937,7 @@ var Animate$1 = Animate = Intact$1.extend({
         var dx = oldPosition.left - newPosition.left;
         var dy = oldPosition.top - newPosition.top;
 
-        this.transform = '';
+        // this.transform = '';
         // this.originTransfrom = '';
         this.dx = dx;
         this.dy = dy;
@@ -3910,12 +3948,22 @@ var Animate$1 = Animate = Intact$1.extend({
                 // this.transform = `translate(${dx}px, ${dy}px)`;
                 // s.transform = s.WebkitTransform = this.transform;
                 // s.transitionDuration = '0s';
-                s.position = '';
+                // s.position = '';
+                // s.left = `${dx}px`;
+                // s.top = `${dy}px`;
+                // if (this._entering) {
+                s.left = oldPosition.left + 'px';
+                s.top = oldPosition.top + 'px';
+                // } else {
+                // s.left = `${dx}px`;
+                // s.top = `${dy}px`;
+                // }
                 this._needMove = false;
             } else {
                 this._needMove = true;
-                // s.left = `${dx}px`;
-                // s.top = `${dy}px`;
+                s.position = 'relative';
+                s.left = dx + 'px';
+                s.top = dy + 'px';
             }
         } else {
             this._needMove = false;
@@ -3933,7 +3981,7 @@ var Animate$1 = Animate = Intact$1.extend({
             if (!e || /transform$/.test(e.propertyName)) {
                 TransitionEvents.off(element, _this3._moveEnd);
                 removeClass(element, _this3.moveClass);
-                s.left = s.top = s.transform = s.WebkitTransform = '';
+                s.position = s.left = s.top = s.transform = s.WebkitTransform = '';
                 _this3._moving = false;
             }
         };
@@ -3952,7 +4000,7 @@ var Animate$1 = Animate = Intact$1.extend({
     _enter: function _enter(onlyInit) {
         var _this4 = this;
 
-        // this._entering = true;
+        this._entering = true;
         var element = this.element;
         var enterClass = this.enterClass;
         var enterActiveClass = this.enterActiveClass;
@@ -3961,12 +4009,11 @@ var Animate$1 = Animate = Intact$1.extend({
         if (this.lastInstance) {
             this.lastInstance._unmountCancelled = true;
             this.lastInstance._leaveEnd();
-            element.style.transitionDuration = '';
             addClass(element, this.enterActiveClass);
         } else {
             addClass(element, enterClass);
+            // addClass(this.element, this.enterActiveClass);
         }
-        addClass(this.element, this.enterActiveClass);
         TransitionEvents.on(element, this._enterEnd);
         if (!onlyInit) {
             nextFrame(function () {
@@ -3975,8 +4022,8 @@ var Animate$1 = Animate = Intact$1.extend({
         }
     },
     _triggerEnter: function _triggerEnter() {
-        this._entering = true;
-        // addClass(this.element, this.enterActiveClass);
+        // this._entering = true;
+        addClass(this.element, this.enterActiveClass);
         removeClass(this.element, this.enterClass);
     },
     _leave: function _leave(onlyInit) {

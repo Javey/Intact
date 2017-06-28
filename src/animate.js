@@ -80,7 +80,7 @@ export default Animate = Intact.extend({
 
         this._enterEnd = (e) => {
             e && e.stopPropagation();
-            // removeClass(element, enterClass);
+            removeClass(element, enterClass);
             removeClass(element, enterActiveClass);
             // if (this.lastInstance) {
                 // element.style.position = '';
@@ -97,6 +97,7 @@ export default Animate = Intact.extend({
             const lastInstance = this._lastVNode.children;
             if (lastInstance._leaving) {
                 this.lastInstance = lastInstance;
+                // this.position = lastInstance.position;
                 // this._isReserve = true;
                 // lastInstance._unmountCancelled = true;
                 // lastInstance._leaveEnd();
@@ -121,6 +122,7 @@ export default Animate = Intact.extend({
                 parentInstance.mountChildren.push(this);
             }
             parentInstance.children.push(this);
+            this.position = this._getPosition();
         } else if (isAppear || !this.isRender) {
             this._enter();
         }
@@ -162,8 +164,9 @@ export default Animate = Intact.extend({
             removeClass(element, this.leaveClass);
             removeClass(element, this.leaveActiveClass);
             const s = element.style;
-            s.position = 'absolute';
-            s.transform = s.WebkitTransform = this.transform;
+            // s.position = 'absolute';
+            // s.transform = s.WebkitTransform = this.transform;
+            s.position = s.top = s.left = s.transform = s.WebkitTransform = '';
             this._leaving = false;
             delete parentDom._reserve[vNode.key];
             TransitionEvents.off(element, this._leaveEnd);
@@ -183,9 +186,23 @@ export default Animate = Intact.extend({
         const children = this.children;
         for (let i = 0; i < children.length; i++) {
             let instance = children[i];
-            instance.position = instance.element.getBoundingClientRect();
+            // if (!instance._entering) {
+                // instance.position = instance.element.getBoundingClientRect();
+            // } else {
+                instance.position = instance._getPosition();
+            // }
         }
         this.children = [];
+    },
+
+    _getPosition() {
+        const element = this.element;
+        const transform = getComputedStyle(element).transform;
+        const matrix = new WebKitCSSMatrix(transform);
+        return {
+            top: element.offsetTop + matrix.m42,
+            left: element.offsetLeft + matrix.m41
+        };
     },
 
     _update(lastVNode, vNode) {
@@ -207,16 +224,26 @@ export default Animate = Intact.extend({
         let i;
         let instance;
 
-        mountChildren.forEach(instance => instance._enter());
-
-        unmountChildren.forEach(instance => {
-            instance.element.style.position = 'absolute';
+        mountChildren.forEach(instance => {
+            console.log('p', instance.position);
+            instance._enter();
         });
+
+        // unmountChildren.forEach(instance => {
+            // instance.element.style.position = 'absolute';
+        // });
+
+        // unmountChildren.forEach(instance => {
+            // if (!instance._moving) {
+                // instance.position = instance._getPosition();
+            // }
+        // });
+
 
         // step1: 先将之前的动画清空
         children.forEach(instance => {
             // if (instance._entering) {
-                // // instance._enterEnd();
+                // instance._enterEnd();
             // }
             if (instance._moving) {
                 instance._moveEnd();
@@ -245,12 +272,15 @@ export default Animate = Intact.extend({
                 // instance.originTransfrom = transform === 'none' ? '' : transform;
             // }
         // });
-        // unmountChildren.forEach(instance => {
+        unmountChildren.forEach(instance => {
             // if (instance._needMoveLeaveClass) {
                 // removeClass(instance.element, instance.leaveClass);
             // }
-            // instance.element.style.position = 'absolute';
-        // });
+            const s = instance.element.style;
+            s.position = 'absolute';
+            // s.top = s.left = 0;
+        });
+        // updateChildren.forEach(instance => instance.element.style.position = 'relative');
         // 被删除的元素，又重新进来了，需要把position还原
         // mountChildren.forEach(instance => {
             // if (instance.lastInstance) {
@@ -282,9 +312,16 @@ export default Animate = Intact.extend({
         children.forEach(instance => {
             const element = instance.element;
             // const transform = getComputedStyle(element).transform;  
-            instance.newPosition = element.getBoundingClientRect();
+            // if (!instance._entering) {
+                // instance.newPosition = element.getBoundingClientRect();
+            // } else {
+                instance.newPosition = instance._getPosition();
+                // instance.position = instance._getPosition();
+            // }
             // instance.originTransfrom = transform === 'none' ? '' : transform;
         });
+
+        // mountChildren.forEach(instance => instance._enter());
 
         // mountChildren.forEach(instance => {
             // if (instance.lastInstance) {
@@ -296,6 +333,7 @@ export default Animate = Intact.extend({
         // step5: 判断元素是否需要移动，并还原到初始位置
         unmountChildren.forEach(instance => instance._initMove(true));
         updateChildren.forEach(instance => instance._initMove());
+        mountChildren.forEach(instance => instance._initMove());
         // children.forEach(instance => instance._initMove());
 
         // step6: 移动元素添加初始类名
@@ -307,22 +345,22 @@ export default Animate = Intact.extend({
         });
 
         // step7: unmount元素初始化类名
-        unmountChildren.forEach(instance => instance._unmount(true));
+        unmountChildren.forEach(instance => instance._unmount());
 
         // step2: 设置mount元素的进入状态
-        // mountChildren.forEach(instance => instance._enter(true));
+        // mountChildren.forEach(instance => instance._enter());
 
         // step8: 所有动画都在下一帧处理
         // setTimeout(() => {
-        nextFrame(() => {
+        // nextFrame(() => {
             // mountChildren.forEach(instance => instance._triggerEnter());
-            unmountChildren.forEach(instance => instance._triggerLeave());
+            // unmountChildren.forEach(instance => instance._triggerLeave());
             // updateChildren.forEach(instance => instance._triggerMove());
-        });
+        // });
  
         this.mountChildren = [];
         this.updateChildren = [];
-        // this.unmountChildren = [];
+        this.unmountChildren = [];
         // this.children = [];
     },
 
@@ -338,7 +376,7 @@ export default Animate = Intact.extend({
         const dx = oldPosition.left - newPosition.left;
         const dy = oldPosition.top - newPosition.top;
 
-        this.transform = '';
+        // this.transform = '';
         // this.originTransfrom = '';
         this.dx = dx;
         this.dy = dy;
@@ -349,12 +387,22 @@ export default Animate = Intact.extend({
                 // this.transform = `translate(${dx}px, ${dy}px)`;
                 // s.transform = s.WebkitTransform = this.transform;
                 // s.transitionDuration = '0s';
-                s.position = '';
+                // s.position = '';
+                // s.left = `${dx}px`;
+                // s.top = `${dy}px`;
+                // if (this._entering) {
+                    s.left = `${oldPosition.left}px`;
+                    s.top = `${oldPosition.top}px`;
+                // } else {
+                    // s.left = `${dx}px`;
+                    // s.top = `${dy}px`;
+                // }
                 this._needMove = false;
             } else {
                 this._needMove = true;
-                // s.left = `${dx}px`;
-                // s.top = `${dy}px`;
+                s.position = 'relative';
+                s.left = `${dx}px`;
+                s.top = `${dy}px`;
             }
         } else {
             this._needMove = false;
@@ -371,7 +419,7 @@ export default Animate = Intact.extend({
             if (!e || /transform$/.test(e.propertyName)) {
                 TransitionEvents.off(element, this._moveEnd);
                 removeClass(element, this.moveClass);
-                s.left = s.top = s.transform = s.WebkitTransform = '';
+                s.position = s.left = s.top = s.transform = s.WebkitTransform = '';
                 this._moving = false;
             }
         };
@@ -388,7 +436,7 @@ export default Animate = Intact.extend({
     },
 
     _enter(onlyInit) {
-        // this._entering = true;
+        this._entering = true;
         const element = this.element;
         const enterClass = this.enterClass;
         const enterActiveClass = this.enterActiveClass;
@@ -397,12 +445,11 @@ export default Animate = Intact.extend({
         if (this.lastInstance) {
             this.lastInstance._unmountCancelled = true;
             this.lastInstance._leaveEnd();
-            element.style.transitionDuration = '';
             addClass(element, this.enterActiveClass);
         } else {
             addClass(element, enterClass);
+            // addClass(this.element, this.enterActiveClass);
         }
-        addClass(this.element, this.enterActiveClass);
         TransitionEvents.on(element, this._enterEnd);
         if (!onlyInit) {
             nextFrame(() => this._triggerEnter());
@@ -410,8 +457,8 @@ export default Animate = Intact.extend({
     },
 
     _triggerEnter() {
-        this._entering = true;
-        // addClass(this.element, this.enterActiveClass);
+        // this._entering = true;
+        addClass(this.element, this.enterActiveClass);
         removeClass(this.element, this.enterClass);
     },
 
