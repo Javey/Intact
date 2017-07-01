@@ -205,6 +205,10 @@ export default Animate = Intact.extend({
         };
     },
 
+    /**
+     * 尽量保持动画的连贯性
+     * 一个元素在enter又在move，leave时，不能保持连贯性
+     */
     _update(lastVNode, vNode) {
         if (!this.get('a:disabled')) {
             const parentInstance = this._getParentAnimate();
@@ -224,10 +228,10 @@ export default Animate = Intact.extend({
         let i;
         let instance;
 
-        mountChildren.forEach(instance => {
-            console.log('p', instance.position);
-            instance._enter();
-        });
+        // mountChildren.forEach(instance => {
+            // console.log('p', instance.position);
+            // instance._enter();
+        // });
 
         // unmountChildren.forEach(instance => {
             // instance.element.style.position = 'absolute';
@@ -239,14 +243,24 @@ export default Animate = Intact.extend({
             // }
         // });
 
+        // step2: 设置mount元素的进入状态
+        // 因为存在moving元素被unmount又被mount的情况
+        // 所以最先处理
+        mountChildren.forEach(instance => instance._enter());
 
         // step1: 先将之前的动画清空
-        children.forEach(instance => {
+        unmountChildren.forEach(instance => {
+            if (instance._moving) {
+                instance._moveEnd();
+            }
+        });
+        updateChildren.forEach(instance => {
             // if (instance._entering) {
                 // instance._enterEnd();
             // }
             if (instance._moving) {
-                instance._moveEnd();
+                instance.element.style.left = instance.element.style.top = '';
+                // instance._moveEnd();
             }
         });
 
@@ -340,23 +354,29 @@ export default Animate = Intact.extend({
         // updateChildren.forEach((instance) => {
         children.forEach((instance) => {
             if (instance._needMove) {
-                instance._move();
+                if (!instance._moving) {
+                    instance._move();
+                } else {
+                    instance._triggerMove();
+                }
             }
         });
 
         // step7: unmount元素初始化类名
         unmountChildren.forEach(instance => instance._unmount());
 
-        // step2: 设置mount元素的进入状态
-        // mountChildren.forEach(instance => instance._enter());
-
         // step8: 所有动画都在下一帧处理
         // setTimeout(() => {
-        // nextFrame(() => {
+        nextFrame(() => {
             // mountChildren.forEach(instance => instance._triggerEnter());
             // unmountChildren.forEach(instance => instance._triggerLeave());
             // updateChildren.forEach(instance => instance._triggerMove());
-        // });
+            // children.forEach((instance) => {
+                // if (instance._needMove) {
+                    // instance._triggerMove();
+                // }
+            // });
+        });
  
         this.mountChildren = [];
         this.updateChildren = [];
@@ -375,13 +395,16 @@ export default Animate = Intact.extend({
 
         const dx = oldPosition.left - newPosition.left;
         const dy = oldPosition.top - newPosition.top;
+        const oDx = this.dx;
+        const oDy = this.dy;
 
         // this.transform = '';
         // this.originTransfrom = '';
         this.dx = dx;
         this.dy = dy;
 
-        if (dx || dy) {
+        if (dx || dy || oDx || oDy) {
+            // 对于move中的元素，需要将它重新回到0
             const s = element.style;
             if (isUnmount) {
                 // this.transform = `translate(${dx}px, ${dy}px)`;
@@ -425,7 +448,8 @@ export default Animate = Intact.extend({
         };
         TransitionEvents.on(element, this._moveEnd);
         if (!onlyInit) {
-            nextFrame(() => this._triggerMove());
+            this._triggerMove();
+            // nextFrame(() => this._triggerMove());
         }
     },
 
@@ -476,10 +500,6 @@ export default Animate = Intact.extend({
     _triggerLeave() {
         const element = this.element;
         const s = element.style;
-        if (this.transform !== undefined) {
-            s.transform = s.WebkitTransform = `${this.transform} ${this.originTransfrom}`;
-            s.transitionDuration = '';
-        }
         addClass(element, this.leaveClass);
     },
 

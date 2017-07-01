@@ -46,7 +46,7 @@
             <!-- transition: all 10s cubic-bezier(.55,0,.1,1); -->
         <!-- } -->
       .fade-enter-active, .fade-leave-active, .fade-move {
-        transition: all 10s cubic-bezier(.55,0,.1,1);
+        transition: all 1s cubic-bezier(.55,0,.1,1);
       }
       .fade-enter, .fade-leave {
         opacity: 0;
@@ -99,6 +99,23 @@
             }
         });
         var app = Intact.mount(App, document.body);
+
+        var test = function() {
+            app.get('items').splice(2, 1); 
+            app.update(); 
+            setTimeout(() => {
+                app.get('items').splice(2, 1);
+                app.update(); 
+                setTimeout(() => {
+                    app.get('items').splice(2, 0, 4); 
+                    app.update();
+                    setTimeout(() => {
+                        app.get('items').splice(2, 1); 
+                        app.update()
+                    }, 3000);
+                }, 3000);
+            }, 3000);
+        }
     </script>
   </body>
 </html>

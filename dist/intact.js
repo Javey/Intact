@@ -2536,8 +2536,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue, parentVNode) {
 
     if (aStart > aEnd) {
         while (bStart <= bEnd) {
-            insertOrAppend(bEnd, bLength, createElement(b[bStart], null, mountedQueue, false, parentVNode), b, dom, true /* detectParent: for animate, if the parentNode exists, then do nothing*/
-            );
+            insertOrAppend(bEnd, bLength, createElement(b[bStart], null, mountedQueue, false, parentVNode), b, dom);
             ++bStart;
         }
     } else if (bStart > bEnd) {
@@ -2632,7 +2631,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue, parentVNode) {
                 for (i = bLength - 1; i >= 0; i--) {
                     if (sources[i] === -1) {
                         pos = i + bStart;
-                        insertOrAppend(pos, b.length, createElement(b[pos], null, mountedQueue, false, parentVNode), b, dom, true);
+                        insertOrAppend(pos, b.length, createElement(b[pos], null, mountedQueue, false, parentVNode), b, dom);
                     }
                 }
             }
@@ -2694,11 +2693,9 @@ function lisAlgorithm(arr) {
     return result;
 }
 
-function insertOrAppend(pos, length, newDom, nodes, dom, detectParent) {
+function insertOrAppend(pos, length, newDom, nodes, dom) {
     var nextPos = pos + 1;
-    if (detectParent && newDom.parentNode) {
-        return;
-    } else if (nextPos < length) {
+    if (nextPos < length) {
         dom.insertBefore(newDom, nodes[nextPos].dom);
     } else {
         appendChild(dom, newDom);
@@ -3759,6 +3756,12 @@ var Animate$1 = Animate = Intact$1.extend({
             left: element.offsetLeft + matrix.m41
         };
     },
+
+
+    /**
+     * 尽量保持动画的连贯性
+     * 一个元素在enter又在move，leave时，不能保持连贯性
+     */
     _update: function _update(lastVNode, vNode) {
         if (!this.get('a:disabled')) {
             var parentInstance = this._getParentAnimate();
@@ -3778,10 +3781,10 @@ var Animate$1 = Animate = Intact$1.extend({
         var i = void 0;
         var instance = void 0;
 
-        mountChildren.forEach(function (instance) {
-            console.log('p', instance.position);
-            instance._enter();
-        });
+        // mountChildren.forEach(instance => {
+        // console.log('p', instance.position);
+        // instance._enter();
+        // });
 
         // unmountChildren.forEach(instance => {
         // instance.element.style.position = 'absolute';
@@ -3793,14 +3796,26 @@ var Animate$1 = Animate = Intact$1.extend({
         // }
         // });
 
+        // step2: 设置mount元素的进入状态
+        // 因为存在moving元素被unmount又被mount的情况
+        // 所以最先处理
+        mountChildren.forEach(function (instance) {
+            return instance._enter();
+        });
 
         // step1: 先将之前的动画清空
-        children.forEach(function (instance) {
+        unmountChildren.forEach(function (instance) {
+            if (instance._moving) {
+                instance._moveEnd();
+            }
+        });
+        updateChildren.forEach(function (instance) {
             // if (instance._entering) {
             // instance._enterEnd();
             // }
             if (instance._moving) {
-                instance._moveEnd();
+                instance.element.style.left = instance.element.style.top = '';
+                // instance._moveEnd();
             }
         });
 
@@ -3900,7 +3915,11 @@ var Animate$1 = Animate = Intact$1.extend({
         // updateChildren.forEach((instance) => {
         children.forEach(function (instance) {
             if (instance._needMove) {
-                instance._move();
+                if (!instance._moving) {
+                    instance._move();
+                } else {
+                    instance._triggerMove();
+                }
             }
         });
 
@@ -3909,16 +3928,18 @@ var Animate$1 = Animate = Intact$1.extend({
             return instance._unmount();
         });
 
-        // step2: 设置mount元素的进入状态
-        // mountChildren.forEach(instance => instance._enter());
-
         // step8: 所有动画都在下一帧处理
         // setTimeout(() => {
-        // nextFrame(() => {
-        // mountChildren.forEach(instance => instance._triggerEnter());
-        // unmountChildren.forEach(instance => instance._triggerLeave());
-        // updateChildren.forEach(instance => instance._triggerMove());
-        // });
+        nextFrame(function () {
+            // mountChildren.forEach(instance => instance._triggerEnter());
+            // unmountChildren.forEach(instance => instance._triggerLeave());
+            // updateChildren.forEach(instance => instance._triggerMove());
+            // children.forEach((instance) => {
+            // if (instance._needMove) {
+            // instance._triggerMove();
+            // }
+            // });
+        });
 
         this.mountChildren = [];
         this.updateChildren = [];
@@ -3936,13 +3957,16 @@ var Animate$1 = Animate = Intact$1.extend({
 
         var dx = oldPosition.left - newPosition.left;
         var dy = oldPosition.top - newPosition.top;
+        var oDx = this.dx;
+        var oDy = this.dy;
 
         // this.transform = '';
         // this.originTransfrom = '';
         this.dx = dx;
         this.dy = dy;
 
-        if (dx || dy) {
+        if (dx || dy || oDx || oDy) {
+            // 对于move中的元素，需要将它重新回到0
             var s = element.style;
             if (isUnmount) {
                 // this.transform = `translate(${dx}px, ${dy}px)`;
@@ -3987,9 +4011,8 @@ var Animate$1 = Animate = Intact$1.extend({
         };
         TransitionEvents.on(element, this._moveEnd);
         if (!onlyInit) {
-            nextFrame(function () {
-                return _this3._triggerMove();
-            });
+            this._triggerMove();
+            // nextFrame(() => this._triggerMove());
         }
     },
     _triggerMove: function _triggerMove() {
@@ -4041,10 +4064,6 @@ var Animate$1 = Animate = Intact$1.extend({
     _triggerLeave: function _triggerLeave() {
         var element = this.element;
         var s = element.style;
-        if (this.transform !== undefined) {
-            s.transform = s.WebkitTransform = this.transform + ' ' + this.originTransfrom;
-            s.transitionDuration = '';
-        }
         addClass(element, this.leaveClass);
     },
     destroy: function destroy(lastVNode, nextVNode) {
