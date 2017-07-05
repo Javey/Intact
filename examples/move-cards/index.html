@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Move Card</title>
+    <title>Move Cards</title>
     <style>
         .container {
             
@@ -13,7 +13,6 @@
             background: gray;
             width: 200px;
             height: 150px;
-            <!-- position: relative; -->
         }
         @keyframes fadeIn {
             from {
@@ -46,11 +45,12 @@
             <!-- transition: all 10s cubic-bezier(.55,0,.1,1); -->
         <!-- } -->
       .fade-enter-active, .fade-leave-active, .fade-move {
-        transition: all 1s cubic-bezier(.55,0,.1,1);
+        transition: all 10s cubic-bezier(.55,0,.1,1);
       }
       .fade-enter, .fade-leave {
         opacity: 0;
         transform: scale(0.5);
+        /* width: 0; */
       }
     </style>
     <script src="https://cdn.jsdelivr.net/lodash/4.3.0/lodash.min.js"></script>

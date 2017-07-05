@@ -3,7 +3,7 @@
 /* } */
 
 .animate-enter-active, .animate-leave-active, .animate-appear-active, .animate-move {
-    -webkit-transition: all cubic-bezier(0.250, 0.460, 0.450, 0.940) 20000ms;
+    -webkit-transition: all cubic-bezier(0.250, 0.460, 0.450, 0.940) 10000ms;
     /* transition: opacity cubic-bezier(0.250, 0.460, 0.450, 0.940) 200ms; */
 }
 

@@ -73,7 +73,7 @@ Intact.prototype = {
     _mount(lastVNode, nextVNode) {},
     _beforeUpdate(lastVNode, nextVNode) {},
     _update(lastVNode, nextVNode) {},
-    _destroy(lastVNode, nextVNode) {},
+    _destroy(lastVNode, nextVNode, parentDom) {},
     _unmount(lastVNode, nextVNode, parentDom) { return true; },
 
     init(lastVNode, nextVNode) {
@@ -99,8 +99,11 @@ Intact.prototype = {
             this.one('$inited', () => {
                 const element = this.init(lastVNode, nextVNode);
                 const dom = nextVNode.dom;
+                // 存在一种情况，组件的第一个元素是一个组件，他们管理的是同一个dom
+                // 但是当第一个元素的dom变更时，父组件的vNode却没有变
+                // 所以这里强制保持一致
+                nextVNode.dom = element;
                 if (!lastVNode || lastVNode.key !== nextVNode.key) {
-                    nextVNode.dom = element;
                     dom.parentNode.replaceChild(element, dom);
                 }
                 this._triggerMountedQueue();
@@ -181,7 +184,8 @@ Intact.prototype = {
         }
 
         this._beforeUpdate(lastVNode, nextVNode);
-        this.element = this.vdt.update(this, this.parentDom, this.mountedQueue, nextVNode);
+        // 直接调用update方法，保持parentVNode不变
+        this.element = this.vdt.update(this, this.parentDom, this.mountedQueue, nextVNode || this.parentVNode);
         // 让整个更新完成，才去触发_update生命周期函数
         if (this.mountedQueue) {
             this.mountedQueue.push(() => {
@@ -280,7 +284,7 @@ Intact.prototype = {
         }
     },
 
-    destroy(lastVNode, nextVNode) {
+    destroy(lastVNode, nextVNode, parentDom) {
         if (this.destroyed) {
             return console.warn('destroyed multiple times');
         }

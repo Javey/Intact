@@ -1,5 +1,6 @@
 import Intact from './intact';
 import {Types} from 'miss/src/vnode';
+import {isNullOrUndefined, noop} from './utils';
 import Vdt from 'vdt';
 
 let Animate;
@@ -8,7 +9,7 @@ export default Animate = Intact.extend({
         'a:tag': 'div',
         'a:transition': 'animate',
         'a:appear': false,
-        'a:mode': 'both', // out-in | in-out
+        'a:mode': 'both', // out-in | in-out | both
         'a:disabled': false // 只做动画管理者，自己不进行动画
     },
 
@@ -31,8 +32,8 @@ export default Animate = Intact.extend({
         this.unmountChildren = [];
         this.updateChildren = [];
         this.children = [];
-        // const parentDom = this.parentDom;
-        const parentDom = this.parentVNode.dom;
+        // const parentDom = this.parentVNode.dom;
+        const parentDom = this.parentDom;
         if (parentDom && parentDom._reserve) {
             lastVNode = parentDom._reserve[nextVNode.key];
         }
@@ -82,11 +83,6 @@ export default Animate = Intact.extend({
             e && e.stopPropagation();
             removeClass(element, enterClass);
             removeClass(element, enterActiveClass);
-            // if (this.lastInstance) {
-                // element.style.position = '';
-                // element.style.transform = element.style.WebkitTransform = '';
-                // this.clone.parentNode.removeChild(this.clone);
-            // }
             TransitionEvents.off(element, this._enterEnd);
             this._entering = false;
         };
@@ -122,13 +118,15 @@ export default Animate = Intact.extend({
                 parentInstance.mountChildren.push(this);
             }
             parentInstance.children.push(this);
-            this.position = this._getPosition();
+            // this.position = this._getPosition();
         } else if (isAppear || !this.isRender) {
             this._enter();
         }
     },
 
     _getParentAnimate() {
+        // 根节点为Animate，不存在parentVNode
+        if (!this.parentVNode) return;
         // this.parentVNode是animate的tag，所以要拿this.parentVNode.parentVNode
         const parentVNode = this.parentVNode.parentVNode;
         if (parentVNode) {
@@ -146,17 +144,23 @@ export default Animate = Intact.extend({
         const transition = this.get('a:transition');
         const vNode = this.vNode;
         const parentDom = this.parentDom;
+        // vNode都会被附上key，当只有一个子元素时，vNode.key === undefined
+        // 这种情况，我们也当成有key处理
+        // const hasKey = !isNullOrUndefined(vNode.key);
 
-        if (!parentDom._reserve) {
-            parentDom._reserve = {};
-        }
-        parentDom._reserve[vNode.key] = vNode;
+        // if (hasKey) {
+            if (!parentDom._reserve) {
+                parentDom._reserve = {};
+            }
+            parentDom._reserve[vNode.key] = vNode;
+        // }
 
         this._leaving = true;
 
         if (this._entering) {
             TransitionEvents.off(element, this._enterEnd);
             this._enterEnd();
+            // document.body.offsetWidth;
         }
 
         this._leaveEnd = (e) => {
@@ -168,15 +172,19 @@ export default Animate = Intact.extend({
             // s.transform = s.WebkitTransform = this.transform;
             s.position = s.top = s.left = s.transform = s.WebkitTransform = '';
             this._leaving = false;
-            delete parentDom._reserve[vNode.key];
+            // if (hasKey) {
+                delete parentDom._reserve[vNode.key];
+            // }
             TransitionEvents.off(element, this._leaveEnd);
             if (!this._unmountCancelled) {
                 parentDom.removeChild(element);
-                this.destroy(vNode);
+                this.destroy(vNode, null, parentDom);
             }
         };
 
         this._leave(onlyInit);
+        // 存在一个dom，同时被子组件和父组件管理的情况
+        element._unmount = noop;
     },
 
     _beforeUpdate(lastVNode, vNode) {
@@ -246,12 +254,26 @@ export default Animate = Intact.extend({
         // step2: 设置mount元素的进入状态
         // 因为存在moving元素被unmount又被mount的情况
         // 所以最先处理
+        mountChildren.forEach(instance => {
+            // 如果当前元素是从上一个unmount的元素来的，
+            // 则要初始化最新位置，因为beforeUpdate中
+            // 不包括当前mount元素的位置初始化
+            // 这样才能保持位置的连贯性
+            if (instance.lastInstance) {
+                instance.position = instance._getPosition();
+            }
+        });
         mountChildren.forEach(instance => instance._enter());
 
         // step1: 先将之前的动画清空
+        // 只有既在move又在enter的unmount元素才清空动画
+        // 这种情况保持不了连贯性
         unmountChildren.forEach(instance => {
             if (instance._moving) {
                 instance._moveEnd();
+                if (instance._entering) {
+                    instance._enterEnd();
+                }
             }
         });
         updateChildren.forEach(instance => {
@@ -469,7 +491,12 @@ export default Animate = Intact.extend({
         if (this.lastInstance) {
             this.lastInstance._unmountCancelled = true;
             this.lastInstance._leaveEnd();
-            addClass(element, this.enterActiveClass);
+            if (this.lastInstance._triggeredLeave) {
+                addClass(element, enterActiveClass);
+            } else {
+                // 如果上一个元素还没来得及做动画，则当做新元素处理
+                addClass(element, enterClass);
+            }
         } else {
             addClass(element, enterClass);
             // addClass(this.element, this.enterActiveClass);
@@ -481,14 +508,22 @@ export default Animate = Intact.extend({
     },
 
     _triggerEnter() {
-        // this._entering = true;
+        this._triggeredEnter = true;
+        if (this._entering === false) {
+            return removeClass(this.element, this.enterActiveClass);
+        }
         addClass(this.element, this.enterActiveClass);
         removeClass(this.element, this.enterClass);
     },
 
     _leave(onlyInit) {
         const element = this.element;
-        addClass(element, this.leaveActiveClass);
+        if (this._triggeredEnter) {
+            // 如果当前元素还没有来得及做enter动画，就被删除
+            // 则leaveActiveClass和leaveClass都放到下一帧添加
+            // 否则leaveClass和enterClass一样就不会有动画效果
+            addClass(element, this.leaveActiveClass);
+        }
         TransitionEvents.on(element, this._leaveEnd);
         if (!onlyInit) {
             nextFrame(() => {
@@ -498,14 +533,23 @@ export default Animate = Intact.extend({
     },
 
     _triggerLeave() {
+        this._triggeredLeave = true;
+        if (this._leaving === false) {
+            return;
+        }
         const element = this.element;
-        const s = element.style;
+        addClass(element, this.leaveActiveClass);
         addClass(element, this.leaveClass);
     },
 
-    destroy(lastVNode, nextVNode) {
-        if (this._leaving !== false) return;
-        this._super(lastVNode, nextVNode);
+    destroy(lastVNode, nextVNode, parentDom) {
+        // 不存在parentDom，则表示parentDom将被删除
+        // 那子组件也要直接销毁掉，
+        // 否则，所有的动画组件，都等到动画结束才销毁
+        if (!parentDom && (!lastVNode || !nextVNode) && (this.parentVNode.dom !== this.element) || this.get('a:disabled') || this._leaving === false) {
+        // if (!nextVNode || nextVNode.key !== lastVNode.key || this.get('a:disabled') || this._leaving === false) {
+            this._super(lastVNode, nextVNode);
+        }
     }
 });
 
