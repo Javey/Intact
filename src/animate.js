@@ -32,6 +32,8 @@ export default Animate = Intact.extend({
         this.unmountChildren = [];
         this.updateChildren = [];
         this.children = [];
+        this._enteringAmount = 0;
+        this._leavingAmount = 0;
         const parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
         if (parentDom && parentDom._reserve) {
             lastVNode = parentDom._reserve[nextVNode.key];
@@ -41,6 +43,7 @@ export default Animate = Intact.extend({
 
     _mount(lastVNode, vNode) {
         if (this.get('a:disabled')) return;
+
 
         let isAppear = false;
         if (this.isRender) {
@@ -78,13 +81,6 @@ export default Animate = Intact.extend({
         this.leaveActiveClass = `${transition}-leave-active`;
         this.moveClass = `${transition}-move`;
 
-        this._enterEnd = (e) => {
-            e && e.stopPropagation();
-            removeClass(element, enterClass);
-            removeClass(element, enterActiveClass);
-            TransitionEvents.off(element, this._enterEnd);
-            this._entering = false;
-        };
 
         // 一个动画元素被删除后，会被保存
         // 如果在删除的过程中，又添加了，则要清除上一个动画状态
@@ -96,7 +92,20 @@ export default Animate = Intact.extend({
             }
         }
 
-        const parentInstance = this._getParentAnimate();
+        const parentInstance = this.parentInstance = this._getParentAnimate();
+
+        this._enterEnd = (e) => {
+            this.trigger('enterEnd');
+            e && e.stopPropagation();
+            removeClass(element, enterClass);
+            removeClass(element, enterActiveClass);
+            TransitionEvents.off(element, this._enterEnd);
+            this._entering = false;
+            if (parentInstance) {
+                parentInstance._enteringAmount--;
+                parentInstance._checkMode();
+            }
+        };
 
         element._unmount = (nouse, parentDom) => {
             this.vNode = vNode;
@@ -104,6 +113,7 @@ export default Animate = Intact.extend({
             if (parentInstance) {
                 parentInstance.unmountChildren.push(this);
                 parentInstance.children.push(this);
+                parentInstance._leavingAmount++;
             } else {
                 this._unmount();
             }
@@ -114,8 +124,12 @@ export default Animate = Intact.extend({
             // 统一做动画
             if (isAppear || !this.isRender) {
                 parentInstance.mountChildren.push(this);
+                parentInstance._enteringAmount++;
+                this._delayEnter = true;
             }
             parentInstance.children.push(this);
+
+            window.parentInstance = parentInstance;
         } else if (isAppear || !this.isRender) {
             // 否则单个元素自己动画
             this._enter();
@@ -169,6 +183,10 @@ export default Animate = Intact.extend({
                 parentDom.removeChild(element);
                 this.destroy(vNode, null, parentDom);
             }
+            if (this.parentInstance) {
+                this.parentInstance._leavingAmount--;
+                this.parentInstance._checkMode();
+            }
         };
 
         this._leave(onlyInit);
@@ -203,7 +221,7 @@ export default Animate = Intact.extend({
      */
     _update(lastVNode, vNode) {
         if (!this.get('a:disabled')) {
-            const parentInstance = this._getParentAnimate();
+            const parentInstance = this.parentInstance;
             if (parentInstance) {
                 parentInstance.updateChildren.push(this);
                 parentInstance.children.push(this);
@@ -215,9 +233,19 @@ export default Animate = Intact.extend({
         // 不存在children，则表示没有子动画元素要管理，直接返回
         if (!children.length) return;
 
-        const mountChildren = this.mountChildren;
+        let mountChildren = this.mountChildren;
         const updateChildren = this.updateChildren;
         const unmountChildren = this.unmountChildren;
+
+        if (this._leavingAmount) {
+            mountChildren = mountChildren.filter(instance => {
+                if (instance._delayEnter) {
+                    instance.element.style.display = 'none';
+                    return false; 
+                }
+                return true;
+            });
+        }
 
         // 进行mount元素的进入动画
         // 因为存在moving元素被unmount又被mount的情况
@@ -286,6 +314,30 @@ export default Animate = Intact.extend({
         this.mountChildren = [];
         this.updateChildren = [];
         this.unmountChildren = [];
+    },
+
+    _checkMode() {
+        const mountChildren = [];
+        const updateChildren = [];
+        const children = this.children = this.children.filter(instance => {
+            if (instance._delayEnter) {
+                instance._delayEnter = false;
+                mountChildren.push(instance);
+                return false;
+            } else if (instance._leaving !== false) {
+                updateChildren.push(instance);
+                return true;
+            }
+            return false;
+        });
+        this._beforeUpdate();
+        mountChildren.forEach(instance => {
+            instance.element.style.display = '';
+        });
+        this.mountChildren = mountChildren;
+        this.updateChildren = updateChildren;
+        this.children  = children.concat(mountChildren);
+        this._update();
     },
 
     _initMove(isUnmount) {

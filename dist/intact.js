@@ -3593,6 +3593,8 @@ var Animate$1 = Animate = Intact$1.extend({
         this.unmountChildren = [];
         this.updateChildren = [];
         this.children = [];
+        this._enteringAmount = 0;
+        this._leavingAmount = 0;
         var parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
         if (parentDom && parentDom._reserve) {
             lastVNode = parentDom._reserve[nextVNode.key];
@@ -3632,14 +3634,6 @@ var Animate$1 = Animate = Intact$1.extend({
         this.leaveActiveClass = transition + '-leave-active';
         this.moveClass = transition + '-move';
 
-        this._enterEnd = function (e) {
-            e && e.stopPropagation();
-            removeClass(element, enterClass);
-            removeClass(element, enterActiveClass);
-            TransitionEvents.off(element, _this._enterEnd);
-            _this._entering = false;
-        };
-
         // 一个动画元素被删除后，会被保存
         // 如果在删除的过程中，又添加了，则要清除上一个动画状态
         // 将这种情况记录下来
@@ -3650,7 +3644,20 @@ var Animate$1 = Animate = Intact$1.extend({
             }
         }
 
-        var parentInstance = this._getParentAnimate();
+        var parentInstance = this.parentInstance = this._getParentAnimate();
+
+        this._enterEnd = function (e) {
+            _this.trigger('enterEnd');
+            e && e.stopPropagation();
+            removeClass(element, enterClass);
+            removeClass(element, enterActiveClass);
+            TransitionEvents.off(element, _this._enterEnd);
+            _this._entering = false;
+            if (parentInstance) {
+                parentInstance._enteringAmount--;
+                parentInstance._checkMode();
+            }
+        };
 
         element._unmount = function (nouse, parentDom) {
             _this.vNode = vNode;
@@ -3658,6 +3665,7 @@ var Animate$1 = Animate = Intact$1.extend({
             if (parentInstance) {
                 parentInstance.unmountChildren.push(_this);
                 parentInstance.children.push(_this);
+                parentInstance._leavingAmount++;
             } else {
                 _this._unmount();
             }
@@ -3668,8 +3676,12 @@ var Animate$1 = Animate = Intact$1.extend({
             // 统一做动画
             if (isAppear || !this.isRender) {
                 parentInstance.mountChildren.push(this);
+                parentInstance._enteringAmount++;
+                this._delayEnter = true;
             }
             parentInstance.children.push(this);
+
+            window.parentInstance = parentInstance;
         } else if (isAppear || !this.isRender) {
             // 否则单个元素自己动画
             this._enter();
@@ -3723,6 +3735,10 @@ var Animate$1 = Animate = Intact$1.extend({
                 parentDom.removeChild(element);
                 _this2.destroy(vNode, null, parentDom);
             }
+            if (_this2.parentInstance) {
+                _this2.parentInstance._leavingAmount--;
+                _this2.parentInstance._checkMode();
+            }
         };
 
         this._leave(onlyInit);
@@ -3756,7 +3772,7 @@ var Animate$1 = Animate = Intact$1.extend({
      */
     _update: function _update(lastVNode, vNode) {
         if (!this.get('a:disabled')) {
-            var parentInstance = this._getParentAnimate();
+            var parentInstance = this.parentInstance;
             if (parentInstance) {
                 parentInstance.updateChildren.push(this);
                 parentInstance.children.push(this);
@@ -3771,6 +3787,16 @@ var Animate$1 = Animate = Intact$1.extend({
         var mountChildren = this.mountChildren;
         var updateChildren = this.updateChildren;
         var unmountChildren = this.unmountChildren;
+
+        if (this._leavingAmount) {
+            mountChildren = mountChildren.filter(function (instance) {
+                if (instance._delayEnter) {
+                    instance.element.style.display = 'none';
+                    return false;
+                }
+                return true;
+            });
+        }
 
         // 进行mount元素的进入动画
         // 因为存在moving元素被unmount又被mount的情况
@@ -3849,6 +3875,29 @@ var Animate$1 = Animate = Intact$1.extend({
         this.mountChildren = [];
         this.updateChildren = [];
         this.unmountChildren = [];
+    },
+    _checkMode: function _checkMode() {
+        var mountChildren = [];
+        var updateChildren = [];
+        var children = this.children = this.children.filter(function (instance) {
+            if (instance._delayEnter) {
+                instance._delayEnter = false;
+                mountChildren.push(instance);
+                return false;
+            } else if (instance._leaving !== false) {
+                updateChildren.push(instance);
+                return true;
+            }
+            return false;
+        });
+        this._beforeUpdate();
+        mountChildren.forEach(function (instance) {
+            instance.element.style.display = '';
+        });
+        this.mountChildren = mountChildren;
+        this.updateChildren = updateChildren;
+        this.children = children.concat(mountChildren);
+        this._update();
     },
     _initMove: function _initMove(isUnmount) {
         var element = this.element;

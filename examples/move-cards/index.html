@@ -35,7 +35,7 @@
             }
         }
 
-        .fade-enter-active {
+        /* .fade-enter-active {
             animation: fadeIn 10s;
         }
         .fade-leave-active {
@@ -43,15 +43,15 @@
         }
         .fade-move {
             transition: all 10s cubic-bezier(.55,0,.1,1);
-        }
-      /* .fade-enter-active, .fade-leave-active, .fade-move {
+        } */
+      .fade-enter-active, .fade-leave-active, .fade-move {
         transition: all 10s cubic-bezier(.55,0,.1,1);
       }
       .fade-enter, .fade-leave {
         opacity: 0;
-        transform: scale(0.5); */
+        transform: scale(0.5);
         /* width: 0; */
-     /* } */
+      } 
     </style>
     <script src="https://cdn.jsdelivr.net/lodash/4.3.0/lodash.min.js"></script>
     <script src="../../dist/intact.js"></script>
@@ -62,6 +62,7 @@
           <button ev-click={self.insert.bind(self)}>insert one card at random index</button>
           <button ev-click={self.reset.bind(self)}>reset</button>
           <button ev-click={self.shuffle.bind(self)}>shuffle</button>
+          <button ev-click={self.insertAndRemove.bind(self)}>insert and remove</button>
           <Animate a:tag="ul" class="container">
             <Animate a:transition="fade" v-for={self.get('items')} class="item" key={value}>
                 {value} <button ev-click={self.remove.bind(self, key)}>x</button>
@@ -82,8 +83,6 @@
                 var items = this.get('items');
                 var i = Math.round(Math.random() * items.length);
                 items.splice(i, 0, id++);
-                <!-- i = Math.round(Math.random() * items.length); -->
-                <!-- items.splice(i, 0, id++); -->
                 this.update();
             },
             reset() {
@@ -96,6 +95,12 @@
                 var items = this.get('items');
                 items.splice(index, 1);
                 this.update();
+            },
+            insertAndRemove() {
+                var items = this.get('items');
+                var i = Math.round(Math.random() * items.length);
+                items.splice(i, 1);
+                this.insert();
             }
         });
         var app = Intact.mount(App, document.body);
