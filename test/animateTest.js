@@ -25,9 +25,17 @@ describe('Animate Test', function() {
         }
     });
 
+    let app;
+    beforeEach(() => {
+        app = Intact.mount(App, document.body);
+    });
+
+    afterEach(() => {
+        document.body.removeChild(app.element);
+    });
+
     it('Animate appear and leave', function(done) {
         this.enableTimeouts(false);
-        const app = Intact.mount(App, document.body);
         const destroyC = sinon.spy(function() {
             this._superApply(arguments);
         });
@@ -58,7 +66,7 @@ describe('Animate Test', function() {
             }, 100);
             sEql(destroyC.callCount, 1);
             sEql(destroyD.callCount, 0);
-        }, 5000);
+        }, 400);
         setTimeout(() => {
             app.load(C);
             setTimeout(() => {
@@ -66,7 +74,7 @@ describe('Animate Test', function() {
             }, 100);
             sEql(destroyC.callCount, 1);
             sEql(destroyD.callCount, 0);
-        }, 6000);
+        }, 700);
         setTimeout(() => {
             app.set('view', undefined);
             setTimeout(() => {
@@ -75,13 +83,13 @@ describe('Animate Test', function() {
             setTimeout(() => {
                 sEql(app.element.innerHTML, '');
                 done();
-            }, 10000);
-        }, 10000);
+            }, 1000);
+        }, 1000);
     });
 
-    it('Animate nested', function() {
+    it('Animate nested', function(done) {
         this.enableTimeouts(false);
-        const app = Intact.mount(App, document.body);
+        this.enableTimeouts(false);
         const C = Intact.extend({
             template: '<Animate a:tag="span" key="c"><Animate a:tag="b" v-if={self.get("show")}><E /></Animate></Animate>',
             _init() {
@@ -114,7 +122,7 @@ describe('Animate Test', function() {
                 sEql(app.element.firstChild.firstChild.className, "animate-enter-active");
             }, 100);
             sEql(destroy.callCount, 0);
-        }, 3000);
+        }, 300);
         setTimeout(() => {
             app.load(D);
             setTimeout(() => {
@@ -124,13 +132,13 @@ describe('Animate Test', function() {
             }, 100);
             setTimeout(() => {
                 sEql(destroy.callCount, 1);
-            }, 11000);
-        }, 5000);
+                done();
+            }, 1100);
+        }, 500);
     });
 
     it('Animate mode', function(done) {
         this.enableTimeouts(false);
-        const app = Intact.mount(App, document.body);
         const C = Intact.extend({
             template: `<Animate>
                 <Animate key="c1">c1</Animate>
@@ -145,12 +153,13 @@ describe('Animate Test', function() {
         });
         app.load(C);
         app.load(D);
-        done();
+        setTimeout(() => {
+            done();
+        }, 1200);
     });
 
     it('Animate move', function(done) {
         this.enableTimeouts(false);
-        const app = Intact.mount(App, document.body);
         const C = Intact.extend({
             template: `<Animate a:tag="ul">
                 <Animate a:tag="li" key="1">1</Animate> 
@@ -177,7 +186,7 @@ describe('Animate Test', function() {
             sEql(children[1].className, '');
             sEql(children[2].className, '');
             done();
-        }, 11000);
+        }, 1200);
     });
 
     it('Animate component render correctly', function() {
@@ -188,16 +197,14 @@ describe('Animate Test', function() {
 
     it('remove element when animation has completed', function(done) {
         this.enableTimeouts(false);
-        var a = Intact.mount(A, document.body);
         setTimeout(function() {
-            sEql(a.element.outerHTML, '<div></div>');
+            sEql(app.element.outerHTML, '<div></div>');
             done();
-        }, 11000);
+        }, 1100);
     });
 
     it('animate cross components', function(done) {
         this.enableTimeouts(false);
-        const app = Intact.mount(App, document.body);
         app.load(Index);
         app.load(Detail);
         setTimeout(() => {
@@ -208,12 +215,11 @@ describe('Animate Test', function() {
             sEql(children[1].innerHTML.indexOf('detail-body') > -1, true);
             sEql(children[1].className, '');
             done();
-        }, 11000);
+        }, 1100);
     });
 
     it('should destroy component when leaving', function(done) {
         this.enableTimeouts(false);
-        const app = Intact.mount(App, document.body);
         const _destroy = sinon.spy();
         const C = Intact.extend({
             template: '<span>c</span>',
@@ -229,12 +235,11 @@ describe('Animate Test', function() {
             sEql(children[0].className, '');
             sEql(children[1].className, '');
             done();
-        }, 11000);
+        }, 1100);
     });
 
     it('patch between Animate and non-Animate components', function(done) {
         this.enableTimeouts(false);
-        const app = Intact.mount(App, document.body);
         const C = Intact.extend({
             template: `var Animate = self.Animate;
                 <Animate>
@@ -267,6 +272,6 @@ describe('Animate Test', function() {
             sEql(children[0].className, '');
             sEql(children[1].className, '');
             done();
-        }, 11000);
+        }, 1200);
     });
 });

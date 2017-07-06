@@ -132,7 +132,7 @@ Intact.prototype = {
         }
         this.rendered = true;
         if (this._pendingUpdate) {
-            this._pendingUpdate();
+            this._pendingUpdate(lastVNode, nextVNode);
             this._pendingUpdate = null;
         }
         this.trigger('$rendered', this);
@@ -160,7 +160,7 @@ Intact.prototype = {
         }
         // 如果还没有渲染，则等待结束再去更新
         if (!this.rendered) {
-            this._pendingUpdate = function() {
+            this._pendingUpdate = function(lastVNode, nextVNode) {
                 this.update(lastVNode, nextVNode);
             };
             return lastVNode ? lastVNode.dom : undefined;

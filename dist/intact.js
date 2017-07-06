@@ -3169,7 +3169,7 @@ Intact$1.prototype = {
         }
         this.rendered = true;
         if (this._pendingUpdate) {
-            this._pendingUpdate();
+            this._pendingUpdate(lastVNode, nextVNode);
             this._pendingUpdate = null;
         }
         this.trigger('$rendered', this);
@@ -3194,7 +3194,7 @@ Intact$1.prototype = {
         }
         // 如果还没有渲染，则等待结束再去更新
         if (!this.rendered) {
-            this._pendingUpdate = function () {
+            this._pendingUpdate = function (lastVNode, nextVNode) {
                 this.update(lastVNode, nextVNode);
             };
             return lastVNode ? lastVNode.dom : undefined;
@@ -3599,7 +3599,7 @@ var Animate$1 = Animate = Intact$1.extend({
         this.unmountChildren = [];
         this.updateChildren = [];
         this.children = [];
-        var parentDom = this.parentVNode.dom || this.parentDom;
+        var parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
         if (parentDom && parentDom._reserve) {
             lastVNode = parentDom._reserve[nextVNode.key];
         }

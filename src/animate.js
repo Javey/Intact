@@ -32,7 +32,7 @@ export default Animate = Intact.extend({
         this.unmountChildren = [];
         this.updateChildren = [];
         this.children = [];
-        const parentDom = this.parentVNode.dom || this.parentDom;
+        const parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
         if (parentDom && parentDom._reserve) {
             lastVNode = parentDom._reserve[nextVNode.key];
         }

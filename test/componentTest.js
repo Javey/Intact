@@ -262,11 +262,11 @@ describe('Component Test', function() {
                     return new Promise((resolve) => {
                         setTimeout(() => {
                             resolve();
-                        });
+                        }, 100);
                     });
                 }),
                 _create: sinon.spy(() => {
-                    sEql(app.element.innerHTML, '<!---->');
+                    sEql(app.element.innerHTML, '<!----><a>a</a>');
                 }),
                 _mount: sinon.spy(() => {
                     sEql(app.element.innerHTML, '<a>a</a>');
@@ -288,7 +288,7 @@ describe('Component Test', function() {
                 sEql(app.get('view').dom, app.element.firstChild);
                 
                 done();
-            });
+            }, 200);
         });
 
         it('should render the last async component directly and ignore progress state', function(done) {
@@ -457,7 +457,7 @@ describe('Component Test', function() {
 
                     done();
                 }, 300);
-            }, 300);
+            }, 400);
         });
 
         it('patch async component with sync component use the different tag', (done) => {
