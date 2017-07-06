@@ -86,16 +86,13 @@ export default Animate = Intact.extend({
             this._entering = false;
         };
 
-        // 一个动画元素被删除后，会被保存，如果下次又出现了，则要清除
-        // 上一个动画状态
+        // 一个动画元素被删除后，会被保存
+        // 如果在删除的过程中，又添加了，则要清除上一个动画状态
+        // 将这种情况记录下来
         if (this._lastVNode && this._lastVNode !== lastVNode) {
             const lastInstance = this._lastVNode.children;
             if (lastInstance._leaving) {
                 this.lastInstance = lastInstance;
-                // this.position = lastInstance.position;
-                // this._isReserve = true;
-                // lastInstance._unmountCancelled = true;
-                // lastInstance._leaveEnd();
             }
         }
 
@@ -113,12 +110,14 @@ export default Animate = Intact.extend({
         };
        
         if (parentInstance) {
+            // 如果存在父动画组件，则使用父级进行管理
+            // 统一做动画
             if (isAppear || !this.isRender) {
                 parentInstance.mountChildren.push(this);
             }
             parentInstance.children.push(this);
-            // this.position = this._getPosition();
         } else if (isAppear || !this.isRender) {
+            // 否则单个元素自己动画
             this._enter();
         }
     },
@@ -143,23 +142,18 @@ export default Animate = Intact.extend({
         const transition = this.get('a:transition');
         const vNode = this.vNode;
         const parentDom = this.parentDom;
-        // vNode都会被附上key，当只有一个子元素时，vNode.key === undefined
-        // 这种情况，我们也当成有key处理
-        // const hasKey = !isNullOrUndefined(vNode.key);
-
-        // if (hasKey) {
-            if (!parentDom._reserve) {
-                parentDom._reserve = {};
-            }
-            parentDom._reserve[vNode.key] = vNode;
-        // }
+        // vNode都会被添加key，当只有一个子元素时，vNode.key === undefined
+        // 这种情况，我们也当成有key处理，此时key为undefined
+        if (!parentDom._reserve) {
+            parentDom._reserve = {};
+        }
+        parentDom._reserve[vNode.key] = vNode;
 
         this._leaving = true;
 
         if (this._entering) {
             TransitionEvents.off(element, this._enterEnd);
             this._enterEnd();
-            // document.body.offsetWidth;
         }
 
         this._leaveEnd = (e) => {
@@ -167,13 +161,9 @@ export default Animate = Intact.extend({
             removeClass(element, this.leaveClass);
             removeClass(element, this.leaveActiveClass);
             const s = element.style;
-            // s.position = 'absolute';
-            // s.transform = s.WebkitTransform = this.transform;
             s.position = s.top = s.left = s.transform = s.WebkitTransform = '';
             this._leaving = false;
-            // if (hasKey) {
-                delete parentDom._reserve[vNode.key];
-            // }
+            delete parentDom._reserve[vNode.key];
             TransitionEvents.off(element, this._leaveEnd);
             if (!this._unmountCancelled) {
                 parentDom.removeChild(element);
@@ -182,22 +172,17 @@ export default Animate = Intact.extend({
         };
 
         this._leave(onlyInit);
-        // 存在一个dom，同时被子组件和父组件管理的情况
+        // 存在一种情况，相同的dom，同时被子组件和父组件管理的情况
+        // 所以unmount后，将其置为空函数，以免再次unmount
         element._unmount = noop;
     },
 
     _beforeUpdate(lastVNode, vNode) {
-        // 更新之前，这里的children是上一份children
-        // 包括上一次的mount和update，不包括上次unmount，
-        // 但这里会有当前需要unmount的元素
+        // 更新之前，这里的children不包含本次更新mount进来的元素
         const children = this.children;
         for (let i = 0; i < children.length; i++) {
             let instance = children[i];
-            // if (!instance._entering) {
-                // instance.position = instance.element.getBoundingClientRect();
-            // } else {
-                instance.position = instance._getPosition();
-            // }
+            instance.position = instance._getPosition();
         }
         this.children = [];
     },
@@ -225,32 +210,16 @@ export default Animate = Intact.extend({
             }
         }
 
-        // 更新之后，这里的children是上一次与当前的合集
-        // 包括当前mount/update/unmount
+        // 更新之后，这里的children包括当前mount/update/unmount的元素
+        const children = this.children;
+        // 不存在children，则表示没有子动画元素要管理，直接返回
+        if (!children.length) return;
+
         const mountChildren = this.mountChildren;
         const updateChildren = this.updateChildren;
         const unmountChildren = this.unmountChildren;
-        const children = this.children;
 
-        let i;
-        let instance;
-
-        // mountChildren.forEach(instance => {
-            // console.log('p', instance.position);
-            // instance._enter();
-        // });
-
-        // unmountChildren.forEach(instance => {
-            // instance.element.style.position = 'absolute';
-        // });
-
-        // unmountChildren.forEach(instance => {
-            // if (!instance._moving) {
-                // instance.position = instance._getPosition();
-            // }
-        // });
-
-        // step2: 设置mount元素的进入状态
+        // 进行mount元素的进入动画
         // 因为存在moving元素被unmount又被mount的情况
         // 所以最先处理
         mountChildren.forEach(instance => {
@@ -264,7 +233,7 @@ export default Animate = Intact.extend({
         });
         mountChildren.forEach(instance => instance._enter());
 
-        // step1: 先将之前的动画清空
+        // 先将之前的动画清空
         // 只有既在move又在enter的unmount元素才清空动画
         // 这种情况保持不了连贯性
         unmountChildren.forEach(instance => {
@@ -275,134 +244,48 @@ export default Animate = Intact.extend({
                 }
             }
         });
+        // 对于更新的元素，如果正在move，则将位置清空，以便确定最终位置
         updateChildren.forEach(instance => {
-            // if (instance._entering) {
-                // instance._enterEnd();
-            // }
             if (instance._moving) {
-                instance.element.style.left = instance.element.style.top = '';
-                // instance._moveEnd();
+                const s = instance.element.style;
+                s.left = s.top = '';
             }
         });
 
-        // children.forEach(instance => {
-            // const element = instance.element;
-            // // const transform = getComputedStyle(element).transform;  
-            // instance.newPosition = element.getBoundingClientRect();
-            // // instance.originTransfrom = transform === 'none' ? '' : transform;
-        // });
-
-        // unmountChildren.forEach(instance => {
-            // if (instance.originTransfrom === undefined) {
-                // instance._needMoveLeaveClass = true;
-                // addClass(instance.element, instance.leaveClass);
-            // } else {
-                // instance._needMoveLeaveClass = false;
-            // }
-        // });
-        // unmountChildren.forEach(instance => {
-            // if (instance.originTransfrom === undefined) {
-                // const element = instance.element;
-                // const transform = getComputedStyle(element).transform;  
-                // instance.originTransfrom = transform === 'none' ? '' : transform;
-            // }
-        // });
+        // 将要删除的元素，设为absolute，以便确定其它元素最终位置
         unmountChildren.forEach(instance => {
-            // if (instance._needMoveLeaveClass) {
-                // removeClass(instance.element, instance.leaveClass);
-            // }
-            const s = instance.element.style;
-            s.position = 'absolute';
-            // s.top = s.left = 0;
+            instance.element.style.position = 'absolute';
         });
-        // updateChildren.forEach(instance => instance.element.style.position = 'relative');
-        // 被删除的元素，又重新进来了，需要把position还原
-        // mountChildren.forEach(instance => {
-            // if (instance.lastInstance) {
-                // const clone = instance.element.cloneNode();
-                // clone.style.position = '';
-                // clone.style.transform = '';
-                // instance.element.parentNode.insertBefore(clone, instance.element);
-                // instance.clone = clone;
-                // // instance.element.style.position = '';
-                // // instance.element.style.transform = '';
-                // // instance.element.style.transitionDuration = '0s';
-            // }
-        // });
-        
-        // step3: 将unmount元素脱离文档流，用于计算移动元素
-        // unmountChildren.forEach(instance => {
-            // const element = instance.element;
-            // element.style.position = 'absolute';
-        // });
 
-        // step4: 获取元素最终位置
-        // unmountChildren.forEach(instance => {
-            // const element = instance.element;
-            // // const transform = getComputedStyle(element).transform;  
-            // instance.newPosition = element.getBoundingClientRect();
-            // // instance.originTransfrom = transform === 'none' ? '' : transform;
-        // });
-        // updateChildren.forEach(instance => {
+        // 获取所有元素的新位置
         children.forEach(instance => {
-            const element = instance.element;
-            // const transform = getComputedStyle(element).transform;  
-            // if (!instance._entering) {
-                // instance.newPosition = element.getBoundingClientRect();
-            // } else {
-                instance.newPosition = instance._getPosition();
-                // instance.position = instance._getPosition();
-            // }
-            // instance.originTransfrom = transform === 'none' ? '' : transform;
+            instance.newPosition = instance._getPosition();
         });
 
-        // mountChildren.forEach(instance => instance._enter());
-
-        // mountChildren.forEach(instance => {
-            // if (instance.lastInstance) {
-                // instance.element.style.position = 'absolute';
-            // }
-        // });
-
-
-        // step5: 判断元素是否需要移动，并还原到初始位置
+        // 分别判断元素是否需要移动，并保持当前位置不变
+        // unmount的元素，从当前位置直接leave，不要move了
         unmountChildren.forEach(instance => instance._initMove(true));
         updateChildren.forEach(instance => instance._initMove());
         mountChildren.forEach(instance => instance._initMove());
-        // children.forEach(instance => instance._initMove());
 
-        // step6: 移动元素添加初始类名
-        // updateChildren.forEach((instance) => {
+        // 如果元素需要移动，则进行move动画
         children.forEach((instance) => {
             if (instance._needMove) {
                 if (!instance._moving) {
                     instance._move();
                 } else {
+                    // 如果已经在移动了，那直接改变translate，保持动画连贯
                     instance._triggerMove();
                 }
             }
         });
 
-        // step7: unmount元素初始化类名
+        // unmount元素做leave动画
         unmountChildren.forEach(instance => instance._unmount());
 
-        // step8: 所有动画都在下一帧处理
-        // setTimeout(() => {
-        nextFrame(() => {
-            // mountChildren.forEach(instance => instance._triggerEnter());
-            // unmountChildren.forEach(instance => instance._triggerLeave());
-            // updateChildren.forEach(instance => instance._triggerMove());
-            // children.forEach((instance) => {
-                // if (instance._needMove) {
-                    // instance._triggerMove();
-                // }
-            // });
-        });
- 
         this.mountChildren = [];
         this.updateChildren = [];
         this.unmountChildren = [];
-        // this.children = [];
     },
 
     _initMove(isUnmount) {
@@ -411,16 +294,16 @@ export default Animate = Intact.extend({
         const newPosition = this.newPosition;
 
         this.position = newPosition;
-        // mount的元素，不处理位置
+
+        // 对于新mount的元素，不进行move判断
         if (!oldPosition) return;
 
+    
         const dx = oldPosition.left - newPosition.left;
         const dy = oldPosition.top - newPosition.top;
         const oDx = this.dx;
         const oDy = this.dy;
 
-        // this.transform = '';
-        // this.originTransfrom = '';
         this.dx = dx;
         this.dy = dy;
 
@@ -428,19 +311,8 @@ export default Animate = Intact.extend({
             // 对于move中的元素，需要将它重新回到0
             const s = element.style;
             if (isUnmount) {
-                // this.transform = `translate(${dx}px, ${dy}px)`;
-                // s.transform = s.WebkitTransform = this.transform;
-                // s.transitionDuration = '0s';
-                // s.position = '';
-                // s.left = `${dx}px`;
-                // s.top = `${dy}px`;
-                // if (this._entering) {
-                    s.left = `${oldPosition.left}px`;
-                    s.top = `${oldPosition.top}px`;
-                // } else {
-                    // s.left = `${dx}px`;
-                    // s.top = `${dy}px`;
-                // }
+                s.left = `${oldPosition.left}px`;
+                s.top = `${oldPosition.top}px`;
                 this._needMove = false;
             } else {
                 this._needMove = true;
@@ -476,7 +348,6 @@ export default Animate = Intact.extend({
 
     _triggerMove() {
         const s = this.element.style;
-        // s.transform = s.WebkitTransform = s.transitionDuration = '';
         s.transform = s.WebkitTransform = `translate(${0 - this.dx}px, ${0 - this.dy}px)`;
     },
 
@@ -498,7 +369,6 @@ export default Animate = Intact.extend({
             }
         } else {
             addClass(element, enterClass);
-            // addClass(this.element, this.enterActiveClass);
         }
         TransitionEvents.on(element, this._enterEnd);
         if (!onlyInit) {
@@ -546,7 +416,6 @@ export default Animate = Intact.extend({
         // 那子组件也要直接销毁掉，
         // 否则，所有的动画组件，都等到动画结束才销毁
         if (!parentDom && (!lastVNode || !nextVNode) && (this.parentVNode.dom !== this.element) || this.get('a:disabled') || this._leaving === false) {
-        // if (!nextVNode || nextVNode.key !== lastVNode.key || this.get('a:disabled') || this._leaving === false) {
             this._super(lastVNode, nextVNode);
         }
     }

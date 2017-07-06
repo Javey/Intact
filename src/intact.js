@@ -74,7 +74,6 @@ Intact.prototype = {
     _beforeUpdate(lastVNode, nextVNode) {},
     _update(lastVNode, nextVNode) {},
     _destroy(lastVNode, nextVNode, parentDom) {},
-    _unmount(lastVNode, nextVNode, parentDom) { return true; },
 
     init(lastVNode, nextVNode) {
         const vdt = this.vdt;
@@ -304,10 +303,6 @@ Intact.prototype = {
         this._destroy(lastVNode, nextVNode);
         this.off();
         this.destroyed = true;
-    },
-
-    unmount(lastVNode, nextVNode, parentDom) {
-        return this._unmount(lastVNode, nextVNode, parentDom);
     },
 
     // function name conflict with utils.get
