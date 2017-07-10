@@ -3571,7 +3571,7 @@ var Animate$1 = Animate = Intact$1.extend({
         'a:tag': 'div',
         'a:transition': 'animate',
         'a:appear': false,
-        'a:mode': 'both', // out-in | in-out | both
+        'a:mode': 'in-out', // out-in | in-out | both
         'a:disabled': false // 只做动画管理者，自己不进行动画
     },
 
@@ -3654,18 +3654,30 @@ var Animate$1 = Animate = Intact$1.extend({
             TransitionEvents.off(element, _this._enterEnd);
             _this._entering = false;
             if (parentInstance) {
-                parentInstance._enteringAmount--;
-                parentInstance._checkMode();
+                if (--parentInstance._enteringAmount === 0 && parentInstance.get('a:mode') === 'in-out') {
+                    parentInstance._checkMode();
+                }
             }
         };
 
         element._unmount = function (nouse, parentDom) {
+            // 如果该元素是延迟mount的元素，则直接删除
+            if (_this._delayEnter) {
+                parentDom.removeChild(element);
+                _this.destroy(vNode);
+                return;
+            }
             _this.vNode = vNode;
             _this.parentDom = parentDom;
             if (parentInstance) {
-                parentInstance.unmountChildren.push(_this);
-                parentInstance.children.push(_this);
                 parentInstance._leavingAmount++;
+                if (parentInstance.get('a:mode') === 'in-out') {
+                    parentInstance.updateChildren.push(_this);
+                    _this._delayLeave = true;
+                } else {
+                    parentInstance.unmountChildren.push(_this);
+                }
+                parentInstance.children.push(_this);
             } else {
                 _this._unmount();
             }
@@ -3675,9 +3687,14 @@ var Animate$1 = Animate = Intact$1.extend({
             // 如果存在父动画组件，则使用父级进行管理
             // 统一做动画
             if (isAppear || !this.isRender) {
-                parentInstance.mountChildren.push(this);
                 parentInstance._enteringAmount++;
-                this._delayEnter = true;
+                // 如果没有unmount的元素，则直接enter
+                if (parentInstance._leavingAmount > 0 && parentInstance.get('a:mode') === 'out-in') {
+                    this._delayEnter = true;
+                    element.style.display = 'none';
+                } else {
+                    parentInstance.mountChildren.push(this);
+                }
             }
             parentInstance.children.push(this);
 
@@ -3735,9 +3752,11 @@ var Animate$1 = Animate = Intact$1.extend({
                 parentDom.removeChild(element);
                 _this2.destroy(vNode, null, parentDom);
             }
-            if (_this2.parentInstance) {
-                _this2.parentInstance._leavingAmount--;
-                _this2.parentInstance._checkMode();
+            var parentInstance = _this2.parentInstance;
+            if (parentInstance) {
+                if (--parentInstance._leavingAmount === 0 && parentInstance.get('a:mode') === 'out-in') {
+                    parentInstance._checkMode();
+                }
             }
         };
 
@@ -3785,18 +3804,23 @@ var Animate$1 = Animate = Intact$1.extend({
         if (!children.length) return;
 
         var mountChildren = this.mountChildren;
-        var updateChildren = this.updateChildren;
         var unmountChildren = this.unmountChildren;
+        var updateChildren = this.updateChildren;
 
-        if (this._leavingAmount) {
-            mountChildren = mountChildren.filter(function (instance) {
-                if (instance._delayEnter) {
-                    instance.element.style.display = 'none';
-                    return false;
-                }
-                return true;
-            });
-        }
+        // if (this._leavingAmount) {
+        // mountChildren = mountChildren.filter(instance => {
+        // if (instance._delayEnter) {
+        // instance.element.style.display = 'none';
+        // return false; 
+        // }
+        // return true;
+        // });
+        // }
+        // if (this._enteringAmount && this.get('a:mode') === 'in-out') {
+        // unmountChildren = unmountChildren.filter(instance => {
+        // return !instance._delayLeave;
+        // });
+        // }
 
         // 进行mount元素的进入动画
         // 因为存在moving元素被unmount又被mount的情况
@@ -3879,11 +3903,15 @@ var Animate$1 = Animate = Intact$1.extend({
     _checkMode: function _checkMode() {
         var mountChildren = [];
         var updateChildren = [];
+        var unmountChildren = [];
         var children = this.children = this.children.filter(function (instance) {
             if (instance._delayEnter) {
                 instance._delayEnter = false;
                 mountChildren.push(instance);
                 return false;
+            } else if (instance._delayLeave) {
+                unmountChildren.push(instance);
+                return true;
             } else if (instance._leaving !== false) {
                 updateChildren.push(instance);
                 return true;
@@ -3893,9 +3921,11 @@ var Animate$1 = Animate = Intact$1.extend({
         this._beforeUpdate();
         mountChildren.forEach(function (instance) {
             instance.element.style.display = '';
+            instance.position = null;
         });
         this.mountChildren = mountChildren;
         this.updateChildren = updateChildren;
+        this.unmountChildren = unmountChildren;
         this.children = children.concat(mountChildren);
         this._update();
     },
@@ -3947,6 +3977,7 @@ var Animate$1 = Animate = Intact$1.extend({
                 TransitionEvents.off(element, _this3._moveEnd);
                 removeClass(element, _this3.moveClass);
                 s.position = s.left = s.top = s.transform = s.WebkitTransform = '';
+                _this3.dx = _this3.dy = 0;
                 _this3._moving = false;
             }
         };
@@ -4027,7 +4058,7 @@ var Animate$1 = Animate = Intact$1.extend({
         // 那子组件也要直接销毁掉，
         // 否则，所有的动画组件，都等到动画结束才销毁
         if (!parentDom && (!lastVNode || !nextVNode) && this.parentVNode.dom !== this.element || this.get('a:disabled') || this._leaving === false) {
-            this._super(lastVNode, nextVNode);
+            this._super(lastVNode, nextVNode, parentDom);
         }
     }
 });

@@ -98,7 +98,8 @@
             },
             insertAndRemove() {
                 var items = this.get('items');
-                var i = Math.round(Math.random() * items.length);
+                var i = Math.floor(Math.random() * items.length);
+                console.log(items.length, i);
                 items.splice(i, 1);
                 this.insert();
             }

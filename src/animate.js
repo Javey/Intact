@@ -9,7 +9,7 @@ export default Animate = Intact.extend({
         'a:tag': 'div',
         'a:transition': 'animate',
         'a:appear': false,
-        'a:mode': 'both', // out-in | in-out | both
+        'a:mode': 'in-out', // out-in | in-out | both
         'a:disabled': false // 只做动画管理者，自己不进行动画
     },
 
@@ -43,7 +43,6 @@ export default Animate = Intact.extend({
 
     _mount(lastVNode, vNode) {
         if (this.get('a:disabled')) return;
-
 
         let isAppear = false;
         if (this.isRender) {
@@ -81,7 +80,6 @@ export default Animate = Intact.extend({
         this.leaveActiveClass = `${transition}-leave-active`;
         this.moveClass = `${transition}-move`;
 
-
         // 一个动画元素被删除后，会被保存
         // 如果在删除的过程中，又添加了，则要清除上一个动画状态
         // 将这种情况记录下来
@@ -102,18 +100,32 @@ export default Animate = Intact.extend({
             TransitionEvents.off(element, this._enterEnd);
             this._entering = false;
             if (parentInstance) {
-                parentInstance._enteringAmount--;
-                parentInstance._checkMode();
+                if (--parentInstance._enteringAmount === 0 &&
+                    parentInstance.get('a:mode') === 'in-out'
+                ) {
+                    parentInstance._checkMode();
+                }
             }
         };
 
         element._unmount = (nouse, parentDom) => {
+            // 如果该元素是延迟mount的元素，则直接删除
+            if (this._delayEnter) {
+                parentDom.removeChild(element);
+                this.destroy(vNode);
+                return;
+            }
             this.vNode = vNode;
             this.parentDom = parentDom;
             if (parentInstance) {
-                parentInstance.unmountChildren.push(this);
-                parentInstance.children.push(this);
                 parentInstance._leavingAmount++;
+                if (parentInstance.get('a:mode') === 'in-out') {
+                    parentInstance.updateChildren.push(this);
+                    this._delayLeave = true;
+                } else {
+                    parentInstance.unmountChildren.push(this);
+                }
+                parentInstance.children.push(this);
             } else {
                 this._unmount();
             }
@@ -123,9 +135,14 @@ export default Animate = Intact.extend({
             // 如果存在父动画组件，则使用父级进行管理
             // 统一做动画
             if (isAppear || !this.isRender) {
-                parentInstance.mountChildren.push(this);
                 parentInstance._enteringAmount++;
-                this._delayEnter = true;
+                // 如果没有unmount的元素，则直接enter
+                if (parentInstance._leavingAmount > 0 && parentInstance.get('a:mode') === 'out-in') {
+                    this._delayEnter = true;
+                    element.style.display = 'none';
+                } else {
+                    parentInstance.mountChildren.push(this);
+                }
             }
             parentInstance.children.push(this);
 
@@ -183,9 +200,11 @@ export default Animate = Intact.extend({
                 parentDom.removeChild(element);
                 this.destroy(vNode, null, parentDom);
             }
-            if (this.parentInstance) {
-                this.parentInstance._leavingAmount--;
-                this.parentInstance._checkMode();
+            const parentInstance = this.parentInstance;
+            if (parentInstance) {
+                if (--parentInstance._leavingAmount === 0 && parentInstance.get('a:mode') === 'out-in') {
+                    parentInstance._checkMode();
+                }
             }
         };
 
@@ -234,18 +253,23 @@ export default Animate = Intact.extend({
         if (!children.length) return;
 
         let mountChildren = this.mountChildren;
+        let unmountChildren = this.unmountChildren;
         const updateChildren = this.updateChildren;
-        const unmountChildren = this.unmountChildren;
 
-        if (this._leavingAmount) {
-            mountChildren = mountChildren.filter(instance => {
-                if (instance._delayEnter) {
-                    instance.element.style.display = 'none';
-                    return false; 
-                }
-                return true;
-            });
-        }
+        // if (this._leavingAmount) {
+            // mountChildren = mountChildren.filter(instance => {
+                // if (instance._delayEnter) {
+                    // instance.element.style.display = 'none';
+                    // return false; 
+                // }
+                // return true;
+            // });
+        // }
+        // if (this._enteringAmount && this.get('a:mode') === 'in-out') {
+            // unmountChildren = unmountChildren.filter(instance => {
+                // return !instance._delayLeave;
+            // });
+        // }
 
         // 进行mount元素的进入动画
         // 因为存在moving元素被unmount又被mount的情况
@@ -319,11 +343,15 @@ export default Animate = Intact.extend({
     _checkMode() {
         const mountChildren = [];
         const updateChildren = [];
+        const unmountChildren = [];
         const children = this.children = this.children.filter(instance => {
             if (instance._delayEnter) {
                 instance._delayEnter = false;
                 mountChildren.push(instance);
                 return false;
+            } else if (instance._delayLeave) {
+                unmountChildren.push(instance);
+                return true;
             } else if (instance._leaving !== false) {
                 updateChildren.push(instance);
                 return true;
@@ -333,9 +361,11 @@ export default Animate = Intact.extend({
         this._beforeUpdate();
         mountChildren.forEach(instance => {
             instance.element.style.display = '';
+            instance.position = null;
         });
         this.mountChildren = mountChildren;
         this.updateChildren = updateChildren;
+        this.unmountChildren = unmountChildren;
         this.children  = children.concat(mountChildren);
         this._update();
     },
@@ -388,6 +418,7 @@ export default Animate = Intact.extend({
                 TransitionEvents.off(element, this._moveEnd);
                 removeClass(element, this.moveClass);
                 s.position = s.left = s.top = s.transform = s.WebkitTransform = '';
+                this.dx = this.dy = 0;
                 this._moving = false;
             }
         };
@@ -468,7 +499,7 @@ export default Animate = Intact.extend({
         // 那子组件也要直接销毁掉，
         // 否则，所有的动画组件，都等到动画结束才销毁
         if (!parentDom && (!lastVNode || !nextVNode) && (this.parentVNode.dom !== this.element) || this.get('a:disabled') || this._leaving === false) {
-            this._super(lastVNode, nextVNode);
+            this._super(lastVNode, nextVNode, parentDom);
         }
     }
 });
