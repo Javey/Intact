@@ -28,6 +28,9 @@ export default Animate = Intact.extend({
     },
 
     init(lastVNode, nextVNode) {
+        if (this.get('a:disabled')) {
+            return this._super(lastVNode, nextVNode);
+        }
         this.mountChildren = [];
         this.unmountChildren = [];
         this.updateChildren = [];
@@ -60,25 +63,29 @@ export default Animate = Intact.extend({
             }
         }
 
-        const transition = this.get('a:transition');
         const element = this.element;
+        const initClassName = () => {
+            const transition = this.get('a:transition');
+            let enterClass;
+            let enterActiveClass;
+            if (isAppear) {
+                enterClass = `${transition}-appear`;
+                enterActiveClass = `${transition}-appear-active`;
+            } else {
+                enterClass = `${transition}-enter`;
+                enterActiveClass = `${transition}-enter-active`;
+            }
 
-        let enterClass;
-        let enterActiveClass;
-        if (isAppear) {
-            enterClass = `${transition}-appear`;
-            enterActiveClass = `${transition}-appear-active`;
-        } else {
-            enterClass = `${transition}-enter`;
-            enterActiveClass = `${transition}-enter-active`;
-        }
+            this.isAppear = isAppear;
+            this.enterClass = enterClass;
+            this.enterActiveClass = enterActiveClass;
+            this.leaveClass = `${transition}-leave`;
+            this.leaveActiveClass = `${transition}-leave-active`;
+            this.moveClass = `${transition}-move`;
+        };
+        this.on('$change:a:transition', initClassName);
+        initClassName();
 
-        this.isAppear = isAppear;
-        this.enterClass = enterClass;
-        this.enterActiveClass = enterActiveClass;
-        this.leaveClass = `${transition}-leave`;
-        this.leaveActiveClass = `${transition}-leave-active`;
-        this.moveClass = `${transition}-move`;
 
         // 一个动画元素被删除后，会被保存
         // 如果在删除的过程中，又添加了，则要清除上一个动画状态
@@ -95,8 +102,8 @@ export default Animate = Intact.extend({
         this._enterEnd = (e) => {
             this.trigger('enterEnd');
             e && e.stopPropagation();
-            removeClass(element, enterClass);
-            removeClass(element, enterActiveClass);
+            removeClass(element, this.enterClass);
+            removeClass(element, this.enterActiveClass);
             TransitionEvents.off(element, this._enterEnd);
             this._entering = false;
             if (parentInstance) {
@@ -176,7 +183,6 @@ export default Animate = Intact.extend({
         if (this.get('a:disabled')) return;
 
         const element = this.element;
-        const transition = this.get('a:transition');
         const vNode = this.vNode;
         const parentDom = this.parentDom;
         // vNode都会被添加key，当只有一个子元素时，vNode.key === undefined
@@ -221,6 +227,7 @@ export default Animate = Intact.extend({
     },
 
     _beforeUpdate(lastVNode, vNode) {
+        // return;
         // 更新之前，这里的children不包含本次更新mount进来的元素
         const children = this.children;
         const reservedChildren = [];
@@ -281,21 +288,6 @@ export default Animate = Intact.extend({
             } 
         }
 
-        // if (this._leavingAmount) {
-            // mountChildren = mountChildren.filter(instance => {
-                // if (instance._delayEnter) {
-                    // instance.element.style.display = 'none';
-                    // return false; 
-                // }
-                // return true;
-            // });
-        // }
-        // if (this._enteringAmount && this.get('a:mode') === 'in-out') {
-            // unmountChildren = unmountChildren.filter(instance => {
-                // return !instance._delayLeave;
-            // });
-        // }
-
         // 进行mount元素的进入动画
         // 因为存在moving元素被unmount又被mount的情况
         // 所以最先处理
@@ -345,6 +337,10 @@ export default Animate = Intact.extend({
         updateChildren.forEach(instance => instance._initMove());
         mountChildren.forEach(instance => instance._initMove());
 
+        // 对于animation动画，enterEnd了entering元素
+        // 需要re-layout，来触发move动画
+        document.body.offsetWidth;
+
         // 如果元素需要移动，则进行move动画
         children.forEach((instance) => {
             if (instance._needMove) {
@@ -375,6 +371,7 @@ export default Animate = Intact.extend({
                 mountChildren.push(instance);
                 return false;
             } else if (instance._delayLeave) {
+                instance._delayLeave = false;
                 unmountChildren.push(instance);
                 return true;
             } else if (instance._leaving !== false) {
@@ -426,6 +423,11 @@ export default Animate = Intact.extend({
                 s.position = 'relative';
                 s.left = `${dx}px`;
                 s.top = `${dy}px`;
+                // 如果当前元素正在enter，而且是animation动画，则要enterEnd
+                // 否则无法move
+                if (this._entering && getAnimateType(element) === 'animation') {
+                    this._enterEnd();
+                }
             }
         } else {
             this._needMove = false;
@@ -474,9 +476,11 @@ export default Animate = Intact.extend({
             } else {
                 // 如果上一个元素还没来得及做动画，则当做新元素处理
                 addClass(element, enterClass);
+                addClass(this.element, this.enterActiveClass);
             }
         } else {
             addClass(element, enterClass);
+            addClass(this.element, this.enterActiveClass);
         }
         TransitionEvents.on(element, this._enterEnd);
         if (!onlyInit) {
@@ -489,7 +493,7 @@ export default Animate = Intact.extend({
         if (this._entering === false) {
             return removeClass(this.element, this.enterActiveClass);
         }
-        addClass(this.element, this.enterActiveClass);
+        // addClass(this.element, this.enterActiveClass);
         removeClass(this.element, this.enterClass);
     },
 
@@ -585,6 +589,8 @@ let EVENT_NAME_MAP = {
 };
 
 let endEvents = [];
+let transitionProp = 'transition';
+let animationProp = 'animation';
 
 function detectEvents() {
     let testEl = document.createElement('div');
@@ -608,10 +614,28 @@ function detectEvents() {
         for (let styleName in baseEvents) {
             if (styleName in style) {
                 endEvents.push(baseEvents[styleName]);
+                if (baseEventName === 'transitionend') {
+                    transitionProp = styleName;
+                } else {
+                    animationProp = styleName;
+                }
                 break;
             }
         }
     }
+}
+
+function getAnimateType(element) {
+    const style = window.getComputedStyle(element);
+    const transitionDurations = style[`${transitionProp}Duration`].split(', ');
+    const animationDurations = style[`${animationProp}Duration`].split(', ');
+    const transitionDuration = getDuration(transitionDurations);
+    const animationDuration = getDuration(animationDurations);
+    return transitionDuration > animationDuration ? 'transition' : 'animation';
+}
+
+function getDuration(durations) {
+    return Math.max.apply(null, durations.map(d => d.slice(0, -1) * 1000));
 }
 
 detectEvents();

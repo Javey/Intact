@@ -3589,6 +3589,9 @@ var Animate$1 = Animate = Intact$1.extend({
         return h(tagName, props, data.get('children'));
     },
     init: function init(lastVNode, nextVNode) {
+        if (this.get('a:disabled')) {
+            return this._super(lastVNode, nextVNode);
+        }
         this.mountChildren = [];
         this.unmountChildren = [];
         this.updateChildren = [];
@@ -3614,25 +3617,28 @@ var Animate$1 = Animate = Intact$1.extend({
             }
         }
 
-        var transition = this.get('a:transition');
         var element = this.element;
+        var initClassName = function initClassName() {
+            var transition = _this.get('a:transition');
+            var enterClass = void 0;
+            var enterActiveClass = void 0;
+            if (isAppear) {
+                enterClass = transition + '-appear';
+                enterActiveClass = transition + '-appear-active';
+            } else {
+                enterClass = transition + '-enter';
+                enterActiveClass = transition + '-enter-active';
+            }
 
-        var enterClass = void 0;
-        var enterActiveClass = void 0;
-        if (isAppear) {
-            enterClass = transition + '-appear';
-            enterActiveClass = transition + '-appear-active';
-        } else {
-            enterClass = transition + '-enter';
-            enterActiveClass = transition + '-enter-active';
-        }
-
-        this.isAppear = isAppear;
-        this.enterClass = enterClass;
-        this.enterActiveClass = enterActiveClass;
-        this.leaveClass = transition + '-leave';
-        this.leaveActiveClass = transition + '-leave-active';
-        this.moveClass = transition + '-move';
+            _this.isAppear = isAppear;
+            _this.enterClass = enterClass;
+            _this.enterActiveClass = enterActiveClass;
+            _this.leaveClass = transition + '-leave';
+            _this.leaveActiveClass = transition + '-leave-active';
+            _this.moveClass = transition + '-move';
+        };
+        this.on('$change:a:transition', initClassName);
+        initClassName();
 
         // 一个动画元素被删除后，会被保存
         // 如果在删除的过程中，又添加了，则要清除上一个动画状态
@@ -3649,8 +3655,8 @@ var Animate$1 = Animate = Intact$1.extend({
         this._enterEnd = function (e) {
             _this.trigger('enterEnd');
             e && e.stopPropagation();
-            removeClass(element, enterClass);
-            removeClass(element, enterActiveClass);
+            removeClass(element, _this.enterClass);
+            removeClass(element, _this.enterActiveClass);
             TransitionEvents.off(element, _this._enterEnd);
             _this._entering = false;
             if (parentInstance) {
@@ -3728,7 +3734,6 @@ var Animate$1 = Animate = Intact$1.extend({
         if (this.get('a:disabled')) return;
 
         var element = this.element;
-        var transition = this.get('a:transition');
         var vNode = this.vNode;
         var parentDom = this.parentDom;
         // vNode都会被添加key，当只有一个子元素时，vNode.key === undefined
@@ -3772,6 +3777,7 @@ var Animate$1 = Animate = Intact$1.extend({
         element._unmount = noop;
     },
     _beforeUpdate: function _beforeUpdate(lastVNode, vNode) {
+        // return;
         // 更新之前，这里的children不包含本次更新mount进来的元素
         var children = this.children;
         var reservedChildren = [];
@@ -3831,21 +3837,6 @@ var Animate$1 = Animate = Intact$1.extend({
             }
         }
 
-        // if (this._leavingAmount) {
-        // mountChildren = mountChildren.filter(instance => {
-        // if (instance._delayEnter) {
-        // instance.element.style.display = 'none';
-        // return false; 
-        // }
-        // return true;
-        // });
-        // }
-        // if (this._enteringAmount && this.get('a:mode') === 'in-out') {
-        // unmountChildren = unmountChildren.filter(instance => {
-        // return !instance._delayLeave;
-        // });
-        // }
-
         // 进行mount元素的进入动画
         // 因为存在moving元素被unmount又被mount的情况
         // 所以最先处理
@@ -3903,6 +3894,10 @@ var Animate$1 = Animate = Intact$1.extend({
             return instance._initMove();
         });
 
+        // 对于animation动画，enterEnd了entering元素
+        // 需要re-layout，来触发move动画
+        document.body.offsetWidth;
+
         // 如果元素需要移动，则进行move动画
         children.forEach(function (instance) {
             if (instance._needMove) {
@@ -3934,6 +3929,7 @@ var Animate$1 = Animate = Intact$1.extend({
                 mountChildren.push(instance);
                 return false;
             } else if (instance._delayLeave) {
+                instance._delayLeave = false;
                 unmountChildren.push(instance);
                 return true;
             } else if (instance._leaving !== false) {
@@ -3983,6 +3979,11 @@ var Animate$1 = Animate = Intact$1.extend({
                 s.position = 'relative';
                 s.left = dx + 'px';
                 s.top = dy + 'px';
+                // 如果当前元素正在enter，而且是animation动画，则要enterEnd
+                // 否则无法move
+                if (this._entering && getAnimateType(element) === 'animation') {
+                    this._enterEnd();
+                }
             }
         } else {
             this._needMove = false;
@@ -4032,9 +4033,11 @@ var Animate$1 = Animate = Intact$1.extend({
             } else {
                 // 如果上一个元素还没来得及做动画，则当做新元素处理
                 addClass(element, enterClass);
+                addClass(this.element, this.enterActiveClass);
             }
         } else {
             addClass(element, enterClass);
+            addClass(this.element, this.enterActiveClass);
         }
         TransitionEvents.on(element, this._enterEnd);
         if (!onlyInit) {
@@ -4048,7 +4051,7 @@ var Animate$1 = Animate = Intact$1.extend({
         if (this._entering === false) {
             return removeClass(this.element, this.enterActiveClass);
         }
-        addClass(this.element, this.enterActiveClass);
+        // addClass(this.element, this.enterActiveClass);
         removeClass(this.element, this.enterClass);
     },
     _leave: function _leave(onlyInit) {
@@ -4142,6 +4145,8 @@ var EVENT_NAME_MAP = {
 };
 
 var endEvents = [];
+var transitionProp = 'transition';
+var animationProp = 'animation';
 
 function detectEvents() {
     var testEl = document.createElement('div');
@@ -4165,10 +4170,30 @@ function detectEvents() {
         for (var styleName in baseEvents) {
             if (styleName in style) {
                 endEvents.push(baseEvents[styleName]);
+                if (baseEventName === 'transitionend') {
+                    transitionProp = styleName;
+                } else {
+                    animationProp = styleName;
+                }
                 break;
             }
         }
     }
+}
+
+function getAnimateType(element) {
+    var style = window.getComputedStyle(element);
+    var transitionDurations = style[transitionProp + 'Duration'].split(', ');
+    var animationDurations = style[animationProp + 'Duration'].split(', ');
+    var transitionDuration = getDuration(transitionDurations);
+    var animationDuration = getDuration(animationDurations);
+    return transitionDuration > animationDuration ? 'transition' : 'animation';
+}
+
+function getDuration(durations) {
+    return Math.max.apply(null, durations.map(function (d) {
+        return d.slice(0, -1) * 1000;
+    }));
 }
 
 detectEvents();

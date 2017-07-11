@@ -13,45 +13,55 @@
             background: gray;
             width: 200px;
             height: 150px;
+            white-space: nowrap;
         }
         @keyframes fadeIn {
-            from {
+            0% {
                 opacity: 0;
-                transform: scale(0.5);
+                transform: translate(0, -100px);
             }
-            to {
+            100% {
                 opacity: 1;
-                transform: scale(1);
+                transform: translate(0, 0);
             }
         }
         @keyframes fadeOut {
             from {
                 opacity: 1;
-                transform: scale(1);
+                transform: translate(0, 0);
             }
             to {
                 opacity: 0;
-                transform: scale(0.5);
+                transform: translate(0, -100px);
             }
         }
-
-        /* .fade-enter-active {
-            animation: fadeIn 10s;
+        .fade-animation-enter-active {
+            animation: fadeIn 1s;
         }
-        .fade-leave-active {
-            animation: fadeOut 10s; 
+        .fade-animation-leave-active {
+            animation: fadeOut 1s; 
         }
-        .fade-move {
-            transition: all 10s cubic-bezier(.55,0,.1,1);
-        } */
-      .fade-enter-active, .fade-leave-active, .fade-move {
-        transition: all 10s cubic-bezier(.55,0,.1,1);
+        .fade-animation-move {
+            transition: all 1s cubic-bezier(.55,0,.1,1);
+        }
+      .fade-transition-enter-active, .fade-transition-leave-active, .fade-transition-move {
+        transition: all 1s cubic-bezier(.55,0,.1,1);
       }
-      .fade-enter, .fade-leave {
+      .fade-transition-enter, .fade-transition-leave {
         opacity: 0;
-        transform: scale(0.5);
+        transform: scale(0.5); */
         /* width: 0; */
-      } 
+      }
+      .slide-fade-enter-active {
+          transition: all .3s ease;
+       }
+       .slide-fade-leave-active {
+         transition: all .8s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+       }
+       .slide-fade-enter, .slide-fade-leave {
+         transform: translateX(10px);
+         opacity: 0;
+      }
     </style>
     <script src="https://cdn.jsdelivr.net/lodash/4.3.0/lodash.min.js"></script>
     <script src="../../dist/intact.js"></script>
@@ -63,11 +73,21 @@
           <button ev-click={self.reset.bind(self)}>reset</button>
           <button ev-click={self.shuffle.bind(self)}>shuffle</button>
           <button ev-click={self.insertAndRemove.bind(self)}>insert and remove</button>
-          <Animate a:tag="ul" class="container">
-            <Animate a:transition="fade" v-for={self.get('items')} class="item" key={value}>
+          mode: <select v-model="mode">
+            <option value="both">both</option>
+            <option value="out-in">out-in</option>
+            <option value="in-out">in-out</option>
+          </select>
+          animation type: <select v-model="type">
+            <option value="transition">transition</option>
+            <option value="animation">animation</option>
+          </select>
+          <Animate a:tag="ul" class="container" a:mode={self.get('mode')}>
+            <Animate a:transition={"fade-" + self.get('type')} v-for={self.get('items')} class="item" key={value}>
                 {value} <button ev-click={self.remove.bind(self, key)}>x</button>
             </Animate>
           </Animate>
+          <!-- <Animate v-if={self.get('items').length % 2} a:transition="slide-fade">toggle</Animate>-->
         </div>
     </script>
 
@@ -76,7 +96,9 @@
 
         var App = Intact.extend({
             defaults: {
-                items: [1, 2, 3, 4, 5]
+                items: [1, 2, 3, 4, 5],
+                mode: 'both',
+                type: 'transition'
             },
             template: document.getElementById('template').innerHTML,
             insert() {
