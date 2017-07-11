@@ -3571,7 +3571,7 @@ var Animate$1 = Animate = Intact$1.extend({
         'a:tag': 'div',
         'a:transition': 'animate',
         'a:appear': false,
-        'a:mode': 'in-out', // out-in | in-out | both
+        'a:mode': 'both', // out-in | in-out | both
         'a:disabled': false // 只做动画管理者，自己不进行动画
     },
 
@@ -3655,7 +3655,9 @@ var Animate$1 = Animate = Intact$1.extend({
             _this._entering = false;
             if (parentInstance) {
                 if (--parentInstance._enteringAmount === 0 && parentInstance.get('a:mode') === 'in-out') {
-                    parentInstance._checkMode();
+                    nextFrame(function () {
+                        parentInstance._checkMode();
+                    });
                 }
             }
         };
@@ -3687,13 +3689,17 @@ var Animate$1 = Animate = Intact$1.extend({
             // 如果存在父动画组件，则使用父级进行管理
             // 统一做动画
             if (isAppear || !this.isRender) {
-                parentInstance._enteringAmount++;
-                // 如果没有unmount的元素，则直接enter
-                if (parentInstance._leavingAmount > 0 && parentInstance.get('a:mode') === 'out-in') {
-                    this._delayEnter = true;
-                    element.style.display = 'none';
+                if (this.lastInstance && this.lastInstance._delayLeave) {
+                    parentInstance.updateChildren.push(this);
                 } else {
-                    parentInstance.mountChildren.push(this);
+                    parentInstance._enteringAmount++;
+                    // 如果没有unmount的元素，则直接enter
+                    if (parentInstance._leavingAmount > 0 && parentInstance.get('a:mode') === 'out-in') {
+                        this._delayEnter = true;
+                        element.style.display = 'none';
+                    } else {
+                        parentInstance.mountChildren.push(this);
+                    }
                 }
             }
             parentInstance.children.push(this);
@@ -3710,9 +3716,9 @@ var Animate$1 = Animate = Intact$1.extend({
         // this.parentVNode是animate的tag，所以要拿this.parentVNode.parentVNode
         var parentVNode = this.parentVNode.parentVNode;
         if (parentVNode) {
-            var parentInstance = parentVNode.children;
-            if (parentInstance instanceof Animate) {
-                return parentInstance;
+            var _parentInstance = parentVNode.children;
+            if (_parentInstance instanceof Animate) {
+                return _parentInstance;
             }
         }
     },
@@ -3768,11 +3774,16 @@ var Animate$1 = Animate = Intact$1.extend({
     _beforeUpdate: function _beforeUpdate(lastVNode, vNode) {
         // 更新之前，这里的children不包含本次更新mount进来的元素
         var children = this.children;
+        var reservedChildren = [];
         for (var i = 0; i < children.length; i++) {
             var instance = children[i];
             instance.position = instance._getPosition();
+            if (instance._delayLeave) {
+                reservedChildren.push(instance);
+                this.updateChildren.push(instance);
+            }
         }
-        this.children = [];
+        this.children = reservedChildren;
     },
     _getPosition: function _getPosition() {
         var element = this.element;
@@ -3789,12 +3800,12 @@ var Animate$1 = Animate = Intact$1.extend({
      * 尽量保持动画的连贯性
      * 一个元素在enter又在move，leave时，不能保持连贯性
      */
-    _update: function _update(lastVNode, vNode) {
+    _update: function _update(lastVNode, vNode, isFromCheckMode) {
         if (!this.get('a:disabled')) {
-            var parentInstance = this.parentInstance;
-            if (parentInstance) {
-                parentInstance.updateChildren.push(this);
-                parentInstance.children.push(this);
+            var _parentInstance2 = this.parentInstance;
+            if (_parentInstance2) {
+                _parentInstance2.updateChildren.push(this);
+                _parentInstance2.children.push(this);
             }
         }
 
@@ -3806,6 +3817,19 @@ var Animate$1 = Animate = Intact$1.extend({
         var mountChildren = this.mountChildren;
         var unmountChildren = this.unmountChildren;
         var updateChildren = this.updateChildren;
+
+        // 如果是in-out模式，但是没有元素enter，则直接leave
+        if (!isFromCheckMode && this._enteringAmount === 0 && parentInstance.get('a:mode') === 'in-out') {
+            for (var i = 0; i < updateChildren.length; i++) {
+                var instance = updateChildren[i];
+                if (instance._delayLeave) {
+                    unmountChildren.push(instance);
+                    updateChildren.splice(i, 1);
+                    instance._delayLeave = false;
+                    i--;
+                }
+            }
+        }
 
         // if (this._leavingAmount) {
         // mountChildren = mountChildren.filter(instance => {
@@ -3927,7 +3951,7 @@ var Animate$1 = Animate = Intact$1.extend({
         this.updateChildren = updateChildren;
         this.unmountChildren = unmountChildren;
         this.children = children.concat(mountChildren);
-        this._update();
+        this._update(null, null, true);
     },
     _initMove: function _initMove(isUnmount) {
         var element = this.element;

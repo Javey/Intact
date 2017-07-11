@@ -9,7 +9,7 @@ export default Animate = Intact.extend({
         'a:tag': 'div',
         'a:transition': 'animate',
         'a:appear': false,
-        'a:mode': 'in-out', // out-in | in-out | both
+        'a:mode': 'both', // out-in | in-out | both
         'a:disabled': false // 只做动画管理者，自己不进行动画
     },
 
@@ -103,7 +103,9 @@ export default Animate = Intact.extend({
                 if (--parentInstance._enteringAmount === 0 &&
                     parentInstance.get('a:mode') === 'in-out'
                 ) {
-                    parentInstance._checkMode();
+                    nextFrame(() => {
+                        parentInstance._checkMode();
+                    });
                 }
             }
         };
@@ -135,13 +137,17 @@ export default Animate = Intact.extend({
             // 如果存在父动画组件，则使用父级进行管理
             // 统一做动画
             if (isAppear || !this.isRender) {
-                parentInstance._enteringAmount++;
-                // 如果没有unmount的元素，则直接enter
-                if (parentInstance._leavingAmount > 0 && parentInstance.get('a:mode') === 'out-in') {
-                    this._delayEnter = true;
-                    element.style.display = 'none';
+                if (this.lastInstance && this.lastInstance._delayLeave) {
+                    parentInstance.updateChildren.push(this);
                 } else {
-                    parentInstance.mountChildren.push(this);
+                    parentInstance._enteringAmount++;
+                    // 如果没有unmount的元素，则直接enter
+                    if (parentInstance._leavingAmount > 0 && parentInstance.get('a:mode') === 'out-in') {
+                        this._delayEnter = true;
+                        element.style.display = 'none';
+                    } else {
+                        parentInstance.mountChildren.push(this);
+                    }
                 }
             }
             parentInstance.children.push(this);
@@ -217,11 +223,16 @@ export default Animate = Intact.extend({
     _beforeUpdate(lastVNode, vNode) {
         // 更新之前，这里的children不包含本次更新mount进来的元素
         const children = this.children;
+        const reservedChildren = [];
         for (let i = 0; i < children.length; i++) {
             let instance = children[i];
             instance.position = instance._getPosition();
+            if (instance._delayLeave) {
+                reservedChildren.push(instance);
+                this.updateChildren.push(instance);
+            }
         }
-        this.children = [];
+        this.children = reservedChildren;
     },
 
     _getPosition() {
@@ -238,7 +249,7 @@ export default Animate = Intact.extend({
      * 尽量保持动画的连贯性
      * 一个元素在enter又在move，leave时，不能保持连贯性
      */
-    _update(lastVNode, vNode) {
+    _update(lastVNode, vNode, isFromCheckMode) {
         if (!this.get('a:disabled')) {
             const parentInstance = this.parentInstance;
             if (parentInstance) {
@@ -252,9 +263,23 @@ export default Animate = Intact.extend({
         // 不存在children，则表示没有子动画元素要管理，直接返回
         if (!children.length) return;
 
+
         let mountChildren = this.mountChildren;
         let unmountChildren = this.unmountChildren;
         const updateChildren = this.updateChildren;
+
+        // 如果是in-out模式，但是没有元素enter，则直接leave
+        if (!isFromCheckMode && this._enteringAmount === 0 && parentInstance.get('a:mode') === 'in-out') {
+            for (let i = 0; i < updateChildren.length; i++) {
+                let instance = updateChildren[i];
+                if (instance._delayLeave) {
+                    unmountChildren.push(instance);
+                    updateChildren.splice(i, 1);
+                    instance._delayLeave = false;
+                    i--;
+                }
+            } 
+        }
 
         // if (this._leavingAmount) {
             // mountChildren = mountChildren.filter(instance => {
@@ -367,7 +392,7 @@ export default Animate = Intact.extend({
         this.updateChildren = updateChildren;
         this.unmountChildren = unmountChildren;
         this.children  = children.concat(mountChildren);
-        this._update();
+        this._update(null, null, true);
     },
 
     _initMove(isUnmount) {
