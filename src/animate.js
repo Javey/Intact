@@ -28,15 +28,17 @@ export default Animate = Intact.extend({
     },
 
     init(lastVNode, nextVNode) {
-        if (this.get('a:disabled')) {
-            return this._super(lastVNode, nextVNode);
-        }
         this.mountChildren = [];
         this.unmountChildren = [];
         this.updateChildren = [];
         this.children = [];
         this._enteringAmount = 0;
         this._leavingAmount = 0;
+
+        if (this.get('a:disabled')) {
+            return this._super(lastVNode, nextVNode);
+        }
+
         const parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
         if (parentDom && parentDom._reserve) {
             lastVNode = parentDom._reserve[nextVNode.key];
@@ -100,8 +102,7 @@ export default Animate = Intact.extend({
         const parentInstance = this.parentInstance = this._getParentAnimate();
 
         this._enterEnd = (e) => {
-            this.trigger('enterEnd');
-            e && e.stopPropagation();
+            e && e.stopPropagation && e.stopPropagation();
             removeClass(element, this.enterClass);
             removeClass(element, this.enterActiveClass);
             TransitionEvents.off(element, this._enterEnd);
@@ -115,6 +116,7 @@ export default Animate = Intact.extend({
                     });
                 }
             }
+            this.trigger('enter:end', element);
         };
 
         element._unmount = (nouse, parentDom) => {
@@ -122,6 +124,7 @@ export default Animate = Intact.extend({
             if (this._delayEnter) {
                 parentDom.removeChild(element);
                 this.destroy(vNode);
+                parentInstance._enteringAmount--;
                 return;
             }
             this.vNode = vNode;
@@ -149,7 +152,9 @@ export default Animate = Intact.extend({
                 } else {
                     parentInstance._enteringAmount++;
                     // 如果没有unmount的元素，则直接enter
-                    if (parentInstance._leavingAmount > 0 && parentInstance.get('a:mode') === 'out-in') {
+                    if (parentInstance._leavingAmount > 0 &&
+                        parentInstance.get('a:mode') === 'out-in'
+                    ) {
                         this._delayEnter = true;
                         element.style.display = 'none';
                     } else {
@@ -158,8 +163,6 @@ export default Animate = Intact.extend({
                 }
             }
             parentInstance.children.push(this);
-
-            window.parentInstance = parentInstance;
         } else if (isAppear || !this.isRender) {
             // 否则单个元素自己动画
             this._enter();
@@ -200,7 +203,7 @@ export default Animate = Intact.extend({
         }
 
         this._leaveEnd = (e) => {
-            e && e.stopPropagation();
+            e && e.stopPropagation && e.stopPropagation();
             removeClass(element, this.leaveClass);
             removeClass(element, this.leaveActiveClass);
             const s = element.style;
@@ -214,26 +217,32 @@ export default Animate = Intact.extend({
             }
             const parentInstance = this.parentInstance;
             if (parentInstance) {
-                if (--parentInstance._leavingAmount === 0 && parentInstance.get('a:mode') === 'out-in') {
+                if (--parentInstance._leavingAmount === 0 &&
+                    parentInstance.get('a:mode') === 'out-in'
+                ) {
                     parentInstance._checkMode();
                 }
             }
+            this.trigger('leave:end', element);
         };
 
         this._leave(onlyInit);
         // 存在一种情况，相同的dom，同时被子组件和父组件管理的情况
         // 所以unmount后，将其置为空函数，以免再次unmount
         element._unmount = noop;
+
+        this.trigger('leave:start', element);
     },
 
     _beforeUpdate(lastVNode, vNode) {
-        // return;
         // 更新之前，这里的children不包含本次更新mount进来的元素
         const children = this.children;
         const reservedChildren = [];
         for (let i = 0; i < children.length; i++) {
             let instance = children[i];
-            instance.position = instance._getPosition();
+            if (!instance._leaving) {
+                instance.position = instance._getPosition();
+            }
             if (instance._delayLeave) {
                 reservedChildren.push(instance);
                 this.updateChildren.push(instance);
@@ -245,6 +254,13 @@ export default Animate = Intact.extend({
     _getPosition() {
         const element = this.element;
         const transform = getComputedStyle(element).transform;
+        if (transform === 'none') {
+            return {
+                top: element.offsetTop,
+                left: element.offsetLeft
+            };
+        }
+        // const transform = element.style.transform;
         const matrix = new WebKitCSSMatrix(transform);
         return {
             top: element.offsetTop + matrix.m42,
@@ -254,11 +270,11 @@ export default Animate = Intact.extend({
 
     /**
      * 尽量保持动画的连贯性
-     * 一个元素在enter又在move，leave时，不能保持连贯性
      */
     _update(lastVNode, vNode, isFromCheckMode) {
+        let parentInstance;
         if (!this.get('a:disabled')) {
-            const parentInstance = this.parentInstance;
+            parentInstance = this.parentInstance;
             if (parentInstance) {
                 parentInstance.updateChildren.push(this);
                 parentInstance.children.push(this);
@@ -276,7 +292,9 @@ export default Animate = Intact.extend({
         const updateChildren = this.updateChildren;
 
         // 如果是in-out模式，但是没有元素enter，则直接leave
-        if (!isFromCheckMode && this._enteringAmount === 0 && parentInstance.get('a:mode') === 'in-out') {
+        if (!isFromCheckMode && this._enteringAmount === 0 && 
+            parentInstance && parentInstance.get('a:mode') === 'in-out'
+        ) {
             for (let i = 0; i < updateChildren.length; i++) {
                 let instance = updateChildren[i];
                 if (instance._delayLeave) {
@@ -472,29 +490,42 @@ export default Animate = Intact.extend({
             this.lastInstance._unmountCancelled = true;
             this.lastInstance._leaveEnd();
             if (this.lastInstance._triggeredLeave) {
-                addClass(element, enterActiveClass);
+                // addClass(element, enterActiveClass);
+                // 保持连贯，添加leaveActiveClass
+                addClass(element, this.leaveActiveClass);
             } else {
                 // 如果上一个元素还没来得及做动画，则当做新元素处理
                 addClass(element, enterClass);
-                addClass(this.element, this.enterActiveClass);
+                // addClass(this.element, this.enterActiveClass);
             }
         } else {
             addClass(element, enterClass);
-            addClass(this.element, this.enterActiveClass);
+            // Fixme: 这里如果，先添加enterActiveClass，针对transition动画
+            // 可能导致enterClass被动画，然后立即end
+            // 但是，针对animation动画，则没有此问题
+            // 如果后添加enterActiveClass，animation动画可能有闪动，
+            // 因为下一帧才开始进行动画，为了清除闪动，可以添加keframe from
+            // 的样式给enterClass
+            // addClass(this.element, this.enterActiveClass);
         }
         TransitionEvents.on(element, this._enterEnd);
         if (!onlyInit) {
             nextFrame(() => this._triggerEnter());
         }
+
+        this.trigger('enter:start', element);
     },
 
     _triggerEnter() {
+        const element = this.element;
         this._triggeredEnter = true;
         if (this._entering === false) {
-            return removeClass(this.element, this.enterActiveClass);
+            return removeClass(element, this.enterActiveClass);
         }
-        // addClass(this.element, this.enterActiveClass);
-        removeClass(this.element, this.enterClass);
+        addClass(element, this.enterActiveClass);
+        removeClass(element, this.enterClass);
+        removeClass(element, this.leaveActiveClass);
+        this.trigger('enter', element, this._enterEnd);
     },
 
     _leave(onlyInit) {
@@ -521,13 +552,18 @@ export default Animate = Intact.extend({
         const element = this.element;
         addClass(element, this.leaveActiveClass);
         addClass(element, this.leaveClass);
+        this.trigger('leave', element, this._leaveEnd);
     },
 
     destroy(lastVNode, nextVNode, parentDom) {
         // 不存在parentDom，则表示parentDom将被删除
         // 那子组件也要直接销毁掉，
         // 否则，所有的动画组件，都等到动画结束才销毁
-        if (!parentDom && (!lastVNode || !nextVNode) && (this.parentVNode.dom !== this.element) || this.get('a:disabled') || this._leaving === false) {
+        if (!parentDom && (!lastVNode || !nextVNode) &&
+            (this.parentVNode.dom !== this.element) ||
+            this.get('a:disabled') || 
+            this._leaving === false
+        ) {
             this._super(lastVNode, nextVNode, parentDom);
         }
     }

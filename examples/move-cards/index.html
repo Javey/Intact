@@ -35,21 +35,27 @@
                 transform: translate(0, -100px);
             }
         }
+        .fade-animation-enter {
+            opacity: 0;
+            transform: translate(0, -100px);
+        }
         .fade-animation-enter-active {
             animation: fadeIn 1s;
         }
         .fade-animation-leave-active {
             animation: fadeOut 1s; 
         }
-        .fade-animation-move {
+        .fade-animation-move, .fade-none-animation-move {
             transition: all 1s cubic-bezier(.55,0,.1,1);
         }
-      .fade-transition-enter-active, .fade-transition-leave-active, .fade-transition-move {
+      .fade-transition-enter-active, .fade-transition-leave-active, .fade-transition-move,
+      .fade-none-transition-move {
         transition: all 1s cubic-bezier(.55,0,.1,1);
       }
       .fade-transition-enter, .fade-transition-leave {
         opacity: 0;
-        transform: scale(0.5); */
+        /* transform: translate(0, -100px); */
+        transform: scale(0.5);
         /* width: 0; */
       }
       .slide-fade-enter-active {
@@ -65,6 +71,7 @@
     </style>
     <script src="https://cdn.jsdelivr.net/lodash/4.3.0/lodash.min.js"></script>
     <script src="../../dist/intact.js"></script>
+    <script src="//cdn.jsdelivr.net/velocity/1.5/velocity.min.js"></script>
   </head>
   <body>
       <script type="text/vdt" id="template">
@@ -83,7 +90,11 @@
             <option value="animation">animation</option>
           </select>
           <Animate a:tag="ul" class="container" a:mode={self.get('mode')}>
-            <Animate a:transition={"fade-" + self.get('type')} v-for={self.get('items')} class="item" key={value}>
+            <Animate a:transition={"fade-none-" + self.get('type')} v-for={self.get('items')} class="item" key={value}
+                ev-enter:start={self.enterStart.bind(self)}
+                ev-enter={self.enter.bind(self)}
+                ev-leave={self.leave.bind(self)}
+            >
                 {value} <button ev-click={self.remove.bind(self, key)}>x</button>
             </Animate>
           </Animate>
@@ -121,9 +132,28 @@
             insertAndRemove() {
                 var items = this.get('items');
                 var i = Math.floor(Math.random() * items.length);
-                console.log(items.length, i);
                 items.splice(i, 1);
                 this.insert();
+            },
+
+            enterStart(element) {
+                element.style.opacity = 0;
+            },
+
+            enter(element, done) {
+                Velocity(element, { opacity: 1, fontSize: '1.4em' }, { duration: 300 })
+                Velocity(element, { fontSize: '1em' }, { complete: done })
+            },
+
+            leave(el, done) {
+                Velocity(el, { translateX: '15px', rotateZ: '50deg' }, { duration: 600 })
+				Velocity(el, { rotateZ: '100deg' }, { loop: 2 })
+				Velocity(el, {
+					rotateZ: '45deg',
+					translateY: '30px',
+					translateX: '30px',
+					opacity: 0
+				}, { complete: done })
             }
         });
         var app = Intact.mount(App, document.body);
