@@ -45,12 +45,9 @@
         .fade-animation-leave-active {
             animation: fadeOut 1s; 
         }
-        .fade-animation-move, .fade-none-animation-move {
-            transition: all 1s cubic-bezier(.55,0,.1,1);
-        }
       .fade-transition-enter-active, .fade-transition-leave-active, .fade-transition-move,
-      .fade-none-transition-move {
-        transition: all 1s cubic-bezier(.55,0,.1,1);
+      .fade-js-move, .fade-animation-move {
+        transition: all 10s cubic-bezier(.55,0,.1,1);
       }
       .fade-transition-enter, .fade-transition-leave {
         opacity: 0;
@@ -88,12 +85,14 @@
           animation type: <select v-model="type">
             <option value="transition">transition</option>
             <option value="animation">animation</option>
+            <option value="js">js</option>
           </select>
           <Animate a:tag="ul" class="container" a:mode={self.get('mode')}>
-            <Animate a:transition={"fade-none-" + self.get('type')} v-for={self.get('items')} class="item" key={value}
-                ev-enter:start={self.enterStart.bind(self)}
-                ev-enter={self.enter.bind(self)}
-                ev-leave={self.leave.bind(self)}
+            <Animate a:transition={"fade-" + self.get('type')} v-for={self.get('items')} class="item" key={value}
+                ev-enter:start={self.get('type') === 'js' ? self.enterStart.bind(self) : undefined}
+                ev-enter={self.get('type') === 'js' ? self.enter.bind(self) : undefined}
+                ev-enter:end={self.get('type') === 'js' ? self.enterEnd.bind(self) : undefined}
+                ev-leave={self.get('type') === 'js' ? self.leave.bind(self) : undefined}
             >
                 {value} <button ev-click={self.remove.bind(self, key)}>x</button>
             </Animate>
@@ -136,24 +135,40 @@
                 this.insert();
             },
 
-            enterStart(element) {
-                element.style.opacity = 0;
+            enterStart(el) {
+                // el.style.transform = 'scale(0.5)';
             },
 
-            enter(element, done) {
-                Velocity(element, { opacity: 1, fontSize: '1.4em' }, { duration: 300 })
-                Velocity(element, { fontSize: '1em' }, { complete: done })
+            enter(el, done) {
+                Velocity(el, { 
+                    transformPerspective: ['600px', '600px'],
+                    transformOriginX: ['0', '0'],
+                    transformOriginY: ['50%', '50%'],
+                    rotateY: [0, -60],
+                    opacity: [1, 0]
+                }, {
+                    duration: 10000,
+                    complete: done
+                });
+            },
+
+            enterEnd(el) {
+                Velocity(el, 'finish');
+                el.style.transform = '';
+                <!-- el.style = ''; -->
             },
 
             leave(el, done) {
-                Velocity(el, { translateX: '15px', rotateZ: '50deg' }, { duration: 600 })
-				Velocity(el, { rotateZ: '100deg' }, { loop: 2 })
-				Velocity(el, {
-					rotateZ: '45deg',
-					translateY: '30px',
-					translateX: '30px',
-					opacity: 0
-				}, { complete: done })
+                Velocity(el, { 
+                    transformPerspective: ['600px', '600px'],
+                    transformOriginX: ['0', '0'],
+                    transformOriginY: ['50%', '50%'],
+                    rotateY: [-60, 0],
+                    opacity: [0, 1]
+                }, {
+                    duration: 1000,
+                    complete: done
+                });
             }
         });
         var app = Intact.mount(App, document.body);
