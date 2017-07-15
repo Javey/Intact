@@ -49,9 +49,9 @@
       .fade-js-move, .fade-animation-move {
         transition: all 1s cubic-bezier(.55,0,.1,1);
       }
-      .fade-js-leave-active {
-          position: absolute;
-      }
+      <!-- .fade-js-leave-active { -->
+          <!-- position: absolute; -->
+      <!-- } -->
       .fade-transition-enter, .fade-transition-leave {
         opacity: 0;
         /* transform: translate(0, -100px); */
@@ -157,7 +157,16 @@
 
             enterEnd(el) {
                 Velocity(el, 'stop');
-                el.style = '';
+                el.style.transform = '';
+                el.style.opacity = '';
+                el.style.transformOrigin = '';
+                <!-- const p = el.style.position; -->
+                <!-- const l = el.style.left; -->
+                <!-- const r = el.style.right; -->
+                <!-- el.style = ''; -->
+                <!-- el.style.position = p; -->
+                <!-- el.style.left = l; -->
+                <!-- el.style.right = r; -->
             },
 
             leave(el, done) {
