@@ -478,12 +478,6 @@ var utils = (Object.freeze || Object)({
 	error: error$1
 });
 
-/**
- * inherit
- * @param Parent
- * @param prototype
- * @returns {Function}
- */
 function inherit(Parent, prototype) {
     var Child = function Child() {
         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
@@ -3993,16 +3987,15 @@ var Animate$1 = Animate = Intact$1.extend({
                 s.top = oldPosition.top + 'px';
                 this._needMove = false;
             } else {
+                // 如果当前元素正在enter，而且是animation动画，则要enterEnd
+                // 否则无法move
+                if (this._entering && getAnimateType(element) !== 'transition') {
+                    this._enterEnd();
+                }
                 this._needMove = true;
                 s.position = 'relative';
                 s.left = dx + 'px';
                 s.top = dy + 'px';
-                // 如果当前元素正在enter，而且是animation动画，则要enterEnd
-                // 否则无法move
-                if (this._entering) {
-                    // && getAnimateType(element) === 'animation') {
-                    this._enterEnd();
-                }
             }
         } else {
             this._needMove = false;
@@ -4212,6 +4205,21 @@ function detectEvents() {
             }
         }
     }
+}
+
+function getAnimateType(element) {
+    var style = window.getComputedStyle(element);
+    var transitionDurations = style[transitionProp + 'Duration'].split(', ');
+    var animationDurations = style[animationProp + 'Duration'].split(', ');
+    var transitionDuration = getDuration(transitionDurations);
+    var animationDuration = getDuration(animationDurations);
+    return transitionDuration > animationDuration ? 'transition' : 'animation';
+}
+
+function getDuration(durations) {
+    return Math.max.apply(null, durations.map(function (d) {
+        return d.slice(0, -1) * 1000;
+    }));
 }
 
 detectEvents();

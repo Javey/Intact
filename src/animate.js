@@ -437,15 +437,15 @@ export default Animate = Intact.extend({
                 s.top = `${oldPosition.top}px`;
                 this._needMove = false;
             } else {
+                // 如果当前元素正在enter，而且是animation动画，则要enterEnd
+                // 否则无法move
+                if (this._entering && getAnimateType(element) !== 'transition') {
+                    this._enterEnd();
+                }
                 this._needMove = true;
                 s.position = 'relative';
                 s.left = `${dx}px`;
                 s.top = `${dy}px`;
-                // 如果当前元素正在enter，而且是animation动画，则要enterEnd
-                // 否则无法move
-                if (this._entering) { // && getAnimateType(element) === 'animation') {
-                    this._enterEnd();
-                }
             }
         } else {
             this._needMove = false;

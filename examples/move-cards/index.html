@@ -47,7 +47,10 @@
         }
       .fade-transition-enter-active, .fade-transition-leave-active, .fade-transition-move,
       .fade-js-move, .fade-animation-move {
-        transition: all 10s cubic-bezier(.55,0,.1,1);
+        transition: all 1s cubic-bezier(.55,0,.1,1);
+      }
+      .fade-js-leave-active {
+          position: absolute;
       }
       .fade-transition-enter, .fade-transition-leave {
         opacity: 0;
@@ -136,7 +139,7 @@
             },
 
             enterStart(el) {
-                // el.style.transform = 'scale(0.5)';
+                el.style.opacity = 0;
             },
 
             enter(el, done) {
@@ -147,15 +150,14 @@
                     rotateY: [0, -60],
                     opacity: [1, 0]
                 }, {
-                    duration: 10000,
+                    duration: 1000,
                     complete: done
                 });
             },
 
             enterEnd(el) {
-                Velocity(el, 'finish');
-                el.style.transform = '';
-                <!-- el.style = ''; -->
+                Velocity(el, 'stop');
+                el.style = '';
             },
 
             leave(el, done) {
