@@ -448,7 +448,7 @@ export default Animate = Intact.extend({
             } else {
                 // 如果当前元素正在enter，而且是animation动画，则要enterEnd
                 // 否则无法move
-                if (this._entering) && getAnimateType(element) !== 'transition') {
+                if (this._entering && getAnimateType(element) !== 'transition') {
                     this._enterEnd();
                 }
                 this._needMove = true;
