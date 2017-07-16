@@ -25,7 +25,6 @@ export default Animate = Intact.extend({
                 props[key] = _props[key];
             }
         }
-        console.log(props);
         return h(tagName, props, self.get('children'));
     },
 
@@ -104,6 +103,7 @@ export default Animate = Intact.extend({
         const parentInstance = this.parentInstance = this._getParentAnimate();
 
         this._enterEnd = (e) => {
+            console.log(element.innerHTML, 'enterEnd');
             e && e.stopPropagation && e.stopPropagation();
             removeClass(element, this.enterClass);
             removeClass(element, this.enterActiveClass);
@@ -118,7 +118,7 @@ export default Animate = Intact.extend({
                     });
                 }
             }
-            this.trigger('enter:end', element);
+            this.trigger('a:enterEnd', element);
         };
 
         element._unmount = (nouse, parentDom) => {
@@ -225,7 +225,7 @@ export default Animate = Intact.extend({
                     parentInstance._checkMode();
                 }
             }
-            this.trigger('a:leave:end', element);
+            this.trigger('a:leaveEnd', element);
         };
 
         this._leave(onlyInit);
@@ -233,7 +233,7 @@ export default Animate = Intact.extend({
         // 所以unmount后，将其置为空函数，以免再次unmount
         element._unmount = noop;
 
-        this.trigger('a:leave:start', element);
+        this.trigger('a:leaveStart', element);
     },
 
     _beforeUpdate(lastVNode, vNode) {
@@ -448,7 +448,7 @@ export default Animate = Intact.extend({
             } else {
                 // 如果当前元素正在enter，而且是animation动画，则要enterEnd
                 // 否则无法move
-                if (this._entering && getAnimateType(element) !== 'transition') {
+                if (this._entering) && getAnimateType(element) !== 'transition') {
                     this._enterEnd();
                 }
                 this._needMove = true;
@@ -522,7 +522,7 @@ export default Animate = Intact.extend({
             nextFrame(() => this._triggerEnter());
         }
 
-        this.trigger('a:enter:start', element);
+        this.trigger('a:enterStart', element);
     },
 
     _triggerEnter() {
@@ -676,6 +676,7 @@ function getAnimateType(element) {
     const animationDurations = style[`${animationProp}Duration`].split(', ');
     const transitionDuration = getDuration(transitionDurations);
     const animationDuration = getDuration(animationDurations);
+    console.log(transitionDuration, animationDuration);
     return transitionDuration > animationDuration ? 'transition' : 'animation';
 }
 

@@ -3587,7 +3587,6 @@ var Animate$1 = Animate = Intact$1.extend({
                 props[key] = _props[key];
             }
         }
-        console.log(props);
         return h(tagName, props, self.get('children'));
     },
     init: function init(lastVNode, nextVNode) {
@@ -3657,6 +3656,7 @@ var Animate$1 = Animate = Intact$1.extend({
         var parentInstance = this.parentInstance = this._getParentAnimate();
 
         this._enterEnd = function (e) {
+            console.log(element.innerHTML, 'enterEnd');
             e && e.stopPropagation && e.stopPropagation();
             removeClass(element, _this.enterClass);
             removeClass(element, _this.enterActiveClass);
@@ -3669,7 +3669,7 @@ var Animate$1 = Animate = Intact$1.extend({
                     });
                 }
             }
-            _this.trigger('enter:end', element);
+            _this.trigger('a:enterEnd', element);
         };
 
         element._unmount = function (nouse, parentDom) {
@@ -3772,7 +3772,7 @@ var Animate$1 = Animate = Intact$1.extend({
                     parentInstance._checkMode();
                 }
             }
-            _this2.trigger('a:leave:end', element);
+            _this2.trigger('a:leaveEnd', element);
         };
 
         this._leave(onlyInit);
@@ -3780,7 +3780,7 @@ var Animate$1 = Animate = Intact$1.extend({
         // 所以unmount后，将其置为空函数，以免再次unmount
         element._unmount = noop;
 
-        this.trigger('a:leave:start', element);
+        this.trigger('a:leaveStart', element);
     },
     _beforeUpdate: function _beforeUpdate(lastVNode, vNode) {
         // 更新之前，这里的children不包含本次更新mount进来的元素
@@ -3998,7 +3998,8 @@ var Animate$1 = Animate = Intact$1.extend({
             } else {
                 // 如果当前元素正在enter，而且是animation动画，则要enterEnd
                 // 否则无法move
-                if (this._entering && getAnimateType(element) !== 'transition') {
+                if (this._entering) {
+                    //} && this.get('a:type') !== 'transition') {
                     this._enterEnd();
                 }
                 this._needMove = true;
@@ -4075,7 +4076,7 @@ var Animate$1 = Animate = Intact$1.extend({
             });
         }
 
-        this.trigger('a:enter:start', element);
+        this.trigger('a:enterStart', element);
     },
     _triggerEnter: function _triggerEnter() {
         var element = this.element;
@@ -4214,21 +4215,6 @@ function detectEvents() {
             }
         }
     }
-}
-
-function getAnimateType(element) {
-    var style = window.getComputedStyle(element);
-    var transitionDurations = style[transitionProp + 'Duration'].split(', ');
-    var animationDurations = style[animationProp + 'Duration'].split(', ');
-    var transitionDuration = getDuration(transitionDurations);
-    var animationDuration = getDuration(animationDurations);
-    return transitionDuration > animationDuration ? 'transition' : 'animation';
-}
-
-function getDuration(durations) {
-    return Math.max.apply(null, durations.map(function (d) {
-        return d.slice(0, -1) * 1000;
-    }));
 }
 
 detectEvents();
