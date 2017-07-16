@@ -1,4 +1,3 @@
-// import Animate from './animate';
 import Intact from './intact';
 import Vdt from 'vdt';
 import Animate from './animate';

@@ -92,10 +92,10 @@
           </select>
           <Animate a:tag="ul" class="container" a:mode={self.get('mode')}>
             <Animate a:transition={"fade-" + self.get('type')} v-for={self.get('items')} class="item" key={value}
-                ev-enter:start={self.get('type') === 'js' ? self.enterStart.bind(self) : undefined}
-                ev-enter={self.get('type') === 'js' ? self.enter.bind(self) : undefined}
-                ev-enter:end={self.get('type') === 'js' ? self.enterEnd.bind(self) : undefined}
-                ev-leave={self.get('type') === 'js' ? self.leave.bind(self) : undefined}
+                ev-a:enter:start={self.get('type') === 'js' ? self.enterStart.bind(self) : undefined}
+                ev-a:enter={self.get('type') === 'js' ? self.enter.bind(self) : undefined}
+                ev-a:enter:end={self.get('type') === 'js' ? self.enterEnd.bind(self) : undefined}
+                ev-a:leave={self.get('type') === 'js' ? self.leave.bind(self) : undefined}
             >
                 {value} <button ev-click={self.remove.bind(self, key)}>x</button>
             </Animate>

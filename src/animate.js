@@ -16,16 +16,17 @@ export default Animate = Intact.extend({
 
     template() {
         const h = Vdt.miss.h;
-        const data = this.data;
-        const tagName = data.get('a:tag');
+        const self = this.data;
+        const tagName = self.get('a:tag');
         const props = {};
-        const _props = data.get();
-        for (let key in data.get()) {
-            if (key[0] !== 'a' || key[1] !== ':') {
+        const _props = self.get();
+        for (let key in _props) {
+            if ((key[0] !== 'a' || key[1] !== ':') && key.substr(0, 5) !== 'ev-a:') {
                 props[key] = _props[key];
             }
         }
-        return h(tagName, props, data.get('children'));
+        console.log(props);
+        return h(tagName, props, self.get('children'));
     },
 
     init(lastVNode, nextVNode) {
@@ -224,7 +225,7 @@ export default Animate = Intact.extend({
                     parentInstance._checkMode();
                 }
             }
-            this.trigger('leave:end', element);
+            this.trigger('a:leave:end', element);
         };
 
         this._leave(onlyInit);
@@ -232,7 +233,7 @@ export default Animate = Intact.extend({
         // 所以unmount后，将其置为空函数，以免再次unmount
         element._unmount = noop;
 
-        this.trigger('leave:start', element);
+        this.trigger('a:leave:start', element);
     },
 
     _beforeUpdate(lastVNode, vNode) {
@@ -521,7 +522,7 @@ export default Animate = Intact.extend({
             nextFrame(() => this._triggerEnter());
         }
 
-        this.trigger('enter:start', element);
+        this.trigger('a:enter:start', element);
     },
 
     _triggerEnter() {
@@ -533,7 +534,7 @@ export default Animate = Intact.extend({
         addClass(element, this.enterActiveClass);
         removeClass(element, this.enterClass);
         removeClass(element, this.leaveActiveClass);
-        this.trigger('enter', element, this._enterEnd);
+        this.trigger('a:enter', element, this._enterEnd);
     },
 
     _leave(onlyInit) {
@@ -560,7 +561,7 @@ export default Animate = Intact.extend({
         const element = this.element;
         addClass(element, this.leaveActiveClass);
         addClass(element, this.leaveClass);
-        this.trigger('leave', element, this._leaveEnd);
+        this.trigger('a:leave', element, this._leaveEnd);
     },
 
     destroy(lastVNode, nextVNode, parentDom) {

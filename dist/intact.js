@@ -3578,16 +3578,17 @@ var Animate$1 = Animate = Intact$1.extend({
 
     template: function template() {
         var h = Vdt$1.miss.h;
-        var data = this.data;
-        var tagName = data.get('a:tag');
+        var self = this.data;
+        var tagName = self.get('a:tag');
         var props = {};
-        var _props = data.get();
-        for (var key in data.get()) {
-            if (key[0] !== 'a' || key[1] !== ':') {
+        var _props = self.get();
+        for (var key in _props) {
+            if ((key[0] !== 'a' || key[1] !== ':') && key.substr(0, 5) !== 'ev-a:') {
                 props[key] = _props[key];
             }
         }
-        return h(tagName, props, data.get('children'));
+        console.log(props);
+        return h(tagName, props, self.get('children'));
     },
     init: function init(lastVNode, nextVNode) {
         this.mountChildren = [];
@@ -3771,7 +3772,7 @@ var Animate$1 = Animate = Intact$1.extend({
                     parentInstance._checkMode();
                 }
             }
-            _this2.trigger('leave:end', element);
+            _this2.trigger('a:leave:end', element);
         };
 
         this._leave(onlyInit);
@@ -3779,7 +3780,7 @@ var Animate$1 = Animate = Intact$1.extend({
         // 所以unmount后，将其置为空函数，以免再次unmount
         element._unmount = noop;
 
-        this.trigger('leave:start', element);
+        this.trigger('a:leave:start', element);
     },
     _beforeUpdate: function _beforeUpdate(lastVNode, vNode) {
         // 更新之前，这里的children不包含本次更新mount进来的元素
@@ -4074,7 +4075,7 @@ var Animate$1 = Animate = Intact$1.extend({
             });
         }
 
-        this.trigger('enter:start', element);
+        this.trigger('a:enter:start', element);
     },
     _triggerEnter: function _triggerEnter() {
         var element = this.element;
@@ -4085,7 +4086,7 @@ var Animate$1 = Animate = Intact$1.extend({
         addClass(element, this.enterActiveClass);
         removeClass(element, this.enterClass);
         removeClass(element, this.leaveActiveClass);
-        this.trigger('enter', element, this._enterEnd);
+        this.trigger('a:enter', element, this._enterEnd);
     },
     _leave: function _leave(onlyInit) {
         var _this5 = this;
@@ -4112,7 +4113,7 @@ var Animate$1 = Animate = Intact$1.extend({
         var element = this.element;
         addClass(element, this.leaveActiveClass);
         addClass(element, this.leaveClass);
-        this.trigger('leave', element, this._leaveEnd);
+        this.trigger('a:leave', element, this._leaveEnd);
     },
     destroy: function destroy(lastVNode, nextVNode, parentDom) {
         // 不存在parentDom，则表示parentDom将被删除
@@ -4271,7 +4272,6 @@ var TransitionEvents = {
     }
 };
 
-// import Animate from './animate';
 Intact$1.prototype.Animate = Animate$1;
 Intact$1.Animate = Animate$1;
 Intact$1.Vdt = Vdt$1;
