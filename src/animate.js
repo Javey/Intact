@@ -103,7 +103,6 @@ export default Animate = Intact.extend({
         const parentInstance = this.parentInstance = this._getParentAnimate();
 
         this._enterEnd = (e) => {
-            console.log(element.innerHTML, 'enterEnd');
             e && e.stopPropagation && e.stopPropagation();
             removeClass(element, this.enterClass);
             removeClass(element, this.enterActiveClass);

@@ -1,7 +1,7 @@
 import {
     inherit, extend, result, each, isFunction, 
     isEqual, uniqueId, get, set, castPath, hasOwn,
-    keys
+    keys, isObject
 } from './utils';
 import Vdt from 'vdt';
 import {hc, render} from 'miss';
@@ -492,7 +492,9 @@ Intact.prototype = {
  * @param prototype
  */
 Intact.extend = function(prototype = {}) {
-    prototype.defaults = extend({}, this.prototype.defaults, prototype.defaults);
+    if (typeof this.prototype.defaults === 'object' && typeof prototype.defaults === 'object') {
+        prototype.defaults = extend({}, this.prototype.defaults, prototype.defaults);
+    }
     return inherit(this, prototype);
 };
 

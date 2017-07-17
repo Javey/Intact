@@ -478,12 +478,6 @@ var utils = (Object.freeze || Object)({
 	error: error$1
 });
 
-/**
- * inherit
- * @param Parent
- * @param prototype
- * @returns {Function}
- */
 function inherit(Parent, prototype) {
     var Child = function Child() {
         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
@@ -3540,7 +3534,9 @@ Intact$1.prototype = {
 Intact$1.extend = function () {
     var prototype = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-    prototype.defaults = extend({}, this.prototype.defaults, prototype.defaults);
+    if (_typeof(this.prototype.defaults) === 'object' && _typeof(prototype.defaults) === 'object') {
+        prototype.defaults = extend({}, this.prototype.defaults, prototype.defaults);
+    }
     return inherit(this, prototype);
 };
 
@@ -3662,7 +3658,6 @@ var Animate$1 = Animate = Intact$1.extend({
         var parentInstance = this.parentInstance = this._getParentAnimate();
 
         this._enterEnd = function (e) {
-            console.log(element.innerHTML, 'enterEnd');
             e && e.stopPropagation && e.stopPropagation();
             removeClass(element, _this.enterClass);
             removeClass(element, _this.enterActiveClass);

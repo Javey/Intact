@@ -31,7 +31,8 @@ describe('Simple Test', function() {
         before(function() {
             Component = Intact.extend({
                 defaults: {
-                    a: 1
+                    a: 1,
+                    c: 3
                 },
 
                 template: '<div>{self.get("a")}</div>',
@@ -50,6 +51,7 @@ describe('Simple Test', function() {
             sEql(Component.prototype.defaults.a, 1);
             sEql(SubComponent.prototype.defaults.a, 2);
             sEql(SubComponent.prototype.defaults.b, 1);
+            sEql(SubComponent.prototype.defaults.c, 3);
             sEql(typeof SubComponent.prototype.template, 'string');
             
             // displayName
@@ -114,6 +116,33 @@ describe('Simple Test', function() {
             i = new SubComponent();
             i.init();
             sEql(i.element.outerHTML, '<div>2</div>');
+        });
+
+        it('defaults can be function', () => {
+            const C = Intact.extend({
+                defaults() {
+                    return {
+                        a: 1,
+                        b: 2
+                    };
+                },
+                template: '<div></div>'
+            });
+            const i = new C({c: 3});
+            sEql(i.get('a'), 1);
+            sEql(i.get('b'), 2);
+            sEql(i.get('c'), 3);
+
+            const D = C.extend({
+                defaults() {
+                    return _.extend(this._super(), {
+                        d: 4
+                    });
+                },
+                template: '<div></div>'
+            });
+            const j = new D({c: 4});
+            sEql(_.isEqual(j.get(), {a: 1, b: 2, c: 4, d: 4}), true);
         });
     });
 
