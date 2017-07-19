@@ -478,12 +478,6 @@ var utils = (Object.freeze || Object)({
 	error: error$1
 });
 
-/**
- * inherit
- * @param Parent
- * @param prototype
- * @returns {Function}
- */
 function inherit(Parent, prototype) {
     var Child = function Child() {
         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
@@ -2284,9 +2278,9 @@ function removeChild(parentDom, vNode) {
 
 function appendChild(parentDom, dom) {
     // for animation the dom will not be moved
-    if (!dom.parentNode) {
-        parentDom.appendChild(dom);
-    }
+    // if (!dom.parentNode) {
+    parentDom.appendChild(dom);
+    // }
 }
 
 function createRef(dom, ref, mountedQueue) {
@@ -2400,8 +2394,8 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
     var newDom = void 0;
 
     if (lastTag !== nextTag || lastVNode.key !== nextVNode.key) {
-        // we should call this function in component's init method
-        // because it should be destroyed before async component has rendered
+        // we should call this remove function in component's init method
+        // because it should be destroyed until async component has rendered
         // removeComponentClassOrInstance(lastVNode, null, nextVNode);
         newDom = createComponentClassOrInstance(nextVNode, parentDom, mountedQueue, lastVNode, false, parentVNode);
     } else {
@@ -2706,9 +2700,10 @@ function lisAlgorithm(arr) {
 
 function insertOrAppend(pos, length, newDom, nodes, dom, detectParent) {
     var nextPos = pos + 1;
-    if (detectParent && newDom.parentNode) {
-        return;
-    } else if (nextPos < length) {
+    // if (detectParent && newDom.parentNode) {
+    // return;
+    // } else
+    if (nextPos < length) {
         dom.insertBefore(newDom, nodes[nextPos].dom);
     } else {
         appendChild(dom, newDom);
