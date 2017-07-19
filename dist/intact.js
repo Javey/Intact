@@ -478,6 +478,12 @@ var utils = (Object.freeze || Object)({
 	error: error$1
 });
 
+/**
+ * inherit
+ * @param Parent
+ * @param prototype
+ * @returns {Function}
+ */
 function inherit(Parent, prototype) {
     var Child = function Child() {
         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
@@ -2461,7 +2467,11 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue, pare
             createElement(nextChildren, parentDom, mountedQueue, false, parentVNode);
         }
     } else if (isArray(nextChildren)) {
-        removeElement(lastChildren, parentDom);
+        if (isStringOrNumber(lastChildren)) {
+            setTextContent(parentDom, '');
+        } else {
+            removeElement(lastChildren, parentDom);
+        }
         createElements(nextChildren, parentDom, mountedQueue, false, parentVNode);
     } else if (isStringOrNumber(lastChildren)) {
         setTextContent(parentDom, '');
@@ -3211,7 +3221,10 @@ Intact$1.prototype = {
 
         // 如果不存在nextVNode，则为直接调用update方法更新自己
         // 否则则是父组件触发的子组件更新，此时需要更新一些状态
-        if (nextVNode) {
+        // 有一种情况，在父组件初次渲染时，子组件渲染过程中，
+        // 又触发了父组件的数据变更，此时父组件渲染完成执行_pendingUpdate
+        // 是没有lastVNode的
+        if (nextVNode && lastVNode) {
             this._patchProps(lastVNode.props, nextVNode.props);
         }
 
@@ -3436,21 +3449,26 @@ Intact$1.prototype = {
             // 如果第三个参数为true，则不update
             this.trigger('$change', this, changeKeys);
 
+            var triggerChangedEvent = function triggerChangedEvent() {
+                for (var _prop7 in changes) {
+                    var _values = changes[_prop7];
+                    _this5.trigger('$changed:' + _prop7, _this5, _values[1], _values[0]);
+                }
+                _this5.trigger('$changed', _this5, changeKeys);
+            };
             if (options.update && this._startRender) {
                 clearTimeout(this._asyncUpdate);
                 var triggerChange = function triggerChange() {
                     _this5.update();
-                    for (var _prop7 in changes) {
-                        var _values = changes[_prop7];
-                        _this5.trigger('$changed:' + _prop7, _this5, _values[1], _values[0]);
-                    }
-                    _this5.trigger('$changed', _this5, changeKeys);
+                    triggerChangedEvent();
                 };
                 if (options.async) {
                     this._asyncUpdate = setTimeout(triggerChange);
                 } else {
                     triggerChange();
                 }
+            } else if (this.mountedQueue && this._startRender) {
+                this.mountedQueue.push(triggerChangedEvent);
             }
         }
 
