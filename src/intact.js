@@ -140,6 +140,10 @@ Intact.prototype = {
         return this.element;
     },
 
+    toString() {
+        return this.vdt.renderString(this); 
+    },
+
     __destroyVNode(lastVNode, nextVNode) {
         removeComponentClassOrInstance(lastVNode, null, nextVNode);
     },

@@ -4,8 +4,6 @@
 	(global.Intact = factory());
 }(this, (function () { 'use strict';
 
-var minDocument = {};
-
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
 } : function (obj) {
@@ -14,7 +12,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var toString$1 = Object.prototype.toString;
 
-var doc = typeof document === 'undefined' ? minDocument : document;
+var doc = typeof document === 'undefined' ? null : document;
 
 var isArray = Array.isArray || function (arr) {
     return toString$1.call(arr) === '[object Array]';
@@ -144,6 +142,26 @@ var strictProps = {
     value: true
 };
 
+var selfClosingTags = {
+    'area': true,
+    'base': true,
+    'br': true,
+    'col': true,
+    'command': true,
+    'embed': true,
+    'hr': true,
+    'img': true,
+    'input': true,
+    'keygen': true,
+    'link': true,
+    'menuitem': true,
+    'meta': true,
+    'param': true,
+    'source': true,
+    'track': true,
+    'wbr': true
+};
+
 function MountedQueue() {
     this.queue = [];
 }
@@ -204,25 +222,6 @@ for (var type in Type) {
     TypeName[Type[type]] = type;
 }
 
-var SelfClosingTags = {
-    'area': true,
-    'base': true,
-    'br': true,
-    'col': true,
-    'embed': true,
-    'hr': true,
-    'img': true,
-    'input': true,
-    'keygen': true,
-    'link': true,
-    'menuitem': true,
-    'meta': true,
-    'param': true,
-    'source': true,
-    'track': true,
-    'wbr': true
-};
-
 // which children must be text
 var TextTags = {
     style: true,
@@ -257,7 +256,8 @@ var Options = {
     },
     getModel: function getModel(data, key) {
         return data[key];
-    }
+    },
+    disableSplitText: false // split text with <!---->
 };
 
 var hasOwn = Object.prototype.hasOwnProperty;
@@ -348,7 +348,7 @@ function configure(options) {
 }
 
 function isSelfClosingTag(tag) {
-    return SelfClosingTags[tag];
+    return selfClosingTags[tag];
 }
 
 function isTextTag(tag) {
@@ -450,9 +450,9 @@ var utils = (Object.freeze || Object)({
 	isNullOrUndefined: isNullOrUndefined,
 	isArray: isArray,
 	indexOf: indexOf,
+	SelfClosingTags: selfClosingTags,
 	Type: Type,
 	TypeName: TypeName,
-	SelfClosingTags: SelfClosingTags,
 	TextTags: TextTags,
 	Directives: Directives,
 	Options: Options,
@@ -1953,11 +1953,12 @@ function updateChildOption(vNode, value, flag) {
 
 function processInput(vNode, dom, nextProps) {
     var type = nextProps.type;
-    var value = nextProps.value;
+    // const value = nextProps.value;
     var checked = nextProps.checked;
     var defaultValue = nextProps.defaultValue;
     var multiple = nextProps.multiple;
-    var hasValue = !isNullOrUndefined(value);
+    var hasValue = nextProps.hasOwnProperty('value');
+    var value = hasValue ? nextProps.value || '' : undefined;
 
     if (multiple && multiple !== dom.multiple) {
         dom.multiple = multiple;
@@ -2277,10 +2278,9 @@ function removeChild(parentDom, vNode) {
 }
 
 function appendChild(parentDom, dom) {
-    // for animation the dom will not be moved
-    // if (!dom.parentNode) {
-    parentDom.appendChild(dom);
-    // }
+    if (!dom.parentNode) {
+        parentDom.appendChild(dom);
+    }
 }
 
 function createRef(dom, ref, mountedQueue) {
@@ -2706,7 +2706,8 @@ function insertOrAppend(pos, length, newDom, nodes, dom, detectParent) {
     if (nextPos < length) {
         dom.insertBefore(newDom, nodes[nextPos].dom);
     } else {
-        appendChild(dom, newDom);
+        dom.appendChild(newDom);
+        // appendChild(dom, newDom);
     }
 }
 
@@ -2872,9 +2873,10 @@ var patchDataset = browser.isIE ? function patchDataset(prop, lastValue, nextVal
 } : patchObject;
 
 var _cache = {};
+var uppercasePattern = /[A-Z]/g;
 function kebabCase(word) {
     if (!_cache[word]) {
-        _cache[word] = word.replace(/[A-Z]/g, function (item) {
+        _cache[word] = word.replace(uppercasePattern, function (item) {
             return '-' + item.toLowerCase();
         });
     }
@@ -2945,6 +2947,209 @@ function patchStyle(lastValue, nextValue, dom) {
     }
 }
 
+function toString$2(vNode, parent, disableSplitText, firstChild) {
+    var type = vNode.type;
+    var tag = vNode.tag;
+    var props = vNode.props;
+    var children = vNode.children;
+
+    var html = void 0;
+    if (type & Types.ComponentClass) {
+        var instance = new tag(props);
+        html = instance.toString();
+    } else if (type & Types.ComponentInstance) {
+        html = vNode.children.toString();
+    } else if (type & Types.Element) {
+        var innerHTML = void 0;
+        html = '<' + tag;
+
+        if (!isNullOrUndefined(vNode.className)) {
+            html += ' class="' + escapeText(vNode.className) + '"';
+        }
+
+        if (props !== EMPTY_OBJ) {
+            for (var prop in props) {
+                var value = props[prop];
+
+                if (prop === 'innerHTML') {
+                    innerHTML = value;
+                } else if (prop === 'style') {
+                    html += ' style="' + renderStylesToString(value) + '"';
+                } else if (prop === 'children') {
+                    // ignore
+                } else if (prop === 'defaultValue') {
+                    if (isNullOrUndefined(props.value)) {
+                        html += ' value="' + escapeText(value) + '"';
+                    }
+                } else if (prop === 'defaultChecked') {
+                    if (isNullOrUndefined(props.checked) && value === true) {
+                        html += ' checked';
+                    }
+                } else if (prop === 'attributes') {
+                    html += renderAttributesToString(value);
+                } else if (prop === 'dataset') {
+                    html += renderDatasetToString(value);
+                } else if (tag === 'option' && prop === 'value') {
+                    html += renderAttributeToString(prop, value);
+                    if (parent && value === parent.props.value) {
+                        html += ' selected';
+                    }
+                } else {
+                    html += renderAttributeToString(prop, value);
+                }
+            }
+        }
+
+        if (selfClosingTags[tag]) {
+            html += ' />';
+        } else {
+            html += '>';
+            if (innerHTML) {
+                html += innerHTML;
+            } else if (children) {
+                if (isString(children)) {
+                    html += children === '' ? ' ' : escapeText(children);
+                } else if (isNumber(children)) {
+                    html += children;
+                } else if (isArray(children)) {
+                    var index = -1;
+                    for (var i = 0; i < children.length; i++) {
+                        var child = children[i];
+                        if (isString(child)) {
+                            html += child === '' ? ' ' : escapeText(child);
+                        } else if (isNumber(child)) {
+                            html += child;
+                        } else {
+                            if (!(child.type & Types.Text)) {
+                                index = -1;
+                            } else {
+                                index++;
+                            }
+                            html += toString$2(child, vNode, disableSplitText, index === 0);
+                        }
+                    }
+                } else {
+                    html += toString$2(children, vNode, true);
+                }
+            }
+
+            html += '</' + tag + '>';
+        }
+    } else if (type & Types.Text) {
+        html = (firstChild || disableSplitText ? '' : '<!---->') + (children === '' ? ' ' : escapeText(children));
+    } else if (type & Types.HtmlComment) {
+        html = '<!--' + children + '-->';
+    } else {
+        throw new Error('Unknown vNode: ' + vNode);
+    }
+
+    return html;
+}
+
+function escapeText(text) {
+    var result = text;
+    var escapeString = "";
+    var start = 0;
+    var i = void 0;
+    for (i = 0; i < text.length; i++) {
+        switch (text.charCodeAt(i)) {
+            case 34:
+                // "
+                escapeString = "&quot;";
+                break;
+            case 39:
+                // \
+                escapeString = "&#039;";
+                break;
+            case 38:
+                // &
+                escapeString = "&amp;";
+                break;
+            case 60:
+                // <
+                escapeString = "&lt;";
+                break;
+            case 62:
+                // >
+                escapeString = "&gt;";
+                break;
+            default:
+                continue;
+        }
+        if (start) {
+            result += text.slice(start, i);
+        } else {
+            result = text.slice(start, i);
+        }
+        result += escapeString;
+        start = i + 1;
+    }
+    if (start && i !== start) {
+        return result + text.slice(start, i);
+    }
+    return result;
+}
+
+function isString(o) {
+    return typeof o === 'string';
+}
+
+function isNumber(o) {
+    return typeof o === 'number';
+}
+
+function renderStylesToString(styles) {
+    if (isStringOrNumber(styles)) {
+        return styles;
+    } else {
+        var renderedString = "";
+        for (var styleName in styles) {
+            var value = styles[styleName];
+
+            if (isStringOrNumber(value)) {
+                renderedString += kebabCase(styleName) + ':' + value + ';';
+            }
+        }
+        return renderedString;
+    }
+}
+
+function renderDatasetToString(dataset) {
+    var renderedString = '';
+    for (var key in dataset) {
+        var dataKey = 'data-' + kebabCase(key);
+        var value = dataset[key];
+        if (isString(value)) {
+            renderedString += ' ' + dataKey + '="' + escapeText(value) + '"';
+        } else if (isNumber(value)) {
+            renderedString += ' ' + dataKey + '="' + value + '"';
+        } else if (value === true) {
+            renderedString += ' ' + dataKey + '="true"';
+        }
+    }
+    return renderedString;
+}
+
+function renderAttributesToString(attributes) {
+    var renderedString = '';
+    for (var key in attributes) {
+        renderedString += renderAttributeToString(key, attributes[key]);
+    }
+    return renderedString;
+}
+
+function renderAttributeToString(key, value) {
+    if (isString(value)) {
+        return ' ' + key + '="' + escapeText(value) + '"';
+    } else if (isNumber(value)) {
+        return ' ' + key + '="' + value + '"';
+    } else if (value === true) {
+        return ' ' + key;
+    } else {
+        return '';
+    }
+}
+
 
 
 var miss = (Object.freeze || Object)({
@@ -2953,7 +3158,8 @@ var miss = (Object.freeze || Object)({
 	render: render,
 	hc: createCommentVNode,
 	remove: removeElement,
-	MountedQueue: MountedQueue
+	MountedQueue: MountedQueue,
+	renderString: toString$2
 });
 
 var parser = new Parser();
@@ -2985,10 +3191,10 @@ Vdt$1.prototype = {
 
         return this.vNode;
     },
-    renderString: function renderString(data) {
-        var node = this.render(data);
+    renderString: function renderString$$1(data) {
+        this.renderVNode(data);
 
-        return node.outerHTML || node.toString();
+        return toString$2(this.vNode, null, Vdt$1.configure().disableSplitText);
     },
     update: function update(data, parentDom, queue, parentVNode) {
         var oldVNode = this.vNode;
@@ -3178,6 +3384,9 @@ Intact$1.prototype = {
         this._create(lastVNode, nextVNode);
 
         return this.element;
+    },
+    toString: function toString() {
+        return this.vdt.renderString(this);
     },
     __destroyVNode: function __destroyVNode(lastVNode, nextVNode) {
         removeComponentClassOrInstance(lastVNode, null, nextVNode);
