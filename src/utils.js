@@ -3,6 +3,8 @@ import {isNullOrUndefined} from 'miss/src/utils';
 
 export {extend, isArray, each, isObject, hasOwn, isNullOrUndefined, noop};
 
+export const inBrowser = typeof window !== 'undefined';
+
 /**
  * inherit
  * @param Parent

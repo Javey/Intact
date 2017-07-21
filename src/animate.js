@@ -1,6 +1,6 @@
 import Intact from './intact';
 import {Types} from 'miss/src/vnode';
-import {isNullOrUndefined, noop} from './utils';
+import {isNullOrUndefined, noop, inBrowser} from './utils';
 import Vdt from 'vdt';
 
 let Animate;
@@ -28,7 +28,7 @@ export default Animate = Intact.extend({
         return h(tagName, props, self.get('children'));
     },
 
-    init(lastVNode, nextVNode) {
+    init: inBrowser ? function(lastVNode, nextVNode) {
         this.mountChildren = [];
         this.unmountChildren = [];
         this.updateChildren = [];
@@ -45,7 +45,7 @@ export default Animate = Intact.extend({
             lastVNode = parentDom._reserve[nextVNode.key];
         }
         return this._super(lastVNode, nextVNode);
-    },
+    } : function() { return this._superApply(arguments); },
 
     _mount(lastVNode, vNode) {
         if (this.get('a:disabled')) return;
@@ -577,12 +577,6 @@ export default Animate = Intact.extend({
     }
 });
 
-const raf = window.requestAnimationFrame ? 
-    window.requestAnimationFrame.bind(window) : setTimeout;
-export function nextFrame(fn) {
-    raf(() => raf(fn));
-}
-
 function addClass(element, className) {
     if (className) {
         if (element.classList) {
@@ -683,8 +677,6 @@ function getDuration(durations) {
     return Math.max.apply(null, durations.map(d => d.slice(0, -1) * 1000));
 }
 
-detectEvents();
-
 function addEventListener(node, eventName, eventListener) {
     node.addEventListener(eventName, eventListener, false);
 }
@@ -723,3 +715,16 @@ let TransitionEvents = {
         TransitionEvents.on(node, listener);
     }
 };
+
+let raf;
+export function nextFrame(fn) {
+    raf(() => raf(fn));
+}
+
+if (inBrowser) {
+    raf = window.requestAnimationFrame ? 
+        window.requestAnimationFrame.bind(window) : setTimeout;
+
+    detectEvents();
+}
+

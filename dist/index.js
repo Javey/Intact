@@ -1,580 +1,14 @@
 'use strict';
 
-var slice = Array.prototype.slice;
-
-var index$2 = iterativelyWalk;
-
-function iterativelyWalk(nodes, cb) {
-    if (!('length' in nodes)) {
-        nodes = [nodes];
-    }
-
-    nodes = slice.call(nodes);
-
-    while (nodes.length) {
-        var node = nodes.shift(),
-            ret = cb(node);
-
-        if (ret) {
-            return ret;
-        }
-
-        if (node.childNodes && node.childNodes.length) {
-            nodes = slice.call(node.childNodes).concat(nodes);
-        }
-    }
-}
-
-var domComment = Comment;
-
-function Comment(data, owner) {
-    if (!(this instanceof Comment)) {
-        return new Comment(data, owner);
-    }
-
-    this.data = data;
-    this.nodeValue = data;
-    this.length = data.length;
-    this.ownerDocument = owner || null;
-}
-
-Comment.prototype.nodeType = 8;
-Comment.prototype.nodeName = "#comment";
-
-Comment.prototype.toString = function _Comment_toString() {
-    return "[object Comment]";
-};
-
-var domText = DOMText;
-
-function DOMText(value, owner) {
-    if (!(this instanceof DOMText)) {
-        return new DOMText(value);
-    }
-
-    this.data = value || "";
-    this.length = this.data.length;
-    this.ownerDocument = owner || null;
-}
-
-DOMText.prototype.type = "DOMTextNode";
-DOMText.prototype.nodeType = 3;
-DOMText.prototype.nodeName = "#text";
-
-DOMText.prototype.toString = function _Text_toString() {
-    return this.data;
-};
-
-DOMText.prototype.replaceData = function replaceData(index, length, value) {
-    var current = this.data;
-    var left = current.substring(0, index);
-    var right = current.substring(index + length, current.length);
-    this.data = left + value + right;
-    this.length = this.data.length;
-};
-
-var dispatchEvent_1 = dispatchEvent;
-
-function dispatchEvent(ev) {
-    var elem = this;
-    var type = ev.type;
-
-    if (!ev.target) {
-        ev.target = elem;
-    }
-
-    if (!elem.listeners) {
-        elem.listeners = {};
-    }
-
-    var listeners = elem.listeners[type];
-
-    if (listeners) {
-        return listeners.forEach(function (listener) {
-            ev.currentTarget = elem;
-            if (typeof listener === 'function') {
-                listener(ev);
-            } else {
-                listener.handleEvent(ev);
-            }
-        });
-    }
-
-    if (elem.parentNode) {
-        elem.parentNode.dispatchEvent(ev);
-    }
-}
-
-var addEventListener_1 = addEventListener;
-
-function addEventListener(type, listener) {
-    var elem = this;
-
-    if (!elem.listeners) {
-        elem.listeners = {};
-    }
-
-    if (!elem.listeners[type]) {
-        elem.listeners[type] = [];
-    }
-
-    if (elem.listeners[type].indexOf(listener) === -1) {
-        elem.listeners[type].push(listener);
-    }
-}
-
-var removeEventListener_1 = removeEventListener;
-
-function removeEventListener(type, listener) {
-    var elem = this;
-
-    if (!elem.listeners) {
-        return;
-    }
-
-    if (!elem.listeners[type]) {
-        return;
-    }
-
-    var list = elem.listeners[type];
-    var index = list.indexOf(listener);
-    if (index !== -1) {
-        list.splice(index, 1);
-    }
-}
-
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
 } : function (obj) {
   return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
 };
 
-var serialize = serializeNode;
-
-var voidElements = ["area", "base", "br", "col", "embed", "hr", "img", "input", "keygen", "link", "menuitem", "meta", "param", "source", "track", "wbr"];
-
-function serializeNode(node) {
-    switch (node.nodeType) {
-        case 3:
-            return escapeText(node.data);
-        case 8:
-            return "<!--" + node.data + "-->";
-        default:
-            return serializeElement(node);
-    }
-}
-
-function serializeElement(elem) {
-    var strings = [];
-
-    var tagname = elem.tagName;
-
-    if (elem.namespaceURI === "http://www.w3.org/1999/xhtml") {
-        tagname = tagname.toLowerCase();
-    }
-
-    strings.push("<" + tagname + properties(elem) + datasetify(elem));
-
-    if (voidElements.indexOf(tagname) > -1) {
-        strings.push(" />");
-    } else {
-        strings.push(">");
-
-        if (elem.childNodes.length) {
-            strings.push.apply(strings, elem.childNodes.map(serializeNode));
-        } else if (elem.textContent || elem.innerText) {
-            strings.push(escapeText(elem.textContent || elem.innerText));
-        } else if (elem.innerHTML) {
-            strings.push(elem.innerHTML);
-        }
-
-        strings.push("</" + tagname + ">");
-    }
-
-    return strings.join("");
-}
-
-function isProperty(elem, key) {
-    var type = _typeof(elem[key]);
-
-    if (key === "style" && (type === "object" && Object.keys(elem.style).length > 0 || type === "string" && elem.style)) {
-        return true;
-    }
-
-    return elem.hasOwnProperty(key) && (type === "string" || type === "boolean" && elem[key] || type === "number") && key !== "nodeName" && key !== "className" && key !== "tagName" && key !== "textContent" && key !== "innerText" && key !== "namespaceURI" && key !== "innerHTML";
-}
-
-function stylify(styles) {
-    if (typeof styles === 'string') return styles;
-    var attr = "";
-    Object.keys(styles).forEach(function (key) {
-        var value = styles[key];
-        key = key.replace(/[A-Z]/g, function (c) {
-            return "-" + c.toLowerCase();
-        });
-        attr += key + ":" + value + ";";
-    });
-    return attr;
-}
-
-function datasetify(elem) {
-    var ds = elem.dataset;
-    var props = [];
-
-    for (var key in ds) {
-        props.push({ name: "data-" + key, value: ds[key] });
-    }
-
-    return props.length ? stringify(props) : "";
-}
-
-function stringify(list) {
-    var attributes = [];
-    list.forEach(function (tuple) {
-        var name = tuple.name;
-        var value = tuple.value;
-
-        if (name === "style") {
-            value = stylify(value);
-        }
-
-        attributes.push(name + "=" + "\"" + escapeAttributeValue(value) + "\"");
-    });
-
-    return attributes.length ? " " + attributes.join(" ") : "";
-}
-
-function properties(elem) {
-    var props = [];
-    for (var key in elem) {
-        if (isProperty(elem, key)) {
-            props.push({ name: key, value: elem[key] });
-        }
-    }
-
-    for (var ns in elem._attributes) {
-        for (var attribute in elem._attributes[ns]) {
-            var prop = elem._attributes[ns][attribute];
-            var name = (prop.prefix ? prop.prefix + ":" : "") + attribute;
-            props.push({ name: name, value: prop.value });
-        }
-    }
-
-    if (elem.className) {
-        props.push({ name: "class", value: elem.className });
-    }
-
-    return props.length ? stringify(props) : "";
-}
-
-function escapeText(s) {
-    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-function escapeAttributeValue(str) {
-    return escapeText(str).replace(/"/g, "&quot;");
-}
-
-var htmlns = "http://www.w3.org/1999/xhtml";
-
-var domElement = DOMElement;
-
-function DOMElement(tagName, owner, namespace) {
-    if (!(this instanceof DOMElement)) {
-        return new DOMElement(tagName);
-    }
-
-    var ns = namespace === undefined ? htmlns : namespace || null;
-
-    this.tagName = ns === htmlns ? String(tagName).toUpperCase() : tagName;
-    this.nodeName = this.tagName;
-    this.className = "";
-    this.dataset = {};
-    this.childNodes = [];
-    this.parentNode = null;
-    this.style = {};
-    this.ownerDocument = owner || null;
-    this.namespaceURI = ns;
-    this._attributes = {};
-
-    if (this.tagName === 'INPUT') {
-        this.type = 'text';
-    }
-}
-
-DOMElement.prototype.type = "DOMElement";
-DOMElement.prototype.nodeType = 1;
-
-DOMElement.prototype.appendChild = function _Element_appendChild(child) {
-    if (child.parentNode) {
-        child.parentNode.removeChild(child);
-    }
-
-    this.childNodes.push(child);
-    child.parentNode = this;
-
-    return child;
-};
-
-DOMElement.prototype.replaceChild = function _Element_replaceChild(elem, needle) {
-    // TODO: Throw NotFoundError if needle.parentNode !== this
-
-    if (elem.parentNode) {
-        elem.parentNode.removeChild(elem);
-    }
-
-    var index = this.childNodes.indexOf(needle);
-
-    needle.parentNode = null;
-    this.childNodes[index] = elem;
-    elem.parentNode = this;
-
-    return needle;
-};
-
-DOMElement.prototype.removeChild = function _Element_removeChild(elem) {
-    // TODO: Throw NotFoundError if elem.parentNode !== this
-
-    var index = this.childNodes.indexOf(elem);
-    this.childNodes.splice(index, 1);
-
-    elem.parentNode = null;
-    return elem;
-};
-
-DOMElement.prototype.insertBefore = function _Element_insertBefore(elem, needle) {
-    // TODO: Throw NotFoundError if referenceElement is a dom node
-    // and parentNode !== this
-
-    if (elem.parentNode) {
-        elem.parentNode.removeChild(elem);
-    }
-
-    var index = needle === null || needle === undefined ? -1 : this.childNodes.indexOf(needle);
-
-    if (index > -1) {
-        this.childNodes.splice(index, 0, elem);
-    } else {
-        this.childNodes.push(elem);
-    }
-
-    elem.parentNode = this;
-    return elem;
-};
-
-DOMElement.prototype.setAttributeNS = function _Element_setAttributeNS(namespace, name, value) {
-    var prefix = null;
-    var localName = name;
-    var colonPosition = name.indexOf(":");
-    if (colonPosition > -1) {
-        prefix = name.substr(0, colonPosition);
-        localName = name.substr(colonPosition + 1);
-    }
-    if (this.tagName === 'INPUT' && name === 'type') {
-        this.type = value;
-    } else {
-        var attributes = this._attributes[namespace] || (this._attributes[namespace] = {});
-        attributes[localName] = { value: value, prefix: prefix };
-    }
-};
-
-DOMElement.prototype.getAttributeNS = function _Element_getAttributeNS(namespace, name) {
-    var attributes = this._attributes[namespace];
-    var value = attributes && attributes[name] && attributes[name].value;
-    if (this.tagName === 'INPUT' && name === 'type') {
-        return this.type;
-    }
-    if (typeof value !== "string") {
-        return null;
-    }
-    return value;
-};
-
-DOMElement.prototype.removeAttributeNS = function _Element_removeAttributeNS(namespace, name) {
-    var attributes = this._attributes[namespace];
-    if (attributes) {
-        delete attributes[name];
-    }
-};
-
-DOMElement.prototype.hasAttributeNS = function _Element_hasAttributeNS(namespace, name) {
-    var attributes = this._attributes[namespace];
-    return !!attributes && name in attributes;
-};
-
-DOMElement.prototype.setAttribute = function _Element_setAttribute(name, value) {
-    return this.setAttributeNS(null, name, value);
-};
-
-DOMElement.prototype.getAttribute = function _Element_getAttribute(name) {
-    return this.getAttributeNS(null, name);
-};
-
-DOMElement.prototype.removeAttribute = function _Element_removeAttribute(name) {
-    return this.removeAttributeNS(null, name);
-};
-
-DOMElement.prototype.hasAttribute = function _Element_hasAttribute(name) {
-    return this.hasAttributeNS(null, name);
-};
-
-DOMElement.prototype.removeEventListener = removeEventListener_1;
-DOMElement.prototype.addEventListener = addEventListener_1;
-DOMElement.prototype.dispatchEvent = dispatchEvent_1;
-
-// Un-implemented
-DOMElement.prototype.focus = function _Element_focus() {
-    return void 0;
-};
-
-DOMElement.prototype.toString = function _Element_toString() {
-    return serialize(this);
-};
-
-DOMElement.prototype.getElementsByClassName = function _Element_getElementsByClassName(classNames) {
-    var classes = classNames.split(" ");
-    var elems = [];
-
-    index$2(this, function (node) {
-        if (node.nodeType === 1) {
-            var nodeClassName = node.className || "";
-            var nodeClasses = nodeClassName.split(" ");
-
-            if (classes.every(function (item) {
-                return nodeClasses.indexOf(item) !== -1;
-            })) {
-                elems.push(node);
-            }
-        }
-    });
-
-    return elems;
-};
-
-DOMElement.prototype.getElementsByTagName = function _Element_getElementsByTagName(tagName) {
-    tagName = tagName.toLowerCase();
-    var elems = [];
-
-    index$2(this.childNodes, function (node) {
-        if (node.nodeType === 1 && (tagName === '*' || node.tagName.toLowerCase() === tagName)) {
-            elems.push(node);
-        }
-    });
-
-    return elems;
-};
-
-DOMElement.prototype.contains = function _Element_contains(element) {
-    return index$2(this, function (node) {
-        return element === node;
-    }) || false;
-};
-
-var domFragment = DocumentFragment;
-
-function DocumentFragment(owner) {
-    if (!(this instanceof DocumentFragment)) {
-        return new DocumentFragment();
-    }
-
-    this.childNodes = [];
-    this.parentNode = null;
-    this.ownerDocument = owner || null;
-}
-
-DocumentFragment.prototype.type = "DocumentFragment";
-DocumentFragment.prototype.nodeType = 11;
-DocumentFragment.prototype.nodeName = "#document-fragment";
-
-DocumentFragment.prototype.appendChild = domElement.prototype.appendChild;
-DocumentFragment.prototype.replaceChild = domElement.prototype.replaceChild;
-DocumentFragment.prototype.removeChild = domElement.prototype.removeChild;
-
-DocumentFragment.prototype.toString = function _DocumentFragment_toString() {
-    return this.childNodes.map(function (node) {
-        return String(node);
-    }).join("");
-};
-
-var event = Event;
-
-function Event(family) {}
-
-Event.prototype.initEvent = function _Event_initEvent(type, bubbles, cancelable) {
-    this.type = type;
-    this.bubbles = bubbles;
-    this.cancelable = cancelable;
-};
-
-Event.prototype.preventDefault = function _Event_preventDefault() {};
-
-var document$1 = Document;
-
-function Document() {
-    if (!(this instanceof Document)) {
-        return new Document();
-    }
-
-    this.head = this.createElement("head");
-    this.body = this.createElement("body");
-    this.documentElement = this.createElement("html");
-    this.documentElement.appendChild(this.head);
-    this.documentElement.appendChild(this.body);
-    this.childNodes = [this.documentElement];
-    this.nodeType = 9;
-}
-
-var proto = Document.prototype;
-proto.createTextNode = function createTextNode(value) {
-    return new domText(value, this);
-};
-
-proto.createElementNS = function createElementNS(namespace, tagName) {
-    var ns = namespace === null ? null : String(namespace);
-    return new domElement(tagName, this, ns);
-};
-
-proto.createElement = function createElement(tagName) {
-    return new domElement(tagName, this);
-};
-
-proto.createDocumentFragment = function createDocumentFragment() {
-    return new domFragment(this);
-};
-
-proto.createEvent = function createEvent(family) {
-    return new event(family);
-};
-
-proto.createComment = function createComment(data) {
-    return new domComment(data, this);
-};
-
-proto.getElementById = function getElementById(id) {
-    id = String(id);
-
-    var result = index$2(this.childNodes, function (node) {
-        if (String(node.id) === id) {
-            return node;
-        }
-    });
-
-    return result || null;
-};
-
-proto.getElementsByClassName = domElement.prototype.getElementsByClassName;
-proto.getElementsByTagName = domElement.prototype.getElementsByTagName;
-proto.contains = domElement.prototype.contains;
-
-proto.removeEventListener = removeEventListener_1;
-proto.addEventListener = addEventListener_1;
-proto.dispatchEvent = dispatchEvent_1;
-
-var index$1 = new document$1();
-
 var toString$1 = Object.prototype.toString;
 
-var doc = typeof document === 'undefined' ? index$1 : document;
+var doc = typeof document === 'undefined' ? {} : document;
 
 var isArray = Array.isArray || function (arr) {
     return toString$1.call(arr) === '[object Array]';
@@ -704,11 +138,34 @@ var strictProps = {
     value: true
 };
 
+var selfClosingTags = {
+    'area': true,
+    'base': true,
+    'br': true,
+    'col': true,
+    'command': true,
+    'embed': true,
+    'hr': true,
+    'img': true,
+    'input': true,
+    'keygen': true,
+    'link': true,
+    'menuitem': true,
+    'meta': true,
+    'param': true,
+    'source': true,
+    'track': true,
+    'wbr': true
+};
+
 function MountedQueue() {
     this.queue = [];
 }
 MountedQueue.prototype.push = function (fn) {
     this.queue.push(fn);
+};
+MountedQueue.prototype.unshift = function (fn) {
+    this.queue.unshift(fn);
 };
 MountedQueue.prototype.trigger = function () {
     var queue = this.queue;
@@ -761,25 +218,6 @@ for (var type in Type) {
     TypeName[Type[type]] = type;
 }
 
-var SelfClosingTags = {
-    'area': true,
-    'base': true,
-    'br': true,
-    'col': true,
-    'embed': true,
-    'hr': true,
-    'img': true,
-    'input': true,
-    'keygen': true,
-    'link': true,
-    'menuitem': true,
-    'meta': true,
-    'param': true,
-    'source': true,
-    'track': true,
-    'wbr': true
-};
-
 // which children must be text
 var TextTags = {
     style: true,
@@ -805,7 +243,7 @@ var Options = {
     // whether rendering on server or not
     server: false,
     // skip all whitespaces in template
-    skipWhitespace: false,
+    skipWhitespace: true,
     setModel: function setModel(data, key, value) {
 
         // return function(e) {
@@ -814,7 +252,8 @@ var Options = {
     },
     getModel: function getModel(data, key) {
         return data[key];
-    }
+    },
+    disableSplitText: false // split text with <!---->
 };
 
 var hasOwn = Object.prototype.hasOwnProperty;
@@ -905,7 +344,7 @@ function configure(options) {
 }
 
 function isSelfClosingTag(tag) {
-    return SelfClosingTags[tag];
+    return selfClosingTags[tag];
 }
 
 function isTextTag(tag) {
@@ -1007,9 +446,9 @@ var utils = Object.freeze({
 	isNullOrUndefined: isNullOrUndefined,
 	isArray: isArray,
 	indexOf: indexOf,
+	SelfClosingTags: selfClosingTags,
 	Type: Type,
 	TypeName: TypeName,
-	SelfClosingTags: SelfClosingTags,
 	TextTags: TextTags,
 	Directives: Directives,
 	Options: Options,
@@ -1034,6 +473,8 @@ var utils = Object.freeze({
 	setSelectModel: setSelectModel,
 	error: error$1
 });
+
+var inBrowser = typeof window !== 'undefined';
 
 /**
  * inherit
@@ -2315,7 +1756,7 @@ var MOUSE_PROPS = ["button", "buttons", "clientX", "clientY", "layerX", "layerY"
 var rkeyEvent = /^key|input/;
 var rmouseEvent = /^(?:mouse|pointer|contextmenu)|click/;
 
-function Event$2(e) {
+function Event(e) {
     for (var i = 0; i < ALL_PROPS.length; i++) {
         var propKey = ALL_PROPS[i];
         this[propKey] = e[propKey];
@@ -2327,7 +1768,7 @@ function Event$2(e) {
 
     this._rawEvent = e;
 }
-Event$2.prototype.preventDefault = function () {
+Event.prototype.preventDefault = function () {
     var e = this._rawEvent;
     if (e.preventDefault) {
         e.preventDefault();
@@ -2335,30 +1776,30 @@ Event$2.prototype.preventDefault = function () {
         e.returnValue = false;
     }
 };
-Event$2.prototype.stopPropagation = function () {
+Event.prototype.stopPropagation = function () {
     var e = this._rawEvent;
     e.cancelBubble = true;
     e.stopImmediatePropagation && e.stopImmediatePropagation();
 };
 
 function MouseEvent(e) {
-    Event$2.call(this, e);
+    Event.call(this, e);
     for (var j = 0; j < MOUSE_PROPS.length; j++) {
         var mousePropKey = MOUSE_PROPS[j];
         this[mousePropKey] = e[mousePropKey];
     }
 }
-MouseEvent.prototype = createObject(Event$2.prototype);
+MouseEvent.prototype = createObject(Event.prototype);
 MouseEvent.prototype.constructor = MouseEvent;
 
 function KeyEvent(e) {
-    Event$2.call(this, e);
+    Event.call(this, e);
     for (var j = 0; j < KEY_PROPS.length; j++) {
         var keyPropKey = KEY_PROPS[j];
         this[keyPropKey] = e[keyPropKey];
     }
 }
-KeyEvent.prototype = createObject(Event$2.prototype);
+KeyEvent.prototype = createObject(Event.prototype);
 KeyEvent.prototype.constructor = KeyEvent;
 
 function proxyEvent(e) {
@@ -2367,26 +1808,26 @@ function proxyEvent(e) {
     } else if (rmouseEvent.test(e.type)) {
         return new MouseEvent(e);
     } else {
-        return new Event$2(e);
+        return new Event(e);
     }
 }
 
-var addEventListener$2 = void 0;
-var removeEventListener$2 = void 0;
+var addEventListener = void 0;
+var removeEventListener = void 0;
 if ('addEventListener' in doc) {
-    addEventListener$2 = function addEventListener(name, fn) {
+    addEventListener = function addEventListener(name, fn) {
         doc.addEventListener(name, fn, false);
     };
 
-    removeEventListener$2 = function removeEventListener(name, fn) {
+    removeEventListener = function removeEventListener(name, fn) {
         doc.removeEventListener(name, fn);
     };
 } else {
-    addEventListener$2 = function addEventListener(name, fn) {
+    addEventListener = function addEventListener(name, fn) {
         doc.attachEvent("on" + name, fn);
     };
 
-    removeEventListener$2 = function removeEventListener(name, fn) {
+    removeEventListener = function removeEventListener(name, fn) {
         doc.detachEvent("on" + name, fn);
     };
 }
@@ -2413,14 +1854,14 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
         var items = delegatedRoots.items;
         if (items.delete(dom)) {
             if (items.size === 0) {
-                removeEventListener$2(name, delegatedRoots.docEvent);
+                removeEventListener(name, delegatedRoots.docEvent);
                 delete delegatedRoots[name];
             }
         }
     }
 }
 
-function dispatchEvent$2(event, target, items, count, isClick) {
+function dispatchEvent(event, target, items, count, isClick) {
     var eventToTrigger = items.get(target);
     if (eventToTrigger) {
         count--;
@@ -2435,7 +1876,7 @@ function dispatchEvent$2(event, target, items, count, isClick) {
         if (isNullOrUndefined(parentDom) || isClick && parentDom.nodeType === 1 && parentDom.disabled) {
             return;
         }
-        dispatchEvent$2(event, parentDom, items, count, isClick);
+        dispatchEvent(event, parentDom, items, count, isClick);
     }
 }
 
@@ -2445,10 +1886,10 @@ function attachEventToDocument(name, delegatedRoots) {
         event || (event = window.event);
         if (count > 0) {
             event = proxyEvent(event);
-            dispatchEvent$2(event, event.target, delegatedRoots.items, count, event.type === 'click');
+            dispatchEvent(event, event.target, delegatedRoots.items, count, event.type === 'click');
         }
     };
-    addEventListener$2(name, docEvent);
+    addEventListener(name, docEvent);
     return docEvent;
 }
 
@@ -2516,11 +1957,12 @@ function updateChildOption(vNode, value, flag) {
 
 function processInput(vNode, dom, nextProps) {
     var type = nextProps.type;
-    var value = nextProps.value;
+    // const value = nextProps.value;
     var checked = nextProps.checked;
     var defaultValue = nextProps.defaultValue;
     var multiple = nextProps.multiple;
-    var hasValue = !isNullOrUndefined(value);
+    var hasValue = nextProps.hasOwnProperty('value');
+    var value = hasValue ? nextProps.value || '' : undefined;
 
     if (multiple && multiple !== dom.multiple) {
         dom.multiple = multiple;
@@ -2618,11 +2060,11 @@ function createElement(vNode, parentDom, mountedQueue, isRender, parentVNode) {
 function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode) {
     var dom = doc.createElement(vNode.tag);
     var children = vNode.children;
-    var ref = vNode.ref;
     var props = vNode.props;
     var className = vNode.className;
 
     vNode.dom = dom;
+    vNode.parentVNode = parentVNode;
 
     if (!isNullOrUndefined(children)) {
         createElements(children, dom, mountedQueue, isRender, vNode);
@@ -2642,12 +2084,13 @@ function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode
         }
     }
 
+    var ref = vNode.ref;
     if (!isNullOrUndefined(ref)) {
         createRef(dom, ref, mountedQueue);
     }
 
-    if (parentDom && !dom.parentNode) {
-        parentDom.appendChild(dom);
+    if (parentDom) {
+        appendChild(parentDom, dom);
     }
 
     return dom;
@@ -2678,7 +2121,7 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
     vNode.children = instance;
 
     if (parentDom) {
-        appendChild(parentDom, vNode);
+        appendChild(parentDom, dom);
         // parentDom.appendChild(dom);
     }
 
@@ -2790,7 +2233,7 @@ function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
     var ref = vNode.ref;
 
     if (typeof instance.destroy === 'function') {
-        instance.destroy(vNode, nextVNode);
+        instance.destroy(vNode, nextVNode, parentDom);
     }
 
     if (ref) {
@@ -2838,15 +2281,10 @@ function removeChild(parentDom, vNode) {
     }
 }
 
-function appendChild(parentDom, vNode) {
-    var dom = vNode.dom;
-    // for animation the dom will not be moved
+function appendChild(parentDom, dom) {
     if (!dom.parentNode) {
         parentDom.appendChild(dom);
     }
-    // if (dom._mount) {
-    // dom._mount(vNode, parentDom);
-    // }
 }
 
 function createRef(dom, ref, mountedQueue) {
@@ -2859,10 +2297,17 @@ function createRef(dom, ref, mountedQueue) {
     }
 }
 
-function patch(lastVNode, nextVNode, parentDom, parentVNode) {
-    var mountedQueue = new MountedQueue();
+function patch(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode) {
+    var isTrigger = true;
+    if (mountedQueue) {
+        isTrigger = false;
+    } else {
+        mountedQueue = new MountedQueue();
+    }
     var dom = patchVNode(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode);
-    mountedQueue.trigger();
+    if (isTrigger) {
+        mountedQueue.trigger();
+    }
     return dom;
 }
 
@@ -2912,13 +2357,13 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode
     var nextProps = nextVNode.props;
     var lastChildren = lastVNode.children;
     var nextChildren = nextVNode.children;
-    var nextRef = nextVNode.ref;
     var lastClassName = lastVNode.className;
     var nextClassName = nextVNode.className;
 
     nextVNode.dom = dom;
+    nextVNode.parentVNode = parentVNode;
 
-    if (lastVNode.tag !== nextVNode.tag) {
+    if (lastVNode.tag !== nextVNode.tag || lastVNode.key !== nextVNode.key) {
         replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode);
     } else {
         if (lastChildren !== nextChildren) {
@@ -2937,6 +2382,7 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode
             }
         }
 
+        var nextRef = nextVNode.ref;
         if (!isNullOrUndefined(nextRef) && lastVNode.ref !== nextRef) {
             createRef(dom, nextRef, mountedQueue);
         }
@@ -2952,15 +2398,27 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
     var newDom = void 0;
 
     if (lastTag !== nextTag || lastVNode.key !== nextVNode.key) {
-        // we should call this function in component's init method
-        // because it should be destroyed before async component has rendered
+        // we should call this remove function in component's init method
+        // because it should be destroyed until async component has rendered
         // removeComponentClassOrInstance(lastVNode, null, nextVNode);
         newDom = createComponentClassOrInstance(nextVNode, parentDom, mountedQueue, lastVNode, false, parentVNode);
     } else {
         instance = lastVNode.children;
+        instance.mountedQueue = mountedQueue;
+        instance.isRender = false;
+        instance.parentVNode = parentVNode;
         newDom = instance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
         nextVNode.children = instance;
+        nextVNode.parentVNode = parentVNode;
+
+        // for intact.js, the dom will not be removed and
+        // the component will not be destoryed, so the ref
+        // function need be called in update method.
+        var ref = nextVNode.ref;
+        if (typeof ref === 'function') {
+            ref(instance);
+        }
     }
 
     // perhaps the dom has be replaced
@@ -2980,8 +2438,17 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, pa
         // removeComponentClassOrInstance(lastVNode, null, nextVNode);
         newDom = createComponentClassOrInstance(nextVNode, parentDom, mountedQueue, lastVNode, false, parentVNode);
     } else {
+        lastInstance.mountedQueue = mountedQueue;
+        lastInstance.isRender = false;
+        lastInstance.parentVNode = parentVNode;
         newDom = lastInstance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
+        nextVNode.parentVNode = parentVNode;
+
+        var ref = nextVNode.ref;
+        if (typeof ref === 'function') {
+            ref(instance);
+        }
     }
 
     if (dom !== newDom && dom.parentNode) {
@@ -3011,7 +2478,11 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue, pare
             createElement(nextChildren, parentDom, mountedQueue, false, parentVNode);
         }
     } else if (isArray(nextChildren)) {
-        removeElement(lastChildren, parentDom);
+        if (isStringOrNumber(lastChildren)) {
+            setTextContent(parentDom, '');
+        } else {
+            removeElement(lastChildren, parentDom);
+        }
         createElements(nextChildren, parentDom, mountedQueue, false, parentVNode);
     } else if (isStringOrNumber(lastChildren)) {
         setTextContent(parentDom, '');
@@ -3086,7 +2557,8 @@ function patchChildrenByKey(a, b, dom, mountedQueue, parentVNode) {
 
     if (aStart > aEnd) {
         while (bStart <= bEnd) {
-            insertOrAppend(bEnd, bLength, createElement(b[bStart], null, mountedQueue, false, parentVNode), b, dom);
+            insertOrAppend(bEnd, bLength, createElement(b[bStart], null, mountedQueue, false, parentVNode), b, dom, true /* detectParent: for animate, if the parentNode exists, then do nothing*/
+            );
             ++bStart;
         }
     } else if (bStart > bEnd) {
@@ -3181,7 +2653,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue, parentVNode) {
                 for (i = bLength - 1; i >= 0; i--) {
                     if (sources[i] === -1) {
                         pos = i + bStart;
-                        insertOrAppend(pos, b.length, createElement(b[pos], null, mountedQueue, false, parentVNode), b, dom);
+                        insertOrAppend(pos, b.length, createElement(b[pos], null, mountedQueue, false, parentVNode), b, dom, true);
                     }
                 }
             }
@@ -3243,12 +2715,16 @@ function lisAlgorithm(arr) {
     return result;
 }
 
-function insertOrAppend(pos, length, newDom, nodes, dom) {
+function insertOrAppend(pos, length, newDom, nodes, dom, detectParent) {
     var nextPos = pos + 1;
+    // if (detectParent && newDom.parentNode) {
+    // return;
+    // } else
     if (nextPos < length) {
         dom.insertBefore(newDom, nodes[nextPos].dom);
     } else {
-        appendChild(dom, newDom);
+        dom.appendChild(newDom);
+        // appendChild(dom, newDom);
     }
 }
 
@@ -3414,9 +2890,10 @@ var patchDataset = browser.isIE ? function patchDataset(prop, lastValue, nextVal
 } : patchObject;
 
 var _cache = {};
+var uppercasePattern = /[A-Z]/g;
 function kebabCase(word) {
     if (!_cache[word]) {
-        _cache[word] = word.replace(/[A-Z]/g, function (item) {
+        _cache[word] = word.replace(uppercasePattern, function (item) {
             return '-' + item.toLowerCase();
         });
     }
@@ -3487,6 +2964,209 @@ function patchStyle(lastValue, nextValue, dom) {
     }
 }
 
+function toString$2(vNode, parent, disableSplitText, firstChild) {
+    var type = vNode.type;
+    var tag = vNode.tag;
+    var props = vNode.props;
+    var children = vNode.children;
+
+    var html = void 0;
+    if (type & Types.ComponentClass) {
+        var instance = new tag(props);
+        html = instance.toString();
+    } else if (type & Types.ComponentInstance) {
+        html = vNode.children.toString();
+    } else if (type & Types.Element) {
+        var innerHTML = void 0;
+        html = '<' + tag;
+
+        if (!isNullOrUndefined(vNode.className)) {
+            html += ' class="' + escapeText(vNode.className) + '"';
+        }
+
+        if (props !== EMPTY_OBJ) {
+            for (var prop in props) {
+                var value = props[prop];
+
+                if (prop === 'innerHTML') {
+                    innerHTML = value;
+                } else if (prop === 'style') {
+                    html += ' style="' + renderStylesToString(value) + '"';
+                } else if (prop === 'children') {
+                    // ignore
+                } else if (prop === 'defaultValue') {
+                    if (isNullOrUndefined(props.value)) {
+                        html += ' value="' + escapeText(value) + '"';
+                    }
+                } else if (prop === 'defaultChecked') {
+                    if (isNullOrUndefined(props.checked) && value === true) {
+                        html += ' checked';
+                    }
+                } else if (prop === 'attributes') {
+                    html += renderAttributesToString(value);
+                } else if (prop === 'dataset') {
+                    html += renderDatasetToString(value);
+                } else if (tag === 'option' && prop === 'value') {
+                    html += renderAttributeToString(prop, value);
+                    if (parent && value === parent.props.value) {
+                        html += ' selected';
+                    }
+                } else {
+                    html += renderAttributeToString(prop, value);
+                }
+            }
+        }
+
+        if (selfClosingTags[tag]) {
+            html += ' />';
+        } else {
+            html += '>';
+            if (innerHTML) {
+                html += innerHTML;
+            } else if (children) {
+                if (isString(children)) {
+                    html += children === '' ? ' ' : escapeText(children);
+                } else if (isNumber(children)) {
+                    html += children;
+                } else if (isArray(children)) {
+                    var index = -1;
+                    for (var i = 0; i < children.length; i++) {
+                        var child = children[i];
+                        if (isString(child)) {
+                            html += child === '' ? ' ' : escapeText(child);
+                        } else if (isNumber(child)) {
+                            html += child;
+                        } else {
+                            if (!(child.type & Types.Text)) {
+                                index = -1;
+                            } else {
+                                index++;
+                            }
+                            html += toString$2(child, vNode, disableSplitText, index === 0);
+                        }
+                    }
+                } else {
+                    html += toString$2(children, vNode, true);
+                }
+            }
+
+            html += '</' + tag + '>';
+        }
+    } else if (type & Types.Text) {
+        html = (firstChild || disableSplitText ? '' : '<!---->') + (children === '' ? ' ' : escapeText(children));
+    } else if (type & Types.HtmlComment) {
+        html = '<!--' + children + '-->';
+    } else {
+        throw new Error('Unknown vNode: ' + vNode);
+    }
+
+    return html;
+}
+
+function escapeText(text) {
+    var result = text;
+    var escapeString = "";
+    var start = 0;
+    var i = void 0;
+    for (i = 0; i < text.length; i++) {
+        switch (text.charCodeAt(i)) {
+            case 34:
+                // "
+                escapeString = "&quot;";
+                break;
+            case 39:
+                // \
+                escapeString = "&#039;";
+                break;
+            case 38:
+                // &
+                escapeString = "&amp;";
+                break;
+            case 60:
+                // <
+                escapeString = "&lt;";
+                break;
+            case 62:
+                // >
+                escapeString = "&gt;";
+                break;
+            default:
+                continue;
+        }
+        if (start) {
+            result += text.slice(start, i);
+        } else {
+            result = text.slice(start, i);
+        }
+        result += escapeString;
+        start = i + 1;
+    }
+    if (start && i !== start) {
+        return result + text.slice(start, i);
+    }
+    return result;
+}
+
+function isString(o) {
+    return typeof o === 'string';
+}
+
+function isNumber(o) {
+    return typeof o === 'number';
+}
+
+function renderStylesToString(styles) {
+    if (isStringOrNumber(styles)) {
+        return styles;
+    } else {
+        var renderedString = "";
+        for (var styleName in styles) {
+            var value = styles[styleName];
+
+            if (isStringOrNumber(value)) {
+                renderedString += kebabCase(styleName) + ':' + value + ';';
+            }
+        }
+        return renderedString;
+    }
+}
+
+function renderDatasetToString(dataset) {
+    var renderedString = '';
+    for (var key in dataset) {
+        var dataKey = 'data-' + kebabCase(key);
+        var value = dataset[key];
+        if (isString(value)) {
+            renderedString += ' ' + dataKey + '="' + escapeText(value) + '"';
+        } else if (isNumber(value)) {
+            renderedString += ' ' + dataKey + '="' + value + '"';
+        } else if (value === true) {
+            renderedString += ' ' + dataKey + '="true"';
+        }
+    }
+    return renderedString;
+}
+
+function renderAttributesToString(attributes) {
+    var renderedString = '';
+    for (var key in attributes) {
+        renderedString += renderAttributeToString(key, attributes[key]);
+    }
+    return renderedString;
+}
+
+function renderAttributeToString(key, value) {
+    if (isString(value)) {
+        return ' ' + key + '="' + escapeText(value) + '"';
+    } else if (isNumber(value)) {
+        return ' ' + key + '="' + value + '"';
+    } else if (value === true) {
+        return ' ' + key;
+    } else {
+        return '';
+    }
+}
+
 
 
 var miss = Object.freeze({
@@ -3495,7 +3175,8 @@ var miss = Object.freeze({
 	render: render,
 	hc: createCommentVNode,
 	remove: removeElement,
-	MountedQueue: MountedQueue
+	MountedQueue: MountedQueue,
+	renderString: toString$2
 });
 
 var parser = new Parser();
@@ -3527,15 +3208,15 @@ Vdt$1.prototype = {
 
         return this.vNode;
     },
-    renderString: function renderString(data) {
-        var node = this.render(data);
+    renderString: function renderString$$1(data) {
+        this.renderVNode(data);
 
-        return node.outerHTML || node.toString();
+        return toString$2(this.vNode, null, Vdt$1.configure().disableSplitText);
     },
-    update: function update(data, parentDom, parentVNode) {
+    update: function update(data, parentDom, queue, parentVNode) {
         var oldVNode = this.vNode;
         this.renderVNode(data);
-        this.node = patch(oldVNode, this.vNode, parentDom, parentVNode);
+        this.node = patch(oldVNode, this.vNode, parentDom, queue, parentVNode);
 
         return this.node;
     },
@@ -3654,10 +3335,7 @@ Intact$1.prototype = {
     _mount: function _mount(lastVNode, nextVNode) {},
     _beforeUpdate: function _beforeUpdate(lastVNode, nextVNode) {},
     _update: function _update(lastVNode, nextVNode) {},
-    _destroy: function _destroy(lastVNode, nextVNode) {},
-    _unmount: function _unmount(lastVNode, nextVNode, parentDom) {
-        return true;
-    },
+    _destroy: function _destroy(lastVNode, nextVNode, parentDom) {},
     init: function init(lastVNode, nextVNode) {
         var _this3 = this;
 
@@ -3673,7 +3351,7 @@ Intact$1.prototype = {
                 // 如果上一个组件是异步组件，并且也还没渲染完成，则直接destroy掉
                 // 让它不再渲染了
                 if (!lastInstance.inited) {
-                    removeComponentClassOrInstance(lastVNode, null, nextVNode);
+                    this.__destroyVNode(lastVNode, nextVNode);
                 }
             } else {
                 var vNode = createCommentVNode('');
@@ -3683,11 +3361,14 @@ Intact$1.prototype = {
             this.one('$inited', function () {
                 var element = _this3.init(lastVNode, nextVNode);
                 var dom = nextVNode.dom;
+                // 存在一种情况，组件的第一个元素是一个组件，他们管理的是同一个dom
+                // 但是当第一个元素的dom变更时，父组件的vNode却没有变
+                // 所以这里强制保持一致
+                nextVNode.dom = element;
                 if (!lastVNode || lastVNode.key !== nextVNode.key) {
-                    nextVNode.dom = element;
                     dom.parentNode.replaceChild(element, dom);
-                    _this3._triggerMountedQueue();
                 }
+                _this3._triggerMountedQueue();
                 _this3.mount(lastVNode, nextVNode);
             });
             vdt.node = placeholder;
@@ -3699,27 +3380,33 @@ Intact$1.prototype = {
         if (lastVNode && lastVNode.key === nextVNode.key) {
             // destroy the last component
             if (!lastVNode.children.destroyed) {
-                removeComponentClassOrInstance(lastVNode, null, nextVNode);
+                this.__destroyVNode(lastVNode, nextVNode);
             }
 
             // make the dom not be replaced, but update the last one
             vdt.vNode = lastVNode.children.vdt.vNode;
-            this.element = vdt.update(this, this.parentDom, nextVNode);
+            this.element = vdt.update(this, this.parentDom, this.mountedQueue, nextVNode);
         } else {
             if (lastVNode) {
-                removeComponentClassOrInstance(lastVNode, null, nextVNode);
+                this.__destroyVNode(lastVNode, nextVNode);
             }
             this.element = vdt.render(this, this.parentDom, this.mountedQueue, nextVNode);
         }
         this.rendered = true;
         if (this._pendingUpdate) {
-            this._pendingUpdate();
+            this._pendingUpdate(lastVNode, nextVNode);
             this._pendingUpdate = null;
         }
         this.trigger('$rendered', this);
         this._create(lastVNode, nextVNode);
 
         return this.element;
+    },
+    toString: function toString() {
+        return this.vdt.renderString(this);
+    },
+    __destroyVNode: function __destroyVNode(lastVNode, nextVNode) {
+        removeComponentClassOrInstance(lastVNode, null, nextVNode);
     },
     mount: function mount(lastVNode, nextVNode) {
         // 异步组件，直接返回
@@ -3735,10 +3422,15 @@ Intact$1.prototype = {
         }
         // 如果还没有渲染，则等待结束再去更新
         if (!this.rendered) {
-            this._pendingUpdate = function () {
+            this._pendingUpdate = function (lastVNode, nextVNode) {
                 this.update(lastVNode, nextVNode);
             };
             return lastVNode ? lastVNode.dom : undefined;
+        }
+
+        if (!nextVNode) {
+            // 如果直接调用update方法，则要清除mountedQueue
+            this.mountedQueue = null;
         }
 
         ++this._updateCount;
@@ -3746,16 +3438,28 @@ Intact$1.prototype = {
         if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
     },
     __update: function __update(lastVNode, nextVNode) {
+        var _this4 = this;
+
         // 如果不存在nextVNode，则为直接调用update方法更新自己
         // 否则则是父组件触发的子组件更新，此时需要更新一些状态
-        if (nextVNode) {
+        // 有一种情况，在父组件初次渲染时，子组件渲染过程中，
+        // 又触发了父组件的数据变更，此时父组件渲染完成执行_pendingUpdate
+        // 是没有lastVNode的
+        if (nextVNode && lastVNode) {
             this._patchProps(lastVNode.props, nextVNode.props);
         }
 
         this._beforeUpdate(lastVNode, nextVNode);
-        this.element = this.vdt.update(this);
-        this._update(lastVNode, nextVNode);
-
+        // 直接调用update方法，保持parentVNode不变
+        this.element = this.vdt.update(this, this.parentDom, this.mountedQueue, nextVNode || this.parentVNode);
+        // 让整个更新完成，才去触发_update生命周期函数
+        if (this.mountedQueue) {
+            this.mountedQueue.push(function () {
+                _this4._update(lastVNode, nextVNode);
+            });
+        } else {
+            this._update(lastVNode, nextVNode);
+        }
         if (--this._updateCount > 0) {
             // 如果更新完成，发现还有更新，则是在更新过程中又触发了更新
             // 此时直接将_updateCount置为1，因为所有数据都已更新，只做最后一次模板更新即可
@@ -3844,7 +3548,7 @@ Intact$1.prototype = {
             }
         }
     },
-    destroy: function destroy(lastVNode, nextVNode) {
+    destroy: function destroy(lastVNode, nextVNode, parentDom) {
         if (this.destroyed) {
             return console.warn('destroyed multiple times');
         }
@@ -3865,11 +3569,9 @@ Intact$1.prototype = {
         this.off();
         this.destroyed = true;
     },
-    unmount: function unmount(lastVNode, nextVNode, parentDom) {
-        return this._unmount(lastVNode, nextVNode, parentDom);
-    },
 
 
+    // function name conflict with utils.get
     get: function _get(key, defaultValue) {
         if (key === undefined) return this.props;
 
@@ -3877,7 +3579,7 @@ Intact$1.prototype = {
     },
 
     set: function _set(key, val, options) {
-        var _this4 = this;
+        var _this5 = this;
 
         if (isNullOrUndefined(key)) return this;
 
@@ -3968,21 +3670,26 @@ Intact$1.prototype = {
             // 如果第三个参数为true，则不update
             this.trigger('$change', this, changeKeys);
 
+            var triggerChangedEvent = function triggerChangedEvent() {
+                for (var _prop7 in changes) {
+                    var _values = changes[_prop7];
+                    _this5.trigger('$changed:' + _prop7, _this5, _values[1], _values[0]);
+                }
+                _this5.trigger('$changed', _this5, changeKeys);
+            };
             if (options.update && this._startRender) {
                 clearTimeout(this._asyncUpdate);
                 var triggerChange = function triggerChange() {
-                    _this4.update();
-                    for (var _prop7 in changes) {
-                        var _values = changes[_prop7];
-                        _this4.trigger('$changed:' + _prop7, _this4, _values[1], _values[0]);
-                    }
-                    _this4.trigger('$changed', _this4, changeKeys);
+                    _this5.update();
+                    triggerChangedEvent();
                 };
                 if (options.async) {
                     this._asyncUpdate = setTimeout(triggerChange);
                 } else {
                     triggerChange();
                 }
+            } else if (this.mountedQueue && this._startRender) {
+                this.mountedQueue.push(triggerChangedEvent);
             }
         }
 
@@ -3995,15 +3702,15 @@ Intact$1.prototype = {
         return this;
     },
     one: function one(name, callback) {
-        var _this5 = this;
+        var _this6 = this;
 
         var fn = function fn() {
             for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
                 args[_key] = arguments[_key];
             }
 
-            callback.apply(_this5, args);
-            _this5.off(name, fn);
+            callback.apply(_this6, args);
+            _this6.off(name, fn);
         };
         this.on(name, fn);
 
@@ -4066,7 +3773,9 @@ Intact$1.prototype = {
 Intact$1.extend = function () {
     var prototype = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-    prototype.defaults = extend({}, this.prototype.defaults, prototype.defaults);
+    if (_typeof(this.prototype.defaults) === 'object' && _typeof(prototype.defaults) === 'object') {
+        prototype.defaults = extend({}, this.prototype.defaults, prototype.defaults);
+    }
     return inherit(this, prototype);
 };
 
@@ -4097,35 +3806,57 @@ Intact$1.mount = function (Component, node) {
     return c;
 };
 
-var A = Intact$1.extend({
+var Animate = void 0;
+var Animate$1 = Animate = Intact$1.extend({
     defaults: {
         'a:tag': 'div',
         'a:transition': 'animate',
-        'a:appear': false
+        'a:appear': false,
+        'a:mode': 'both', // out-in | in-out | both
+        'a:disabled': false, // 只做动画管理者，自己不进行动画
+        'a:move': true // 是否执行move动画
     },
 
     template: function template() {
         var h = Vdt$1.miss.h;
-        var data = this.data;
-        var tagName = data.get('a:tag');
+        var self = this.data;
+        var tagName = self.get('a:tag');
         var props = {};
-        var _props = data.get();
-        for (var key in data.get()) {
-            if (key[0] !== 'a' || key[1] !== ':') {
+        var _props = self.get();
+        for (var key in _props) {
+            if ((key[0] !== 'a' || key[1] !== ':') && key.substr(0, 5) !== 'ev-a:') {
                 props[key] = _props[key];
             }
         }
-        return h(tagName, props, data.get('children'));
+        return h(tagName, props, self.get('children'));
     },
-    init: function init(lastVNode, nextVNode) {
-        var parentDom = this.parentDom;
+
+
+    init: inBrowser ? function (lastVNode, nextVNode) {
+        this.mountChildren = [];
+        this.unmountChildren = [];
+        this.updateChildren = [];
+        this.children = [];
+        this._enteringAmount = 0;
+        this._leavingAmount = 0;
+
+        if (this.get('a:disabled')) {
+            return this._super(lastVNode, nextVNode);
+        }
+
+        var parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
         if (parentDom && parentDom._reserve) {
             lastVNode = parentDom._reserve[nextVNode.key];
         }
         return this._super(lastVNode, nextVNode);
+    } : function () {
+        return this._superApply(arguments);
     },
+
     _mount: function _mount(lastVNode, vNode) {
         var _this = this;
+
+        if (this.get('a:disabled')) return;
 
         var isAppear = false;
         if (this.isRender) {
@@ -4135,51 +3866,126 @@ var A = Intact$1.extend({
             }
         }
 
-        var transition = this.get('a:transition');
         var element = this.element;
+        var initClassName = function initClassName() {
+            var transition = _this.get('a:transition');
+            var enterClass = void 0;
+            var enterActiveClass = void 0;
+            if (isAppear) {
+                enterClass = transition + '-appear';
+                enterActiveClass = transition + '-appear-active';
+            } else {
+                enterClass = transition + '-enter';
+                enterActiveClass = transition + '-enter-active';
+            }
 
-        var enterClass = void 0;
-        var enterActiveClass = void 0;
-        if (isAppear) {
-            enterClass = transition + '-appear';
-            enterActiveClass = transition + '-appear-active';
-        } else {
-            enterClass = transition + '-enter';
-            enterActiveClass = transition + '-enter-active';
-        }
-
-        this._enterEnd = function (e) {
-            e && e.stopPropagation();
-            removeClass(element, enterClass);
-            removeClass(element, enterActiveClass);
-            _this._entering = false;
-            TransitionEvents.off(element, _this._enterEnd);
+            _this.isAppear = isAppear;
+            _this.enterClass = enterClass;
+            _this.enterActiveClass = enterActiveClass;
+            _this.leaveClass = transition + '-leave';
+            _this.leaveActiveClass = transition + '-leave-active';
+            _this.moveClass = transition + '-move';
         };
+        this.on('$change:a:transition', initClassName);
+        initClassName();
 
-        if (this._lastVNode) {
+        // 一个动画元素被删除后，会被保存
+        // 如果在删除的过程中，又添加了，则要清除上一个动画状态
+        // 将这种情况记录下来
+        if (this._lastVNode && this._lastVNode !== lastVNode) {
             var lastInstance = this._lastVNode.children;
             if (lastInstance._leaving) {
-                TransitionEvents.off(element, lastInstance._leaveEnd);
-                lastInstance._unmountCancelled = true;
-                lastInstance._leaveEnd();
+                this.lastInstance = lastInstance;
             }
         }
 
-        if (isAppear || !this.isRender) {
-            this._entering = true;
-            this._enter(this._enterEnd, enterClass, enterActiveClass);
-        }
+        var parentInstance = this.parentInstance = this._getParentAnimate();
+
+        this._enterEnd = function (e) {
+            e && e.stopPropagation && e.stopPropagation();
+            removeClass(element, _this.enterClass);
+            removeClass(element, _this.enterActiveClass);
+            TransitionEvents.off(element, _this._enterEnd);
+            _this._entering = false;
+            if (parentInstance) {
+                if (--parentInstance._enteringAmount === 0 && parentInstance.get('a:mode') === 'in-out') {
+                    nextFrame(function () {
+                        parentInstance._checkMode();
+                    });
+                }
+            }
+            _this.trigger('a:enterEnd', element);
+        };
 
         element._unmount = function (nouse, parentDom) {
-            _this._unmount(lastVNode, vNode, parentDom);
+            // 如果该元素是延迟mount的元素，则直接删除
+            if (_this._delayEnter) {
+                parentDom.removeChild(element);
+                _this.destroy(vNode);
+                parentInstance._enteringAmount--;
+                return;
+            }
+            _this.vNode = vNode;
+            _this.parentDom = parentDom;
+            if (parentInstance) {
+                parentInstance._leavingAmount++;
+                if (parentInstance.get('a:mode') === 'in-out') {
+                    parentInstance.updateChildren.push(_this);
+                    _this._delayLeave = true;
+                } else {
+                    parentInstance.unmountChildren.push(_this);
+                }
+                parentInstance.children.push(_this);
+            } else {
+                _this._unmount();
+            }
         };
+
+        if (parentInstance) {
+            // 如果存在父动画组件，则使用父级进行管理
+            // 统一做动画
+            if (isAppear || !this.isRender) {
+                if (this.lastInstance && this.lastInstance._delayLeave) {
+                    parentInstance.updateChildren.push(this);
+                } else {
+                    parentInstance._enteringAmount++;
+                    // 如果没有unmount的元素，则直接enter
+                    if (parentInstance._leavingAmount > 0 && parentInstance.get('a:mode') === 'out-in') {
+                        this._delayEnter = true;
+                        element.style.display = 'none';
+                    } else {
+                        parentInstance.mountChildren.push(this);
+                    }
+                }
+            }
+            parentInstance.children.push(this);
+        } else if (isAppear || !this.isRender) {
+            // 否则单个元素自己动画
+            this._enter();
+        }
     },
-    _unmount: function _unmount(lastVNode, vNode, parentDom) {
+    _getParentAnimate: function _getParentAnimate() {
+        // 根节点为Animate，不存在parentVNode
+        if (!this.parentVNode) return;
+        // this.parentVNode是animate的tag，所以要拿this.parentVNode.parentVNode
+        var parentVNode = this.parentVNode.parentVNode;
+        if (parentVNode) {
+            var parentInstance = parentVNode.children;
+            if (parentInstance instanceof Animate) {
+                return parentInstance;
+            }
+        }
+    },
+    _unmount: function _unmount(onlyInit) {
         var _this2 = this;
 
-        var element = this.element;
-        var transition = this.get('a:transition');
+        if (this.get('a:disabled')) return;
 
+        var element = this.element;
+        var vNode = this.vNode;
+        var parentDom = this.parentDom;
+        // vNode都会被添加key，当只有一个子元素时，vNode.key === undefined
+        // 这种情况，我们也当成有key处理，此时key为undefined
         if (!parentDom._reserve) {
             parentDom._reserve = {};
         }
@@ -4193,47 +3999,376 @@ var A = Intact$1.extend({
         }
 
         this._leaveEnd = function (e) {
-            e && e.stopPropagation();
-            removeClass(element, transition + '-leave');
-            removeClass(element, transition + '-leave-active');
-            if (!_this2._unmountCancelled) {
-                parentDom.removeChild(element);
-            }
+            e && e.stopPropagation && e.stopPropagation();
+            removeClass(element, _this2.leaveClass);
+            removeClass(element, _this2.leaveActiveClass);
+            var s = element.style;
+            s.position = s.top = s.left = s.transform = s.WebkitTransform = '';
             _this2._leaving = false;
             delete parentDom._reserve[vNode.key];
             TransitionEvents.off(element, _this2._leaveEnd);
+            if (!_this2._unmountCancelled) {
+                parentDom.removeChild(element);
+                _this2.destroy(vNode, null, parentDom);
+            }
+            var parentInstance = _this2.parentInstance;
+            if (parentInstance) {
+                if (--parentInstance._leavingAmount === 0 && parentInstance.get('a:mode') === 'out-in') {
+                    parentInstance._checkMode();
+                }
+            }
+            _this2.trigger('a:leaveEnd', element);
         };
 
-        this._leave(this._leaveEnd);
-    },
-    _enter: function _enter(done, enterClass, enterActiveClass) {
-        var element = this.element;
+        this._leave(onlyInit);
+        // 存在一种情况，相同的dom，同时被子组件和父组件管理的情况
+        // 所以unmount后，将其置为空函数，以免再次unmount
+        element._unmount = noop;
 
-        addClass(element, enterClass);
-        TransitionEvents.on(element, done);
-        // element.offsetWidth;
-        nextFrame(function () {
-            addClass(element, enterActiveClass);
-        });
+        this.trigger('a:leaveStart', element);
     },
-    _leave: function _leave(done) {
-        var transition = this.get('a:transition');
+    _beforeUpdate: function _beforeUpdate(lastVNode, vNode) {
+        // 更新之前，这里的children不包含本次更新mount进来的元素
+        var children = this.children;
+        var reservedChildren = [];
+        var isMove = this.get('a:move');
+        for (var i = 0; i < children.length; i++) {
+            var instance = children[i];
+            if (!instance._leaving && isMove) {
+                instance.position = instance._getPosition();
+            }
+            if (instance._delayLeave) {
+                reservedChildren.push(instance);
+                this.updateChildren.push(instance);
+            }
+        }
+        this.children = reservedChildren;
+    },
+    _getPosition: function _getPosition() {
         var element = this.element;
-        addClass(element, transition + '-leave');
-        TransitionEvents.on(element, done);
-        // element.offsetWidth;
-        nextFrame(function () {
-            addClass(element, transition + '-leave-active');
+        var transform = getComputedStyle(element).transform;
+        if (transform === 'none') {
+            return {
+                top: element.offsetTop,
+                left: element.offsetLeft
+            };
+        }
+        // const transform = element.style.transform;
+        var matrix = new WebKitCSSMatrix(transform);
+        return {
+            top: element.offsetTop + matrix.m42,
+            left: element.offsetLeft + matrix.m41
+        };
+    },
+
+
+    /**
+     * 尽量保持动画的连贯性
+     */
+    _update: function _update(lastVNode, vNode, isFromCheckMode) {
+        var parentInstance = void 0;
+        if (!this.get('a:disabled')) {
+            parentInstance = this.parentInstance;
+            if (parentInstance) {
+                parentInstance.updateChildren.push(this);
+                parentInstance.children.push(this);
+            }
+        }
+
+        // 更新之后，这里的children包括当前mount/update/unmount的元素
+        var children = this.children;
+        // 不存在children，则表示没有子动画元素要管理，直接返回
+        if (!children.length) return;
+
+        var mountChildren = this.mountChildren;
+        var unmountChildren = this.unmountChildren;
+        var updateChildren = this.updateChildren;
+        var isMove = this.get('a:move');
+
+        // 如果是in-out模式，但是没有元素enter，则直接leave
+        if (!isFromCheckMode && this._enteringAmount === 0 && parentInstance && parentInstance.get('a:mode') === 'in-out') {
+            for (var i = 0; i < updateChildren.length; i++) {
+                var instance = updateChildren[i];
+                if (instance._delayLeave) {
+                    unmountChildren.push(instance);
+                    updateChildren.splice(i, 1);
+                    instance._delayLeave = false;
+                    i--;
+                }
+            }
+        }
+
+        // 进行mount元素的进入动画
+        // 因为存在moving元素被unmount又被mount的情况
+        // 所以最先处理
+        if (isMove) {
+            mountChildren.forEach(function (instance) {
+                // 如果当前元素是从上一个unmount的元素来的，
+                // 则要初始化最新位置，因为beforeUpdate中
+                // 不包括当前mount元素的位置初始化
+                // 这样才能保持位置的连贯性
+                if (instance.lastInstance) {
+                    instance.position = instance._getPosition();
+                }
+            });
+        }
+        mountChildren.forEach(function (instance) {
+            return instance._enter();
         });
+
+        // 先将之前的动画清空
+        // 只有既在move又在enter的unmount元素才清空动画
+        // 这种情况保持不了连贯性
+        if (isMove) {
+            unmountChildren.forEach(function (instance) {
+                if (instance._moving) {
+                    instance._moveEnd();
+                    if (instance._entering) {
+                        instance._enterEnd();
+                    }
+                }
+            });
+
+            // 对于更新的元素，如果正在move，则将位置清空，以便确定最终位置
+            updateChildren.forEach(function (instance) {
+                if (instance._moving) {
+                    var s = instance.element.style;
+                    s.left = s.top = '';
+                }
+            });
+
+            // 将要删除的元素，设为absolute，以便确定其它元素最终位置
+            unmountChildren.forEach(function (instance) {
+                instance.element.style.position = 'absolute';
+            });
+
+            // 获取所有元素的新位置
+            children.forEach(function (instance) {
+                instance.newPosition = instance._getPosition();
+            });
+
+            // 分别判断元素是否需要移动，并保持当前位置不变
+            // unmount的元素，从当前位置直接leave，不要move了
+            unmountChildren.forEach(function (instance) {
+                return instance._initMove(true);
+            });
+            updateChildren.forEach(function (instance) {
+                return instance._initMove();
+            });
+            mountChildren.forEach(function (instance) {
+                return instance._initMove();
+            });
+
+            // 对于animation动画，enterEnd了entering元素
+            // 需要re-layout，来触发move动画
+            document.body.offsetWidth;
+
+            // 如果元素需要移动，则进行move动画
+            children.forEach(function (instance) {
+                if (instance._needMove) {
+                    if (!instance._moving) {
+                        instance._move();
+                    } else {
+                        // 如果已经在移动了，那直接改变translate，保持动画连贯
+                        instance._triggerMove();
+                    }
+                }
+            });
+        }
+
+        // unmount元素做leave动画
+        unmountChildren.forEach(function (instance) {
+            return instance._unmount();
+        });
+
+        this.mountChildren = [];
+        this.updateChildren = [];
+        this.unmountChildren = [];
+    },
+    _checkMode: function _checkMode() {
+        var mountChildren = [];
+        var updateChildren = [];
+        var unmountChildren = [];
+        var children = this.children = this.children.filter(function (instance) {
+            if (instance._delayEnter) {
+                instance._delayEnter = false;
+                mountChildren.push(instance);
+                return false;
+            } else if (instance._delayLeave) {
+                instance._delayLeave = false;
+                unmountChildren.push(instance);
+                return true;
+            } else if (instance._leaving !== false) {
+                updateChildren.push(instance);
+                return true;
+            }
+            return false;
+        });
+        this._beforeUpdate();
+        mountChildren.forEach(function (instance) {
+            instance.element.style.display = '';
+            instance.position = null;
+        });
+        this.mountChildren = mountChildren;
+        this.updateChildren = updateChildren;
+        this.unmountChildren = unmountChildren;
+        this.children = children.concat(mountChildren);
+        this._update(null, null, true);
+    },
+    _initMove: function _initMove(isUnmount) {
+        var element = this.element;
+        var oldPosition = this.position;
+        var newPosition = this.newPosition;
+
+        this.position = newPosition;
+
+        // 对于新mount的元素，不进行move判断
+        if (!oldPosition) return;
+
+        var dx = oldPosition.left - newPosition.left;
+        var dy = oldPosition.top - newPosition.top;
+        var oDx = this.dx;
+        var oDy = this.dy;
+
+        this.dx = dx;
+        this.dy = dy;
+
+        if (dx || dy || oDx || oDy) {
+            // 对于move中的元素，需要将它重新回到0
+            var s = element.style;
+            if (isUnmount) {
+                s.left = oldPosition.left + 'px';
+                s.top = oldPosition.top + 'px';
+                this._needMove = false;
+            } else {
+                // 如果当前元素正在enter，而且是animation动画，则要enterEnd
+                // 否则无法move
+                if (this._entering && getAnimateType(element) !== 'transition') {
+                    this._enterEnd();
+                }
+                this._needMove = true;
+                s.position = 'relative';
+                s.left = dx + 'px';
+                s.top = dy + 'px';
+            }
+        } else {
+            this._needMove = false;
+        }
+    },
+    _move: function _move(onlyInit) {
+        var _this3 = this;
+
+        this._moving = true;
+        var element = this.element;
+        var s = element.style;
+        addClass(element, this.moveClass);
+        this._moveEnd = function (e) {
+            e && e.stopPropagation();
+            if (!e || /transform$/.test(e.propertyName)) {
+                TransitionEvents.off(element, _this3._moveEnd);
+                removeClass(element, _this3.moveClass);
+                s.position = s.left = s.top = s.transform = s.WebkitTransform = '';
+                _this3.dx = _this3.dy = 0;
+                _this3._moving = false;
+            }
+        };
+        TransitionEvents.on(element, this._moveEnd);
+        if (!onlyInit) {
+            this._triggerMove();
+            // nextFrame(() => this._triggerMove());
+        }
+    },
+    _triggerMove: function _triggerMove() {
+        var s = this.element.style;
+        s.transform = s.WebkitTransform = 'translate(' + (0 - this.dx) + 'px, ' + (0 - this.dy) + 'px)';
+    },
+    _enter: function _enter(onlyInit) {
+        var _this4 = this;
+
+        this._entering = true;
+        var element = this.element;
+        var enterClass = this.enterClass;
+        var enterActiveClass = this.enterActiveClass;
+
+        // 如果这个元素是上一个删除的元素，则从当前状态回到原始状态
+        if (this.lastInstance) {
+            this.lastInstance._unmountCancelled = true;
+            this.lastInstance._leaveEnd();
+            if (this.lastInstance._triggeredLeave) {
+                // addClass(element, enterActiveClass);
+                // 保持连贯，添加leaveActiveClass
+                addClass(element, this.leaveActiveClass);
+            } else {
+                // 如果上一个元素还没来得及做动画，则当做新元素处理
+                addClass(element, enterClass);
+                // addClass(this.element, this.enterActiveClass);
+            }
+        } else {
+            addClass(element, enterClass);
+            // Fixme: 这里如果，先添加enterActiveClass，针对transition动画
+            // 可能导致enterClass被动画，然后立即end
+            // 但是，针对animation动画，则没有此问题
+            // 如果后添加enterActiveClass，animation动画可能有闪动，
+            // 因为下一帧才开始进行动画，为了清除闪动，可以添加keframe from
+            // 的样式给enterClass
+            // addClass(this.element, this.enterActiveClass);
+        }
+        TransitionEvents.on(element, this._enterEnd);
+        if (!onlyInit) {
+            nextFrame(function () {
+                return _this4._triggerEnter();
+            });
+        }
+
+        this.trigger('a:enterStart', element);
+    },
+    _triggerEnter: function _triggerEnter() {
+        var element = this.element;
+        this._triggeredEnter = true;
+        if (this._entering === false) {
+            return removeClass(element, this.enterActiveClass);
+        }
+        addClass(element, this.enterActiveClass);
+        removeClass(element, this.enterClass);
+        removeClass(element, this.leaveActiveClass);
+        this.trigger('a:enter', element, this._enterEnd);
+    },
+    _leave: function _leave(onlyInit) {
+        var _this5 = this;
+
+        var element = this.element;
+        if (this._triggeredEnter) {
+            // 如果当前元素还没有来得及做enter动画，就被删除
+            // 则leaveActiveClass和leaveClass都放到下一帧添加
+            // 否则leaveClass和enterClass一样就不会有动画效果
+            addClass(element, this.leaveActiveClass);
+        }
+        TransitionEvents.on(element, this._leaveEnd);
+        if (!onlyInit) {
+            nextFrame(function () {
+                _this5._triggerLeave();
+            });
+        }
+    },
+    _triggerLeave: function _triggerLeave() {
+        this._triggeredLeave = true;
+        if (this._leaving === false) {
+            return;
+        }
+        var element = this.element;
+        addClass(element, this.leaveActiveClass);
+        addClass(element, this.leaveClass);
+        this.trigger('a:leave', element, this._leaveEnd);
+    },
+    destroy: function destroy(lastVNode, nextVNode, parentDom) {
+        // 不存在parentDom，则表示parentDom将被删除
+        // 那子组件也要直接销毁掉，
+        // 否则，所有的动画组件，都等到动画结束才销毁
+        if (!parentDom && (!lastVNode || !nextVNode) && this.parentVNode.dom !== this.element || this.get('a:disabled') || this._leaving === false) {
+            this._super(lastVNode, nextVNode, parentDom);
+        }
     }
 });
-
-var raf = window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : setTimeout;
-function nextFrame(fn) {
-    raf(function () {
-        return raf(fn);
-    });
-}
 
 function addClass(element, className) {
     if (className) {
@@ -4283,6 +4418,8 @@ var EVENT_NAME_MAP = {
 };
 
 var endEvents = [];
+var transitionProp = 'transition';
+var animationProp = 'animation';
 
 function detectEvents() {
     var testEl = document.createElement('div');
@@ -4306,19 +4443,38 @@ function detectEvents() {
         for (var styleName in baseEvents) {
             if (styleName in style) {
                 endEvents.push(baseEvents[styleName]);
+                if (baseEventName === 'transitionend') {
+                    transitionProp = styleName;
+                } else {
+                    animationProp = styleName;
+                }
                 break;
             }
         }
     }
 }
 
-detectEvents();
+function getAnimateType(element) {
+    var style = window.getComputedStyle(element);
+    var transitionDurations = style[transitionProp + 'Duration'].split(', ');
+    var animationDurations = style[animationProp + 'Duration'].split(', ');
+    var transitionDuration = getDuration(transitionDurations);
+    var animationDuration = getDuration(animationDurations);
+    console.log(transitionDuration, animationDuration);
+    return transitionDuration > animationDuration ? 'transition' : 'animation';
+}
 
-function addEventListener$3(node, eventName, eventListener) {
+function getDuration(durations) {
+    return Math.max.apply(null, durations.map(function (d) {
+        return d.slice(0, -1) * 1000;
+    }));
+}
+
+function addEventListener$1(node, eventName, eventListener) {
     node.addEventListener(eventName, eventListener, false);
 }
 
-function removeEventListener$3(node, eventName, eventListener) {
+function removeEventListener$1(node, eventName, eventListener) {
     node.removeEventListener(eventName, eventListener, false);
 }
 
@@ -4331,7 +4487,7 @@ var TransitionEvents = {
             return;
         }
         endEvents.forEach(function (endEvent) {
-            addEventListener$3(node, endEvent, eventListener);
+            addEventListener$1(node, endEvent, eventListener);
         });
     },
 
@@ -4340,7 +4496,7 @@ var TransitionEvents = {
             return;
         }
         endEvents.forEach(function (endEvent) {
-            removeEventListener$3(node, endEvent, eventListener);
+            removeEventListener$1(node, endEvent, eventListener);
         });
     },
 
@@ -4353,10 +4509,21 @@ var TransitionEvents = {
     }
 };
 
-// import Animate from './animate';
-Intact$1.prototype.Animate = A;
-// Intact.Animate = Animate;
-Intact$1.Animate = A;
+var raf = void 0;
+function nextFrame(fn) {
+    raf(function () {
+        return raf(fn);
+    });
+}
+
+if (inBrowser) {
+    raf = window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : setTimeout;
+
+    detectEvents();
+}
+
+Intact$1.prototype.Animate = Animate$1;
+Intact$1.Animate = Animate$1;
 Intact$1.Vdt = Vdt$1;
 Vdt$1.configure({
     getModel: function getModel(self, key) {

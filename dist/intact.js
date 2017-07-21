@@ -12,7 +12,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var toString$1 = Object.prototype.toString;
 
-var doc = typeof document === 'undefined' ? null : document;
+var doc = typeof document === 'undefined' ? {} : document;
 
 var isArray = Array.isArray || function (arr) {
     return toString$1.call(arr) === '[object Array]';
@@ -478,6 +478,14 @@ var utils = (Object.freeze || Object)({
 	error: error$1
 });
 
+var inBrowser = typeof window !== 'undefined';
+
+/**
+ * inherit
+ * @param Parent
+ * @param prototype
+ * @returns {Function}
+ */
 function inherit(Parent, prototype) {
     var Child = function Child() {
         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
@@ -2407,6 +2415,14 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
         nextVNode.dom = newDom;
         nextVNode.children = instance;
         nextVNode.parentVNode = parentVNode;
+
+        // for intact.js, the dom will not be removed and
+        // the component will not be destoryed, so the ref
+        // function need be called in update method.
+        var ref = nextVNode.ref;
+        if (typeof ref === 'function') {
+            ref(instance);
+        }
     }
 
     // perhaps the dom has be replaced
@@ -2432,6 +2448,11 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, pa
         newDom = lastInstance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
         nextVNode.parentVNode = parentVNode;
+
+        var ref = nextVNode.ref;
+        if (typeof ref === 'function') {
+            ref(instance);
+        }
     }
 
     if (dom !== newDom && dom.parentNode) {
@@ -3813,7 +3834,9 @@ var Animate$1 = Animate = Intact$1.extend({
         }
         return h(tagName, props, self.get('children'));
     },
-    init: function init(lastVNode, nextVNode) {
+
+
+    init: inBrowser ? function (lastVNode, nextVNode) {
         this.mountChildren = [];
         this.unmountChildren = [];
         this.updateChildren = [];
@@ -3830,7 +3853,10 @@ var Animate$1 = Animate = Intact$1.extend({
             lastVNode = parentDom._reserve[nextVNode.key];
         }
         return this._super(lastVNode, nextVNode);
+    } : function () {
+        return this._superApply(arguments);
     },
+
     _mount: function _mount(lastVNode, vNode) {
         var _this = this;
 
@@ -4348,13 +4374,6 @@ var Animate$1 = Animate = Intact$1.extend({
     }
 });
 
-var raf = window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : setTimeout;
-function nextFrame(fn) {
-    raf(function () {
-        return raf(fn);
-    });
-}
-
 function addClass(element, className) {
     if (className) {
         if (element.classList) {
@@ -4455,8 +4474,6 @@ function getDuration(durations) {
     }));
 }
 
-detectEvents();
-
 function addEventListener$1(node, eventName, eventListener) {
     node.addEventListener(eventName, eventListener, false);
 }
@@ -4495,6 +4512,19 @@ var TransitionEvents = {
         TransitionEvents.on(node, listener);
     }
 };
+
+var raf = void 0;
+function nextFrame(fn) {
+    raf(function () {
+        return raf(fn);
+    });
+}
+
+if (inBrowser) {
+    raf = window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : setTimeout;
+
+    detectEvents();
+}
 
 Intact$1.prototype.Animate = Animate$1;
 Intact$1.Animate = Animate$1;
