@@ -2992,7 +2992,7 @@ function toString$2(vNode, parent, disableSplitText, firstChild) {
                     innerHTML = value;
                 } else if (prop === 'style') {
                     html += ' style="' + renderStylesToString(value) + '"';
-                } else if (prop === 'children') {
+                } else if (prop === 'children' || prop === 'className' || prop === 'key' || prop === 'ref') {
                     // ignore
                 } else if (prop === 'defaultValue') {
                     if (isNullOrUndefined(props.value)) {
@@ -3023,7 +3023,7 @@ function toString$2(vNode, parent, disableSplitText, firstChild) {
             html += '>';
             if (innerHTML) {
                 html += innerHTML;
-            } else if (children) {
+            } else if (!isNullOrUndefined(children)) {
                 if (isString(children)) {
                     html += children === '' ? ' ' : escapeText(children);
                 } else if (isNumber(children)) {
@@ -3036,7 +3036,7 @@ function toString$2(vNode, parent, disableSplitText, firstChild) {
                             html += child === '' ? ' ' : escapeText(child);
                         } else if (isNumber(child)) {
                             html += child;
-                        } else {
+                        } else if (!isNullOrUndefined(child)) {
                             if (!(child.type & Types.Text)) {
                                 index = -1;
                             } else {
@@ -3167,6 +3167,225 @@ function renderAttributeToString(key, value) {
     }
 }
 
+function hydrateRoot(vNode, parentDom, mountedQueue) {
+    if (!isNullOrUndefined(parentDom)) {
+        var dom = parentDom.firstChild;
+        var newDom = hydrate(vNode, dom, mountedQueue, parentDom, null);
+        dom = parentDom.firstChild;
+        if (dom !== null) {
+            // should only one entry
+            while (dom = dom.nextSibling) {
+                parentDom.removeChild(dom);
+            }
+        }
+        return newDom;
+    }
+    return null;
+}
+
+function hydrate(vNode, dom, mountedQueue, parentDom, parentVNode) {
+    if (dom !== null) {
+        var isTrigger = true;
+        if (mountedQueue) {
+            isTrigger = false;
+        } else {
+            mountedQueue = new MountedQueue();
+        }
+        dom = hydrateElement(vNode, dom, mountedQueue, parentDom, parentVNode);
+        if (isTrigger) {
+            mountedQueue.trigger();
+        }
+    }
+    return dom;
+}
+
+function hydrateElement(vNode, dom, mountedQueue, parentDom, parentVNode) {
+    var type = vNode.type;
+
+    if (type & Types.Element) {
+        return hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode);
+    } else if (type & Types.Text) {
+        return hydrateText(vNode, dom);
+    } else if (type & Types.HtmlComment) {
+        return hydrateComment(vNode, dom);
+    } else if (type & Types.ComponentClassOrInstance) {
+        return hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode);
+    }
+}
+
+function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode) {
+    var props = vNode.props;
+    var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
+    instance.parentDom = parentDom;
+    instance.mountedQueue = mountedQueue;
+    instance.isRender = true;
+    instance.parentVNode = parentVNode;
+    var newDom = instance.hydrate(vNode, dom);
+
+    vNode.dom = newDom;
+    vNode.children = instance;
+
+    if (typeof instance.mount === 'function') {
+        mountedQueue.push(function () {
+            return instance.mount(null, vNode);
+        });
+    }
+
+    var ref = vNode.ref;
+    if (typeof ref === 'function') {
+        ref(instance);
+    }
+
+    if (dom !== newDom && dom.parentNode) {
+        dom.parentNode.replaceChild(newDom, dom);
+    }
+
+    return dom;
+}
+
+function hydrateComment(vNode, dom) {
+    if (dom.nodeType !== 8) {
+        var newDom = createCommentElement(vNode, null);
+        dom.parentNode.replaceChild(newDom, dom);
+        return newDom;
+    }
+    var comment = vNode.children;
+    if (dom.data !== comment) {
+        dom.data = comment;
+    }
+    vNode.dom = dom;
+    return dom;
+}
+
+function hydrateText(vNode, dom) {
+    if (dom.nodeType !== 3) {
+        var newDom = createTextElement(vNode, null);
+        dom.parentNode.replaceChild(newDom, dom);
+
+        return newDom;
+    }
+
+    var text = vNode.children;
+    if (dom.nodeValue !== text) {
+        dom.nodeValue = text;
+    }
+    vNode.dom = dom;
+
+    return dom;
+}
+
+function hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode) {
+    var children = vNode.children;
+    var props = vNode.props;
+    var className = vNode.className;
+    var type = vNode.type;
+    var ref = vNode.ref;
+
+    vNode.parentVNode = parentVNode;
+
+    if (dom.nodeType !== 1 || dom.tagName.toLowerCase() !== vNode.tag) {
+        warning('Server-side markup doesn\'t match client-side markup');
+        var newDom = createElement(vNode, null, mountedQueue, parentDom, parentVNode);
+        dom.parentNode.replaceChild(newDom, dom);
+
+        return newDom;
+    }
+
+    vNode.dom = dom;
+    if (!isNullOrUndefined(children)) {
+        hydrateChildren(children, dom, mountedQueue, vNode);
+    } else if (dom.firstChild !== null) {
+        setTextContent(dom, '');
+    }
+
+    if (props !== EMPTY_OBJ) {
+        var isFormElement = (type & Types.FormElement) > 0;
+        for (var prop in props) {
+            patchProp(prop, null, props[prop], dom, isFormElement);
+        }
+        if (isFormElement) {
+            processForm(vNode, dom, props, true);
+        }
+    }
+
+    if (!isNullOrUndefined(className)) {
+        dom.className = className;
+    } else if (dom.className !== '') {
+        dom.removeAttribute('class');
+    }
+
+    if (ref) {
+        createRef(dom, ref, mountedQueue);
+    }
+
+    return dom;
+}
+
+function hydrateChildren(children, parentDom, mountedQueue, parentVNode) {
+    normalizeChildren$1(parentDom);
+    var dom = parentDom.firstChild;
+
+    if (isStringOrNumber(children)) {
+        if (dom !== null && dom.nodeType === 3) {
+            if (dom.nodeValue !== children) {
+                dom.nodeValue = children;
+            }
+        } else if (children === '') {
+            parentDom.appendChild(document.createTextNode(''));
+        } else {
+            setTextContent(parentDom, children);
+        }
+        if (dom !== null) {
+            dom = dom.nextSibling;
+        }
+    } else if (isArray(children)) {
+        for (var i = 0; i < children.length; i++) {
+            var child = children[i];
+
+            if (!isNullOrUndefined(child)) {
+                if (dom !== null) {
+                    var nextSibling = dom.nextSibling;
+                    hydrateElement(child, dom, mountedQueue, parentDom, parentVNode);
+                    dom = nextSibling;
+                } else {
+                    createElement(child, parentDom, mountedQueue, true, parentVNode);
+                }
+            }
+        }
+    } else {
+        if (dom !== null) {
+            hydrateElement(children, dom, mountedQueue, parentDom, parentVNode);
+        } else {
+            createElement(children, parentDom, mountedQueue, true, parentVNode);
+        }
+    }
+
+    // clear any other DOM nodes, there should be on a single entry for the root
+    // while (dom) {
+    // const nextSibling = dom.nextSibling;
+    // parentDom.removeChild(dom);
+    // dom = nextSibling;
+    // }
+}
+
+function normalizeChildren$1(parentDom) {
+    var dom = parentDom.firstChild;
+
+    while (dom) {
+        if (dom.nodeType === 8 && dom.data === '') {
+            var lastDom = dom.previousSibling;
+            parentDom.removeChild(dom);
+            dom = lastDom || parentDom.firstChild;
+        } else {
+            dom = dom.nextSibling;
+        }
+    }
+}
+
+var warning = (typeof console === 'undefined' ? 'undefined' : _typeof(console)) === 'object' ? function (message) {
+    console.warn(message);
+} : function () {};
+
 
 
 var miss = Object.freeze({
@@ -3176,7 +3395,9 @@ var miss = Object.freeze({
 	hc: createCommentVNode,
 	remove: removeElement,
 	MountedQueue: MountedQueue,
-	renderString: toString$2
+	renderString: toString$2,
+	hydrateRoot: hydrateRoot,
+	hydrate: hydrate
 });
 
 var parser = new Parser();
@@ -3217,6 +3438,13 @@ Vdt$1.prototype = {
         var oldVNode = this.vNode;
         this.renderVNode(data);
         this.node = patch(oldVNode, this.vNode, parentDom, queue, parentVNode);
+
+        return this.node;
+    },
+    hydrate: function hydrate$$1(data, dom, queue, parentDom, parentVNode) {
+        this.renderVNode(data);
+        hydrate(this.vNode, dom, queue, parentDom, parentVNode);
+        this.node = this.vNode.dom;
 
         return this.node;
     },
@@ -3336,8 +3564,34 @@ Intact$1.prototype = {
     _beforeUpdate: function _beforeUpdate(lastVNode, nextVNode) {},
     _update: function _update(lastVNode, nextVNode) {},
     _destroy: function _destroy(lastVNode, nextVNode, parentDom) {},
-    init: function init(lastVNode, nextVNode) {
+    hydrate: function hydrate$$1(vNode, dom) {
         var _this3 = this;
+
+        var vdt = this.vdt;
+        if (!this.inited) {
+            this.one('$inited', function () {
+                var element = _this3.hydrate(vNode, dom);
+                if (dom !== element) {
+                    vNode.dom = element;
+                }
+                _this3._triggerMountedQueue();
+                _this3.mount(null, vNode);
+            });
+            return dom;
+        }
+        this.element = vdt.hydrate(this, dom, this.mountedQueue, this.parentDom, vNode);
+        this.rendered = true;
+        if (this._pendingUpdate) {
+            this._pendingUpdate(null, vNode);
+            this._pendingUpdate = null;
+        }
+        this.trigger('$rendered', this);
+        this._create(null, vNode);
+
+        return this.element;
+    },
+    init: function init(lastVNode, nextVNode) {
+        var _this4 = this;
 
         var vdt = this.vdt;
         this._lastVNode = lastVNode;
@@ -3354,12 +3608,12 @@ Intact$1.prototype = {
                     this.__destroyVNode(lastVNode, nextVNode);
                 }
             } else {
-                var vNode = createCommentVNode('');
+                var vNode = createCommentVNode('!');
                 placeholder = render(vNode);
                 vdt.vNode = vNode;
             }
             this.one('$inited', function () {
-                var element = _this3.init(lastVNode, nextVNode);
+                var element = _this4.init(lastVNode, nextVNode);
                 var dom = nextVNode.dom;
                 // 存在一种情况，组件的第一个元素是一个组件，他们管理的是同一个dom
                 // 但是当第一个元素的dom变更时，父组件的vNode却没有变
@@ -3368,8 +3622,8 @@ Intact$1.prototype = {
                 if (!lastVNode || lastVNode.key !== nextVNode.key) {
                     dom.parentNode.replaceChild(element, dom);
                 }
-                _this3._triggerMountedQueue();
-                _this3.mount(lastVNode, nextVNode);
+                _this4._triggerMountedQueue();
+                _this4.mount(lastVNode, nextVNode);
             });
             vdt.node = placeholder;
             return placeholder;
@@ -3438,7 +3692,7 @@ Intact$1.prototype = {
         if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
     },
     __update: function __update(lastVNode, nextVNode) {
-        var _this4 = this;
+        var _this5 = this;
 
         // 如果不存在nextVNode，则为直接调用update方法更新自己
         // 否则则是父组件触发的子组件更新，此时需要更新一些状态
@@ -3455,7 +3709,7 @@ Intact$1.prototype = {
         // 让整个更新完成，才去触发_update生命周期函数
         if (this.mountedQueue) {
             this.mountedQueue.push(function () {
-                _this4._update(lastVNode, nextVNode);
+                _this5._update(lastVNode, nextVNode);
             });
         } else {
             this._update(lastVNode, nextVNode);
@@ -3579,7 +3833,7 @@ Intact$1.prototype = {
     },
 
     set: function _set(key, val, options) {
-        var _this5 = this;
+        var _this6 = this;
 
         if (isNullOrUndefined(key)) return this;
 
@@ -3673,14 +3927,14 @@ Intact$1.prototype = {
             var triggerChangedEvent = function triggerChangedEvent() {
                 for (var _prop7 in changes) {
                     var _values = changes[_prop7];
-                    _this5.trigger('$changed:' + _prop7, _this5, _values[1], _values[0]);
+                    _this6.trigger('$changed:' + _prop7, _this6, _values[1], _values[0]);
                 }
-                _this5.trigger('$changed', _this5, changeKeys);
+                _this6.trigger('$changed', _this6, changeKeys);
             };
             if (options.update && this._startRender) {
                 clearTimeout(this._asyncUpdate);
                 var triggerChange = function triggerChange() {
-                    _this5.update();
+                    _this6.update();
                     triggerChangedEvent();
                 };
                 if (options.async) {
@@ -3702,15 +3956,15 @@ Intact$1.prototype = {
         return this;
     },
     one: function one(name, callback) {
-        var _this6 = this;
+        var _this7 = this;
 
         var fn = function fn() {
             for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
                 args[_key] = arguments[_key];
             }
 
-            callback.apply(_this6, args);
-            _this6.off(name, fn);
+            callback.apply(_this7, args);
+            _this7.off(name, fn);
         };
         this.on(name, fn);
 
@@ -3803,6 +4057,16 @@ Intact$1.mount = function (Component, node) {
             c.mount();
         });
     }
+    return c;
+};
+
+Intact$1.hydrate = function (Component, node) {
+    if (!Component || !(Component.prototype instanceof Intact$1 || Component === Intact$1)) {
+        throw new Error('expect for a class component');
+    }
+    var c = new Component();
+    c.parentDom = node;
+    c.hydrate(null, node.firstChild);
     return c;
 };
 

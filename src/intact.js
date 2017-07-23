@@ -4,7 +4,7 @@ import {
     keys, isObject
 } from './utils';
 import Vdt from 'vdt';
-import {hc, render} from 'miss';
+import {hc, render, hydrateRoot, h} from 'miss';
 import {removeComponentClassOrInstance} from 'miss/src/vdom';
 import {EMPTY_OBJ} from 'miss/src/vnode';
 import {isNullOrUndefined, isEventProp} from 'miss/src/utils';
@@ -75,6 +75,30 @@ Intact.prototype = {
     _update(lastVNode, nextVNode) {},
     _destroy(lastVNode, nextVNode, parentDom) {},
 
+    hydrate(vNode, dom) {
+        const vdt = this.vdt;
+        if (!this.inited) {
+            this.one('$inited', () => {
+                const element = this.hydrate(vNode, dom);
+                if (dom !== element) {
+                    vNode.dom = element;
+                }
+                this._triggerMountedQueue();
+                this.mount(null, vNode);
+            });
+
+            return dom;
+        }
+
+        this._startRender = true;
+        this.element = vdt.hydrate(this, dom, this.mountedQueue, this.parentDom, vNode);
+        this.rendered = true;
+        this.trigger('$rendered', this);
+        this._create(null, vNode);
+
+        return this.element;
+    },
+
     init(lastVNode, nextVNode) {
         const vdt = this.vdt;
         this._lastVNode = lastVNode;
@@ -91,7 +115,7 @@ Intact.prototype = {
                     this.__destroyVNode(lastVNode, nextVNode);
                 }
             } else {
-                const vNode = hc('');
+                const vNode = hc('!');
                 placeholder = render(vNode);
                 vdt.vNode = vNode;
             }
@@ -516,23 +540,13 @@ Intact.extend = function(prototype = {}) {
  * @param node {Node} html节点
  */
 Intact.mount = function(Component, node) {
-    if (!Component || !(Component.prototype instanceof Intact || Component === Intact)) {
-        throw new Error('expect for a class component');
-    }
-    const c = new Component();
-    c.parentDom = node;
-    // c._initMountedQueue();
-    let dom;
-    if (c.inited) {
-        dom = c.init();
-        // node.appendChild(dom);
-        c.mount();
-    } else {
-        c.one('$inited', () => {
-            dom = c.init();
-            // node.appendChild(dom);
-            c.mount();
-        });
-    }
-    return c;
+    const vNode = h(Component);
+    render(vNode, node);
+    return vNode.children;
 };
+
+Intact.hydrate = function(Component, node) {
+    const vNode = h(Component);
+    hydrateRoot(vNode, node);
+    return vNode.children;
+}
