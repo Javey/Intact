@@ -4314,7 +4314,7 @@ var Animate$1 = Animate = Intact$1.extend({
             };
         }
         // const transform = element.style.transform;
-        var matrix = new WebKitCSSMatrix(transform);
+        var matrix = new CSSMatrix(transform);
         return {
             top: element.offsetTop + matrix.m42,
             left: element.offsetLeft + matrix.m41
@@ -4720,7 +4720,6 @@ function getAnimateType(element) {
     var animationDurations = style[animationProp + 'Duration'].split(', ');
     var transitionDuration = getDuration(transitionDurations);
     var animationDuration = getDuration(animationDurations);
-    console.log(transitionDuration, animationDuration);
     return transitionDuration > animationDuration ? 'transition' : 'animation';
 }
 
@@ -4781,6 +4780,22 @@ if (inBrowser) {
 
     detectEvents();
 }
+
+var CSSMatrix = typeof WebKitCSSMatrix !== 'undefined' ? WebKitCSSMatrix : function (transform) {
+    this.m42 = 0;
+    this.m41 = 0;
+    var type = transform.slice(0, transform.indexOf('('));
+    var parts = void 0;
+    if (type === 'matrix3d') {
+        parts = transform.slice(9, -1).split(',');
+        this.m41 = parseFloat(parts[12]);
+        this.m42 = parseFloat(parts[13]);
+    } else if (type === 'matrix') {
+        parts = transform.slice(7, -1).split(',');
+        this.m41 = parseFloat(parts[4]);
+        this.m42 = parseFloat(parts[5]);
+    }
+};
 
 Intact$1.prototype.Animate = Animate$1;
 Intact$1.Animate = Animate$1;

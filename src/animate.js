@@ -263,7 +263,7 @@ export default Animate = Intact.extend({
             };
         }
         // const transform = element.style.transform;
-        const matrix = new WebKitCSSMatrix(transform);
+        const matrix = new CSSMatrix(transform);
         return {
             top: element.offsetTop + matrix.m42,
             left: element.offsetLeft + matrix.m41
@@ -669,7 +669,6 @@ function getAnimateType(element) {
     const animationDurations = style[`${animationProp}Duration`].split(', ');
     const transitionDuration = getDuration(transitionDurations);
     const animationDuration = getDuration(animationDurations);
-    console.log(transitionDuration, animationDuration);
     return transitionDuration > animationDuration ? 'transition' : 'animation';
 }
 
@@ -728,3 +727,20 @@ if (inBrowser) {
     detectEvents();
 }
 
+const CSSMatrix = typeof WebKitCSSMatrix !== 'undefined' ? 
+    WebKitCSSMatrix : 
+    function(transform) {
+        this.m42 = 0;
+        this.m41 = 0;
+        const type = transform.slice(0, transform.indexOf('('));
+        let parts;
+        if (type === 'matrix3d') {
+            parts = transform.slice(9, -1).split(',');
+            this.m41 = parseFloat(parts[12]);
+            this.m42 = parseFloat(parts[13]);
+        } else if (type === 'matrix') {
+            parts = transform.slice(7, -1).split(',');
+            this.m41 = parseFloat(parts[4]);
+            this.m42 = parseFloat(parts[5]);
+        }
+    };
