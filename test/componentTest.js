@@ -266,7 +266,7 @@ describe('Component Test', function() {
                     });
                 }),
                 _create: sinon.spy(() => {
-                    sEql(app.element.innerHTML, '<!----><a>a</a>');
+                    sEql(app.element.innerHTML, '<!--!--><a>a</a>');
                 }),
                 _mount: sinon.spy(() => {
                     sEql(app.element.innerHTML, '<a>a</a>');
@@ -278,7 +278,7 @@ describe('Component Test', function() {
 
             app.load(Async);
 
-            sEql(app.element.innerHTML, '<!---->');
+            sEql(app.element.innerHTML, '<!--!-->');
             checkFunctionCallCount(p, [1, 0, 0, 0, 0]);
             sEql(app.get('view').dom, undefined);
 
@@ -311,7 +311,7 @@ describe('Component Test', function() {
             app.load(Async2);
 
             setTimeout(() => {
-                sEql(app.element.innerHTML, '<!---->');
+                sEql(app.element.innerHTML, '<!--!-->');
             }, 150);
             setTimeout(() => {
                 sEql(app.element.innerHTML, '<a>2</a>');
@@ -435,11 +435,11 @@ describe('Component Test', function() {
                 }
             });
             app.load(Async2);
-            sEql(app.element.innerHTML, '<!---->');
+            sEql(app.element.innerHTML, '<!--!-->');
             setTimeout(() => {
-                sEql(app.element.innerHTML, '<span><!----></span>');
+                sEql(app.element.innerHTML, '<span><!--!--></span>');
                 app.load(Async2);
-                sEql(app.element.innerHTML, '<span><!----></span>');
+                sEql(app.element.innerHTML, '<span><!--!--></span>');
             }, 150);
             setTimeout(() => {
                 sEql(app.element.innerHTML, '<span><a>a</a></span>');

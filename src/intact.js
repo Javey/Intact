@@ -549,4 +549,4 @@ Intact.hydrate = function(Component, node) {
     const vNode = h(Component);
     hydrateRoot(vNode, node);
     return vNode.children;
-}
+};

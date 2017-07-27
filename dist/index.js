@@ -1815,24 +1815,28 @@ function proxyEvent(e) {
 var addEventListener = void 0;
 var removeEventListener = void 0;
 if ('addEventListener' in doc) {
-    addEventListener = function addEventListener(name, fn) {
-        doc.addEventListener(name, fn, false);
+    addEventListener = function addEventListener(dom, name, fn) {
+        dom.addEventListener(name, fn, false);
     };
 
-    removeEventListener = function removeEventListener(name, fn) {
-        doc.removeEventListener(name, fn);
+    removeEventListener = function removeEventListener(dom, name, fn) {
+        dom.removeEventListener(name, fn);
     };
 } else {
-    addEventListener = function addEventListener(name, fn) {
-        doc.attachEvent("on" + name, fn);
+    addEventListener = function addEventListener(dom, name, fn) {
+        dom.attachEvent("on" + name, fn);
     };
 
-    removeEventListener = function removeEventListener(name, fn) {
-        doc.detachEvent("on" + name, fn);
+    removeEventListener = function removeEventListener(dom, name, fn) {
+        dom.detachEvent("on" + name, fn);
     };
 }
 
 var delegatedEvents = {};
+var unDelegatesEvents = {
+    'mouseenter': true,
+    'mouseleave': true
+};
 
 function handleEvent(name, lastEvent, nextEvent, dom) {
     if (name === 'blur') {
@@ -1841,22 +1845,31 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
         name = 'focusin';
     }
 
-    var delegatedRoots = delegatedEvents[name];
+    if (!unDelegatesEvents[name]) {
+        var delegatedRoots = delegatedEvents[name];
 
-    if (nextEvent) {
-        if (!delegatedRoots) {
-            delegatedRoots = { items: new SimpleMap(), docEvent: null };
-            delegatedRoots.docEvent = attachEventToDocument(name, delegatedRoots);
-            delegatedEvents[name] = delegatedRoots;
-        }
-        delegatedRoots.items.set(dom, nextEvent);
-    } else if (delegatedRoots) {
-        var items = delegatedRoots.items;
-        if (items.delete(dom)) {
-            if (items.size === 0) {
-                removeEventListener(name, delegatedRoots.docEvent);
-                delete delegatedRoots[name];
+        if (nextEvent) {
+            if (!delegatedRoots) {
+                delegatedRoots = { items: new SimpleMap(), docEvent: null };
+                delegatedRoots.docEvent = attachEventToDocument(name, delegatedRoots);
+                delegatedEvents[name] = delegatedRoots;
             }
+            delegatedRoots.items.set(dom, nextEvent);
+        } else if (delegatedRoots) {
+            var items = delegatedRoots.items;
+            if (items.delete(dom)) {
+                if (items.size === 0) {
+                    removeEventListener(doc, name, delegatedRoots.docEvent);
+                    delete delegatedRoots[name];
+                }
+            }
+        }
+    } else {
+        if (lastEvent) {
+            removeEventListener(dom, name, lastEvent);
+        }
+        if (nextEvent) {
+            addEventListener(dom, name, nextEvent);
         }
     }
 }
@@ -1889,7 +1902,7 @@ function attachEventToDocument(name, delegatedRoots) {
             dispatchEvent(event, event.target, delegatedRoots.items, count, event.type === 'click');
         }
     };
-    addEventListener(name, docEvent);
+    addEventListener(doc, name, docEvent);
     return docEvent;
 }
 
@@ -3468,7 +3481,7 @@ function compile(source, options) {
             var ast = parser.parse(source, options),
                 hscript = stringifier.stringify(ast, options.autoReturn);
 
-            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', '__u = _Vdt.utils, extend = __u.extend, _e = __u.error, _className = __u.className,', '__o = __u.Options, _getModel = __o.getModel, _setModel = __o.setModel,', '_setCheckboxModel = __u.setCheckboxModel, _detectCheckboxChecked = __u.detectCheckboxChecked,', '_setSelectModel = __u.setSelectModel,', (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj;', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
+            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', '__u = _Vdt.utils, extend = __u.extend, _e = __u.error, _className = __u.className,', '__o = __u.Options, _getModel = __o.getModel, _setModel = __o.setModel,', '_setCheckboxModel = __u.setCheckboxModel, _detectCheckboxChecked = __u.detectCheckboxChecked,', '_setSelectModel = __u.setSelectModel,', (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj, Animate = self && self.Animate;', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
             templateFn = options.onlySource ? function () {} : new Function('obj', '_Vdt', 'blocks', hscript);
             templateFn.source = 'function(obj, _Vdt, blocks) {\n' + hscript + '\n}';
             break;
@@ -3577,14 +3590,13 @@ Intact$1.prototype = {
                 _this3._triggerMountedQueue();
                 _this3.mount(null, vNode);
             });
+
             return dom;
         }
+
+        this._startRender = true;
         this.element = vdt.hydrate(this, dom, this.mountedQueue, this.parentDom, vNode);
         this.rendered = true;
-        if (this._pendingUpdate) {
-            this._pendingUpdate(null, vNode);
-            this._pendingUpdate = null;
-        }
         this.trigger('$rendered', this);
         this._create(null, vNode);
 
@@ -4039,35 +4051,15 @@ Intact$1.extend = function () {
  * @param node {Node} html节点
  */
 Intact$1.mount = function (Component, node) {
-    if (!Component || !(Component.prototype instanceof Intact$1 || Component === Intact$1)) {
-        throw new Error('expect for a class component');
-    }
-    var c = new Component();
-    c.parentDom = node;
-    // c._initMountedQueue();
-    var dom = void 0;
-    if (c.inited) {
-        dom = c.init();
-        // node.appendChild(dom);
-        c.mount();
-    } else {
-        c.one('$inited', function () {
-            dom = c.init();
-            // node.appendChild(dom);
-            c.mount();
-        });
-    }
-    return c;
+    var vNode = createVNode(Component);
+    render(vNode, node);
+    return vNode.children;
 };
 
 Intact$1.hydrate = function (Component, node) {
-    if (!Component || !(Component.prototype instanceof Intact$1 || Component === Intact$1)) {
-        throw new Error('expect for a class component');
-    }
-    var c = new Component();
-    c.parentDom = node;
-    c.hydrate(null, node.firstChild);
-    return c;
+    var vNode = createVNode(Component);
+    hydrateRoot(vNode, node);
+    return vNode.children;
 };
 
 var Animate = void 0;
@@ -4318,7 +4310,7 @@ var Animate$1 = Animate = Intact$1.extend({
             };
         }
         // const transform = element.style.transform;
-        var matrix = new WebKitCSSMatrix(transform);
+        var matrix = new CSSMatrix(transform);
         return {
             top: element.offsetTop + matrix.m42,
             left: element.offsetLeft + matrix.m41
@@ -4724,7 +4716,6 @@ function getAnimateType(element) {
     var animationDurations = style[animationProp + 'Duration'].split(', ');
     var transitionDuration = getDuration(transitionDurations);
     var animationDuration = getDuration(animationDurations);
-    console.log(transitionDuration, animationDuration);
     return transitionDuration > animationDuration ? 'transition' : 'animation';
 }
 
@@ -4785,6 +4776,22 @@ if (inBrowser) {
 
     detectEvents();
 }
+
+var CSSMatrix = typeof WebKitCSSMatrix !== 'undefined' ? WebKitCSSMatrix : function (transform) {
+    this.m42 = 0;
+    this.m41 = 0;
+    var type = transform.slice(0, transform.indexOf('('));
+    var parts = void 0;
+    if (type === 'matrix3d') {
+        parts = transform.slice(9, -1).split(',');
+        this.m41 = parseFloat(parts[12]);
+        this.m42 = parseFloat(parts[13]);
+    } else if (type === 'matrix') {
+        parts = transform.slice(7, -1).split(',');
+        this.m41 = parseFloat(parts[4]);
+        this.m42 = parseFloat(parts[5]);
+    }
+};
 
 Intact$1.prototype.Animate = Animate$1;
 Intact$1.Animate = Animate$1;
