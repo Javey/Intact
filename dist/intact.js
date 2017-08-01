@@ -205,6 +205,7 @@ var setTextContent = browser.isIE8 ? function (dom, text) {
 
 var i = 0;var Type = { JS: i++,
     JSXText: i++,
+    JSXUnescapeText: i++,
     JSXElement: i++,
     JSXExpressionContainer: i++,
     JSXAttribute: i++,
@@ -440,7 +441,7 @@ function setSelectModel(data, key, e) {
 var error$1 = function () {
     var hasConsole = typeof console !== 'undefined';
     return hasConsole ? function (e) {
-        console.error(e);
+        console.error(e.stack);
     } : noop;
 }();
 
@@ -1037,6 +1038,11 @@ Parser.prototype = {
         this._expect(Delimiters[0]);
         if (this._isExpect(Delimiters[1])) {
             expression = this._parseJSXEmptyExpression();
+        } else if (this._isExpect('=')) {
+            // if the lead char is '=', then treat it as unescape string
+            expression = this._parseJSXUnescapeText();
+            this._expect(Delimiters[1]);
+            return expression;
         } else {
             expression = this._parseExpression();
         }
@@ -1051,6 +1057,13 @@ Parser.prototype = {
 
     _parseExpression: function _parseExpression() {
         return this._parseTemplate();
+    },
+
+    _parseJSXUnescapeText: function _parseJSXUnescapeText() {
+        this._expect('=');
+        return this._type(Type$1.JSXUnescapeText, {
+            value: this._parseTemplate()
+        });
     },
 
     _parseJSXChildren: function _parseJSXChildren(element) {
@@ -1305,6 +1318,8 @@ Stringifier.prototype = {
                 return this._visitJSX(element);
             case Type$2.JSXText:
                 return this._visitJSXText(element);
+            case Type$2.JSXUnescapeText:
+                return this._visitJSXUnescapeText(element);
             case Type$2.JSXExpressionContainer:
                 return this._visitJSXExpressionContainer(element.value);
             case Type$2.JSXWidget:
@@ -1582,6 +1597,10 @@ Stringifier.prototype = {
         return ret;
     },
 
+    _visitJSXUnescapeText: function _visitJSXUnescapeText(element) {
+        return 'hu(' + this._visitJSXExpressionContainer(element.value) + ')';
+    },
+
     _visitJSXWidget: function _visitJSXWidget(element) {
         if (element.children.length) {
             element.attributes.push({ name: 'children', value: element.children });
@@ -1628,7 +1647,9 @@ var Types = {
 
     InputElement: 1 << 6,
     SelectElement: 1 << 7,
-    TextareaElement: 1 << 8
+    TextareaElement: 1 << 8,
+
+    UnescapeText: 1 << 9 // for server side render unescape text
 };
 Types.FormElement = Types.InputElement | Types.SelectElement | Types.TextareaElement;
 Types.Element = Types.HtmlElement | Types.FormElement;
@@ -1690,6 +1711,10 @@ function createVNode(tag, props, children, className, key, ref) {
 
 function createCommentVNode(children) {
     return new VNode(Types.HtmlComment, null, EMPTY_OBJ, children);
+}
+
+function createUnescapeTextVNode(children) {
+    return new VNode(Types.UnescapeText, null, EMPTY_OBJ, children);
 }
 
 function createTextVNode(text) {
@@ -2479,7 +2504,11 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue, pare
             createElements(nextChildren, parentDom, mountedQueue, false, parentVNode);
         }
     } else if (isNullOrUndefined(nextChildren)) {
-        removeElements(lastChildren, parentDom);
+        if (isStringOrNumber(lastChildren)) {
+            setTextContent(parentDom, '');
+        } else {
+            removeElements(lastChildren, parentDom);
+        }
     } else if (isStringOrNumber(nextChildren)) {
         if (isStringOrNumber(lastChildren)) {
             parentDom.firstChild.nodeValue = nextChildren;
@@ -3073,6 +3102,8 @@ function toString$2(vNode, parent, disableSplitText, firstChild) {
         html = (firstChild || disableSplitText ? '' : '<!---->') + (children === '' ? ' ' : escapeText(children));
     } else if (type & Types.HtmlComment) {
         html = '<!--' + children + '-->';
+    } else if (type & Types.UnescapeText) {
+        html = isNullOrUndefined(children) ? '' : children;
     } else {
         throw new Error('Unknown vNode: ' + vNode);
     }
@@ -3410,6 +3441,7 @@ var miss = (Object.freeze || Object)({
 	patch: patch,
 	render: render,
 	hc: createCommentVNode,
+	hu: createUnescapeTextVNode,
 	remove: removeElement,
 	MountedQueue: MountedQueue,
 	renderString: toString$2,
@@ -3485,7 +3517,7 @@ function compile(source, options) {
             var ast = parser.parse(source, options),
                 hscript = stringifier.stringify(ast, options.autoReturn);
 
-            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', '__u = _Vdt.utils, extend = __u.extend, _e = __u.error, _className = __u.className,', '__o = __u.Options, _getModel = __o.getModel, _setModel = __o.setModel,', '_setCheckboxModel = __u.setCheckboxModel, _detectCheckboxChecked = __u.detectCheckboxChecked,', '_setSelectModel = __u.setSelectModel,', (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj, Animate = self && self.Animate;', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
+            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, hu = _Vdt.miss.hu, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', '__u = _Vdt.utils, extend = __u.extend, _e = __u.error, _className = __u.className,', '__o = __u.Options, _getModel = __o.getModel, _setModel = __o.setModel,', '_setCheckboxModel = __u.setCheckboxModel, _detectCheckboxChecked = __u.detectCheckboxChecked,', '_setSelectModel = __u.setSelectModel,', (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj, Animate = self && self.Animate;', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
             templateFn = options.onlySource ? function () {} : new Function('obj', '_Vdt', 'blocks', hscript);
             templateFn.source = 'function(obj, _Vdt, blocks) {\n' + hscript + '\n}';
             break;
@@ -3698,8 +3730,10 @@ Intact$1.prototype = {
             return lastVNode ? lastVNode.dom : undefined;
         }
 
-        if (!nextVNode) {
+        if (!nextVNode && this._updateCount === 0) {
             // 如果直接调用update方法，则要清除mountedQueue
+            // 如果在render的过程中，又触发了update，则此时
+            // 不能清空，所以要判断_updateCount
             this.mountedQueue = null;
         }
 
@@ -4028,7 +4062,7 @@ Intact$1.prototype = {
         return this;
     },
     _initMountedQueue: function _initMountedQueue() {
-        this.mountedQueue = new Vdt$1.miss.MountedQueue();
+        this.mountedQueue = new MountedQueue();
     },
     _triggerMountedQueue: function _triggerMountedQueue() {
         this.mountedQueue.trigger();
@@ -4056,8 +4090,15 @@ Intact$1.extend = function () {
  */
 Intact$1.mount = function (Component, node) {
     var vNode = createVNode(Component);
-    render(vNode, node);
-    return vNode.children;
+    var mountedQueue = new MountedQueue();
+    render(vNode, node, mountedQueue);
+    var instance = vNode.children;
+    // 如果不是异步组件，则触发mount事件，否则
+    // 交给组件的init方法，等异步处理完成后触发
+    if (instance.inited) {
+        mountedQueue.trigger();
+    }
+    return instance;
 };
 
 Intact$1.hydrate = function (Component, node) {

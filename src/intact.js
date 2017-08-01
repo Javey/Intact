@@ -7,7 +7,7 @@ import Vdt from 'vdt';
 import {hc, render, hydrateRoot, h} from 'miss';
 import {removeComponentClassOrInstance} from 'miss/src/vdom';
 import {EMPTY_OBJ} from 'miss/src/vnode';
-import {isNullOrUndefined, isEventProp} from 'miss/src/utils';
+import {isNullOrUndefined, isEventProp, MountedQueue} from 'miss/src/utils';
 
 export default function Intact(props) {
     if (!this.template) {
@@ -193,8 +193,10 @@ Intact.prototype = {
             return lastVNode ? lastVNode.dom : undefined;
         }
 
-        if (!nextVNode) {
+        if (!nextVNode && this._updateCount === 0) {
             // 如果直接调用update方法，则要清除mountedQueue
+            // 如果在render的过程中，又触发了update，则此时
+            // 不能清空，所以要判断_updateCount
             this.mountedQueue = null;
         }
 
@@ -514,7 +516,7 @@ Intact.prototype = {
     },
 
     _initMountedQueue() {
-        this.mountedQueue = new Vdt.miss.MountedQueue();
+        this.mountedQueue = new MountedQueue();
     },
 
     _triggerMountedQueue() {
@@ -541,8 +543,15 @@ Intact.extend = function(prototype = {}) {
  */
 Intact.mount = function(Component, node) {
     const vNode = h(Component);
-    render(vNode, node);
-    return vNode.children;
+    const mountedQueue = new MountedQueue();
+    render(vNode, node, mountedQueue);
+    const instance = vNode.children;
+    // 如果不是异步组件，则触发mount事件，否则
+    // 交给组件的init方法，等异步处理完成后触发
+    if (instance.inited) {
+        mountedQueue.trigger();
+    }
+    return instance;
 };
 
 Intact.hydrate = function(Component, node) {
