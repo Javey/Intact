@@ -808,7 +808,7 @@ Parser.prototype = {
 
         while (this.index < this.length) {
             var ch = this._char();
-            if (ch === '\'' || ch === '"') {
+            if (ch === '\'' || ch === '"' || ch === '`') {
                 // skip element(<div>) in quotes
                 this._scanStringLiteral();
             } else if (this._isElementStart()) {
@@ -898,7 +898,7 @@ Parser.prototype = {
 
     _scanJSXStringLiteral: function _scanJSXStringLiteral() {
         var quote = this._char();
-        if (quote !== '\'' && quote !== '"') {
+        if (quote !== '\'' && quote !== '"' && quote !== '`') {
             this._error('String literal must starts with a qoute');
         }
         this._updateIndex();
@@ -3717,7 +3717,7 @@ Intact$1.prototype = {
         this.trigger('$mounted', this);
         this._mount(lastVNode, nextVNode);
     },
-    update: function update(lastVNode, nextVNode) {
+    update: function update(lastVNode, nextVNode, fromPending) {
         // 如果该组件已被销毁，则不更新
         if (this.destroyed) {
             return lastVNode ? lastVNode.dom : undefined;
@@ -3725,15 +3725,15 @@ Intact$1.prototype = {
         // 如果还没有渲染，则等待结束再去更新
         if (!this.rendered) {
             this._pendingUpdate = function (lastVNode, nextVNode) {
-                this.update(lastVNode, nextVNode);
+                this.update(lastVNode, nextVNode, true);
             };
             return lastVNode ? lastVNode.dom : undefined;
         }
 
-        if (!nextVNode && this._updateCount === 0) {
+        if (!nextVNode && !fromPending && this._updateCount === 0) {
             // 如果直接调用update方法，则要清除mountedQueue
             // 如果在render的过程中，又触发了update，则此时
-            // 不能清空，所以要判断_updateCount
+            // 不能清空
             this.mountedQueue = null;
         }
 
