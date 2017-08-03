@@ -13,6 +13,10 @@
     "release-major": "git checkout master && npm version major && bower version major 2>/dev/null; git push origin master --tags && npm publish",
     "build": "rollup -c rollup.config.js && rollup -c rollup.config.node.js && uglifyjs dist/intact.js -o dist/intact.min.js -m"
   },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Javey/Intact"
+  },
   "devDependencies": {
     "babel-core": "^6.24.1",
     "babel-loader": "^7.0.0",
