@@ -1,5 +1,5 @@
 import {extend, isArray, each, isObject, hasOwn, noop} from 'vdt/src/lib/utils';
-import {isNullOrUndefined} from 'miss/src/utils';
+import {isNullOrUndefined} from 'misstime/src/utils';
 
 export {extend, isArray, each, isObject, hasOwn, isNullOrUndefined, noop};
 

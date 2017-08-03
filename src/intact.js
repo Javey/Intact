@@ -4,10 +4,10 @@ import {
     keys, isObject
 } from './utils';
 import Vdt from 'vdt';
-import {hc, render, hydrateRoot, h} from 'miss';
-import {removeComponentClassOrInstance} from 'miss/src/vdom';
-import {EMPTY_OBJ} from 'miss/src/vnode';
-import {isNullOrUndefined, isEventProp, MountedQueue} from 'miss/src/utils';
+import {hc, render, hydrateRoot, h} from 'misstime';
+import {removeComponentClassOrInstance} from 'misstime/src/vdom';
+import {EMPTY_OBJ} from 'misstime/src/vnode';
+import {isNullOrUndefined, isEventProp, MountedQueue} from 'misstime/src/utils';
 
 export default function Intact(props) {
     if (!this.template) {

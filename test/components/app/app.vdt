@@ -1,3 +1,1 @@
-const Animate = self.Animate;
-
 <div>{self.get('view')}</div>

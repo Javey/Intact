@@ -42,5 +42,8 @@
   },
   "presets": [
     "es2015"
-  ]
+  ],
+  "dependencies": {
+    "misstime": "^0.1.1"
+  }
 }

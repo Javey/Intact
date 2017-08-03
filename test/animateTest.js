@@ -16,7 +16,7 @@ describe('Animate Test', function() {
             show: true 
         },
 
-        template: Intact.Vdt.compile(`var Animate = self.Animate;
+        template: Intact.Vdt.compile(`
             <Animate><Animate v-if={self.get('show')}>animate</Animate></Animate>
         `, {noWith: true}),
 
@@ -241,7 +241,7 @@ describe('Animate Test', function() {
     it('patch between Animate and non-Animate components', function(done) {
         this.enableTimeouts(false);
         const C = Intact.extend({
-            template: `var Animate = self.Animate;
+            template: `
                 <Animate>
                     <div key="c-header">c header</div>
                     <Animate key="c-body">c body</Animate>
@@ -250,7 +250,7 @@ describe('Animate Test', function() {
             destroy() {}
         });
         const D = Intact.extend({
-            template: `var Animate = self.Animate;
+            template: `
                 <Animate>
                     <div key="d-header">d header</div>
                     <Animate key="d-body">d body</Animate>

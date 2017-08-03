@@ -385,7 +385,7 @@ describe('Component Test', function() {
             });
             const Sync = Intact.extend({
                 defaults: {value: 'b'},
-                template: '<b>{self.get("value")}</b>',
+                template: '<b><i>{self.get("value")}</i></b>',
                 _create() {
                     this.text = document.createTextNode('c');
                     this.element.appendChild(this.text);
@@ -395,11 +395,11 @@ describe('Component Test', function() {
             const sync = app.load(Sync);
             app.load(Async);
             app.update();
-            sEql(app.element.innerHTML, '<b>bc</b>');
+            sEql(app.element.innerHTML, '<b><i>b</i>c</b>');
             sync.set('value', 'bb');
             app.update();
             
-            sEql(app.element.innerHTML, '<b>bbc</b>');
+            sEql(app.element.innerHTML, '<b><i>bb</i>c</b>');
             sEql(_destroy.callCount, 0);
             setTimeout(() => {
                 sEql(_destroy.callCount, 1);
@@ -409,7 +409,7 @@ describe('Component Test', function() {
                 app.load(Async);
                 app.load(Sync);
                 sEql(_destroy.callCount, 2);
-                sEql(app.element.innerHTML, '<b>bc</b>');
+                sEql(app.element.innerHTML, '<b><i>b</i>c</b>');
 
                 done();
             }, 600);

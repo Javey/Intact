@@ -1,5 +1,5 @@
 import Intact from './intact';
-import {Types} from 'miss/src/vnode';
+import {Types} from 'misstime/src/vnode';
 import {isNullOrUndefined, noop, inBrowser} from './utils';
 import Vdt from 'vdt';
 
