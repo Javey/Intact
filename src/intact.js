@@ -542,6 +542,7 @@ Intact.extend = function(prototype = {}) {
  * @param node {Node} html节点
  */
 Intact.mount = function(Component, node) {
+    if (!node) throw new Error(`expect a parent dom to mount Component, but got ${node}`);
     const vNode = h(Component);
     const mountedQueue = new MountedQueue();
     render(vNode, node, mountedQueue);
@@ -555,6 +556,7 @@ Intact.mount = function(Component, node) {
 };
 
 Intact.hydrate = function(Component, node) {
+    if (!node) throw new Error(`expect a parent dom to hydrate Component, but got ${node}`);
     const vNode = h(Component);
     hydrateRoot(vNode, node);
     return vNode.children;
