@@ -1761,6 +1761,9 @@ Stringifier.prototype = {
                     ret.push('value: _getModel(self, ' + value + ')');
                     ret.push('\'ev-change\': function(__e) {\n                        _setSelectModel(self, ' + value + ', __e);\n                    }');
                     return;
+                case 'textarea':
+                    eventName = 'input';
+                    break;
                 default:
                     break;
             }
@@ -6059,6 +6062,7 @@ Intact$1.extend = function () {
  * @param node {Node} html节点
  */
 Intact$1.mount = function (Component, node) {
+    if (!node) throw new Error('expect a parent dom to mount Component, but got ' + node);
     var vNode = createVNode$1(Component);
     var mountedQueue = new MountedQueue$1();
     render$1(vNode, node, mountedQueue);
@@ -6072,6 +6076,7 @@ Intact$1.mount = function (Component, node) {
 };
 
 Intact$1.hydrate = function (Component, node) {
+    if (!node) throw new Error('expect a parent dom to hydrate Component, but got ' + node);
     var vNode = createVNode$1(Component);
     hydrateRoot$1(vNode, node);
     return vNode.children;
