@@ -1,5 +1,4 @@
-import Intact from './intact';
-import {Types} from 'misstime/src/vnode';
+import Intact from './intact'; import {Types} from 'misstime/src/vnode';
 import {isNullOrUndefined, noop, inBrowser} from './utils';
 import Vdt from 'vdt';
 
@@ -58,7 +57,7 @@ export default Animate = Intact.extend({
                 (
                     this.parentDom ||
                     (parent = this.parentVNode) &&
-                    parent.type & Types.ComponentClassOrInstance &&
+                    (parent.type & Types.ComponentClassOrInstance) &&
                     !parent.children.isRender
                 )
             ) {
@@ -85,6 +84,7 @@ export default Animate = Intact.extend({
             this.leaveClass = `${transition}-leave`;
             this.leaveActiveClass = `${transition}-leave-active`;
             this.moveClass = `${transition}-move`;
+            this.enterEventName = isAppear ? 'a:appear' : 'a:enter';
         };
         this.on('$change:a:transition', initClassName);
         initClassName();
@@ -117,7 +117,7 @@ export default Animate = Intact.extend({
                     });
                 }
             }
-            this.trigger('a:enterEnd', element);
+            this.trigger(`${this.enterEventName}End`, element);
         };
 
         element._unmount = (nouse, parentDom) => {
@@ -504,24 +504,22 @@ export default Animate = Intact.extend({
             } else {
                 // 如果上一个元素还没来得及做动画，则当做新元素处理
                 addClass(element, enterClass);
-                // addClass(this.element, this.enterActiveClass);
             }
         } else {
             addClass(element, enterClass);
-            // Fixme: 这里如果，先添加enterActiveClass，针对transition动画
-            // 可能导致enterClass被动画，然后立即end
-            // 但是，针对animation动画，则没有此问题
-            // 如果后添加enterActiveClass，animation动画可能有闪动，
-            // 因为下一帧才开始进行动画，为了清除闪动，可以添加keframe from
-            // 的样式给enterClass
-            // addClass(this.element, this.enterActiveClass);
         }
         TransitionEvents.on(element, this._enterEnd);
-        if (!onlyInit) {
-            nextFrame(() => this._triggerEnter());
-        }
 
-        this.trigger('a:enterStart', element);
+        this.trigger(`${this.enterEventName}Start`, element);
+
+        if (!onlyInit) {
+            if (getAnimateType(element, enterActiveClass) !== 'animation') {
+                nextFrame(() => this._triggerEnter());
+            } else {
+                // 对于animation动画，同步添加enterActiveClass，避免闪动
+                this._triggerEnter();
+            }
+        }
     },
 
     _triggerEnter() {
@@ -533,7 +531,7 @@ export default Animate = Intact.extend({
         addClass(element, this.enterActiveClass);
         removeClass(element, this.enterClass);
         removeClass(element, this.leaveActiveClass);
-        this.trigger('a:enter', element, this._enterEnd);
+        this.trigger(this.enterEventName, element, this._enterEnd);
     },
 
     _leave(onlyInit) {
@@ -663,12 +661,14 @@ function detectEvents() {
     }
 }
 
-function getAnimateType(element) {
+function getAnimateType(element, className) {
+    if (className) addClass(element, className);
     const style = window.getComputedStyle(element);
     const transitionDurations = style[`${transitionProp}Duration`].split(', ');
     const animationDurations = style[`${animationProp}Duration`].split(', ');
     const transitionDuration = getDuration(transitionDurations);
     const animationDuration = getDuration(animationDurations);
+    if (className) removeClass(element, className);
     return transitionDuration > animationDuration ? 'transition' : 'animation';
 }
 
