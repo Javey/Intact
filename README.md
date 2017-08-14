@@ -1,6 +1,6 @@
 # Intact
 
-[Documents][http://javey.github.io/intact/#/document/start]
+[Documents](http://javey.github.io/intact/#/document/start)
 
 ## 简介
 
