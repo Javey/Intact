@@ -236,7 +236,8 @@ var Directives = {
     'v-else': true,
     'v-for': true,
     'v-for-value': true,
-    'v-for-key': true
+    'v-for-key': true,
+    'v-raw': true
 };
 
 var Options = {
@@ -341,9 +342,15 @@ function getDelimiters() {
     return Options.delimiters;
 }
 
-function configure(options) {
-    if (options !== undefined) {
-        extend(Options, options);
+function configure(key, value) {
+    if (typeof key === 'string') {
+        if (value === undefined) {
+            return Options[key];
+        } else {
+            Options[key] = value;
+        }
+    } else if (isObject$$1(key)) {
+        extend(Options, key);
     }
     return Options;
 }
@@ -1159,7 +1166,7 @@ Parser.prototype = {
             this._expect('>');
         } else {
             this._expect('>');
-            ret.children = this._parseJSXChildren(ret);
+            ret.children = this._parseJSXChildren(ret, attrs.hasVRaw);
         }
 
         return ret;
@@ -1168,7 +1175,8 @@ Parser.prototype = {
     _parseJSXAttribute: function _parseJSXAttribute() {
         var ret = {
             attributes: [],
-            directives: []
+            directives: [],
+            hasVRaw: false
         };
         while (this.index < this.length) {
             this._skipWhitespace();
@@ -1176,9 +1184,16 @@ Parser.prototype = {
                 break;
             } else {
                 var attr = this._parseJSXAttributeName();
+                if (attr.name === 'v-raw') {
+                    ret.hasVRaw = true;
+                    continue;
+                }
                 if (this._char() === '=') {
                     this._updateIndex();
                     attr.value = this._parseJSXAttributeValue();
+                } else {
+                    // treat no-value attribute as true
+                    attr.value = this._type(Type$1.JSXExpressionContainer, { value: [this._type(Type$1.JS, { value: 'true' })] });
                 }
                 ret[attr.type === Type$1.JSXAttribute ? 'attributes' : 'directives'].push(attr);
             }
@@ -1253,7 +1268,7 @@ Parser.prototype = {
         });
     },
 
-    _parseJSXChildren: function _parseJSXChildren(element) {
+    _parseJSXChildren: function _parseJSXChildren(element, hasVRaw) {
         var children = [],
             endTag = element.value + '>',
             current = null;
@@ -1271,13 +1286,22 @@ Parser.prototype = {
                 break;
         }
 
-        this._skipWhitespaceBetweenElements(endTag);
-        while (this.index < this.length) {
-            if (this._isExpect(endTag)) {
-                break;
+        if (hasVRaw) {
+            while (this.index < this.length) {
+                if (this._isExpect(endTag)) {
+                    break;
+                }
+                children.push(this._scanJSXText([endTag]));
             }
-            current = this._parseJSXChild(element, endTag, current);
-            children.push(current);
+        } else {
+            this._skipWhitespaceBetweenElements(endTag);
+            while (this.index < this.length) {
+                if (this._isExpect(endTag)) {
+                    break;
+                }
+                current = this._parseJSXChild(element, endTag, current);
+                children.push(current);
+            }
         }
         this._parseJSXClosingElement();
         return children;
@@ -6161,6 +6185,7 @@ var Animate$1 = Animate = Intact$1.extend({
             _this.leaveClass = transition + '-leave';
             _this.leaveActiveClass = transition + '-leave-active';
             _this.moveClass = transition + '-move';
+            _this.enterEventName = isAppear ? 'a:appear' : 'a:enter';
         };
         this.on('$change:a:transition', initClassName);
         initClassName();
@@ -6190,7 +6215,7 @@ var Animate$1 = Animate = Intact$1.extend({
                     });
                 }
             }
-            _this.trigger('a:enterEnd', element);
+            _this.trigger(_this.enterEventName + 'End', element);
         };
 
         element._unmount = function (nouse, parentDom) {
@@ -6577,26 +6602,24 @@ var Animate$1 = Animate = Intact$1.extend({
             } else {
                 // 如果上一个元素还没来得及做动画，则当做新元素处理
                 addClass(element, enterClass);
-                // addClass(this.element, this.enterActiveClass);
             }
         } else {
             addClass(element, enterClass);
-            // Fixme: 这里如果，先添加enterActiveClass，针对transition动画
-            // 可能导致enterClass被动画，然后立即end
-            // 但是，针对animation动画，则没有此问题
-            // 如果后添加enterActiveClass，animation动画可能有闪动，
-            // 因为下一帧才开始进行动画，为了清除闪动，可以添加keframe from
-            // 的样式给enterClass
-            // addClass(this.element, this.enterActiveClass);
         }
         TransitionEvents.on(element, this._enterEnd);
-        if (!onlyInit) {
-            nextFrame(function () {
-                return _this4._triggerEnter();
-            });
-        }
 
-        this.trigger('a:enterStart', element);
+        this.trigger(this.enterEventName + 'Start', element);
+
+        if (!onlyInit) {
+            if (getAnimateType(element, enterActiveClass) !== 'animation') {
+                nextFrame(function () {
+                    return _this4._triggerEnter();
+                });
+            } else {
+                // 对于animation动画，同步添加enterActiveClass，避免闪动
+                this._triggerEnter();
+            }
+        }
     },
     _triggerEnter: function _triggerEnter() {
         var element = this.element;
@@ -6607,7 +6630,7 @@ var Animate$1 = Animate = Intact$1.extend({
         addClass(element, this.enterActiveClass);
         removeClass(element, this.enterClass);
         removeClass(element, this.leaveActiveClass);
-        this.trigger('a:enter', element, this._enterEnd);
+        this.trigger(this.enterEventName, element, this._enterEnd);
     },
     _leave: function _leave(onlyInit) {
         var _this5 = this;
@@ -6730,12 +6753,14 @@ function detectEvents() {
     }
 }
 
-function getAnimateType(element) {
+function getAnimateType(element, className) {
+    if (className) addClass(element, className);
     var style = window.getComputedStyle(element);
     var transitionDurations = style[transitionProp + 'Duration'].split(', ');
     var animationDurations = style[animationProp + 'Duration'].split(', ');
     var transitionDuration = getDuration(transitionDurations);
     var animationDuration = getDuration(animationDurations);
+    if (className) removeClass(element, className);
     return transitionDuration > animationDuration ? 'transition' : 'animation';
 }
 
