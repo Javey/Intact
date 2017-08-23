@@ -59,18 +59,18 @@ export function inherit(Parent, prototype) {
 }
 
 let nativeCreate = Object.create;
-export function create(object) {
-    if (nativeCreate) {
-        return nativeCreate(object);
-    } else {
-        let fn = () => {};
-        fn.prototype = object;
-        return new fn();
-    }
-}
+export const create = nativeCreate ? nativeCreate : function(object) {
+    let fn = () => {};
+    fn.prototype = object;
+    return new fn();
+};
 
 export function isFunction(obj) {
     return typeof obj === 'function';
+}
+
+export function isString(s) {
+    return typeof s === 'string';
 }
 
 export function result(obj, property, fallback) {

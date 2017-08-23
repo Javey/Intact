@@ -144,6 +144,40 @@ describe('Simple Test', function() {
             const j = new D({c: 4});
             sEql(_.isEqual(j.get(), {a: 1, b: 2, c: 4, d: 4}), true);
         });
+
+        it('parent template can be used in child template', () => {
+            const C = Intact.extend({
+                template: '<div><b:a>c</b:a></div>'
+            });
+            const D = C.extend({
+                template: `
+                    <t:parent>
+                        <b:a>{parent()}d</b:a>
+                    </t:parent>
+                `
+            });
+            const d = new D();
+            sEql(d.init().outerHTML, '<div>cd</div>');
+
+            class E extends Intact {
+                get template() {
+                    return '<div><b:a>e</b:a></div>';
+                }
+            }
+
+            class F extends E {
+                get template() {
+                    return `
+                        <t:parent>
+                            <b:a>{parent()}f</b:a>
+                        </t:parent>
+                    `;
+                }
+            }
+
+            const f = new F();
+            sEql(f.init().outerHTML, '<div>ef</div>');
+        });
     });
 
     describe('Intact.mount', function() {

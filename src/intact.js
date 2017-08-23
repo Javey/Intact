@@ -1,7 +1,7 @@
 import {
     inherit, extend, result, each, isFunction, 
     isEqual, uniqueId, get, set, castPath, hasOwn,
-    keys, isObject
+    keys, isObject, isString
 } from './utils';
 import Vdt from 'vdt';
 import {hc, render, hydrateRoot, h} from 'misstime';
@@ -20,6 +20,18 @@ export default function Intact(props) {
     this.props = {};
     this.vdt = Vdt(this.template);
     this.set(props, {silent: true});
+
+    
+    const parentTemplate = this.constructor.prototype.__proto__.template;
+    if (isFunction(parentTemplate)) {
+        this._parentTemplate = parentTemplate;
+    } else if (isString(parentTemplate)) {
+        this._parentTemplate = Vdt.compile(parentTemplate);
+    } else {
+        this._parentTemplate = function() {
+            throw new Error('super.template does not exist');
+        };
+    }
 
     // for compatibility v1.0
     this.widgets = this.vdt.widgets || {};

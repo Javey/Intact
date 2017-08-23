@@ -732,27 +732,27 @@ function inherit(Parent, prototype) {
             };
         }();
     });
-    Child.__super = Parent.prototype;
     Child.prototype.constructor = Child;
 
     extend(Child, Parent);
+    Child.__super = Parent.prototype;
 
     return Child;
 }
 
 var nativeCreate = Object.create;
-function create(object) {
-    if (nativeCreate) {
-        return nativeCreate(object);
-    } else {
-        var fn = function fn() {};
-        fn.prototype = object;
-        return new fn();
-    }
-}
+var create = nativeCreate ? nativeCreate : function (object) {
+    var fn = function fn() {};
+    fn.prototype = object;
+    return new fn();
+};
 
 function isFunction(obj) {
     return typeof obj === 'function';
+}
+
+function isString(s) {
+    return typeof s === 'string';
 }
 
 function result(obj, property, fallback) {
@@ -1830,7 +1830,7 @@ Stringifier.prototype = {
     },
 
     _visitJSXVdt: function _visitJSXVdt(element, isRoot) {
-        var ret = ['(function(blocks) {', 'var _blocks = {}, __blocks = extend({}, blocks), _obj = ' + this._visitJSXAttribute(element, false, false).props + ' || {};', 'if (_obj.hasOwnProperty("arguments")) { extend(_obj, _obj.arguments === null ? obj : _obj.arguments); delete _obj.arguments; }', 'return ' + element.value + '.call(this, _obj, _Vdt, '].join('\n'),
+        var ret = ['(function(blocks) {', 'var _blocks = {}, __blocks = extend({}, blocks), _obj = ' + this._visitJSXAttribute(element, false, false).props + ' || {};', 'if (_obj.hasOwnProperty("arguments")) { extend(_obj, _obj.arguments === true ? obj : _obj.arguments); delete _obj.arguments; }', 'return ' + element.value + '.call(this, _obj, _Vdt, '].join('\n'),
             blocks = [];
 
         each(element.children, function (child) {
@@ -3284,7 +3284,7 @@ function toString$3(vNode, parent, disableSplitText, firstChild) {
             if (innerHTML) {
                 html += innerHTML;
             } else if (!isNullOrUndefined(children)) {
-                if (isString(children)) {
+                if (isString$1(children)) {
                     html += children === '' ? ' ' : escapeText(children);
                 } else if (isNumber(children)) {
                     html += children;
@@ -3292,7 +3292,7 @@ function toString$3(vNode, parent, disableSplitText, firstChild) {
                     var index = -1;
                     for (var i = 0; i < children.length; i++) {
                         var child = children[i];
-                        if (isString(child)) {
+                        if (isString$1(child)) {
                             html += child === '' ? ' ' : escapeText(child);
                         } else if (isNumber(child)) {
                             html += child;
@@ -3369,7 +3369,7 @@ function escapeText(text) {
     return result;
 }
 
-function isString(o) {
+function isString$1(o) {
     return typeof o === 'string';
 }
 
@@ -3398,7 +3398,7 @@ function renderDatasetToString(dataset) {
     for (var key in dataset) {
         var dataKey = 'data-' + kebabCase(key);
         var value = dataset[key];
-        if (isString(value)) {
+        if (isString$1(value)) {
             renderedString += ' ' + dataKey + '="' + escapeText(value) + '"';
         } else if (isNumber(value)) {
             renderedString += ' ' + dataKey + '="' + value + '"';
@@ -3418,7 +3418,7 @@ function renderAttributesToString(attributes) {
 }
 
 function renderAttributeToString(key, value) {
-    if (isString(value)) {
+    if (isString$1(value)) {
         return ' ' + key + '="' + escapeText(value) + '"';
     } else if (isNumber(value)) {
         return ' ' + key + '="' + value + '"';
@@ -3731,7 +3731,7 @@ function compile(source, options) {
             var ast = parser.parse(source, options),
                 hscript = stringifier.stringify(ast, options.autoReturn);
 
-            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, hu = _Vdt.miss.hu, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', '__u = _Vdt.utils, extend = __u.extend, _e = __u.error, _className = __u.className,', '__o = __u.Options, _getModel = __o.getModel, _setModel = __o.setModel,', '_setCheckboxModel = __u.setCheckboxModel, _detectCheckboxChecked = __u.detectCheckboxChecked,', '_setSelectModel = __u.setSelectModel,', (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj, Animate = self && self.Animate;', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
+            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, hu = _Vdt.miss.hu, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', '__u = _Vdt.utils, extend = __u.extend, _e = __u.error, _className = __u.className,', '__o = __u.Options, _getModel = __o.getModel, _setModel = __o.setModel,', '_setCheckboxModel = __u.setCheckboxModel, _detectCheckboxChecked = __u.detectCheckboxChecked,', '_setSelectModel = __u.setSelectModel,', (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj, Animate = self && self.Animate, parent = self && self._parentTemplate', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
             templateFn = options.onlySource ? function () {} : new Function('obj', '_Vdt', 'blocks', hscript);
             templateFn.source = 'function(obj, _Vdt, blocks) {\n' + hscript + '\n}';
             break;
@@ -5176,7 +5176,7 @@ function toString$4(vNode, parent, disableSplitText, firstChild) {
             if (innerHTML) {
                 html += innerHTML;
             } else if (!isNullOrUndefined$1(children)) {
-                if (isString$1(children)) {
+                if (isString$2(children)) {
                     html += children === '' ? ' ' : escapeText$1(children);
                 } else if (isNumber$1(children)) {
                     html += children;
@@ -5184,7 +5184,7 @@ function toString$4(vNode, parent, disableSplitText, firstChild) {
                     var index = -1;
                     for (var i = 0; i < children.length; i++) {
                         var child = children[i];
-                        if (isString$1(child)) {
+                        if (isString$2(child)) {
                             html += child === '' ? ' ' : escapeText$1(child);
                         } else if (isNumber$1(child)) {
                             html += child;
@@ -5261,7 +5261,7 @@ function escapeText$1(text) {
     return result;
 }
 
-function isString$1(o) {
+function isString$2(o) {
     return typeof o === 'string';
 }
 
@@ -5290,7 +5290,7 @@ function renderDatasetToString$1(dataset) {
     for (var key in dataset) {
         var dataKey = 'data-' + kebabCase$1(key);
         var value = dataset[key];
-        if (isString$1(value)) {
+        if (isString$2(value)) {
             renderedString += ' ' + dataKey + '="' + escapeText$1(value) + '"';
         } else if (isNumber$1(value)) {
             renderedString += ' ' + dataKey + '="' + value + '"';
@@ -5310,7 +5310,7 @@ function renderAttributesToString$1(attributes) {
 }
 
 function renderAttributeToString$1(key, value) {
-    if (isString$1(value)) {
+    if (isString$2(value)) {
         return ' ' + key + '="' + escapeText$1(value) + '"';
     } else if (isNumber$1(value)) {
         return ' ' + key + '="' + value + '"';
@@ -5553,6 +5553,17 @@ function Intact$1(props) {
     this.props = {};
     this.vdt = Vdt$1(this.template);
     this.set(props, { silent: true });
+
+    var parentTemplate = this.constructor.prototype.__proto__.template;
+    if (isFunction(parentTemplate)) {
+        this._parentTemplate = parentTemplate;
+    } else if (isString(parentTemplate)) {
+        this._parentTemplate = Vdt$1.compile(parentTemplate);
+    } else {
+        this._parentTemplate = function () {
+            throw new Error('super.template does not exist');
+        };
+    }
 
     // for compatibility v1.0
     this.widgets = this.vdt.widgets || {};
