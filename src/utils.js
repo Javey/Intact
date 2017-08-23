@@ -50,10 +50,10 @@ export function inherit(Parent, prototype) {
             };
         })();
     });
-    Child.__super = Parent.prototype;
     Child.prototype.constructor = Child;
 
     extend(Child, Parent);
+    Child.__super = Parent.prototype;
 
     return Child;
 }
