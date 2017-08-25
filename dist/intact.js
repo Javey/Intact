@@ -674,6 +674,8 @@ var setTextContent$1 = browser$1.isIE8 ? function (dom, text) {
 };
 
 var inBrowser = typeof window !== 'undefined';
+var UA = inBrowser && window.navigator.userAgent.toLowerCase();
+var isIOS = UA && /iphone|ipad|ipod|ios/.test(UA);
 
 /**
  * inherit
@@ -948,6 +950,8 @@ var nextTick = function () {
             p.then(callback).catch(function (err) {
                 return console.error(err);
             });
+            // description in vue
+            if (isIOS) setTimeout(noop);
         };
     } else if (typeof MutationObserver !== 'undefined' && isNative(MutationObserver) ||
     // PhantomJS and iOS 7.x
