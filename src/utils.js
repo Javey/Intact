@@ -4,6 +4,8 @@ import {isNullOrUndefined} from 'misstime/src/utils';
 export {extend, isArray, each, isObject, hasOwn, isNullOrUndefined, noop};
 
 export const inBrowser = typeof window !== 'undefined';
+export const UA = inBrowser && window.navigator.userAgent.toLowerCase();
+export const isIOS = UA && /iphone|ipad|ipod|ios/.test(UA);
 
 /**
  * inherit
@@ -290,6 +292,8 @@ const nextTick = (() => {
         const p = Promise.resolve();
         return (callback) => {
             p.then(callback).catch(err => console.error(err));
+            // description in vue
+            if (isIOS) setTimeout(noop);
         };
     } else if (typeof MutationObserver !== 'undefined' && 
         isNative(MutationObserver) ||
