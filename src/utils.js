@@ -281,3 +281,53 @@ export function set(object, path, value) {
 
     return object;
 }
+
+function isNative(Ctor) {
+    return typeof Ctor === 'function' && /native code/.test(Ctor.toString());
+}
+const nextTick = (() => {
+    if (typeof Promise !== 'undefined' && isNative(Promise)) {
+        const p = Promise.resolve();
+        return (callback) => {
+            p.then(callback).catch(err => console.error(err));
+        };
+    } else if (typeof MutationObserver !== 'undefined' && 
+        isNative(MutationObserver) ||
+        // PhantomJS and iOS 7.x
+        MutationObserver.toString() === '[object MutationObserverConstructor]'
+    ) {
+        const callbacks = [];
+        const nextTickHandler = () => {
+            const _callbacks = callbacks.slice(0);
+            callbacks.length = 0;
+            for (let i = 0; i < _callbacks.length; i++) {
+                _callbacks[i]();
+            }
+        };
+        const node = document.createTextNode('');
+        new MutationObserver(nextTickHandler).observe(node, {
+            characterData: true
+        });
+        let i = 1;
+        return (callback) => {
+            callbacks.push(callback);
+            i = (i + 1) % 2;
+            node.data = String(i);
+        };
+    } else {
+        return (callback) => {
+            setTimeout(callback, 0);
+        };
+    }
+})();
+export function NextTick(eachCallback) {
+    this.callback = null;
+    this.eachCallback = eachCallback;
+    nextTick(() => this.callback());
+}
+NextTick.prototype.fire = function(callback, data) {
+    this.callback = callback; 
+    if (this.eachCallback) {
+        this.eachCallback(data);
+    }
+};

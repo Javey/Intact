@@ -1,7 +1,7 @@
 import {
     inherit, extend, result, each, isFunction, 
     isEqual, uniqueId, get, set, castPath, hasOwn,
-    keys, isObject, isString
+    keys, isObject, isString, NextTick
 } from './utils';
 import Vdt from 'vdt';
 import {hc, render, hydrateRoot, h} from 'misstime';
@@ -443,30 +443,42 @@ Intact.prototype = {
                 this.trigger(`$change:${prop}`, this, values[1], values[0]);
             }
             const changeKeys = keys(changes);
-            // 之前存在触发change就会调用update的用法，这里传入true做兼容
-            // 如果第三个参数为true，则不update
+
             this.trigger('$change', this, changeKeys);
 
-            const triggerChangedEvent = () => {
-                for (let prop in changes) {
-                    let values = changes[prop];
-                    this.trigger(`$changed:${prop}`, this, values[1], values[0]);
-                }
-                this.trigger('$changed', this, changeKeys);
-            };
             if (options.update && this._startRender) {
-                clearTimeout(this._asyncUpdate);
-                const triggerChange = () => {
+                const triggerChange = (changes, changeKeys) => {
                     this.update();
-                    triggerChangedEvent();
+                    this._triggerChangedEvent(changes, changeKeys);
                 };
                 if (options.async) {
-                    this._asyncUpdate = setTimeout(triggerChange);
+                    if (!this._$nextTick) {
+                        this._$nextTick = new NextTick(function(data) {
+                            // 将每次改变的属性放入数组
+                            this.args.push(data);
+                        });
+                        this._$nextTick.args = [];
+                    }
+                    let self = this;
+                    this._$nextTick.fire(function() {
+                        // 合并执行更新后，触发所有$changed事件
+                        const args = this.args;
+                        let changes = {};
+                        for (let i = 0; i < args.length; i++) {
+                            extend(changes, args[i]); 
+                        }
+                        self._$nextTick = null;
+                        triggerChange(changes, keys(changes));
+                    }, changes);
                 } else {
-                    triggerChange();
+                    triggerChange(changes, changeKeys);
                 }
             } else if (this.mountedQueue && this._startRender) {
-                this.mountedQueue.push(triggerChangedEvent);
+                // 如果是父组件导致子组件更新，此时存在mountedQueue
+                // 则在组件数更新完毕，触发$changed事件
+                this.mountedQueue.push(() => {
+                    this._triggerChangedEvent(changes, changeKeys);
+                });
             }
         }
 
@@ -533,6 +545,14 @@ Intact.prototype = {
 
     _triggerMountedQueue() {
         this.mountedQueue.trigger();
+    },
+
+    _triggerChangedEvent(changes, changeKeys) {
+        for (let prop in changes) {
+            let values = changes[prop];
+            this.trigger(`$changed:${prop}`, this, values[1], values[0]);
+        }
+        this.trigger('$changed', this, changeKeys);
     }
 };
 

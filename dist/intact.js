@@ -938,6 +938,60 @@ function set$$1(object, path, value) {
     return object;
 }
 
+function isNative(Ctor) {
+    return typeof Ctor === 'function' && /native code/.test(Ctor.toString());
+}
+var nextTick = function () {
+    if (typeof Promise !== 'undefined' && isNative(Promise)) {
+        var p = Promise.resolve();
+        return function (callback) {
+            p.then(callback).catch(function (err) {
+                return console.error(err);
+            });
+        };
+    } else if (typeof MutationObserver !== 'undefined' && isNative(MutationObserver) ||
+    // PhantomJS and iOS 7.x
+    MutationObserver.toString() === '[object MutationObserverConstructor]') {
+        var callbacks = [];
+        var nextTickHandler = function nextTickHandler() {
+            var _callbacks = callbacks.slice(0);
+            callbacks.length = 0;
+            for (var _i = 0; _i < _callbacks.length; _i++) {
+                _callbacks[_i]();
+            }
+        };
+        var node = document.createTextNode('');
+        new MutationObserver(nextTickHandler).observe(node, {
+            characterData: true
+        });
+        var i = 1;
+        return function (callback) {
+            callbacks.push(callback);
+            i = (i + 1) % 2;
+            node.data = String(i);
+        };
+    } else {
+        return function (callback) {
+            setTimeout(callback, 0);
+        };
+    }
+}();
+function NextTick(eachCallback) {
+    var _this = this;
+
+    this.callback = null;
+    this.eachCallback = eachCallback;
+    nextTick(function () {
+        return _this.callback();
+    });
+}
+NextTick.prototype.fire = function (callback, data) {
+    this.callback = callback;
+    if (this.eachCallback) {
+        this.eachCallback(data);
+    }
+};
+
 /**
  * @fileoverview parse jsx to ast
  * @author javey
@@ -950,7 +1004,7 @@ var TypeName$1 = TypeName;
 var elementNameRegexp = /^<\w+:?\s*[\w\/>]/;
 
 function isJSXIdentifierPart(ch) {
-    return ch === 58 || ch === 95 || ch === 45 || ch === 36 || // : and _ (underscore) and - $
+    return ch === 58 || ch === 95 || ch === 45 || ch === 36 || ch === 46 || // : _ (underscore) - $ .
     ch >= 65 && ch <= 90 || // A..Z
     ch >= 97 && ch <= 122 || // a..z
     ch >= 48 && ch <= 57; // 0..9
@@ -5978,30 +6032,42 @@ Intact$1.prototype = {
                 this.trigger('$change:' + _prop6, this, values$$1[1], values$$1[0]);
             }
             var changeKeys = keys(changes);
-            // 之前存在触发change就会调用update的用法，这里传入true做兼容
-            // 如果第三个参数为true，则不update
+
             this.trigger('$change', this, changeKeys);
 
-            var triggerChangedEvent = function triggerChangedEvent() {
-                for (var _prop7 in changes) {
-                    var _values = changes[_prop7];
-                    _this6.trigger('$changed:' + _prop7, _this6, _values[1], _values[0]);
-                }
-                _this6.trigger('$changed', _this6, changeKeys);
-            };
             if (options.update && this._startRender) {
-                clearTimeout(this._asyncUpdate);
-                var triggerChange = function triggerChange() {
+                var triggerChange = function triggerChange(changes, changeKeys) {
                     _this6.update();
-                    triggerChangedEvent();
+                    _this6._triggerChangedEvent(changes, changeKeys);
                 };
                 if (options.async) {
-                    this._asyncUpdate = setTimeout(triggerChange);
+                    if (!this._$nextTick) {
+                        this._$nextTick = new NextTick(function (data) {
+                            // 将每次改变的属性放入数组
+                            this.args.push(data);
+                        });
+                        this._$nextTick.args = [];
+                    }
+                    var self = this;
+                    this._$nextTick.fire(function () {
+                        // 合并执行更新后，触发所有$changed事件
+                        var args = this.args;
+                        var changes = {};
+                        for (var _i2 = 0; _i2 < args.length; _i2++) {
+                            extend(changes, args[_i2]);
+                        }
+                        self._$nextTick = null;
+                        triggerChange(changes, keys(changes));
+                    }, changes);
                 } else {
-                    triggerChange();
+                    triggerChange(changes, changeKeys);
                 }
             } else if (this.mountedQueue && this._startRender) {
-                this.mountedQueue.push(triggerChangedEvent);
+                // 如果是父组件导致子组件更新，此时存在mountedQueue
+                // 则在组件数更新完毕，触发$changed事件
+                this.mountedQueue.push(function () {
+                    _this6._triggerChangedEvent(changes, changeKeys);
+                });
             }
         }
 
@@ -6074,6 +6140,13 @@ Intact$1.prototype = {
     },
     _triggerMountedQueue: function _triggerMountedQueue() {
         this.mountedQueue.trigger();
+    },
+    _triggerChangedEvent: function _triggerChangedEvent(changes, changeKeys) {
+        for (var prop in changes) {
+            var values$$1 = changes[prop];
+            this.trigger('$changed:' + prop, this, values$$1[1], values$$1[0]);
+        }
+        this.trigger('$changed', this, changeKeys);
     }
 };
 

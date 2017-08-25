@@ -272,7 +272,7 @@ describe('Simple Test', function() {
             sEql(instance.get('a.a'), 1);
         });
 
-        it('set', function() {
+        it('set sync', function() {
             instance.set('a', 1);
             sEql(instance.get('a'), 1);
             instance.set({a: 11});
@@ -286,6 +286,36 @@ describe('Simple Test', function() {
             sEql(instance.get('aa.a'), 2);
             instance.set('aaa.a', 1);
             dEql(instance.get('aaa'), {a: 1});
+        });
+
+        it('set async', function(done) {
+            instance.init();
+            instance._update = sinon.spy(function() {  });
+            const aFn = sinon.spy(function() {  });
+            const bFn = sinon.spy(function() {  });
+            instance.on('$changed:a', aFn);
+            instance.on('$changed:b', bFn);
+
+            instance.set('a', 10, {async: true});
+            instance.set('b', 20, {async: true});
+            sEql(instance._update.callCount, 0);
+            sEql(aFn.callCount, 0);
+            sEql(bFn.callCount, 0);
+            setTimeout(() => {
+                sEql(instance._update.callCount, 1);
+                sEql(aFn.callCount, 1);
+                sEql(bFn.callCount, 1);
+
+                instance.set('a', 11, {async: true});
+                instance.set('b', 21, {async: true});
+                setTimeout(() => {
+                    sEql(instance._update.callCount, 2);
+                    sEql(aFn.callCount, 2);
+                    sEql(bFn.callCount, 2);
+
+                    done();
+                });
+            });
         });
     });
 
