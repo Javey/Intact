@@ -72,6 +72,8 @@ export default function Intact(props) {
 Intact.prototype = {
     constructor: Intact,
 
+    defaults() {},
+
     addEvents(props = this.props) {
         each(props , (value, key) => {
             if (isEventProp(key) && isFunction(value)) {

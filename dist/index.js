@@ -3688,6 +3688,7 @@ function Intact$1(props) {
 Intact$1.prototype = {
     constructor: Intact$1,
 
+    defaults: function defaults$$1() {},
     addEvents: function addEvents() {
         var _this2 = this;
 
