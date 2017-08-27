@@ -1,4 +1,5 @@
-import Intact from './intact'; import {Types} from 'misstime/src/vnode';
+import Intact from './intact';
+import {Types} from 'misstime/src/vnode';
 import {isNullOrUndefined, noop, inBrowser} from './utils';
 import Vdt from 'vdt';
 
@@ -536,15 +537,21 @@ export default Animate = Intact.extend({
 
     _leave(onlyInit) {
         const element = this.element;
+        // 为了保持动画连贯，我们立即添加leaveActiveClass
+        // 但如果当前元素还没有来得及做enter动画，就被删除
+        // 则leaveActiveClass和leaveClass都放到下一帧添加
+        // 否则leaveClass和enterClass一样就不会有动画效果
         if (this._triggeredEnter) {
-            // 如果当前元素还没有来得及做enter动画，就被删除
-            // 则leaveActiveClass和leaveClass都放到下一帧添加
-            // 否则leaveClass和enterClass一样就不会有动画效果
             addClass(element, this.leaveActiveClass);
         }
-        TransitionEvents.on(element, this._leaveEnd);
+        // TransitionEvents.on(element, this._leaveEnd);
         if (!onlyInit) {
             nextFrame(() => {
+                // 存在一种情况，当一个enter动画在完成的瞬间，
+                // 这个元素被删除了，由于前面保持动画的连贯性
+                // 添加了leaveActiveClass，则会导致绑定的leaveEnd
+                // 立即执行，所以这里放到下一帧来绑定
+                TransitionEvents.on(element, this._leaveEnd);
                 this._triggerLeave();
             });
         }

@@ -29,7 +29,6 @@
     "karma-mocha": "^1.3.0",
     "karma-webpack": "^2.0.3",
     "lodash": "^4.17.4",
-    "miss": "*",
     "mocha": "^2.4.5",
     "mocha-phantomjs": "^4.0.2",
     "rollup": "^0.41.6",
@@ -40,7 +39,6 @@
     "rollup-watch": "^3.2.2",
     "sinon": "^1.17.3",
     "style-loader": "^0.18.2",
-    "vdt": "^0.10.2",
     "vdt-loader": "^1.0.0",
     "webpack": "^2.6.1"
   },
@@ -48,6 +46,7 @@
     "es2015"
   ],
   "dependencies": {
-    "misstime": "^0.1.1"
+    "misstime": "^0.1.1",
+    "vdt": "^1.0.5"
   }
 }
