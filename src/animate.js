@@ -1,6 +1,6 @@
 import Intact from './intact';
 import {Types} from 'misstime/src/vnode';
-import {isNullOrUndefined, noop, inBrowser} from './utils';
+import {isNullOrUndefined, noop, inBrowser, keys} from './utils';
 import Vdt from 'vdt';
 
 let Animate;
@@ -11,7 +11,8 @@ export default Animate = Intact.extend({
         'a:appear': false,
         'a:mode': 'both', // out-in | in-out | both
         'a:disabled': false, // 只做动画管理者，自己不进行动画
-        'a:move': true // 是否执行move动画
+        'a:move': true, // 是否执行move动画
+        'a:css': true, // 是否使用css动画，如果自定义动画函数，可以将它置为false
     },
 
     template() {
@@ -28,28 +29,53 @@ export default Animate = Intact.extend({
         return h(tagName, props, self.get('children'));
     },
 
-    init: inBrowser ? function(lastVNode, nextVNode) {
-        this.mountChildren = [];
-        this.unmountChildren = [];
-        this.updateChildren = [];
-        this.children = [];
-        this._enteringAmount = 0;
-        this._leavingAmount = 0;
+    _init() {
+        this.isSupportCssTransition = endEvents.length;
+        if (!this.isSupportCssTransition) {
+            // 如果不支持css动画，则关闭css
+            this.set({
+                'a:css': false,
+                'a:move': false
+            }, {silent: true});
+        }
+    },
 
-        if (this.get('a:disabled')) {
+    _hasJsTransition() {
+        const events = this._events;
+        for (let key in events) {
+            if (key[0] === 'a' && key[1] === ':') {
+                if (events[key].length) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    },
+
+    init: inBrowser ? 
+        function(lastVNode, nextVNode) {
+            this.mountChildren = [];
+            this.unmountChildren = [];
+            this.updateChildren = [];
+            this.children = [];
+            this._enteringAmount = 0;
+            this._leavingAmount = 0;
+
+            // if (this.get('a:disabled')) {
+                // return this._super(lastVNode, nextVNode);
+            // }
+
+            const parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
+            if (parentDom && parentDom._reserve) {
+                lastVNode = parentDom._reserve[nextVNode.key];
+            }
             return this._super(lastVNode, nextVNode);
-        }
-
-        const parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
-        if (parentDom && parentDom._reserve) {
-            lastVNode = parentDom._reserve[nextVNode.key];
-        }
-        return this._super(lastVNode, nextVNode);
-    } : function() { return this._superApply(arguments); },
+        } : 
+        function() { 
+            return this._superApply(arguments); 
+        },
 
     _mount(lastVNode, vNode) {
-        if (this.get('a:disabled')) return;
-
         let isAppear = false;
         if (this.isRender) {
             let parent;
@@ -67,6 +93,7 @@ export default Animate = Intact.extend({
         }
 
         const element = this.element;
+
         const initClassName = () => {
             const transition = this.get('a:transition');
             let enterClass;
@@ -104,9 +131,11 @@ export default Animate = Intact.extend({
         const parentInstance = this.parentInstance = this._getParentAnimate();
 
         this._enterEnd = (e) => {
-            e && e.stopPropagation && e.stopPropagation();
-            removeClass(element, this.enterClass);
-            removeClass(element, this.enterActiveClass);
+            if (this.get('a:css') && !this.get('a:disabled')) {
+                e && e.stopPropagation && e.stopPropagation();
+                removeClass(element, this.enterClass);
+                removeClass(element, this.enterActiveClass);
+            }
             TransitionEvents.off(element, this._enterEnd);
             this._entering = false;
             if (parentInstance) {
@@ -129,9 +158,11 @@ export default Animate = Intact.extend({
                 parentInstance._enteringAmount--;
                 return;
             }
+            const isNotAnimate = !this.get('a:css') && !this._hasJsTransition() || 
+                this.get('a:disabled');
             this.vNode = vNode;
             this.parentDom = parentDom;
-            if (parentInstance) {
+            if (parentInstance && !isNotAnimate) {
                 parentInstance._leavingAmount++;
                 if (parentInstance.get('a:mode') === 'in-out') {
                     parentInstance.updateChildren.push(this);
@@ -140,11 +171,14 @@ export default Animate = Intact.extend({
                     parentInstance.unmountChildren.push(this);
                 }
                 parentInstance.children.push(this);
+            } else if (isNotAnimate) {
+                parentDom.removeChild(element);
+                this.destroy(vNode);
             } else {
                 this._unmount();
             }
         };
-       
+
         if (parentInstance) {
             // 如果存在父动画组件，则使用父级进行管理
             // 统一做动画
@@ -186,7 +220,6 @@ export default Animate = Intact.extend({
    
     _unmount(onlyInit) {
         if (this.get('a:disabled')) return;
-
         const element = this.element;
         const vNode = this.vNode;
         const parentDom = this.parentDom;
@@ -205,9 +238,11 @@ export default Animate = Intact.extend({
         }
 
         this._leaveEnd = (e) => {
-            e && e.stopPropagation && e.stopPropagation();
-            removeClass(element, this.leaveClass);
-            removeClass(element, this.leaveActiveClass);
+            if (this.get('a:css') && !this.get('a:disabled')) {
+                e && e.stopPropagation && e.stopPropagation();
+                removeClass(element, this.leaveClass);
+                removeClass(element, this.leaveActiveClass);
+            }
             const s = element.style;
             s.position = s.top = s.left = s.transform = s.WebkitTransform = '';
             this._leaving = false;
@@ -462,6 +497,7 @@ export default Animate = Intact.extend({
     },
 
     _move(onlyInit) {
+        if (this.get('a:disabled')) return;
         this._moving = true;
         const element = this.element;
         const s = element.style;
@@ -489,24 +525,29 @@ export default Animate = Intact.extend({
     },
 
     _enter(onlyInit) {
+        if (this.get('a:disabled')) return;
         this._entering = true;
         const element = this.element;
         const enterClass = this.enterClass;
         const enterActiveClass = this.enterActiveClass;
+        const isCss = this.get('a:css');
 
         // 如果这个元素是上一个删除的元素，则从当前状态回到原始状态
         if (this.lastInstance) {
             this.lastInstance._unmountCancelled = true;
             this.lastInstance._leaveEnd();
-            if (this.lastInstance._triggeredLeave) {
-                // addClass(element, enterActiveClass);
-                // 保持连贯，添加leaveActiveClass
-                addClass(element, this.leaveActiveClass);
-            } else {
-                // 如果上一个元素还没来得及做动画，则当做新元素处理
-                addClass(element, enterClass);
+
+            if (isCss) {
+                if (this.lastInstance._triggeredLeave) {
+                    // addClass(element, enterActiveClass);
+                    // 保持连贯，添加leaveActiveClass
+                    addClass(element, this.leaveActiveClass);
+                } else {
+                    // 如果上一个元素还没来得及做动画，则当做新元素处理
+                    addClass(element, enterClass);
+                }
             }
-        } else {
+        } else if (isCss) {
             addClass(element, enterClass);
         }
         TransitionEvents.on(element, this._enterEnd);
@@ -514,7 +555,7 @@ export default Animate = Intact.extend({
         this.trigger(`${this.enterEventName}Start`, element);
 
         if (!onlyInit) {
-            if (getAnimateType(element, enterActiveClass) !== 'animation') {
+            if (isCss && getAnimateType(element, enterActiveClass) !== 'animation') {
                 nextFrame(() => this._triggerEnter());
             } else {
                 // 对于animation动画，同步添加enterActiveClass，避免闪动
@@ -526,12 +567,14 @@ export default Animate = Intact.extend({
     _triggerEnter() {
         const element = this.element;
         this._triggeredEnter = true;
-        if (this._entering === false) {
-            return removeClass(element, this.enterActiveClass);
+        if (this.get('a:css')) {
+            if (this._entering === false) {
+                return removeClass(element, this.enterActiveClass);
+            }
+            addClass(element, this.enterActiveClass);
+            removeClass(element, this.enterClass);
+            removeClass(element, this.leaveActiveClass);
         }
-        addClass(element, this.enterActiveClass);
-        removeClass(element, this.enterClass);
-        removeClass(element, this.leaveActiveClass);
         this.trigger(this.enterEventName, element, this._enterEnd);
     },
 
@@ -563,8 +606,10 @@ export default Animate = Intact.extend({
             return;
         }
         const element = this.element;
-        addClass(element, this.leaveActiveClass);
-        addClass(element, this.leaveClass);
+        if (this.get('a:css')) {
+            addClass(element, this.leaveActiveClass);
+            addClass(element, this.leaveClass);
+        }
         this.trigger('a:leave', element, this._leaveEnd);
     },
 
@@ -574,7 +619,7 @@ export default Animate = Intact.extend({
         // 否则，所有的动画组件，都等到动画结束才销毁
         if (!parentDom && (!lastVNode || !nextVNode) &&
             (this.parentVNode.dom !== this.element) ||
-            this.get('a:disabled') || 
+            // this.get('a:disabled') || 
             this._leaving === false
         ) {
             this._super(lastVNode, nextVNode, parentDom);
