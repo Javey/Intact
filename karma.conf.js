@@ -17,7 +17,11 @@ module.exports = function(config) {
                 rules: [
                     {
                         test: /\.js$/,
-                        loader: 'babel-loader',
+                        // loader: 'babel-loader',
+                        use: {
+                            loader: 'istanbul-instrumenter-loader',
+                            options: { esModules: true }
+                        },
                         exclude: /node_modules/
                     },
                     {
@@ -36,13 +40,16 @@ module.exports = function(config) {
         ],
         plugins: [
             'karma-mocha',
-            'karma-webpack'
+            'karma-webpack',
+            // 'karma-coverage',
+            'karma-coverage-istanbul-reporter'
         ],
         client: {
             mocha: {
                 reporter: 'html'
             }
         },
-        singleRun: true
+        singleRun: true,
+        reporters: ['progress', 'coverage-istanbul'],
     });
 };

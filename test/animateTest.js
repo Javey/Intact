@@ -274,4 +274,79 @@ describe('Animate Test', function() {
             done();
         }, 1200);
     });
+
+    it('should not animate when a:disabled is equal to false', function(done) {
+        const C = Intact.extend({
+            template: `
+                <div>
+                    <Animate v-if={self.get('show')}
+                        a:disabled={true}
+                    >test</Animate>
+                </div>
+            `
+        });
+
+        const c = app.load(C);
+        c.set('show', true);
+        setTimeout(() => {
+            sEql(app.element.innerHTML, '<div><div>test</div></div>');
+            c.set('show', false);
+            sEql(app.element.innerHTML, '<div></div>');
+            done();
+        });
+    });
+
+    it('should not use css transition when a:css is equal to false', function(done) {
+        const C = Intact.extend({
+            template: `
+                <div>
+                    <Animate v-if={self.get('show')}
+                        a:css={false}
+                    >test</Animate>
+                </div>
+            `
+        });
+        const c = app.load(C);
+        c.set('show', true);
+        setTimeout(() => {
+            sEql(app.element.innerHTML, '<div><div>test</div></div>');
+            c.set('show', false);
+            sEql(app.element.innerHTML, '<div></div>');
+            done();
+        });
+    });
+
+    it('should use js animation when a:css is equal to false but has callbacks', function(done) {
+        this.enableTimeouts(false);
+        const C = Intact.extend({
+            template: `
+                <div>
+                    <Animate v-if={self.get('show')}
+                        a:css={false}
+                        ev-a:enter={self.enter.bind(self)}
+                        ev-a:leave={self.leave.bind(self)}
+                    >test</Animate>
+                </div>
+            `,
+            enter(el, _done) {
+                sEql(el.outerHTML, '<div>test</div>');
+                _done();
+            },
+            leave(el, _done) {
+                sEql(el.outerHTML, '<div>test</div>');
+                setTimeout(() => {
+                    _done();
+                    sEql(app.element.innerHTML, '<div></div>');
+                    done();
+                }, 1000);
+            }
+        });
+        const c = app.load(C);
+        c.set('show', true);
+        sEql(app.element.innerHTML, '<div><div>test</div></div>');
+        c.set('show', false);
+        setTimeout(() => {
+            sEql(app.element.innerHTML, '<div><div>test</div></div>');
+        });
+    });
 });

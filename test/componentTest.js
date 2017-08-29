@@ -511,4 +511,75 @@ describe('Component Test', function() {
             });
         });
     });
+
+    it('toString', () => {
+        const a = new A();
+        const b = new B();
+        sEql(a.toString(), '<a>1</a>');
+        sEql(b.toString(), '<b><a>1</a>1</b>');
+
+        const C = Intact.extend({
+            template: `<div>{1}{2}</div>`
+        });
+        sEql(new C().toString(), '<div>1<!---->2</div>');
+    });
+
+    it('hydrate', () => {
+        const div = document.createElement('div');
+        document.body.appendChild(div);
+        const C = Intact.extend({
+            template: `<div ev-click={self.add.bind(self)}>{self.get('count')}</div>`,
+            defaults() {
+                return {count: 1};
+            },
+            add() {
+                this.set('count', this.get('count') + 1);
+            }
+        });
+
+        const c = new C();
+        div.innerHTML = c.toString();
+        sEql(div.innerHTML, `<div>1</div>`);
+        Intact.hydrate(C, div);
+        sEql(div.innerHTML, `<div>1</div>`);
+        div.firstChild.click();
+        sEql(div.innerHTML, `<div>2</div>`);
+        document.body.removeChild(div);
+    });
+
+    it('hydrate async component', (done) => {
+        const div = document.createElement('div');
+        document.body.appendChild(div);
+        const C = Intact.extend({
+            template: `<D />`,
+            _init() {
+                this.D = D;
+            }
+        });
+        const D = Intact.extend({
+            template: `<div ev-click={self.add.bind(self)}>{self.get('count')}</div>`,
+            defaults() {
+                return {count: 1};
+            },
+            _init() {
+                return new Promise(resolve => {
+                    setTimeout(resolve, 50);
+                });
+            },
+            add() {
+                this.set('count', this.get('count') + 1);
+            }
+        });
+
+        div.innerHTML = '<div>0</div>';
+        Intact.hydrate(C, div);
+        sEql(div.innerHTML, '<div>0</div>');
+        setTimeout(() => {
+            sEql(div.innerHTML, '<div>1</div>');
+            div.firstChild.click();
+            sEql(div.innerHTML, '<div>2</div>');
+            document.body.removeChild(div);
+            done();
+        }, 100);
+    });
 });

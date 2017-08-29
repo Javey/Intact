@@ -6760,7 +6760,7 @@ var Animate$1 = Animate = Intact$1.extend({
         // 但如果当前元素还没有来得及做enter动画，就被删除
         // 则leaveActiveClass和leaveClass都放到下一帧添加
         // 否则leaveClass和enterClass一样就不会有动画效果
-        if (this._triggeredEnter) {
+        if (this._triggeredEnter && this.get('a:css')) {
             addClass(element, this.leaveActiveClass);
         }
         // TransitionEvents.on(element, this._leaveEnd);
