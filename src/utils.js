@@ -295,11 +295,11 @@ const nextTick = (() => {
             // description in vue
             if (isIOS) setTimeout(noop);
         };
-    } else if (typeof MutationObserver !== 'undefined' && 
+    } else if (typeof MutationObserver !== 'undefined' && ( 
         isNative(MutationObserver) ||
         // PhantomJS and iOS 7.x
         MutationObserver.toString() === '[object MutationObserverConstructor]'
-    ) {
+    )) {
         const callbacks = [];
         const nextTickHandler = () => {
             const _callbacks = callbacks.slice(0);

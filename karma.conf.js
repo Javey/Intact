@@ -17,12 +17,19 @@ module.exports = function(config) {
                 rules: [
                     {
                         test: /\.js$/,
-                        // loader: 'babel-loader',
-                        use: {
-                            loader: 'istanbul-instrumenter-loader',
-                            options: { esModules: true }
+                        loader: {
+                            loader: 'babel-loader',
+                            // options: {
+                                // presets: ['es2015-loose']
+                            // }
                         },
-                        exclude: /node_modules/
+
+                        // use: {
+                            // loader: 'istanbul-instrumenter-loader',
+                            // options: {esModules: true}
+                        // },
+                        // enforce: 'post',
+                        // exclude: /node_modules/
                     },
                     {
                         test: /\.css$/,

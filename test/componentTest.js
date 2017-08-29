@@ -440,7 +440,7 @@ describe('Component Test', function() {
                 sEql(app.element.innerHTML, '<span><!--!--></span>');
                 app.load(Async2);
                 sEql(app.element.innerHTML, '<span><!--!--></span>');
-            }, 150);
+            }, 200);
             setTimeout(() => {
                 sEql(app.element.innerHTML, '<span><a>a</a></span>');
 

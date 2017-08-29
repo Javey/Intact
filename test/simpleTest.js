@@ -536,7 +536,12 @@ describe('Simple Test', function() {
                 defaults: {
                     list: [1, '2', '3']
                 },
-                template: '<select v-model="a"><option v-for={self.get("list")} value={value}>{value}</option></select>'
+                template: `<select v-model="a">
+                    <option 
+                        v-for={self.get("list")}
+                        value={value}
+                    >{value}</option>
+                </select>`
             });
 
             var instance = new Component();

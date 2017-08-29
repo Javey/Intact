@@ -200,7 +200,7 @@ describe('Animate Test', function() {
         setTimeout(function() {
             sEql(app.element.outerHTML, '<div></div>');
             done();
-        }, 1100);
+        }, 1500);
     });
 
     it('animate cross components', function(done) {
@@ -215,7 +215,7 @@ describe('Animate Test', function() {
             sEql(children[1].innerHTML.indexOf('detail-body') > -1, true);
             sEql(children[1].className, '');
             done();
-        }, 1100);
+        }, 1500);
     });
 
     it('should destroy component when leaving', function(done) {
@@ -235,7 +235,7 @@ describe('Animate Test', function() {
             sEql(children[0].className, '');
             sEql(children[1].className, '');
             done();
-        }, 1100);
+        }, 3000); // this will be long time in firefox
     });
 
     it('patch between Animate and non-Animate components', function(done) {
