@@ -42,7 +42,8 @@ module.exports = function(config) {
             'karma-mocha',
             'karma-webpack',
             // 'karma-coverage',
-            'karma-coverage-istanbul-reporter'
+            'karma-coverage-istanbul-reporter',
+            'karma-sauce-launcher',
         ],
         client: {
             mocha: {

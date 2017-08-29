@@ -6,7 +6,8 @@
   "browser": "dist/intact.js",
   "module": "src/index",
   "scripts": {
-    "test": "karma start karma.conf.js",
+    "test": "karma start karma.conf.saucelabs.js",
+    "test:local": "karma start karma.conf.js",
     "release": "npm run release-patch",
     "release-patch": "git checkout master && npm version patch && bower version patch 2>/dev/null; git push origin master --tags && npm publish",
     "release-minor": "git checkout master && npm version minor && bower version minor 2>/dev/null; git push origin master --tags && npm publish",
@@ -31,6 +32,7 @@
     "karma-coverage": "^1.1.1",
     "karma-coverage-istanbul-reporter": "^1.3.0",
     "karma-mocha": "^1.3.0",
+    "karma-sauce-launcher": "^1.2.0",
     "karma-webpack": "^2.0.3",
     "lodash": "^4.17.4",
     "mocha": "^2.4.5",
