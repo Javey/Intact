@@ -291,7 +291,8 @@ export default Animate = Intact.extend({
 
     _getPosition() {
         const element = this.element;
-        const transform = getComputedStyle(element).transform;
+        const style = getComputedStyle(element);
+        const transform = style.transform || style.WebkitTransform;
         if (transform === 'none') {
             return {
                 top: element.offsetTop,

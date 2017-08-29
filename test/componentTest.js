@@ -2,6 +2,8 @@ import Intact from '../src';
 import assert from 'assert';
 import _ from 'lodash';
 import App from './components/app';
+import {Promise} from 'es6-promise';
+import {dispatchEvent} from './utils';
 
 const sEql = assert.strictEqual;
 const dEql = assert.deepStrictEqual;
@@ -257,7 +259,7 @@ describe('Component Test', function() {
         it('should render async component correctly', function(done) {
             this.enableTimeouts(false);
             const p = {
-                template: '<a ref={(dom) => self.dom = dom}>a</a>',
+                template: '<a ref={function(dom) {self.dom = dom}}>a</a>',
                 _init: sinon.spy(() => {
                     return new Promise((resolve) => {
                         setTimeout(() => {
@@ -322,7 +324,7 @@ describe('Component Test', function() {
         it('should destroy async component correctly', function(done) {
             this.enableTimeouts(false);
             const p = {
-                template: '<a ref={(dom) => self.dom = dom}>a</a>',
+                template: '<a ref={function(dom) {self.dom = dom}}>a</a>',
                 _init: sinon.spy(function() {
                     return new Promise((resolve) => {
                         setTimeout(() => {
@@ -358,14 +360,14 @@ describe('Component Test', function() {
 
                 setTimeout(() => {
                     app.load(Sync);
-                    sEql(lastView.dom , null);
+                    sEql(lastView.dom, null);
                     sEql(app.element.innerHTML, '<b>b</b>');
                     lastView.update();
                     sEql(app.element.innerHTML, '<b>b</b>');
                     checkFunctionCallCount(p, [2, 1, 1, 1, 2]);
-                });
-                done();
-            });
+                    done();
+                }, 100);
+            }, 100);
         });
 
         it('should not run destroy until the next async component start to render', function(done) {
@@ -482,7 +484,7 @@ describe('Component Test', function() {
             setTimeout(() => {
                 sEql(app.element.innerHTML, '<a>a</a>');
                 done();
-            });
+            }, 100);
         });
 
         it('patch async component with sync component use the same tag', (done) => {
@@ -508,7 +510,7 @@ describe('Component Test', function() {
                 sEql(app.element.innerHTML, '<a>a</a>');
                 sEql(syncElement, app.element.firstChild);
                 done();
-            });
+            }, 100);
         });
     });
 
@@ -542,7 +544,7 @@ describe('Component Test', function() {
         sEql(div.innerHTML, `<div>1</div>`);
         Intact.hydrate(C, div);
         sEql(div.innerHTML, `<div>1</div>`);
-        div.firstChild.click();
+        dispatchEvent(div.firstChild, 'click');
         sEql(div.innerHTML, `<div>2</div>`);
         document.body.removeChild(div);
     });
@@ -576,7 +578,7 @@ describe('Component Test', function() {
         sEql(div.innerHTML, '<div>0</div>');
         setTimeout(() => {
             sEql(div.innerHTML, '<div>1</div>');
-            div.firstChild.click();
+            dispatchEvent(div.firstChild, 'click');
             sEql(div.innerHTML, '<div>2</div>');
             document.body.removeChild(div);
             done();

@@ -83,12 +83,11 @@ describe('Animate Test', function() {
             setTimeout(() => {
                 sEql(app.element.innerHTML, '');
                 done();
-            }, 1000);
+            }, 1200);
         }, 1000);
     });
 
     it('Animate nested', function(done) {
-        this.enableTimeouts(false);
         this.enableTimeouts(false);
         const C = Intact.extend({
             template: '<Animate a:tag="span" key="c"><Animate a:tag="b" v-if={self.get("show")}><E /></Animate></Animate>',
@@ -115,12 +114,12 @@ describe('Animate Test', function() {
         setTimeout(() => {
             sEql(app.element.firstChild.firstChild.className, "animate-leave-active animate-leave");
             sEql(destroy.callCount, 0);
-        }, 100);
+        }, 200);
         setTimeout(() => {
             view.set('show', true);
             setTimeout(() => {
                 sEql(app.element.firstChild.firstChild.className, "animate-enter-active");
-            }, 100);
+            }, 200);
             sEql(destroy.callCount, 0);
         }, 300);
         setTimeout(() => {
@@ -129,12 +128,12 @@ describe('Animate Test', function() {
                 sEql(app.element.firstChild.className, "animate-leave-active animate-leave");
                 sEql(app.element.children[1].className, "animate-enter-active");
                 sEql(destroy.callCount, 0);
-            }, 100);
+            }, 200);
             setTimeout(() => {
                 sEql(destroy.callCount, 1);
                 done();
-            }, 1100);
-        }, 500);
+            }, 1200);
+        }, 700);
     });
 
     it('Animate mode', function(done) {

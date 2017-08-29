@@ -1,14 +1,16 @@
 import Intact from '../src';
 import assert from 'assert';
 import _ from 'lodash';
+import {dispatchEvent} from './utils';
 
 const sEql = assert.strictEqual;
 const dEql = assert.deepStrictEqual;
+const userAgent = navigator.userAgent;
+const isSafari = userAgent.indexOf('Safari') > -1 && userAgent.indexOf('Chrome') < 0;
 
 function isFunction(o) {
     sEql(typeof o, 'function');
 }
-
 
 describe('Simple Test', function() {
     it('Intact object test', function() {
@@ -524,8 +526,7 @@ describe('Simple Test', function() {
             sEql(dom.value, '1');
 
             dom.value = '123';
-            var event = new Event('input', {bubbles: true});
-            dom.dispatchEvent(event);
+            dispatchEvent(dom, 'input');
             sEql(instance.get('a'), '123');
 
             document.body.removeChild(dom);
@@ -548,14 +549,17 @@ describe('Simple Test', function() {
             var dom = instance.init();
             document.body.appendChild(dom);
 
-            sEql(dom.value, '');
+            if (isSafari) {
+                sEql(dom.value, '1');
+            } else {
+                sEql(dom.value, '');
+            }
 
             instance.set('a', '2');
             sEql(dom.value, '2');
 
             dom.value = '1';
-            var event = new Event('change', {bubbles: true});
-            dom.dispatchEvent(event);
+            dispatchEvent(dom, 'change');
             sEql(instance.get('a'), 1);
 
             document.body.removeChild(dom);
@@ -574,7 +578,11 @@ describe('Simple Test', function() {
             document.body.appendChild(dom);
             window._i = instance;
 
-            sEql(dom.value, '');
+            if (isSafari) {
+                sEql(dom.value, '1');
+            } else {
+                sEql(dom.value, '');
+            }
 
             instance.set('a', [1, '2', 3]);
             _.each([true, true, false], (item, index) => {
@@ -584,8 +592,7 @@ describe('Simple Test', function() {
             dom.options[0].selected = true;
             dom.options[1].selected = false;
             dom.options[2].selected = true;
-            var event = new Event('change', {bubbles: true});
-            dom.dispatchEvent(event);
+            dispatchEvent(dom, 'change');
             dEql(instance.get('a'), [1, '3']);
 
             document.body.removeChild(dom);

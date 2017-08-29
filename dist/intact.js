@@ -6463,7 +6463,8 @@ var Animate$1 = Animate = Intact$1.extend({
     },
     _getPosition: function _getPosition() {
         var element = this.element;
-        var transform = getComputedStyle(element).transform;
+        var style = getComputedStyle(element);
+        var transform = style.transform || style.WebkitTransform;
         if (transform === 'none') {
             return {
                 top: element.offsetTop,
