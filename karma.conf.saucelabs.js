@@ -37,6 +37,8 @@ const customLaunchers = {
     };
 });
 
+// remove animate test for saucelabs
+commonConfig.files.pop();
 module.exports = function(config) {
     commonConfig(config);
     config.set({
