@@ -4,6 +4,8 @@ module.exports = function(config) {
     config.set({
         logLevel: config.LOG_INFO,
         files: [
+            // 'node_modules/babel-polyfill/dist/polyfill.js',
+            'test/polyfill.js',
             'node_modules/sinon/pkg/sinon.js',
             'test/simpleTest.js',
             'test/componentTest.js',
@@ -17,12 +19,7 @@ module.exports = function(config) {
                 rules: [
                     {
                         test: /\.js$/,
-                        loader: {
-                            loader: 'babel-loader',
-                            // options: {
-                                // presets: ['es2015-loose']
-                            // }
-                        },
+                        loader: 'babel-loader',
 
                         // use: {
                             // loader: 'istanbul-instrumenter-loader',

@@ -1,9 +1,9 @@
 import Intact from '../src';
 import assert from 'assert';
-import _ from 'lodash';
 import App from './components/app';
 import {Promise} from 'es6-promise';
-import {dispatchEvent} from './utils';
+import {dispatchEvent, eqlOuterHtml, eqlHtml} from './utils';
+import {each} from '../src/utils';
 
 const sEql = assert.strictEqual;
 const dEql = assert.deepStrictEqual;
@@ -33,7 +33,7 @@ describe('Component Test', function() {
     it('component composite', function() {
         var b = new B();
         b.init();
-        sEql(b.element.outerHTML, '<b><a>1</a>1</b>');
+        eqlOuterHtml(b.element, '<b><a>1</a>1</b>');
     });
 
     it('child component update self', function() {
@@ -41,14 +41,14 @@ describe('Component Test', function() {
         b.init();
 
         b.set('b', 2);
-        sEql(b.element.outerHTML, '<b><a>1</a>2</b>');
+        eqlOuterHtml(b.element, '<b><a>1</a>2</b>');
         sEql(b.widgets.a instanceof A, true);
 
         b.widgets.a.set('a', 2);
-        sEql(b.element.outerHTML, '<b><a>2</a>2</b>');
+        eqlOuterHtml(b.element, '<b><a>2</a>2</b>');
 
         b.set('b', 3);
-        sEql(b.element.outerHTML, '<b><a>2</a>3</b>');
+        eqlOuterHtml(b.element, '<b><a>2</a>3</b>');
     });
 
     it('pass props to child', function() {
@@ -64,7 +64,7 @@ describe('Component Test', function() {
         var html = '<span><a>3</a></span>';
         var c = new C();
         c.init();
-        sEql(c.element.outerHTML, html);
+        eqlOuterHtml(c.element, html);
     });
 
     it('parent component update', function() {
@@ -81,12 +81,12 @@ describe('Component Test', function() {
 
         c.init();
         c.set('c', 2);
-        sEql(c.element.outerHTML, '<span><a>2</a></span>');
+        eqlOuterHtml(c.element, '<span><a>2</a></span>');
 
         c.widgets.a.set('a', 4);
-        sEql(c.element.outerHTML, '<span><a>4</a></span>');
+        eqlOuterHtml(c.element, '<span><a>4</a></span>');
         c.update();
-        sEql(c.element.outerHTML, '<span><a>2</a></span>');
+        eqlOuterHtml(c.element, '<span><a>2</a></span>');
     });
 
     it('update child component instance', function() {
@@ -104,20 +104,20 @@ describe('Component Test', function() {
         a._destroy = destroyAFn;
         b._destroy = destroyBFn;
 
-        c.init();
-        sEql(c.element.outerHTML, '<div></div>');
+        const dom = c.init();
+        eqlOuterHtml(c.element, '<div></div>');
 
         c.set('component', a);
         sEql(a.inited, true);
         sEql(a.rendered, true);
         sEql(a.mounted, true);
-        sEql(c.element.outerHTML, '<div><a>1</a></div>');
+        eqlOuterHtml(c.element, '<div><a>1</a></div>');
 
         c.set('component', b);
         sEql(b.inited, true);
         sEql(b.rendered, true);
         sEql(b.mounted, true);
-        sEql(c.element.outerHTML, '<div><b><a>1</a>1</b></div>');
+        eqlOuterHtml(c.element, '<div><b><a>1</a>1</b></div>');
 
         sEql(destroyAFn.callCount, 1);
         sEql(destroyBFn.callCount, 0);
@@ -143,7 +143,9 @@ describe('Component Test', function() {
                 sEql(this.widgets.b instanceof B, true);
             },
 
-            template: '<div><B a={self.get("a")} ev-$change:a={self.changeData.bind(self)} widget="aa"/><B widget="b" /></div>',
+            template: `<div><B a={self.get("a")} 
+                ev-$change:a={self.changeData.bind(self)} widget="aa"
+            /><B widget="b" /></div>`,
 
             changeData: function() {
                 this.set('a', 3);
@@ -160,15 +162,15 @@ describe('Component Test', function() {
         });
 
         var a = new A();
-        a.init();
-        sEql(a.element.outerHTML, '<div><b>1</b><b>1</b></div>');
+        const dom = a.init();
+        eqlOuterHtml(a.element, '<div><b>1</b><b>1</b></div>');
 
         a.set('a', 2);
         sEql(a.widgets.b instanceof B, true);
-        sEql(a.element.outerHTML, '<div><b>3</b><b>1</b></div>');
+        eqlOuterHtml(a.element, '<div><b>3</b><b>1</b></div>');
 
         a.set('a', 4);
-        sEql(a.element.outerHTML, '<div><b>3</b><b>1</b></div>');
+        eqlOuterHtml(a.element, '<div><b>3</b><b>1</b></div>');
     });
 
     it('should remove events', function() {
@@ -212,7 +214,7 @@ describe('Component Test', function() {
         sEql(a.mounted, false);
 
         var inited = sinon.spy(function() {
-            sEql(a.init().outerHTML, '<a>1</a>');
+            eqlOuterHtml(a.init(), '<a>1</a>');
             done();
         });
 
@@ -251,7 +253,7 @@ describe('Component Test', function() {
         });
 
         function checkFunctionCallCount(p, counts) {
-            _.each(['_init', '_create', '_mount', '_update', '_destroy'], (item, index) => {
+            each(['_init', '_create', '_mount', '_update', '_destroy'], (item, index) => {
                 sEql(p[item].callCount, counts[index]);
             });
         }
@@ -264,14 +266,14 @@ describe('Component Test', function() {
                     return new Promise((resolve) => {
                         setTimeout(() => {
                             resolve();
-                        }, 100);
+                        });
                     });
                 }),
                 _create: sinon.spy(() => {
-                    sEql(app.element.innerHTML, '<!--!--><a>a</a>');
+                    eqlHtml(app.element, '<!--!--><a>a</a>');
                 }),
                 _mount: sinon.spy(() => {
-                    sEql(app.element.innerHTML, '<a>a</a>');
+                    eqlHtml(app.element, '<a>a</a>');
                 }),
                 _update: sinon.spy(),
                 _destroy: sinon.spy()
@@ -280,12 +282,12 @@ describe('Component Test', function() {
 
             app.load(Async);
 
-            sEql(app.element.innerHTML, '<!--!-->');
+            eqlHtml(app.element, '<!--!-->');
             checkFunctionCallCount(p, [1, 0, 0, 0, 0]);
             sEql(app.get('view').dom, undefined);
 
             setTimeout(() => {
-                sEql(app.element.innerHTML, '<a>a</a>');
+                eqlHtml(app.element, '<a>a</a>');
                 checkFunctionCallCount(p, [1, 1, 1, 0, 0]);
                 sEql(app.get('view').dom, app.element.firstChild);
                 
@@ -313,10 +315,10 @@ describe('Component Test', function() {
             app.load(Async2);
 
             setTimeout(() => {
-                sEql(app.element.innerHTML, '<!--!-->');
+                eqlHtml(app.element, '<!--!-->');
             }, 150);
             setTimeout(() => {
-                sEql(app.element.innerHTML, '<a>2</a>');
+                eqlHtml(app.element, '<a>2</a>');
                 done();
             }, 300);
         });
@@ -344,12 +346,12 @@ describe('Component Test', function() {
             app.load(Async);
             app.load(Sync);
 
-            sEql(app.element.innerHTML, '<b>b</b>');
+            eqlHtml(app.element, '<b>b</b>');
             checkFunctionCallCount(p, [1, 0, 0, 0, 1]);
             sEql(app.get('view').dom, undefined);
 
             setTimeout(() => {
-                sEql(app.element.innerHTML, '<b>b</b>');
+                eqlHtml(app.element, '<b>b</b>');
                 checkFunctionCallCount(p, [1, 0, 0, 0, 1]);
                 sEql(app.get('view').dom, undefined);
                 
@@ -361,9 +363,9 @@ describe('Component Test', function() {
                 setTimeout(() => {
                     app.load(Sync);
                     sEql(lastView.dom, null);
-                    sEql(app.element.innerHTML, '<b>b</b>');
+                    eqlHtml(app.element, '<b>b</b>');
                     lastView.update();
-                    sEql(app.element.innerHTML, '<b>b</b>');
+                    eqlHtml(app.element, '<b>b</b>');
                     checkFunctionCallCount(p, [2, 1, 1, 1, 2]);
                     done();
                 }, 100);
@@ -397,21 +399,21 @@ describe('Component Test', function() {
             const sync = app.load(Sync);
             app.load(Async);
             app.update();
-            sEql(app.element.innerHTML, '<b><i>b</i>c</b>');
+            eqlHtml(app.element, '<b><i>b</i>c</b>');
             sync.set('value', 'bb');
             app.update();
             
-            sEql(app.element.innerHTML, '<b><i>bb</i>c</b>');
+            eqlHtml(app.element, '<b><i>bb</i>c</b>');
             sEql(_destroy.callCount, 0);
             setTimeout(() => {
                 sEql(_destroy.callCount, 1);
-                sEql(app.element.innerHTML, '<a>a</a>');
+                eqlHtml(app.element, '<a>a</a>');
                 
                 app.load(Sync);
                 app.load(Async);
                 app.load(Sync);
                 sEql(_destroy.callCount, 2);
-                sEql(app.element.innerHTML, '<b><i>b</i>c</b>');
+                eqlHtml(app.element, '<b><i>b</i>c</b>');
 
                 done();
             }, 600);
@@ -437,23 +439,23 @@ describe('Component Test', function() {
                 }
             });
             app.load(Async2);
-            sEql(app.element.innerHTML, '<!--!-->');
+            eqlHtml(app.element, '<!--!-->');
             setTimeout(() => {
-                sEql(app.element.innerHTML, '<span><!--!--></span>');
+                eqlHtml(app.element, '<span><!--!--></span>');
                 app.load(Async2);
-                sEql(app.element.innerHTML, '<span><!--!--></span>');
+                eqlHtml(app.element, '<span><!--!--></span>');
             }, 200);
             setTimeout(() => {
-                sEql(app.element.innerHTML, '<span><a>a</a></span>');
+                eqlHtml(app.element, '<span><a>a</a></span>');
 
                 // update
                 const sync = app.load(Async2);
-                sEql(app.element.innerHTML, '<span><a>a</a></span>');
+                eqlHtml(app.element, '<span><a>a</a></span>');
                 sEql(sync.inited, false);
                 sEql(sync.rendered, false);
 
                 setTimeout(() => {
-                    sEql(app.element.innerHTML, '<span><a>a</a></span>');
+                    eqlHtml(app.element, '<span><a>a</a></span>');
                     sEql(sync.inited, true);
                     sEql(sync.rendered, true);
 
@@ -482,7 +484,7 @@ describe('Component Test', function() {
             const asyncElement = app.element.firstChild;
             sEql(syncElement, asyncElement);
             setTimeout(() => {
-                sEql(app.element.innerHTML, '<a>a</a>');
+                eqlHtml(app.element, '<a>a</a>');
                 done();
             }, 100);
         });
@@ -507,7 +509,7 @@ describe('Component Test', function() {
             const asyncElement = app.element.firstChild;
             sEql(syncElement, asyncElement);
             setTimeout(() => {
-                sEql(app.element.innerHTML, '<a>a</a>');
+                eqlHtml(app.element, '<a>a</a>');
                 sEql(syncElement, app.element.firstChild);
                 done();
             }, 100);
@@ -541,11 +543,11 @@ describe('Component Test', function() {
 
         const c = new C();
         div.innerHTML = c.toString();
-        sEql(div.innerHTML, `<div>1</div>`);
+        eqlHtml(div, `<div>1</div>`);
         Intact.hydrate(C, div);
-        sEql(div.innerHTML, `<div>1</div>`);
+        eqlHtml(div, `<div>1</div>`);
         dispatchEvent(div.firstChild, 'click');
-        sEql(div.innerHTML, `<div>2</div>`);
+        eqlHtml(div, `<div>2</div>`);
         document.body.removeChild(div);
     });
 
@@ -575,11 +577,11 @@ describe('Component Test', function() {
 
         div.innerHTML = '<div>0</div>';
         Intact.hydrate(C, div);
-        sEql(div.innerHTML, '<div>0</div>');
+        eqlHtml(div, '<div>0</div>');
         setTimeout(() => {
-            sEql(div.innerHTML, '<div>1</div>');
+            eqlHtml(div, '<div>1</div>');
             dispatchEvent(div.firstChild, 'click');
-            sEql(div.innerHTML, '<div>2</div>');
+            eqlHtml(div, '<div>2</div>');
             document.body.removeChild(div);
             done();
         }, 100);

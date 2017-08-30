@@ -26,7 +26,7 @@
     "babel-plugin-transform-es3-property-literals": "^6.22.0",
     "babel-polyfill": "^6.9.1",
     "babel-preset-es2015": "^6.24.1",
-    "babel-preset-es2015-loose": "^8.0.0",
+    "core-js": "^2.5.0",
     "css-loader": "^0.28.4",
     "es6-promise": "^4.1.1",
     "express": "^4.13.1",
@@ -50,11 +50,8 @@
     "sinon": "^1.17.3",
     "style-loader": "^0.18.2",
     "vdt-loader": "^1.0.0",
-    "webpack": "^2.6.1"
+    "webpack": "^2.4.1"
   },
-  "presets": [
-    "es2015"
-  ],
   "dependencies": {
     "misstime": "^0.1.1",
     "vdt": "^1.0.5"

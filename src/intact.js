@@ -1,7 +1,7 @@
 import {
     inherit, extend, result, each, isFunction, 
     isEqual, uniqueId, get, set, castPath, hasOwn,
-    keys, isObject, isString, NextTick
+    keys, isObject, isString, NextTick, getParentTemplate
 } from './utils';
 import Vdt from 'vdt';
 import {hc, render, hydrateRoot, h} from 'misstime';
@@ -22,7 +22,7 @@ export default function Intact(props) {
     this.set(props, {silent: true});
 
     
-    const parentTemplate = this.constructor.prototype.__proto__.template;
+    const parentTemplate = getParentTemplate(this);
     if (isFunction(parentTemplate)) {
         this._parentTemplate = parentTemplate;
     } else if (isString(parentTemplate)) {

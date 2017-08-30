@@ -1,16 +1,19 @@
 import Intact from '../src';
 import assert from 'assert';
-import _ from 'lodash';
 import css from './css/animate.css';
 import Index from './components/index';
 import Detail from './components/detail';
 import App from './components/app';
 import Animate from '../src/animate';
+import {browser} from 'misstime/src/utils';
 
 const sEql = assert.strictEqual;
 const dEql = assert.deepStrictEqual;
 
 describe('Animate Test', function() {
+    // don't test animation in IE
+    if (browser.isIE) return;
+
     var A = Intact.extend({
         defaults: {
             show: true 

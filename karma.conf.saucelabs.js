@@ -43,5 +43,8 @@ module.exports = function(config) {
         browsers: Object.keys(customLaunchers),
         customLaunchers: customLaunchers,
         reporters: ['dots', 'saucelabs'],
+        sauceLabs: {
+            testName: 'Intact Unit Tests'
+        },
     });
 };
