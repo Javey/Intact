@@ -1,18 +1,9 @@
 const webpack = require('webpack');
 
-module.exports.files = [
-    // 'node_modules/babel-polyfill/dist/polyfill.js',
-    'test/polyfill.js',
-    'node_modules/sinon/pkg/sinon.js',
-    'test/simpleTest.js',
-    'test/componentTest.js',
-    'test/animateTest.js',
-];
-
 module.exports = function(config) {
     config.set({
         logLevel: config.LOG_INFO,
-        files: files, 
+        files: module.exports.files, 
         preprocessors: {
             'test/**/*.js': ['webpack'],
         },
@@ -60,3 +51,14 @@ module.exports = function(config) {
         reporters: ['progress', 'coverage-istanbul'],
     });
 };
+
+module.exports.files = [
+    // 'node_modules/babel-polyfill/dist/polyfill.js',
+    'test/polyfill.js',
+    'node_modules/sinon/pkg/sinon.js',
+    'test/simpleTest.js',
+    'test/componentTest.js',
+    'test/animateTest.js',
+];
+
+
