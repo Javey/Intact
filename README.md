@@ -1,6 +1,16 @@
+<p align="center">
+    <a href="https://saucelabs.com/u/Intactjs">
+        <img src="https://saucelabs.com/buildstatus/Intactjs?saucy" alt="Build Status">
+    </a>
+    <br />
+    <a href="https://saucelabs.com/u/Intactjs">
+        <img src="https://saucelabs.com/browser-matrix/Intactjs.svg" alt="Browser Matrix">
+    </a> 
+</p>
+
 # Intact
 
-[Documents](http://javey.github.io/intact/#/document/start)
+[文档 Documents](http://javey.github.io/intact/#/document/start)
 
 ## 简介
 
