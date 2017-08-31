@@ -28,11 +28,9 @@ const customLaunchers = {
     },
     sl_ios_safari: {
         base: 'SauceLabs',
-        browserName: 'Safari',
-        deviceName: 'iPhone 7 Simulator',
-        deviceOrientation: 'portrait',
-        platform: 'iOS',
-        version: '10.3'
+        browserName: 'iphone',
+        platform: 'OS X 10.9',
+        version: '7.1'
     },
     sl_android: {
         base: 'SauceLabs',
