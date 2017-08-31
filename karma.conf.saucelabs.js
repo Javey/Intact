@@ -25,6 +25,22 @@ const customLaunchers = {
         browserName: 'safari',
         platform: 'macOS 10.12',
         version: '10'
+    },
+    sl_ios_safari: {
+        base: 'SauceLabs',
+        browserName: 'Safari',
+        deviceName: 'iPhone 7 Simulator',
+        deviceOrientation: 'portrait',
+        platformName: 'iOS',
+        platformVersion: '10.3'
+    },
+    sl_android: {
+        base: 'SauceLabs',
+        browserName: 'Browser',
+        platform: 'Android',
+        version: '4.4',
+        deviceName: 'Samsung Galaxy S3 Emulator',
+        deviceOrientation: 'portrait'
     }
 };
 
@@ -44,9 +60,12 @@ module.exports = function(config) {
     config.set({
         browsers: Object.keys(customLaunchers),
         customLaunchers: customLaunchers,
-        reporters: ['dots', 'saucelabs'],
+        reporters: ['progress', 'saucelabs'],
         sauceLabs: {
-            testName: 'Intact Unit Tests'
+            testName: 'Intact Unit Tests',
+            recordScreenshots: false,
+            public: 'public',
         },
+        captureTimeout: 120000,
     });
 };
