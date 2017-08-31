@@ -32,7 +32,7 @@ const customLaunchers = {
     customLaunchers[`sl_ie${v}`] = {
         base: 'SauceLabs',
         browserName: v === 13 || v === 14 ? 'MicrosoftEdge' : 'internet explorer',
-        platform: `Windows ${v === 13 || v === 14 ? '10' : v !== 8 ? '7' : 'XP'}`,
+        platform: `Windows ${v === 13 || v === 14 ? '10' : '7'}`,
         version: v 
     };
 });
