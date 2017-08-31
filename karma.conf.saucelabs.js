@@ -37,10 +37,10 @@ const customLaunchers = {
     sl_android: {
         base: 'SauceLabs',
         browserName: 'Browser',
-        platform: 'Android',
-        version: '4.4',
         deviceName: 'Samsung Galaxy S3 Emulator',
-        deviceOrientation: 'portrait'
+        deviceOrientation: 'portrait',
+        platformName: 'Android',
+        platformVersion: '4.4',
     }
 };
 
@@ -64,7 +64,6 @@ module.exports = function(config) {
         sauceLabs: {
             testName: 'Intact Unit Tests',
             recordScreenshots: false,
-            public: 'public',
         },
         captureTimeout: 120000,
     });
