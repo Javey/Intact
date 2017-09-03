@@ -1,6 +1,6 @@
 import Intact from '../src';
 import assert from 'assert';
-import {dispatchEvent, dEql, eqlHtml} from './utils';
+import {dispatchEvent, dEql, eqlHtml, eqlOuterHtml} from './utils';
 import {extend, each, isEqual} from '../src/utils';
 import {browser} from 'misstime/src/utils';
 
@@ -160,20 +160,29 @@ describe('Simple Test', function() {
                     </t:parent>
                 `
             });
+            const DD = D.extend({
+                template: `
+                    <t:parent>
+                        <b:a>{parent()} dd</b:a>
+                    </t:parent>
+                `
+            });
+
             const d = new D();
-            const div = document.createElement('div');
-            div.appendChild(d.init());
-            eqlHtml(div, '<div>cd</div>');
+            eqlOuterHtml(d.init(), '<div>cd</div>');
+            const dd = new DD();
+            eqlOuterHtml(dd.init(), '<div>cd dd</div>');
 
             if (browser.isIE8) return;
 
             class E extends Intact {
+                @Intact.template()
                 get template() {
                     return '<div><b:a>e</b:a></div>';
                 }
             }
-
             class F extends E {
+                @Intact.template()
                 get template() {
                     return `
                         <t:parent>
@@ -182,9 +191,52 @@ describe('Simple Test', function() {
                     `;
                 }
             }
+            class FF extends F {
+                @Intact.template()
+                get template() {
+                    return `
+                        <t:parent>
+                            <b:a>{parent()} ff</b:a>
+                        </t:parent>
+                    `;
+                }
+            }
 
             const f = new F();
             sEql(f.init().outerHTML, '<div>ef</div>');
+            const ff = new FF();
+            sEql(ff.init().outerHTML, '<div>ef ff</div>');
+
+            class G extends Intact {
+                @Intact.template()
+                get template() {
+                    return Intact.Vdt.compile(`
+                        <div><b:a>1</b:a></div>
+                    `);
+                }
+            }
+            class GG extends G {
+                @Intact.template()
+                get template() {
+                    return `
+                        <t:parent>
+                            <b:a>{parent()}2</b:a>
+                        </t:parent>
+                    `;
+                }
+            }
+            class GGG extends GG {
+                @Intact.template()
+                get template() {
+                    return Intact.Vdt.compile(`
+                        <t:parent>
+                            <b:a>{parent()}3</b:a>
+                        </t:parent>
+                    `);
+                }
+            }
+            eqlOuterHtml(new GG().init(), '<div>12</div>');
+            eqlOuterHtml(new GGG().init(), '<div>123</div>');
         });
     });
 

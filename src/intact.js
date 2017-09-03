@@ -1,7 +1,7 @@
 import {
     inherit, extend, result, each, isFunction, 
     isEqual, uniqueId, get, set, castPath, hasOwn,
-    keys, isObject, isString, NextTick, getParentTemplate
+    keys, isObject, isString, NextTick
 } from './utils';
 import Vdt from 'vdt';
 import {hc, render, hydrateRoot, h} from 'misstime';
@@ -20,18 +20,6 @@ export default function Intact(props) {
     this.props = {};
     this.vdt = Vdt(this.template);
     this.set(props, {silent: true});
-
-    
-    const parentTemplate = getParentTemplate(this);
-    if (isFunction(parentTemplate)) {
-        this._parentTemplate = parentTemplate;
-    } else if (isString(parentTemplate)) {
-        this._parentTemplate = Vdt.compile(parentTemplate);
-    } else {
-        this._parentTemplate = function() {
-            throw new Error('super.template does not exist');
-        };
-    }
 
     // for compatibility v1.0
     this.widgets = this.vdt.widgets || {};
@@ -595,3 +583,32 @@ Intact.hydrate = function(Component, node) {
     hydrateRoot(vNode, node);
     return vNode.children;
 };
+
+// ES7 Decorator for template
+if (Object.defineProperty) {
+    Intact.template = function(options) {
+        return function(target, name, descriptor) {
+            let template = target.template;
+            if (isString(template)) {
+                template = Vdt.compile(template, options);
+            }
+            const Parent = Object.getPrototypeOf(target);
+            const _super = function(...args) {
+                return Parent.template.apply(this, args);
+            }; 
+            descriptor.get = function() {
+                return function(...args) {
+                    const self = this || {};
+                    const __super = self._super;
+                    let returnValue;
+
+                    self._super = _super;
+                    returnValue = template.apply(this, args);
+                    self._super = __super;
+
+                    return returnValue;
+                };
+            };
+        }
+    }
+}

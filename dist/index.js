@@ -669,329 +669,6 @@ var setTextContent$1 = browser$1.isIE8 ? function (dom, text) {
     dom.textContent = text;
 };
 
-var inBrowser = typeof window !== 'undefined';
-var UA = inBrowser && window.navigator.userAgent.toLowerCase();
-var isIOS = UA && /iphone|ipad|ipod|ios/.test(UA);
-
-/**
- * inherit
- * @param Parent
- * @param prototype
- * @returns {Function}
- */
-function inherit(Parent, prototype) {
-    var Child = function Child() {
-        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-            args[_key] = arguments[_key];
-        }
-
-        return Parent.apply(this, args);
-    };
-
-    Child.prototype = create(Parent.prototype);
-    each(prototype, function (proto, name) {
-        if (name === 'displayName') {
-            Child.displayName = proto;
-        }
-        if (!isFunction(proto) || name === 'template') {
-            Child.prototype[name] = proto;
-            return;
-        }
-        Child.prototype[name] = function () {
-            var _super = function _super() {
-                for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-                    args[_key2] = arguments[_key2];
-                }
-
-                return Parent.prototype[name].apply(this, args);
-            },
-                _superApply = function _superApply(args) {
-                return Parent.prototype[name].apply(this, args);
-            };
-            return function () {
-                var self = this || {},
-                    __super = self._super,
-                    __superApply = self._superApply,
-                    returnValue = void 0;
-
-                self._super = _super;
-                self._superApply = _superApply;
-
-                for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-                    args[_key3] = arguments[_key3];
-                }
-
-                returnValue = proto.apply(this, args);
-
-                self._super = __super;
-                self._superApply = __superApply;
-
-                return returnValue;
-            };
-        }();
-    });
-    Child.prototype.constructor = Child;
-
-    extend(Child, Parent);
-    Child.__super = Parent.prototype;
-
-    return Child;
-}
-
-var nativeCreate = Object.create;
-var create = nativeCreate ? nativeCreate : function (object) {
-    var fn = function fn() {};
-    fn.prototype = object;
-    return new fn();
-};
-
-function isFunction(obj) {
-    return typeof obj === 'function';
-}
-
-function isString(s) {
-    return typeof s === 'string';
-}
-
-function result(obj, property, fallback) {
-    var value = isNullOrUndefined$1(obj) ? undefined : obj[property];
-    if (value === undefined) {
-        value = fallback;
-    }
-    return isFunction(value) ? value.call(obj) : value;
-}
-
-
-
-var toString = Object.prototype.toString;
-// Internal recursive comparison function for `isEqual`.
-var eq = function eq(a, b, aStack, bStack) {
-    // Identical objects are equal. `0 === -0`, but they aren't identical.
-    // See the [Harmony `egal` proposal](http://wiki.ecmascript.org/doku.php?id=harmony:egal).
-    if (a === b) return a !== 0 || 1 / a === 1 / b;
-    // A strict comparison is necessary because `null == undefined`.
-    if (isNullOrUndefined$1(a) || isNullOrUndefined$1(b)) return a === b;
-    // Compare `[[Class]]` names.
-    var className$$1 = toString.call(a);
-    if (className$$1 !== toString.call(b)) return false;
-    switch (className$$1) {
-        // Strings, numbers, regular expressions, dates, and booleans are compared by value.
-        case '[object RegExp]':
-        // RegExps are coerced to strings for comparison (Note: '' + /a/i === '/a/i')
-        case '[object String]':
-            // Primitives and their corresponding object wrappers are equivalent; thus, `"5"` is
-            // equivalent to `new String("5")`.
-            return '' + a === '' + b;
-        case '[object Number]':
-            // `NaN`s are equivalent, but non-reflexive.
-            // Object(NaN) is equivalent to NaN
-            if (+a !== +a) return +b !== +b;
-            // An `egal` comparison is performed for other numeric values.
-            return +a === 0 ? 1 / +a === 1 / b : +a === +b;
-        case '[object Date]':
-        case '[object Boolean]':
-            // Coerce dates and booleans to numeric primitive values. Dates are compared by their
-            // millisecond representations. Note that invalid dates with millisecond representations
-            // of `NaN` are not equivalent.
-            return +a === +b;
-    }
-
-    var areArrays = className$$1 === '[object Array]';
-    if (!areArrays) {
-        if ((typeof a === 'undefined' ? 'undefined' : _typeof(a)) != 'object' || (typeof b === 'undefined' ? 'undefined' : _typeof(b)) != 'object') return false;
-
-        // Objects with different constructors are not equivalent, but `Object`s or `Array`s
-        // from different frames are.
-        var aCtor = a.constructor,
-            bCtor = b.constructor;
-        if (aCtor !== bCtor && !(isFunction(aCtor) && aCtor instanceof aCtor && isFunction(bCtor) && bCtor instanceof bCtor) && 'constructor' in a && 'constructor' in b) {
-            return false;
-        }
-    }
-    // Assume equality for cyclic structures. The algorithm for detecting cyclic
-    // structures is adapted from ES 5.1 section 15.12.3, abstract operation `JO`.
-
-    // Initializing stack of traversed objects.
-    // It's done here since we only need them for objects and arrays comparison.
-    aStack = aStack || [];
-    bStack = bStack || [];
-    var length = aStack.length;
-    while (length--) {
-        // Linear search. Performance is inversely proportional to the number of
-        // unique nested structures.
-        if (aStack[length] === a) return bStack[length] === b;
-    }
-
-    // Add the first object to the stack of traversed objects.
-    aStack.push(a);
-    bStack.push(b);
-
-    // Recursively compare objects and arrays.
-    if (areArrays) {
-        // Compare array lengths to determine if a deep comparison is necessary.
-        length = a.length;
-        if (length !== b.length) return false;
-        // Deep compare the contents, ignoring non-numeric properties.
-        while (length--) {
-            if (!eq(a[length], b[length], aStack, bStack)) return false;
-        }
-    } else {
-        // Deep compare objects.
-        var aKeys = keys(a),
-            key;
-        length = aKeys.length;
-        // Ensure that both objects contain the same number of properties before comparing deep equality.
-        if (keys(b).length !== length) return false;
-        while (length--) {
-            // Deep compare each member
-            key = aKeys[length];
-            if (!(hasOwn.call(b, key) && eq(a[key], b[key], aStack, bStack))) return false;
-        }
-    }
-    // Remove the first object from the stack of traversed objects.
-    aStack.pop();
-    bStack.pop();
-    return true;
-};
-
-function isEqual(a, b) {
-    return eq(a, b);
-}
-
-var idCounter = 0;
-function uniqueId(prefix) {
-    var id = ++idCounter + '';
-    return prefix ? prefix + id : id;
-}
-
-var keys = Object.keys || function (obj) {
-    var ret = [];
-    each(obj, function (value, key) {
-        return ret.push(key);
-    });
-    return ret;
-};
-
-
-
-var pathMap = {};
-var reLeadingDot = /^\./;
-var rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g;
-var reEscapeChar = /\\(\\)?/g;
-var reIsUint = /^(?:0|[1-9]\d*)$/;
-function castPath(path) {
-    if (typeof path !== 'string') return path;
-    if (pathMap[path]) return pathMap[path];
-
-    var ret = [];
-    if (reLeadingDot.test(path)) {
-        result.push('');
-    }
-    path.replace(rePropName, function (match, number, quote, string) {
-        ret.push(quote ? path.replace(reEscapeChar, '$1') : number || match);
-    });
-    pathMap[path] = ret;
-
-    return ret;
-}
-function isIndex(value) {
-    return (typeof value === 'number' || reIsUint.test(value)) && value > -1 && value % 1 === 0;
-}
-function get$$1(object, path, defaultValue) {
-    if (hasOwn.call(object, path)) return object[path];
-    path = castPath(path);
-
-    var index = 0,
-        length = path.length;
-
-    while (!isNullOrUndefined$1(object) && index < length) {
-        object = object[path[index++]];
-    }
-
-    return index && index === length ? object : defaultValue;
-}
-function set$$1(object, path, value) {
-    if (hasOwn.call(object, path)) {
-        object[path] = value;
-        return object;
-    }
-
-    path = castPath(path);
-
-    var index = -1,
-        length = path.length,
-        lastIndex = length - 1,
-        nested = object;
-    while (!isNullOrUndefined$1(nested) && ++index < length) {
-        var key = path[index],
-            newValue = value;
-        if (index !== lastIndex) {
-            var objValue = nested[key];
-            newValue = isObject$$1(objValue) ? objValue : isIndex(path[index + 1]) ? [] : {};
-        }
-        nested[key] = newValue;
-        nested = nested[key];
-    }
-
-    return object;
-}
-
-function isNative(Ctor) {
-    return typeof Ctor === 'function' && /native code/.test(Ctor.toString());
-}
-var nextTick = function () {
-    if (typeof Promise !== 'undefined' && isNative(Promise)) {
-        var p = Promise.resolve();
-        return function (callback) {
-            p.then(callback).catch(function (err) {
-                return console.error(err);
-            });
-            // description in vue
-            if (isIOS) setTimeout(noop);
-        };
-    } else if (typeof MutationObserver !== 'undefined' && isNative(MutationObserver) ||
-    // PhantomJS and iOS 7.x
-    MutationObserver.toString() === '[object MutationObserverConstructor]') {
-        var callbacks = [];
-        var nextTickHandler = function nextTickHandler() {
-            var _callbacks = callbacks.slice(0);
-            callbacks.length = 0;
-            for (var _i = 0; _i < _callbacks.length; _i++) {
-                _callbacks[_i]();
-            }
-        };
-        var node = document.createTextNode('');
-        new MutationObserver(nextTickHandler).observe(node, {
-            characterData: true
-        });
-        var i = 1;
-        return function (callback) {
-            callbacks.push(callback);
-            i = (i + 1) % 2;
-            node.data = String(i);
-        };
-    } else {
-        return function (callback) {
-            setTimeout(callback, 0);
-        };
-    }
-}();
-function NextTick(eachCallback) {
-    var _this = this;
-
-    this.callback = null;
-    this.eachCallback = eachCallback;
-    nextTick(function () {
-        return _this.callback();
-    });
-}
-NextTick.prototype.fire = function (callback, data) {
-    this.callback = callback;
-    if (this.eachCallback) {
-        this.eachCallback(data);
-    }
-};
-
 /**
  * @fileoverview parse jsx to ast
  * @author javey
@@ -3785,7 +3462,7 @@ function compile(source, options) {
             var ast = parser.parse(source, options),
                 hscript = stringifier.stringify(ast, options.autoReturn);
 
-            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, hu = _Vdt.miss.hu, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', '__u = _Vdt.utils, extend = __u.extend, _e = __u.error, _className = __u.className,', '__o = __u.Options, _getModel = __o.getModel, _setModel = __o.setModel,', '_setCheckboxModel = __u.setCheckboxModel, _detectCheckboxChecked = __u.detectCheckboxChecked,', '_setSelectModel = __u.setSelectModel,', (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj, Animate = self && self.Animate, parent = self && self._parentTemplate', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
+            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, hu = _Vdt.miss.hu, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', '__u = _Vdt.utils, extend = __u.extend, _e = __u.error, _className = __u.className,', '__o = __u.Options, _getModel = __o.getModel, _setModel = __o.setModel,', '_setCheckboxModel = __u.setCheckboxModel, _detectCheckboxChecked = __u.detectCheckboxChecked,', '_setSelectModel = __u.setSelectModel,', (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj, Animate = self && self.Animate, parent = this._super', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
             templateFn = options.onlySource ? function () {} : new Function('obj', '_Vdt', 'blocks', hscript);
             templateFn.source = 'function(obj, _Vdt, blocks) {\n' + hscript + '\n}';
             break;
@@ -3810,6 +3487,352 @@ Vdt$1.configure = configure;
 
 // for compatibility v1.0
 Vdt$1.virtualDom = miss;
+
+var inBrowser = typeof window !== 'undefined';
+var UA = inBrowser && window.navigator.userAgent.toLowerCase();
+var isIOS = UA && /iphone|ipad|ipod|ios/.test(UA);
+
+/**
+ * inherit
+ * @param Parent
+ * @param prototype
+ * @returns {Function}
+ */
+function inherit(Parent, prototype) {
+    var Child = function Child() {
+        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+        }
+
+        return Parent.apply(this, args);
+    };
+
+    Child.prototype = create(Parent.prototype);
+    each(prototype, function (proto, name) {
+        if (name === 'displayName') {
+            Child.displayName = proto;
+        }
+        if (name === 'template') {
+            if (isString(proto)) {
+                proto = Vdt$1.compile(proto);
+                prototype.template = proto;
+            }
+        } else if (!isFunction(proto)) {
+            Child.prototype[name] = proto;
+            return;
+        }
+        Child.prototype[name] = function () {
+            var _super = function _super() {
+                for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+                    args[_key2] = arguments[_key2];
+                }
+
+                return Parent.prototype[name].apply(this, args);
+            },
+                _superApply = function _superApply(args) {
+                return Parent.prototype[name].apply(this, args);
+            };
+            return function () {
+                var self = this || {},
+                    __super = self._super,
+                    __superApply = self._superApply,
+                    returnValue = void 0;
+
+                self._super = _super;
+                self._superApply = _superApply;
+
+                for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+                    args[_key3] = arguments[_key3];
+                }
+
+                returnValue = proto.apply(this, args);
+
+                self._super = __super;
+                self._superApply = __superApply;
+
+                return returnValue;
+            };
+        }();
+    });
+    Child.prototype.constructor = Child;
+
+    extend(Child, Parent);
+    Child.__super = Parent.prototype;
+
+    return Child;
+}
+
+// const nativeGetPrototypeOf = Object.getPrototypeOf;
+// export const getParentTemplate = isNative(nativeGetPrototypeOf) ?
+// function(instance) {
+// return nativeGetPrototypeOf(instance.constructor.prototype).template; 
+// } :
+// function(instance) {
+// const c = instance.constructor;
+// if (c.__super) {
+// // is inherit by Intact.extend()
+// return c.__super.template;
+// } else if (c.prototype.__proto__) {
+// // has __proto__
+// return c.prototype.__proto__.template; 
+// } else {
+// return null;
+// }
+// };
+
+var nativeCreate = Object.create;
+var create = nativeCreate ? nativeCreate : function (object) {
+    var fn = function fn() {};
+    fn.prototype = object;
+    return new fn();
+};
+
+function isFunction(obj) {
+    return typeof obj === 'function';
+}
+
+function isString(s) {
+    return typeof s === 'string';
+}
+
+function result(obj, property, fallback) {
+    var value = isNullOrUndefined$1(obj) ? undefined : obj[property];
+    if (value === undefined) {
+        value = fallback;
+    }
+    return isFunction(value) ? value.call(obj) : value;
+}
+
+
+
+var toString = Object.prototype.toString;
+// Internal recursive comparison function for `isEqual`.
+var eq = function eq(a, b, aStack, bStack) {
+    // Identical objects are equal. `0 === -0`, but they aren't identical.
+    // See the [Harmony `egal` proposal](http://wiki.ecmascript.org/doku.php?id=harmony:egal).
+    if (a === b) return a !== 0 || 1 / a === 1 / b;
+    // A strict comparison is necessary because `null == undefined`.
+    if (isNullOrUndefined$1(a) || isNullOrUndefined$1(b)) return a === b;
+    // Compare `[[Class]]` names.
+    var className$$1 = toString.call(a);
+    if (className$$1 !== toString.call(b)) return false;
+    switch (className$$1) {
+        // Strings, numbers, regular expressions, dates, and booleans are compared by value.
+        case '[object RegExp]':
+        // RegExps are coerced to strings for comparison (Note: '' + /a/i === '/a/i')
+        case '[object String]':
+            // Primitives and their corresponding object wrappers are equivalent; thus, `"5"` is
+            // equivalent to `new String("5")`.
+            return '' + a === '' + b;
+        case '[object Number]':
+            // `NaN`s are equivalent, but non-reflexive.
+            // Object(NaN) is equivalent to NaN
+            if (+a !== +a) return +b !== +b;
+            // An `egal` comparison is performed for other numeric values.
+            return +a === 0 ? 1 / +a === 1 / b : +a === +b;
+        case '[object Date]':
+        case '[object Boolean]':
+            // Coerce dates and booleans to numeric primitive values. Dates are compared by their
+            // millisecond representations. Note that invalid dates with millisecond representations
+            // of `NaN` are not equivalent.
+            return +a === +b;
+    }
+
+    var areArrays = className$$1 === '[object Array]';
+    if (!areArrays) {
+        if ((typeof a === 'undefined' ? 'undefined' : _typeof(a)) != 'object' || (typeof b === 'undefined' ? 'undefined' : _typeof(b)) != 'object') return false;
+
+        // Objects with different constructors are not equivalent, but `Object`s or `Array`s
+        // from different frames are.
+        var aCtor = a.constructor,
+            bCtor = b.constructor;
+        if (aCtor !== bCtor && !(isFunction(aCtor) && aCtor instanceof aCtor && isFunction(bCtor) && bCtor instanceof bCtor) && 'constructor' in a && 'constructor' in b) {
+            return false;
+        }
+    }
+    // Assume equality for cyclic structures. The algorithm for detecting cyclic
+    // structures is adapted from ES 5.1 section 15.12.3, abstract operation `JO`.
+
+    // Initializing stack of traversed objects.
+    // It's done here since we only need them for objects and arrays comparison.
+    aStack = aStack || [];
+    bStack = bStack || [];
+    var length = aStack.length;
+    while (length--) {
+        // Linear search. Performance is inversely proportional to the number of
+        // unique nested structures.
+        if (aStack[length] === a) return bStack[length] === b;
+    }
+
+    // Add the first object to the stack of traversed objects.
+    aStack.push(a);
+    bStack.push(b);
+
+    // Recursively compare objects and arrays.
+    if (areArrays) {
+        // Compare array lengths to determine if a deep comparison is necessary.
+        length = a.length;
+        if (length !== b.length) return false;
+        // Deep compare the contents, ignoring non-numeric properties.
+        while (length--) {
+            if (!eq(a[length], b[length], aStack, bStack)) return false;
+        }
+    } else {
+        // Deep compare objects.
+        var aKeys = keys(a),
+            key;
+        length = aKeys.length;
+        // Ensure that both objects contain the same number of properties before comparing deep equality.
+        if (keys(b).length !== length) return false;
+        while (length--) {
+            // Deep compare each member
+            key = aKeys[length];
+            if (!(hasOwn.call(b, key) && eq(a[key], b[key], aStack, bStack))) return false;
+        }
+    }
+    // Remove the first object from the stack of traversed objects.
+    aStack.pop();
+    bStack.pop();
+    return true;
+};
+
+function isEqual(a, b) {
+    return eq(a, b);
+}
+
+var idCounter = 0;
+function uniqueId(prefix) {
+    var id = ++idCounter + '';
+    return prefix ? prefix + id : id;
+}
+
+var keys = Object.keys || function (obj) {
+    var ret = [];
+    each(obj, function (value, key) {
+        return ret.push(key);
+    });
+    return ret;
+};
+
+
+
+var pathMap = {};
+var reLeadingDot = /^\./;
+var rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g;
+var reEscapeChar = /\\(\\)?/g;
+var reIsUint = /^(?:0|[1-9]\d*)$/;
+function castPath(path) {
+    if (typeof path !== 'string') return path;
+    if (pathMap[path]) return pathMap[path];
+
+    var ret = [];
+    if (reLeadingDot.test(path)) {
+        result.push('');
+    }
+    path.replace(rePropName, function (match, number, quote, string) {
+        ret.push(quote ? path.replace(reEscapeChar, '$1') : number || match);
+    });
+    pathMap[path] = ret;
+
+    return ret;
+}
+function isIndex(value) {
+    return (typeof value === 'number' || reIsUint.test(value)) && value > -1 && value % 1 === 0;
+}
+function get$$1(object, path, defaultValue) {
+    if (hasOwn.call(object, path)) return object[path];
+    path = castPath(path);
+
+    var index = 0,
+        length = path.length;
+
+    while (!isNullOrUndefined$1(object) && index < length) {
+        object = object[path[index++]];
+    }
+
+    return index && index === length ? object : defaultValue;
+}
+function set$$1(object, path, value) {
+    if (hasOwn.call(object, path)) {
+        object[path] = value;
+        return object;
+    }
+
+    path = castPath(path);
+
+    var index = -1,
+        length = path.length,
+        lastIndex = length - 1,
+        nested = object;
+    while (!isNullOrUndefined$1(nested) && ++index < length) {
+        var key = path[index],
+            newValue = value;
+        if (index !== lastIndex) {
+            var objValue = nested[key];
+            newValue = isObject$$1(objValue) ? objValue : isIndex(path[index + 1]) ? [] : {};
+        }
+        nested[key] = newValue;
+        nested = nested[key];
+    }
+
+    return object;
+}
+
+function isNative(Ctor) {
+    return typeof Ctor === 'function' && /native code/.test(Ctor.toString());
+}
+var nextTick = function () {
+    if (typeof Promise !== 'undefined' && isNative(Promise)) {
+        var p = Promise.resolve();
+        return function (callback) {
+            p.then(callback).catch(function (err) {
+                return console.error(err);
+            });
+            // description in vue
+            if (isIOS) setTimeout(noop);
+        };
+    } else if (typeof MutationObserver !== 'undefined' && (isNative(MutationObserver) ||
+    // PhantomJS and iOS 7.x
+    MutationObserver.toString() === '[object MutationObserverConstructor]')) {
+        var callbacks = [];
+        var nextTickHandler = function nextTickHandler() {
+            var _callbacks = callbacks.slice(0);
+            callbacks.length = 0;
+            for (var _i = 0; _i < _callbacks.length; _i++) {
+                _callbacks[_i]();
+            }
+        };
+        var node = document.createTextNode('');
+        new MutationObserver(nextTickHandler).observe(node, {
+            characterData: true
+        });
+        var i = 1;
+        return function (callback) {
+            callbacks.push(callback);
+            i = (i + 1) % 2;
+            node.data = String(i);
+        };
+    } else {
+        return function (callback) {
+            setTimeout(callback, 0);
+        };
+    }
+}();
+function NextTick(eachCallback) {
+    var _this = this;
+
+    this.callback = null;
+    this.eachCallback = eachCallback;
+    nextTick(function () {
+        return _this.callback();
+    });
+}
+NextTick.prototype.fire = function (callback, data) {
+    this.callback = callback;
+    if (this.eachCallback) {
+        this.eachCallback(data);
+    }
+};
 
 var Types$1 = {
     Text: 1,
@@ -5608,17 +5631,6 @@ function Intact$1(props) {
     this.vdt = Vdt$1(this.template);
     this.set(props, { silent: true });
 
-    var parentTemplate = this.constructor.prototype.__proto__.template;
-    if (isFunction(parentTemplate)) {
-        this._parentTemplate = parentTemplate;
-    } else if (isString(parentTemplate)) {
-        this._parentTemplate = Vdt$1.compile(parentTemplate);
-    } else {
-        this._parentTemplate = function () {
-            throw new Error('super.template does not exist');
-        };
-    }
-
     // for compatibility v1.0
     this.widgets = this.vdt.widgets || {};
     this._widget = this.props.widget || uniqueId('widget');
@@ -6191,6 +6203,44 @@ Intact$1.hydrate = function (Component, node) {
     return vNode.children;
 };
 
+// ES7 Decorator for template
+if (Object.defineProperty) {
+    Intact$1.template = function (options) {
+        return function (target, name, descriptor) {
+            var template = target.template;
+            if (isString(template)) {
+                template = Vdt$1.compile(template, options);
+            }
+            var Parent = Object.getPrototypeOf(target);
+            var _super = function _super() {
+                for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+                    args[_key3] = arguments[_key3];
+                }
+
+                return Parent.template.apply(this, args);
+            };
+            descriptor.get = function () {
+                return function () {
+                    var self = this || {};
+                    var __super = self._super;
+                    var returnValue = void 0;
+
+                    self._super = _super;
+
+                    for (var _len4 = arguments.length, args = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+                        args[_key4] = arguments[_key4];
+                    }
+
+                    returnValue = template.apply(this, args);
+                    self._super = __super;
+
+                    return returnValue;
+                };
+            };
+        };
+    };
+}
+
 var Animate = void 0;
 var Animate$1 = Animate = Intact$1.extend({
     defaults: {
@@ -6459,7 +6509,8 @@ var Animate$1 = Animate = Intact$1.extend({
     },
     _getPosition: function _getPosition() {
         var element = this.element;
-        var transform = getComputedStyle(element).transform;
+        var style = getComputedStyle(element);
+        var transform = style.transform || style.WebkitTransform;
         if (transform === 'none') {
             return {
                 top: element.offsetTop,

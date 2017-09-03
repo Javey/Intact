@@ -1,5 +1,6 @@
 import {extend, isArray, each, isObject, hasOwn, noop} from 'vdt/src/lib/utils';
 import {isNullOrUndefined} from 'misstime/src/utils';
+import Vdt from 'vdt';
 
 export {extend, isArray, each, isObject, hasOwn, isNullOrUndefined, noop};
 
@@ -23,7 +24,12 @@ export function inherit(Parent, prototype) {
         if (name === 'displayName') {
             Child.displayName = proto;
         }
-        if (!isFunction(proto) || name === 'template') {
+        if (name === 'template') {
+            if (isString(proto)) {
+                proto = Vdt.compile(proto);
+                prototype.template = proto;
+            }
+        } else if (!isFunction(proto)) {
             Child.prototype[name] = proto;
             return;
         }
@@ -60,23 +66,23 @@ export function inherit(Parent, prototype) {
     return Child;
 }
 
-const nativeGetPrototypeOf = Object.getPrototypeOf;
-export const getParentTemplate = isNative(nativeGetPrototypeOf) ?
-    function(instance) {
-        return nativeGetPrototypeOf(instance.constructor.prototype).template; 
-    } :
-    function(instance) {
-        const c = instance.constructor;
-        if (c.__super) {
-            // is inherit by Intact.extend()
-            return c.__super.template;
-        } else if (c.prototype.__proto__) {
-            // has __proto__
-            return c.prototype.__proto__.template; 
-        } else {
-            return null;
-        }
-    };
+// const nativeGetPrototypeOf = Object.getPrototypeOf;
+// export const getParentTemplate = isNative(nativeGetPrototypeOf) ?
+    // function(instance) {
+        // return nativeGetPrototypeOf(instance.constructor.prototype).template; 
+    // } :
+    // function(instance) {
+        // const c = instance.constructor;
+        // if (c.__super) {
+            // // is inherit by Intact.extend()
+            // return c.__super.template;
+        // } else if (c.prototype.__proto__) {
+            // // has __proto__
+            // return c.prototype.__proto__.template; 
+        // } else {
+            // return null;
+        // }
+    // };
 
 let nativeCreate = Object.create;
 export const create = nativeCreate ? nativeCreate : function(object) {
