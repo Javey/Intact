@@ -54,7 +54,7 @@ describe('Simple Test', function() {
             sEql(SubComponent.prototype.defaults.a, 2);
             sEql(SubComponent.prototype.defaults.b, 1);
             sEql(SubComponent.prototype.defaults.c, 3);
-            sEql(typeof SubComponent.prototype.template, 'string');
+            sEql(typeof SubComponent.prototype.template, 'function');
             
             // displayName
             sEql(Component.prototype.displayName, 'Component');
