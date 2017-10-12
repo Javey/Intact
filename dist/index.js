@@ -4545,10 +4545,6 @@ var Animate$1 = Animate = Intact$1.extend({
             _this2._leaving = false;
             delete parentDom._reserve[vNode.key];
             TransitionEvents.off(element, _this2._leaveEnd);
-            if (!_this2._unmountCancelled) {
-                parentDom.removeChild(element);
-                _this2.destroy(vNode, null, parentDom);
-            }
             var parentInstance = _this2.parentInstance;
             if (parentInstance) {
                 if (--parentInstance._leavingAmount === 0 && parentInstance.get('a:mode') === 'out-in') {
@@ -4556,6 +4552,10 @@ var Animate$1 = Animate = Intact$1.extend({
                 }
             }
             _this2.trigger('a:leaveEnd', element);
+            if (!_this2._unmountCancelled) {
+                parentDom.removeChild(element);
+                _this2.destroy(vNode, null, parentDom);
+            }
         };
 
         this._leave(onlyInit);
