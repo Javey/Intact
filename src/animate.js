@@ -253,10 +253,6 @@ export default Animate = Intact.extend({
             this._leaving = false;
             delete parentDom._reserve[vNode.key];
             TransitionEvents.off(element, this._leaveEnd);
-            if (!this._unmountCancelled) {
-                parentDom.removeChild(element);
-                this.destroy(vNode, null, parentDom);
-            }
             const parentInstance = this.parentInstance;
             if (parentInstance) {
                 if (--parentInstance._leavingAmount === 0 &&
@@ -266,6 +262,10 @@ export default Animate = Intact.extend({
                 }
             }
             this.trigger('a:leaveEnd', element);
+            if (!this._unmountCancelled) {
+                parentDom.removeChild(element);
+                this.destroy(vNode, null, parentDom);
+            }
         };
 
         this._leave(onlyInit);
