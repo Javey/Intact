@@ -351,4 +351,18 @@ describe('Animate Test', function() {
             sEql(app.element.innerHTML, '<div><div>test</div></div>');
         });
     });
+
+    it('hydrate Animate', () => {
+        const div = document.createElement('div');
+        document.body.appendChild(div);
+        const C = Intact.extend({
+            template: `<Animate>test</Animate>`
+        });
+        const c = new C();
+        div.innerHTML = c.toString();
+        const newC = Intact.hydrate(C, div);
+        newC.update();
+        sEql(div.innerHTML, `<div>test</div>`);
+        document.body.removeChild(div);
+    });
 });

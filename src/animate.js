@@ -38,6 +38,13 @@ export default Animate = Intact.extend({
                 'a:move': false
             }, {silent: true});
         }
+
+        this.mountChildren = [];
+        this.unmountChildren = [];
+        this.updateChildren = [];
+        this.children = [];
+        this._enteringAmount = 0;
+        this._leavingAmount = 0;
     },
 
     _hasJsTransition() {
@@ -54,13 +61,6 @@ export default Animate = Intact.extend({
 
     init: inBrowser ? 
         function(lastVNode, nextVNode) {
-            this.mountChildren = [];
-            this.unmountChildren = [];
-            this.updateChildren = [];
-            this.children = [];
-            this._enteringAmount = 0;
-            this._leavingAmount = 0;
-
             // if (this.get('a:disabled')) {
                 // return this._super(lastVNode, nextVNode);
             // }
