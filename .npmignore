@@ -1,0 +1,12 @@
+demo/
+examples/
+test/
+.babelrc
+.jshintrc
+.travis.yml
+bower.json
+karma.*
+npm-debug.log
+publish.js
+rollup.*
+server.js
