@@ -4338,7 +4338,7 @@ var Animate$1 = Animate = Intact$1.extend({
         var props = {};
         var _props = self.get();
         for (var key in _props) {
-            if ((key[0] !== 'a' || key[1] !== ':') && key.substr(0, 5) !== 'ev-a:') {
+            if (key !== 'ref' && key !== 'key' && (key[0] !== 'a' || key[1] !== ':') && key.substr(0, 5) !== 'ev-a:') {
                 props[key] = _props[key];
             }
         }
