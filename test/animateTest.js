@@ -365,4 +365,25 @@ describe('Animate Test', function() {
         sEql(div.innerHTML, `<div>test</div>`);
         document.body.removeChild(div);
     });
+
+    it('Animate leaveEnd event', (done) => {
+        const leaveEnd = sinon.spy();
+        const C = Intact.extend({
+            defaults() { return {show: true} },
+            template: `
+                <div>
+                    <Animate v-if={self.get('show')}
+                        ev-a:leaveEnd={self.leaveEnd.bind(self)}
+                    >test</Animate>
+                </div>
+            `,
+            leaveEnd: leaveEnd 
+        });
+        const c = app.load(C);
+        c.set('show', false);
+        setTimeout(() => {
+            sEql(leaveEnd.callCount, 1);
+            done();
+        }, 1200);
+    });
 });
