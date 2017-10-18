@@ -1,7 +1,7 @@
 {
   "name": "intact",
   "description": "A very lightweight data-binding library to create rich web application",
-  "version": "2.0.8",
+  "version": "2.1.0",
   "main": "dist/index",
   "browser": "dist/intact.js",
   "module": "src/index",
