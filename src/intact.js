@@ -336,8 +336,9 @@ Intact.prototype = {
             vdt.destroy();
         }
         this._destroy(lastVNode, nextVNode);
-        this.off();
         this.destroyed = true;
+        this.trigger('$destoryed', this);
+        this.off();
     },
 
     // function name conflict with utils.get
