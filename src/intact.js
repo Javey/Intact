@@ -93,7 +93,7 @@ Intact.prototype = {
         }
 
         this._startRender = true;
-        this.element = vdt.hydrate(this, dom, this.mountedQueue, this.parentDom, vNode);
+        this.element = vdt.hydrate(this, dom, this.mountedQueue, this.parentDom, vNode, this.isSVG);
         this.rendered = true;
         this.trigger('$rendered', this);
         this._create(null, vNode);
@@ -148,12 +148,12 @@ Intact.prototype = {
         
             // make the dom not be replaced, but update the last one
             vdt.vNode = lastVNode.children.vdt.vNode;
-            this.element = vdt.update(this, this.parentDom, this.mountedQueue, nextVNode);
+            this.element = vdt.update(this, this.parentDom, this.mountedQueue, nextVNode, this.isSVG);
         } else {
             if (lastVNode) {
                 this.__destroyVNode(lastVNode, nextVNode);
             }
-            this.element = vdt.render(this, this.parentDom, this.mountedQueue, nextVNode);
+            this.element = vdt.render(this, this.parentDom, this.mountedQueue, nextVNode, this.isSVG);
         }
         this.rendered = true;
         if (this._pendingUpdate) {
@@ -219,7 +219,7 @@ Intact.prototype = {
 
         this._beforeUpdate(lastVNode, nextVNode);
         // 直接调用update方法，保持parentVNode不变
-        this.element = this.vdt.update(this, this.parentDom, this.mountedQueue, nextVNode || this.parentVNode);
+        this.element = this.vdt.update(this, this.parentDom, this.mountedQueue, nextVNode || this.parentVNode, this.isSVG);
         // 让整个更新完成，才去触发_update生命周期函数
         if (this.mountedQueue) {
             this.mountedQueue.push(() => {

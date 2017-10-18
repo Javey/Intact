@@ -4,6 +4,7 @@ import App from './components/app';
 import {Promise} from 'es6-promise';
 import {dispatchEvent, eqlOuterHtml, eqlHtml} from './utils';
 import {each} from '../src/utils';
+import {svgNS} from 'misstime/src/utils';
 
 const sEql = assert.strictEqual;
 const dEql = assert.deepStrictEqual;
@@ -585,5 +586,69 @@ describe('Component Test', function() {
             document.body.removeChild(div);
             done();
         }, 100);
+    });
+
+    describe('SVG', () => {
+        let container;
+
+        beforeEach(() => {
+            container = document.createElement('div');
+            document.body.appendChild(container);
+        });
+
+        afterEach(() => {
+            document.body.removeChild(container);
+        });
+
+        it('render svg component', () => {
+            const SvgComponent = Intact.extend({
+                template: `<svg><circle r="50" fill="red"></circle></svg>`
+            });
+            Intact.mount(SvgComponent, container);
+            sEql(container.firstChild.namespaceURI, svgNS);
+            sEql(container.firstChild.firstChild.namespaceURI, svgNS);
+        });
+
+        it('render svg child component', () => {
+            const C = Intact.extend({
+                template: `<circle r="50" fill="red"></circle>`
+            });
+            const D = Intact.extend({
+                template: `var C = self.C; <svg><C /></svg>`,
+                _init() {
+                    this.C = C;
+                }
+            });
+            Intact.mount(D, container);
+
+            sEql(container.firstChild.namespaceURI, svgNS);
+            sEql(container.firstChild.firstChild.namespaceURI, svgNS);
+        });
+
+        it('patch svg child component', () => {
+            const C1 = Intact.extend({
+                template: `<circle r="50" fill="red"></circle>`
+            });
+            const C2 = Intact.extend({
+                template: `<rect width="50" height="50" fill="blue"></rect>`
+            });
+            const D = Intact.extend({
+                template: `
+                    var C1 = self.C1;
+                    var C2 = self.C2;
+                    <svg><C1 v-if={self.get('a')} /><C2 v-else /></svg>
+                `,
+                _init() {
+                    this.C1 = C1;
+                    this.C2 = C2;
+                }
+            });
+            const d = Intact.mount(D, container);
+            d.set('a', true);
+
+            sEql(container.firstChild.namespaceURI, svgNS);
+            sEql(container.firstChild.firstChild.namespaceURI, svgNS);
+            sEql(container.firstChild.firstChild.tagName.toLowerCase(), 'circle');
+        });
     });
 });
