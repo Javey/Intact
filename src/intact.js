@@ -337,7 +337,7 @@ Intact.prototype = {
         }
         this._destroy(lastVNode, nextVNode);
         this.destroyed = true;
-        this.trigger('$destoryed', this);
+        this.trigger('$destroyed', this);
         this.off();
     },
 
