@@ -55,6 +55,6 @@
   },
   "dependencies": {
     "misstime": "^0.2.0",
-    "vdt": "^1.1.0"
+    "vdt": "^1.1.1"
   }
 }
