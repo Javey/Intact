@@ -34,7 +34,7 @@ describe('Animate Test', function() {
     });
 
     afterEach(() => {
-        document.body.removeChild(app.element);
+        // document.body.removeChild(app.element);
     });
 
     it('Animate appear and leave', function(done) {
@@ -382,6 +382,39 @@ describe('Animate Test', function() {
         const c = app.load(C);
         c.set('show', false);
         setTimeout(() => {
+            sEql(leaveEnd.callCount, 1);
+            done();
+        }, 1200);
+    });
+
+    it('should not end when event bubbles', (done) => {
+        const leaveEnd = sinon.spy();
+        const C = Intact.extend({
+            defaults() { return {show: true, hover: false} },
+            template: `
+                <div>
+                    <Animate v-if={self.get('show')}
+                        ev-a:leaveEnd={self.leaveEnd.bind(self)}
+                    >
+                        <div class={{"test-button": true, "hover": self.get('hover')}}>
+                            test
+                        </div>
+                    </Animate>
+                </div>
+            `,
+            leaveEnd: leaveEnd 
+        });
+        const c = app.load(C);
+        setTimeout(() => {
+            c.set('hover', true);
+            c.set('show', false);
+        });
+        setTimeout(() => {
+            sEql(app.element.firstChild.children.length, 1);
+            sEql(leaveEnd.callCount, 0);
+        }, 500);
+        setTimeout(() => {
+            sEql(app.element.firstChild.children.length, 0);
             sEql(leaveEnd.callCount, 1);
             done();
         }, 1200);
