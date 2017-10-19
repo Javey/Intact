@@ -34,7 +34,7 @@ describe('Animate Test', function() {
     });
 
     afterEach(() => {
-        // document.body.removeChild(app.element);
+        document.body.removeChild(app.element);
     });
 
     it('Animate appear and leave', function(done) {
