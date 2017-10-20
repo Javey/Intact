@@ -16,6 +16,7 @@ export default function Intact(props) {
     
     props = extend({}, result(this, 'defaults'), props);
 
+    this._defaults = props;
     this._events = {};
     this.props = {};
     this.vdt = Vdt(this.template);
@@ -121,6 +122,7 @@ Intact.prototype = {
                 placeholder = render(vNode);
                 vdt.vNode = vNode;
             }
+            // 组件销毁事件也会解绑，所以这里无需判断组件是否销毁了
             this.one('$inited', () => {
                 const element = this.init(lastVNode, nextVNode);
                 const dom = nextVNode.dom;
@@ -309,10 +311,11 @@ Intact.prototype = {
                 }
             }
 
-            // 将不存在nextProps中，但存在lastProps中的属性，统统置为空
+            // 将不存在nextProps中，但存在lastProps中的属性，统统置为默认值
+            const defaults = this._defaults;
             if (lastPropsWithoutEvents) {
                 for (let prop in lastPropsWithoutEvents) {
-                    this.set(prop, undefined, {update: false});
+                    this.set(prop, defaults[prop], {update: false});
                 }
             }
         }
