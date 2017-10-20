@@ -651,4 +651,30 @@ describe('Component Test', function() {
             sEql(container.firstChild.firstChild.tagName.toLowerCase(), 'circle');
         });
     });
+
+    it('should reset to default value when prop in lastProps but not in nextProps', () => {
+        const C = Intact.extend({
+            template: `<div>{self.get('value')}</div>`,
+            defaults() {
+                return {
+                    value: 'default'
+                }
+            }
+        });
+        const D = Intact.extend({
+            template: `var C = self.C;
+                <div>{self.get('a')}<C value="a" /><C /></div>
+            `,
+            defaults() {
+                this.C = C;
+                return {
+                    a: 'test'
+                }
+            }
+        });
+        const d = Intact.mount(D, document.body);
+        d.set('a', undefined);
+        sEql(d.element.innerHTML, '<div>a</div><div>default</div>');
+        document.body.removeChild(d.element);
+    })
 });
