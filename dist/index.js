@@ -3752,7 +3752,6 @@ function Intact$1(props) {
 
     props = extend({}, result(this, 'defaults'), props);
 
-    this._defaults = props;
     this._events = {};
     this.props = {};
     this.vdt = Vdt$1(this.template);
@@ -4048,7 +4047,7 @@ Intact$1.prototype = {
             }
 
             // 将不存在nextProps中，但存在lastProps中的属性，统统置为默认值
-            var defaults$$1 = this._defaults;
+            var defaults$$1 = result(this, 'defaults');
             if (lastPropsWithoutEvents) {
                 for (var _prop3 in lastPropsWithoutEvents) {
                     this.set(_prop3, defaults$$1[_prop3], { update: false });
