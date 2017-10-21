@@ -136,6 +136,8 @@ export default Animate = Intact.extend({
         const parentInstance = this.parentInstance = this._getParentAnimate();
 
         this._enterEnd = (e) => {
+            if (e && e.target !== element) return;
+
             if (this.get('a:css') && !this.get('a:disabled')) {
                 e && e.stopPropagation && e.stopPropagation();
                 removeClass(element, this.enterClass);
@@ -243,6 +245,8 @@ export default Animate = Intact.extend({
         }
 
         this._leaveEnd = (e) => {
+            if (e && e.target !== element) return;
+
             if (this.get('a:css') && !this.get('a:disabled')) {
                 e && e.stopPropagation && e.stopPropagation();
                 removeClass(element, this.leaveClass);
