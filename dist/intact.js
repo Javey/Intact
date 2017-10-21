@@ -1707,11 +1707,18 @@ function createVNode(tag, props, children, className, key, ref) {
             throw new Error('unknown vNode type: ' + tag);
     }
 
-    if (type & Types.ComponentClass && props.children) {
-        props.children = normalizeChildren(props.children);
+    if (type & Types.ComponentClass) {
+        if (!isNullOrUndefined(children)) {
+            children = normalizeChildren(children);
+        } else if (!isNullOrUndefined(props.children)) {
+            children = normalizeChildren(props.children);
+        }
+        props.children = children;
+    } else {
+        children = normalizeChildren(children);
     }
 
-    return new VNode(type, tag, props, normalizeChildren(children), className || props.className, key || props.key, ref || props.ref);
+    return new VNode(type, tag, props, children, className || props.className, key || props.key, ref || props.ref);
 }
 
 function createCommentVNode(children) {
@@ -2873,7 +2880,7 @@ function patchProps(lastVNode, nextVNode, isSVG) {
     }
     if (lastProps !== EMPTY_OBJ) {
         for (prop in lastProps) {
-            if (!(prop in nextProps)) {
+            if (!skipProps[prop] && isNullOrUndefined(nextProps[prop]) && !isNullOrUndefined(lastProps[prop])) {
                 removeProp(prop, lastProps[prop], dom);
             }
         }
@@ -4021,11 +4028,18 @@ function createVNode$1(tag, props, children, className, key, ref) {
             throw new Error('unknown vNode type: ' + tag);
     }
 
-    if (type & Types$1.ComponentClass && props.children) {
-        props.children = normalizeChildren$2(props.children);
+    if (type & Types$1.ComponentClass) {
+        if (!isNullOrUndefined$1(children)) {
+            children = normalizeChildren$2(children);
+        } else if (!isNullOrUndefined$1(props.children)) {
+            children = normalizeChildren$2(props.children);
+        }
+        props.children = children;
+    } else {
+        children = normalizeChildren$2(children);
     }
 
-    return new VNode$1(type, tag, props, normalizeChildren$2(children), className || props.className, key || props.key, ref || props.ref);
+    return new VNode$1(type, tag, props, children, className || props.className, key || props.key, ref || props.ref);
 }
 
 function createCommentVNode$1(children) {
@@ -5171,7 +5185,7 @@ function patchProps$1(lastVNode, nextVNode, isSVG) {
     }
     if (lastProps !== EMPTY_OBJ$1) {
         for (prop in lastProps) {
-            if (!(prop in nextProps)) {
+            if (!skipProps$1[prop] && isNullOrUndefined$1(nextProps[prop]) && !isNullOrUndefined$1(lastProps[prop])) {
                 removeProp$1(prop, lastProps[prop], dom);
             }
         }
