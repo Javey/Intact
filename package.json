@@ -41,6 +41,7 @@
     "karma-sauce-launcher": "^1.2.0",
     "karma-webpack": "^2.0.3",
     "lodash": "^4.17.4",
+    "misstime": "^0.2.2-1",
     "mocha": "^2.4.5",
     "mocha-phantomjs": "^4.0.2",
     "rollup": "^0.41.6",
@@ -51,6 +52,7 @@
     "rollup-watch": "^3.2.2",
     "sinon": "^1.17.3",
     "style-loader": "^0.18.2",
+    "vdt": "^1.1.2-1",
     "vdt-loader": "^1.0.0",
     "webpack": "^2.4.1"
   },
