@@ -1499,11 +1499,18 @@ function createVNode(tag, props, children, className, key, ref) {
             throw new Error('unknown vNode type: ' + tag);
     }
 
-    if (type & Types.ComponentClass && props.children) {
-        props.children = normalizeChildren(props.children);
+    if (type & Types.ComponentClass) {
+        if (!isNullOrUndefined(children)) {
+            if (props === EMPTY_OBJ) props = {};
+            props.children = normalizeChildren(children);
+        } else if (!isNullOrUndefined(props.children)) {
+            props.children = normalizeChildren(props.children);
+        }
+    } else {
+        children = normalizeChildren(children);
     }
 
-    return new VNode(type, tag, props, normalizeChildren(children), className || props.className, key || props.key, ref || props.ref);
+    return new VNode(type, tag, props, children, className || props.className, key || props.key, ref || props.ref);
 }
 
 function createCommentVNode(children) {
@@ -1813,7 +1820,7 @@ function processInput(vNode, dom, nextProps) {
     var defaultValue = nextProps.defaultValue;
     var multiple = nextProps.multiple;
     var hasValue = nextProps.hasOwnProperty('value');
-    var value = hasValue ? nextProps.value || '' : undefined;
+    var value = hasValue ? nextProps.value : undefined;
 
     if (multiple && multiple !== dom.multiple) {
         dom.multiple = multiple;
@@ -2665,7 +2672,7 @@ function patchProps(lastVNode, nextVNode, isSVG) {
     }
     if (lastProps !== EMPTY_OBJ) {
         for (prop in lastProps) {
-            if (!(prop in nextProps)) {
+            if (!skipProps[prop] && isNullOrUndefined(nextProps[prop]) && !isNullOrUndefined(lastProps[prop])) {
                 removeProp(prop, lastProps[prop], dom);
             }
         }
@@ -2685,7 +2692,7 @@ function patchProp(prop, lastValue, nextValue, dom, isFormElement, isSVG) {
             if (dom[prop] !== value || browser.isIE8) {
                 dom[prop] = value;
             }
-            // add a private property _value for select an object
+            // add a private property _value for selecting an non-string value 
             if (prop === 'value') {
                 dom._value = value;
             }
