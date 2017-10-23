@@ -1,9 +1,18 @@
 .animate-enter-active, .animate-leave-active, .animate-appear-active, .animate-move {
-    -webkit-transition: all cubic-bezier(0.250, 0.460, 0.450, 0.940) 1000ms;
-    transition: all cubic-bezier(0.250, 0.460, 0.450, 0.940) 1000ms;
+    -webkit-transition: all cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s;
+    transition: all cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s;
 }
 
 .animate-enter, .animate-appear, .animate-leave {
     opacity: 0;
+}
+
+.test-button {
+    width: 100px;
+    background: blue;
+    transition: all .3s;
+}
+.test-button.hover {
+    width: 200px;
 }
 

@@ -55,7 +55,7 @@
     "webpack": "^2.4.1"
   },
   "dependencies": {
-    "misstime": "^0.2.0",
-    "vdt": "^1.1.1"
+    "misstime": "^0.2.2-0",
+    "vdt": "^1.1.2-0"
   }
 }
