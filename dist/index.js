@@ -1815,12 +1815,11 @@ function updateChildOption(vNode, value, flag) {
 
 function processInput(vNode, dom, nextProps) {
     var type = nextProps.type;
-    // const value = nextProps.value;
+    var value = nextProps.value;
     var checked = nextProps.checked;
     var defaultValue = nextProps.defaultValue;
     var multiple = nextProps.multiple;
-    var hasValue = nextProps.hasOwnProperty('value');
-    var value = hasValue ? nextProps.value : undefined;
+    var hasValue = !isNullOrUndefined(value);
 
     if (multiple && multiple !== dom.multiple) {
         dom.multiple = multiple;
