@@ -2115,15 +2115,7 @@ function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
     // removeElements(vNode.props.children, null);
 
     if (parentDom) {
-        // if (typeof instance.unmount === 'function') {
-        // if (!instance.unmount(vNode, nextVNode, parentDom)) {
-        // parentDom.removeChild(vNode.dom); 
-        // }
-        // } else {
-        // parentDom.removeChild(vNode.dom); 
         removeChild(parentDom, vNode);
-        // }
-        // parentDom.removeChild(vNode.dom);
     }
 }
 
@@ -3091,12 +3083,12 @@ function hydrateRoot(vNode, parentDom, mountedQueue) {
     if (!isNullOrUndefined(parentDom)) {
         var dom = parentDom.firstChild;
         var newDom = hydrate(vNode, dom, mountedQueue, parentDom, null, false);
-        dom = parentDom.firstChild;
-        if (dom !== null) {
-            // should only one entry
-            while (dom = dom.nextSibling) {
-                parentDom.removeChild(dom);
-            }
+        dom = dom.nextSibling;
+        // should only one entry
+        while (dom) {
+            var next = dom.nextSibling;
+            parentDom.removeChild(dom);
+            dom = next;
         }
         return newDom;
     }
