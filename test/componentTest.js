@@ -676,5 +676,32 @@ describe('Component Test', function() {
         d.set('a', undefined);
         sEql(d.element.innerHTML, '<div>a</div><div>default</div>');
         document.body.removeChild(d.element);
-    })
+    });
+
+    it('should update when destroying', () => {
+        const C = Intact.extend({
+            template: `<p>{self.get('value')}</p>`
+        });
+
+        const D = Intact.extend({
+            template: `var C = self.C;
+                <div>{self.get('value')}<C value={self.get('value')} key="c" /></div>
+            `,
+            _init() {
+                this.C = C;
+            },
+            _destroy() {
+                // update child component
+                this.set('value', 1);
+                sEql(d.element.outerHTML, '<div>1<p>1</p></div>');
+            }
+        });
+
+        const d = Intact.mount(D, document.body);
+        d.destroy();
+        // should no update when destroyed
+        d.set('value', 2);
+        sEql(d.element.outerHTML, '<div>1<p>1</p></div>');
+        document.body.removeChild(d.element);
+    });
 });

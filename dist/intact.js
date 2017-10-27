@@ -3931,7 +3931,9 @@ Intact$1.prototype = {
     },
     update: function update(lastVNode, nextVNode, fromPending) {
         // 如果该组件已被销毁，则不更新
-        if (this.destroyed) {
+        // 组件的销毁顺序是从自下而上逐步销毁的，对于子组件，即使将要销毁也要更新
+        // 只有父组件被销毁了才不去更新，父组件的更新是没有vNode参数
+        if (!lastVNode && !nextVNode && this.destroyed) {
             return lastVNode ? lastVNode.dom : undefined;
         }
         // 如果还没有渲染，则等待结束再去更新
