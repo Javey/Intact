@@ -26,6 +26,9 @@ export default function Intact(props) {
     this._widget = this.props.widget || uniqueId('widget');
     this.attributes = this.props;
 
+    // for string ref
+    this.refs = this.widgets;
+
     this.uniqueId = this._widget;
 
     this.inited = false;

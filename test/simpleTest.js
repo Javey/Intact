@@ -103,6 +103,23 @@ describe('Simple Test', function() {
             sEql(instance._i instanceof Component, true);
         });
 
+        it('string ref', () => {
+            var TestComponent = Intact.extend({
+                template: '<div ref="dom"><Component ref="test" /></div>',
+                _init: function() {
+                    this.Component = Component;
+                }
+            });
+            var instance = new TestComponent();
+            sEql(instance.refs.test, undefined);
+            instance.init();
+            sEql(instance.refs.test instanceof Component, true);
+            sEql(instance.refs.dom, instance.element);
+            instance.destroy();
+            sEql(instance.refs.test, null);
+            sEql(instance.refs.dom, null);
+        });
+
         it('es6 class extend', () => {
             if (browser.isIE8) return;
 
