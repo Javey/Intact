@@ -2049,14 +2049,14 @@ function removeElements(vNodes, parentDom) {
     }
 }
 
-function removeElement(vNode, parentDom) {
+function removeElement(vNode, parentDom, nextVNode) {
     var type = vNode.type;
     if (type & Types.Element) {
         return removeHtmlElement(vNode, parentDom);
     } else if (type & Types.TextElement) {
         return removeText(vNode, parentDom);
     } else if (type & Types.ComponentClassOrInstance) {
-        return removeComponentClassOrInstance(vNode, parentDom);
+        return removeComponentClassOrInstance(vNode, parentDom, nextVNode);
     } else if (type & Types.ComponentFunction) {
         return removeComponentFunction(vNode, parentDom);
     }
@@ -2125,7 +2125,9 @@ function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
 function replaceChild(parentDom, lastVNode, nextVNode) {
     var lastDom = lastVNode.dom;
     var nextDom = nextVNode.dom;
-    if (!parentDom) parentDom = lastDom.parentNode;
+    var parentNode = lastDom.parentNode;
+    // maybe the lastDom has be moved
+    if (!parentDom || parentNode !== parentDom) parentDom = parentNode;
     if (lastDom._unmount) {
         lastDom._unmount(lastVNode, parentDom);
         if (!nextDom.parentNode) {
@@ -2634,7 +2636,7 @@ function insertOrAppend(pos, length, newDom, nodes, dom, detectParent) {
 }
 
 function replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
-    removeElement(lastVNode, null);
+    removeElement(lastVNode, null, nextVNode);
     createElement(nextVNode, null, mountedQueue, false, parentVNode, isSVG);
     replaceChild(parentDom, lastVNode, nextVNode);
 }
@@ -4976,10 +4978,14 @@ var Animate$1 = Animate = Intact$1.extend({
         this.trigger('a:leave', element, this._leaveEnd);
     },
     destroy: function destroy(lastVNode, nextVNode, parentDom) {
-        // 不存在parentDom，则表示parentDom将被删除
-        // 那子组件也要直接销毁掉，
-        // 否则，所有的动画组件，都等到动画结束才销毁
-        if (!parentDom && (!lastVNode || !nextVNode) && this.parentVNode.dom !== this.element ||
+        // 1: 不存在parentDom，有两种情况：
+        //      1): 父元素也要被销毁，此时: !parentDom && lastVNode && !nextVNode
+        //      2): 该元素将被替换，此时：!parentDom && lastVNode && nextVNode
+        //      对于1)，既然父元素要销毁，那本身也要直接销毁
+        //      对于2)，本省必须待动画结束方能销毁
+        // 2: 如果该元素已经动画完成，直接销毁
+        // 3: 如果直接调用destroy方法，则直接销毁，此时：!lastVNode && !nextVNode && !parentDom
+        if (!parentDom && !nextVNode && this.parentVNode.dom !== this.element ||
         // this.get('a:disabled') || 
         this._leaving === false) {
             this._super(lastVNode, nextVNode, parentDom);
