@@ -1115,7 +1115,7 @@ Stringifier.prototype = {
             case Type$2.JSXWidget:
                 return this._visitJSXWidget(element);
             case Type$2.JSXBlock:
-                return this._visitJSXBlock(element);
+                return this._visitJSXBlock(element, true);
             case Type$2.JSXVdt:
                 return this._visitJSXVdt(element, isRoot);
             case Type$2.JSXComment:
@@ -1397,30 +1397,47 @@ Stringifier.prototype = {
     },
 
     _visitJSXWidget: function _visitJSXWidget(element) {
-        if (element.children.length) {
-            element.attributes.push({ name: 'children', value: element.children });
-        }
+        var _visitJSXBlocks = this._visitJSXBlocks(element, false),
+            blocks = _visitJSXBlocks.blocks,
+            children = _visitJSXBlocks.children;
+
+        element.attributes.push({ name: 'children', value: children });
+        element.attributes.push({ name: '_blocks', value: blocks });
+
         var attributes = this._visitJSXAttribute(element, false, false);
         return this._visitJSXDirective(element, 'h(' + normalizeArgs([element.value, attributes.props, 'null', 'null', attributes.key, attributes.ref]) + ')');
     },
 
     _visitJSXBlock: function _visitJSXBlock(element, isAncestor) {
-        arguments.length === 1 && (isAncestor = true);
-
         return '(_blocks.' + element.value + ' = function(parent) {return ' + this._visitJSXChildren(element.children) + ';}) && (__blocks.' + element.value + ' = function(parent) {\n' + 'var self = this;\n' + 'return blocks.' + element.value + ' ? blocks.' + element.value + '.call(this, function() {\n' + 'return _blocks.' + element.value + '.call(self, parent);\n' + '}) : _blocks.' + element.value + '.call(this, parent);\n' + '})' + (isAncestor ? ' && __blocks.' + element.value + '.call(this)' : '');
     },
 
-    _visitJSXVdt: function _visitJSXVdt(element, isRoot) {
-        var ret = ['(function(blocks) {', 'var _blocks = {}, __blocks = extend({}, blocks), _obj = ' + this._visitJSXAttribute(element, false, false).props + ' || {};', 'if (_obj.hasOwnProperty("arguments")) { extend(_obj, _obj.arguments === true ? obj : _obj.arguments); delete _obj.arguments; }', 'return ' + element.value + '.call(this, _obj, _Vdt, '].join('\n'),
-            blocks = [];
-
+    _visitJSXBlocks: function _visitJSXBlocks(element, isRoot) {
+        var blocks = [];
+        var children = [];
         each(element.children, function (child) {
             if (child.type === Type$2.JSXBlock) {
                 blocks.push(this._visitJSXBlock(child, false));
+            } else {
+                children.push(child);
             }
         }, this);
 
-        ret += (blocks.length ? blocks.join(' && ') + ' && __blocks)' : '__blocks)') + '}).call(this, ' + (isRoot ? 'blocks)' : '{})');
+        var _blocks = {
+            type: Type$2.JS,
+            value: blocks.length ? ['function(blocks) {', '    var _blocks = {}, __blocks = extend({}, blocks);', '    return ' + blocks.join(' && ') + ' && __blocks;', '}.call(this, ' + (isRoot ? 'blocks' : '{}') + ')'].join('\n') : isRoot ? 'blocks' : 'null'
+        };
+
+        return { blocks: _blocks, children: children.length ? children : null };
+    },
+
+    _visitJSXVdt: function _visitJSXVdt(element, isRoot) {
+        var _visitJSXBlocks2 = this._visitJSXBlocks(element, isRoot),
+            blocks = _visitJSXBlocks2.blocks,
+            children = _visitJSXBlocks2.children;
+
+        element.attributes.push({ name: 'children', value: children });
+        var ret = ['(function() {', '    var _obj = ' + this._visitJSXAttribute(element, false, false).props + ';', '    if (_obj.hasOwnProperty("arguments")) {', '        extend(_obj, _obj.arguments === true ? obj : _obj.arguments);', '        delete _obj.arguments;', '    }', '    return ' + element.value + '.call(this, _obj, _Vdt, ' + this._visitJS(blocks) + ')', '}).call(this)'].join('\n');
 
         return this._visitJSXDirective(element, ret);
     },
@@ -3333,38 +3350,42 @@ function Vdt$1(source, options) {
     this.vNode = null;
     this.node = null;
     this.widgets = {};
+    this.blocks = {};
 }
 Vdt$1.prototype = {
     constructor: Vdt$1,
 
-    render: function render$$1(data, parentDom, queue, parentVNode, isSVG) {
-        this.renderVNode(data);
+    render: function render$$1(data, parentDom, queue, parentVNode, isSVG, blocks) {
+        this.renderVNode(data, blocks);
         this.node = render(this.vNode, parentDom, queue, parentVNode, isSVG);
 
         return this.node;
     },
-    renderVNode: function renderVNode(data) {
+    renderVNode: function renderVNode(data, blocks) {
         if (data !== undefined) {
             this.data = data;
         }
-        this.vNode = this.template(this.data, Vdt$1);
+        if (blocks !== undefined) {
+            this.blocks = blocks;
+        }
+        this.vNode = this.template(this.data, Vdt$1, this.blocks);
 
         return this.vNode;
     },
-    renderString: function renderString$$1(data) {
-        this.renderVNode(data);
+    renderString: function renderString$$1(data, blocks) {
+        this.renderVNode(data, blocks);
 
         return toString$2(this.vNode, null, Vdt$1.configure().disableSplitText);
     },
-    update: function update(data, parentDom, queue, parentVNode, isSVG) {
+    update: function update(data, parentDom, queue, parentVNode, isSVG, blocks) {
         var oldVNode = this.vNode;
-        this.renderVNode(data);
+        this.renderVNode(data, blocks);
         this.node = patch(oldVNode, this.vNode, parentDom, queue, parentVNode, isSVG);
 
         return this.node;
     },
-    hydrate: function hydrate$$1(data, dom, queue, parentDom, parentVNode, isSVG) {
-        this.renderVNode(data);
+    hydrate: function hydrate$$1(data, dom, queue, parentDom, parentVNode, isSVG, blocks) {
+        this.renderVNode(data, blocks);
         hydrate(this.vNode, dom, queue, parentDom, parentVNode, isSVG);
         this.node = this.vNode.dom;
 
@@ -3836,7 +3857,7 @@ Intact$1.prototype = {
         }
 
         this._startRender = true;
-        this.element = vdt.hydrate(this, dom, this.mountedQueue, this.parentDom, vNode, this.isSVG);
+        this.element = vdt.hydrate(this, dom, this.mountedQueue, this.parentDom, vNode, this.isSVG, this.get('_blocks'));
         this.rendered = true;
         this.trigger('$rendered', this);
         this._create(null, vNode);
@@ -3858,7 +3879,7 @@ Intact$1.prototype = {
                 // 如果上一个组件是异步组件，并且也还没渲染完成，则直接destroy掉
                 // 让它不再渲染了
                 if (!lastInstance.inited) {
-                    this.__destroyVNode(lastVNode, nextVNode);
+                    removeComponentClassOrInstance(lastVNode, null, nextVNode);
                 }
             } else {
                 var vNode = createCommentVNode('!');
@@ -3888,17 +3909,17 @@ Intact$1.prototype = {
         if (lastVNode && lastVNode.key === nextVNode.key) {
             // destroy the last component
             if (!lastVNode.children.destroyed) {
-                this.__destroyVNode(lastVNode, nextVNode);
+                removeComponentClassOrInstance(lastVNode, null, nextVNode);
             }
 
             // make the dom not be replaced, but update the last one
             vdt.vNode = lastVNode.children.vdt.vNode;
-            this.element = vdt.update(this, this.parentDom, this.mountedQueue, nextVNode, this.isSVG);
+            this.element = vdt.update(this, this.parentDom, this.mountedQueue, nextVNode, this.isSVG, this.get('_blocks'));
         } else {
             if (lastVNode) {
-                this.__destroyVNode(lastVNode, nextVNode);
+                removeComponentClassOrInstance(lastVNode, null, nextVNode);
             }
-            this.element = vdt.render(this, this.parentDom, this.mountedQueue, nextVNode, this.isSVG);
+            this.element = vdt.render(this, this.parentDom, this.mountedQueue, nextVNode, this.isSVG, this.get('_blocks'));
         }
         this.rendered = true;
         if (this._pendingUpdate) {
@@ -3911,10 +3932,7 @@ Intact$1.prototype = {
         return this.element;
     },
     toString: function toString() {
-        return this.vdt.renderString(this);
-    },
-    __destroyVNode: function __destroyVNode(lastVNode, nextVNode) {
-        removeComponentClassOrInstance(lastVNode, null, nextVNode);
+        return this.vdt.renderString(this, this.get('_blocks'));
     },
     mount: function mount(lastVNode, nextVNode) {
         // 异步组件，直接返回
@@ -3963,7 +3981,7 @@ Intact$1.prototype = {
 
         this._beforeUpdate(lastVNode, nextVNode);
         // 直接调用update方法，保持parentVNode不变
-        this.element = this.vdt.update(this, this.parentDom, this.mountedQueue, nextVNode || this.parentVNode, this.isSVG);
+        this.element = this.vdt.update(this, this.parentDom, this.mountedQueue, nextVNode || this.parentVNode, this.isSVG, this.get('_blocks'));
         // 让整个更新完成，才去触发_update生命周期函数
         if (this.mountedQueue) {
             this.mountedQueue.push(function () {
