@@ -5,9 +5,9 @@
   "scripts": {
     "test": "node_modules/.bin/mocha-phantomjs test/index.html",
     "release": "npm run release-patch",
-    "release-patch": "git checkout master && npm version patch && bower version patch 2>/dev/null; git push origin master --tags && npm publish",
-    "release-minor": "git checkout master && npm version minor && bower version minor 2>/dev/null; git push origin master --tags && npm publish",
-    "release-major": "git checkout master && npm version major && bower version major 2>/dev/null; git push origin master --tags && npm publish",
+    "release-patch": "npm version patch && git push origin master --tags && npm publish",
+    "release-minor": "npm version minor && git push origin master --tags && npm publish",
+    "release-major": "npm version major && git push origin master --tags && npm publish",
     "build": "browserify src/index.js -t babelify -o dist/intact.js -s Intact && uglifyjs dist/intact.js -o dist/intact.min.js -m"
   },
   "dependencies": {
