@@ -26,6 +26,9 @@ export default function Intact(props) {
     this._widget = this.props.widget || uniqueId('widget');
     this.attributes = this.props;
 
+    // for string ref
+    this.refs = this.widgets;
+
     this.uniqueId = this._widget;
 
     this.inited = false;
@@ -93,7 +96,11 @@ Intact.prototype = {
         }
 
         this._startRender = true;
-        this.element = vdt.hydrate(this, dom, this.mountedQueue, this.parentDom, vNode, this.isSVG);
+        this.element = vdt.hydrate(
+            this, dom, this.mountedQueue, 
+            this.parentDom, vNode, this.isSVG,
+            this.get('_blocks')
+        );
         this.rendered = true;
         this.trigger('$rendered', this);
         this._create(null, vNode);
@@ -114,7 +121,7 @@ Intact.prototype = {
                 // 如果上一个组件是异步组件，并且也还没渲染完成，则直接destroy掉
                 // 让它不再渲染了
                 if (!lastInstance.inited) {
-                    this.__destroyVNode(lastVNode, nextVNode);
+                    removeComponentClassOrInstance(lastVNode, null, nextVNode);
                 }
             } else {
                 const vNode = hc('!');
@@ -144,17 +151,25 @@ Intact.prototype = {
         if (lastVNode && lastVNode.key === nextVNode.key) {
             // destroy the last component
             if (!lastVNode.children.destroyed) {
-                this.__destroyVNode(lastVNode, nextVNode);
+                removeComponentClassOrInstance(lastVNode, null, nextVNode);
             }
         
             // make the dom not be replaced, but update the last one
             vdt.vNode = lastVNode.children.vdt.vNode;
-            this.element = vdt.update(this, this.parentDom, this.mountedQueue, nextVNode, this.isSVG);
+            this.element = vdt.update(
+                this, this.parentDom, this.mountedQueue,
+                nextVNode, this.isSVG,
+                this.get('_blocks')
+            );
         } else {
             if (lastVNode) {
-                this.__destroyVNode(lastVNode, nextVNode);
+                removeComponentClassOrInstance(lastVNode, null, nextVNode);
             }
-            this.element = vdt.render(this, this.parentDom, this.mountedQueue, nextVNode, this.isSVG);
+            this.element = vdt.render(
+                this, this.parentDom, this.mountedQueue, 
+                nextVNode, this.isSVG,
+                this.get('_blocks')
+            );
         }
         this.rendered = true;
         if (this._pendingUpdate) {
@@ -168,11 +183,7 @@ Intact.prototype = {
     },
 
     toString() {
-        return this.vdt.renderString(this); 
-    },
-
-    __destroyVNode(lastVNode, nextVNode) {
-        removeComponentClassOrInstance(lastVNode, null, nextVNode);
+        return this.vdt.renderString(this, this.get('_blocks')); 
     },
 
     mount(lastVNode, nextVNode) {
@@ -185,7 +196,9 @@ Intact.prototype = {
 
     update(lastVNode, nextVNode, fromPending) {
         // 如果该组件已被销毁，则不更新
-        if (this.destroyed) {
+        // 组件的销毁顺序是从自下而上逐步销毁的，对于子组件，即使将要销毁也要更新
+        // 只有父组件被销毁了才不去更新，父组件的更新是没有vNode参数
+        if (!lastVNode && !nextVNode && this.destroyed) {
             return lastVNode ? lastVNode.dom : undefined;
         }
         // 如果还没有渲染，则等待结束再去更新
@@ -220,7 +233,11 @@ Intact.prototype = {
 
         this._beforeUpdate(lastVNode, nextVNode);
         // 直接调用update方法，保持parentVNode不变
-        this.element = this.vdt.update(this, this.parentDom, this.mountedQueue, nextVNode || this.parentVNode, this.isSVG);
+        this.element = this.vdt.update(
+            this, this.parentDom, this.mountedQueue,
+            nextVNode || this.parentVNode, this.isSVG,
+            this.get('_blocks')
+        );
         // 让整个更新完成，才去触发_update生命周期函数
         if (this.mountedQueue) {
             this.mountedQueue.push(() => {

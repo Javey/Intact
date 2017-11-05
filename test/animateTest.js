@@ -419,4 +419,35 @@ describe('Animate Test', function() {
             done();
         }, 1200);
     });
+
+    it('should not destroy until animate end when replace', (done) => {
+        this.enableTimeouts(false);
+        const _destroy = sinon.spy();
+        const C = Intact.extend({
+            template: '<span>c</span>',
+            _destroy: _destroy
+        });
+        const D = Intact.extend({
+            template: `var C = self.C;
+                <div>
+                    <Animate v-if={self.get('show')}><C /></Animate>
+                    <span v-else></span>
+                </div>`,
+            defaults() {
+                this.C = C;
+                return {
+                    show: true
+                }
+            }
+        });
+
+        const d = Intact.mount(D, document.body);
+        d.set('show', false);
+        sEql(_destroy.callCount, 0);
+        setTimeout(() => {
+            sEql(d.element.innerHTML, '<span></span>');
+            sEql(_destroy.callCount, 1);
+            done();
+        }, 1200);
+    });
 });

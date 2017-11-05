@@ -676,5 +676,95 @@ describe('Component Test', function() {
         d.set('a', undefined);
         sEql(d.element.innerHTML, '<div>a</div><div>default</div>');
         document.body.removeChild(d.element);
-    })
+    });
+
+    it('should update when destroying', () => {
+        const C = Intact.extend({
+            template: `<p>{self.get('value')}</p>`
+        });
+
+        const D = Intact.extend({
+            template: `var C = self.C;
+                <div>{self.get('value')}<C value={self.get('value')} key="c" /></div>
+            `,
+            _init() {
+                this.C = C;
+            },
+            _destroy() {
+                // update child component
+                this.set('value', 1);
+                sEql(d.element.outerHTML, '<div>1<p>1</p></div>');
+            }
+        });
+
+        const d = Intact.mount(D, document.body);
+        d.destroy();
+        // should no update when destroyed
+        d.set('value', 2);
+        sEql(d.element.outerHTML, '<div>1<p>1</p></div>');
+        document.body.removeChild(d.element);
+    });
+
+    describe('<b:block>', () => {
+        let C;
+        let d;
+        beforeEach(() => {
+            C = Intact.extend({
+                template: `<div><b:test>aa</b:test><b:body></b:body></div>`
+            });
+        });
+
+        afterEach(() => {
+            document.body.removeChild(d.element);
+        });
+
+        function render(template) {
+            const D = Intact.extend({
+                template: `var C = self.C; ${template}`,
+                _init() { this.C = C; }
+            });
+            d = Intact.mount(D, document.body);
+        }
+
+        it('render one block', () => {
+            render('<C><b:test>cc</b:test></C>');
+            sEql(d.element.outerHTML, '<div>cc</div>');
+        });
+
+        it('render multiple blocks', () => {
+            render('<C><b:test>c1</b:test><b:body>c2</b:body></C>');
+            sEql(d.element.innerHTML, 'c1c2');
+        });
+
+        it('redundant block should not be rendered', () => {
+            render('<C><b:test>c1</b:test><b:body>c2</b:body><b:aa>aa</b:aa></C>');
+            sEql(d.element.innerHTML, 'c1c2');
+        });
+
+        it('render parent', () => {
+            render('<C><b:test>{parent()}child</b:test></C>');
+            sEql(d.element.innerHTML, 'aachild');
+        });
+
+        it('block extendable', () => {
+            const CC = C.extend({
+                template: `<t:parent><b:body>cc</b:body></t:parent>`
+            });
+            const D = Intact.extend({
+                template: `var CC = self.CC; <CC><b:test>{parent()}child</b:test></CC>`,
+                _init() { this.CC = CC; }
+            });
+            d = Intact.mount(D, document.body);
+            sEql(d.element.innerHTML, 'aachildcc');
+        });
+
+        it('update', () => {
+            render(`<C><b:test>
+                <span v-if={self.get('show')}>show</span>
+                <i v-else>i</i>
+            </b:test></C>`);
+            d.set('show', true);
+            sEql(d.element.innerHTML, '<span>show</span>');
+        });
+    });
 });
