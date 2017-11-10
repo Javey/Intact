@@ -48,13 +48,14 @@ export default function Intact(props) {
 
     const inited = () => {
         this.inited = true;
-        // 为了兼容之前change事件必update的用法
-        // this.on('change', () => this.update());
         this.trigger('$inited', this);
     };
     const ret = this._init();
     if (ret && ret.then) {
-        ret.then(inited);
+        ret.then(inited, err => {
+            console.warn('Unhandled promise rejection in _init: ', err);
+            inited();
+        });
     } else {
         inited();
     }

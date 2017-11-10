@@ -767,4 +767,22 @@ describe('Component Test', function() {
             sEql(d.element.innerHTML, '<span>show</span>');
         });
     });
+
+    it('should render when promise.reject in _init', (done) => {
+        const C = Intact.extend({
+            template: `<div>{self.get('a')}</div>`,
+            _init() {
+                return new Promise((resolve, reject) => {
+                    reject();
+                });
+            }
+        });
+
+        const c = Intact.mount(C, document.body);
+        setTimeout(() => {
+            sEql(c.element.outerHTML, '<div></div>');
+            document.body.removeChild(c.element);
+            done();
+        });
+    });
 });

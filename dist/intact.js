@@ -114,6 +114,11 @@ var skipProps = {
     defaultValue: true
 };
 
+function isSkipProp(prop) {
+    // treat prop which start with '_' as private prop, so skip it
+    return skipProps[prop] || prop[0] === '_';
+}
+
 var booleanProps = {
     muted: true,
     scoped: true,
@@ -181,13 +186,21 @@ MountedQueue.prototype.trigger = function () {
 
 var browser = {};
 if (typeof navigator !== 'undefined') {
-    var ua = navigator.userAgent;
-    var index = ua.indexOf('MSIE ');
+    var ua = navigator.userAgent.toLowerCase();
+    var index = ua.indexOf('msie ');
     if (~index) {
         browser.isIE = true;
         var version = parseInt(ua.substring(index + 5, ua.indexOf('.', index)), 10);
         browser.version = version;
         browser.isIE8 = version === 8;
+    } else if (~ua.indexOf('edge')) {
+        browser.isEdge = true;
+    } else if (~ua.indexOf('safari')) {
+        if (~ua.indexOf('chrome')) {
+            browser.isChrome = true;
+        } else {
+            browser.isSafari = true;
+        }
     }
 }
 
@@ -514,7 +527,7 @@ var utils = (Object.freeze || Object)({
 var Type$1 = Type;
 var TypeName$1 = TypeName;
 
-var elementNameRegexp = /^<\w+:?\s*[\w\/>]/;
+var elementNameRegexp = /^<\w+:?\s*[\{\w\/>]/;
 
 function isJSXIdentifierPart(ch) {
     return ch === 58 || ch === 95 || ch === 45 || ch === 36 || ch === 46 || // : _ (underscore) - $ .
@@ -2687,7 +2700,7 @@ function patchProps(lastVNode, nextVNode, isSVG) {
     }
     if (lastProps !== EMPTY_OBJ) {
         for (prop in lastProps) {
-            if (!skipProps[prop] && isNullOrUndefined(nextProps[prop]) && !isNullOrUndefined(lastProps[prop])) {
+            if (!isSkipProp(prop) && isNullOrUndefined(nextProps[prop]) && !isNullOrUndefined(lastProps[prop])) {
                 removeProp(prop, lastProps[prop], dom);
             }
         }
@@ -2696,7 +2709,7 @@ function patchProps(lastVNode, nextVNode, isSVG) {
 
 function patchProp(prop, lastValue, nextValue, dom, isFormElement, isSVG) {
     if (lastValue !== nextValue) {
-        if (skipProps[prop] || isFormElement && prop === 'value') {
+        if (isSkipProp(prop) || isFormElement && prop === 'value') {
             return;
         } else if (booleanProps[prop]) {
             dom[prop] = !!nextValue;
@@ -2770,7 +2783,7 @@ function removeProp(prop, lastValue, dom) {
     }
 }
 
-var removeDataset = browser.isIE ? function (lastValue, dom) {
+var removeDataset = browser.isIE || browser.isSafari ? function (lastValue, dom) {
     for (var key in lastValue) {
         dom.removeAttribute('data-' + kebabCase(key));
     }
@@ -3810,13 +3823,14 @@ function Intact$1(props) {
 
     var inited = function inited() {
         _this.inited = true;
-        // 为了兼容之前change事件必update的用法
-        // this.on('change', () => this.update());
         _this.trigger('$inited', _this);
     };
     var ret = this._init();
     if (ret && ret.then) {
-        ret.then(inited);
+        ret.then(inited, function (err) {
+            console.warn('Unhandled promise rejection in _init: ', err);
+            inited();
+        });
     } else {
         inited();
     }
