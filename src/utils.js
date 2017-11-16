@@ -14,6 +14,15 @@ export const isIOS = UA && /iphone|ipad|ipod|ios/.test(UA);
  * @param prototype
  * @returns {Function}
  */
+const isSupportGetDescriptor = (() => {
+    const a = {};
+    try {
+        Object.getOwnPropertyDescriptor(a, 'a');
+    } catch (e) {
+        return false;
+    }
+    return true;
+})();
 export function inherit(Parent, prototype) {
     let Child = function(...args) {
         return Parent.apply(this, args);
@@ -33,7 +42,7 @@ export function inherit(Parent, prototype) {
             Child.prototype[name] = proto;
             return;
         }
-        Child.prototype[name] = (() => {
+        const fn = (() => {
             let _super = function(...args) {
                     return Parent.prototype[name].apply(this, args);
                 }, 
@@ -57,6 +66,23 @@ export function inherit(Parent, prototype) {
                 return returnValue;
             };
         })();
+        
+        // if template is define by getter
+        if (isSupportGetDescriptor &&
+            name === 'template' && 
+            Parent.prototype.template &&
+            Object.getOwnPropertyDescriptor(Parent.prototype, 'template').get
+        ) {
+            Object.defineProperty(Child.prototype, 'template', {
+                get() {
+                    return fn;
+                },
+                enumerable: true,
+                configurable: true,
+            });
+        } else {
+            Child.prototype[name] = fn;
+        }
     });
     Child.prototype.constructor = Child;
 

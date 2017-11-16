@@ -3460,6 +3460,15 @@ var isIOS = UA && /iphone|ipad|ipod|ios/.test(UA);
  * @param prototype
  * @returns {Function}
  */
+var isSupportGetDescriptor = function () {
+    var a = {};
+    try {
+        Object.getOwnPropertyDescriptor(a, 'a');
+    } catch (e) {
+        return false;
+    }
+    return true;
+}();
 function inherit(Parent, prototype) {
     var Child = function Child() {
         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
@@ -3483,7 +3492,7 @@ function inherit(Parent, prototype) {
             Child.prototype[name] = proto;
             return;
         }
-        Child.prototype[name] = function () {
+        var fn = function () {
             var _super = function _super() {
                 for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
                     args[_key2] = arguments[_key2];
@@ -3515,6 +3524,20 @@ function inherit(Parent, prototype) {
                 return returnValue;
             };
         }();
+
+        // if template is define by getter
+        if (isSupportGetDescriptor && name === 'template' && Parent.prototype.template && Object.getOwnPropertyDescriptor(Parent.prototype, 'template').get) {
+            Object.defineProperty(Child.prototype, 'template', {
+                get: function get$$1() {
+                    return fn;
+                },
+
+                enumerable: true,
+                configurable: true
+            });
+        } else {
+            Child.prototype[name] = fn;
+        }
     });
     Child.prototype.constructor = Child;
 

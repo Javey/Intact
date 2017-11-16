@@ -139,6 +139,23 @@ describe('Simple Test', function() {
             sEql(i.element.outerHTML, '<div>2</div>');
         });
 
+        it('es6 class with function class extend', () => {
+            if (browser.isIE8) return;
+
+            class TestComponent extends Intact {
+                @Intact.template()
+                get template() { return `<div>aa</div>`; }
+            }
+
+            const SubComponent = TestComponent.extend({
+                template: `<div><t:parent />bb</div>`
+            });
+
+            const i = new SubComponent();
+            i.init();
+            sEql(i.element.outerHTML, '<div><div>aa</div>bb</div>');
+        });
+
         it('defaults can be function', () => {
             const C = Intact.extend({
                 defaults() {
