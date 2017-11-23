@@ -131,10 +131,11 @@ var booleanProps = {
     seamless: true,
     reversed: true,
     allowfullscreen: true,
-    novalidate: true,
+    noValidate: true,
     hidden: true,
-    autoFocus: true,
-    selected: true
+    autofocus: true,
+    selected: true,
+    indeterminate: true
 };
 
 var strictProps = {
