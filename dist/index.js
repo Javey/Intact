@@ -2022,6 +2022,7 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
 
     vNode.dom = dom;
     vNode.children = instance;
+    vNode.parentVNode = parentVNode;
 
     if (parentDom) {
         appendChild(parentDom, dom);
@@ -3171,6 +3172,7 @@ function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, pa
 
     vNode.dom = newDom;
     vNode.children = instance;
+    vNode.parentVNode = parentVNode;
 
     if (typeof instance.mount === 'function') {
         mountedQueue.push(function () {
@@ -4109,7 +4111,7 @@ Intact$1.prototype = {
             }
 
             // 将不存在nextProps中，但存在lastProps中的属性，统统置为默认值
-            var defaults$$1 = result(this, 'defaults');
+            var defaults$$1 = result(this, 'defaults') || {};
             if (lastPropsWithoutEvents) {
                 for (var _prop3 in lastPropsWithoutEvents) {
                     this.set(_prop3, defaults$$1[_prop3], { update: false });
