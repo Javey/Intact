@@ -141,7 +141,8 @@ var booleanProps = {
 var strictProps = {
     volume: true,
     defaultChecked: true,
-    value: true
+    value: true,
+    htmlFor: true
 };
 
 var selfClosingTags = {
@@ -1417,7 +1418,10 @@ Stringifier.prototype = {
             hasBlock = _visitJSXBlocks.hasBlock;
 
         element.attributes.push({ name: 'children', value: children });
-        element.attributes.push({ name: 'context', value: 'this' });
+        element.attributes.push({ name: '_context', value: {
+                type: Type$2.JS,
+                value: 'this'
+            } });
         if (hasBlock) {
             element.attributes.push({ name: '_blocks', value: blocks });
         }
@@ -1581,8 +1585,6 @@ function normalizeChildren(vNodes) {
 function applyKey(vNode, reference) {
     if (isNullOrUndefined(vNode.key)) {
         vNode.key = '.$' + reference.index++;
-    } else if (vNode.key[0] === '.') {
-        vNode.key = '.$' + reference.index++ + vNode.key;
     }
     return vNode;
 }
@@ -3387,9 +3389,9 @@ Vdt$1.prototype = {
         if (data !== undefined) {
             this.data = data;
         }
-        if (blocks !== undefined) {
-            this.blocks = blocks;
-        }
+        // if (blocks !== undefined) {
+        this.blocks = blocks;
+        // }
         this.vNode = this.template(this.data, Vdt$1, this.blocks);
 
         return this.vNode;
