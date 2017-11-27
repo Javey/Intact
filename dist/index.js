@@ -1413,10 +1413,14 @@ Stringifier.prototype = {
     _visitJSXWidget: function _visitJSXWidget(element) {
         var _visitJSXBlocks = this._visitJSXBlocks(element, false),
             blocks = _visitJSXBlocks.blocks,
-            children = _visitJSXBlocks.children;
+            children = _visitJSXBlocks.children,
+            hasBlock = _visitJSXBlocks.hasBlock;
 
         element.attributes.push({ name: 'children', value: children });
-        element.attributes.push({ name: '_blocks', value: blocks });
+        element.attributes.push({ name: 'context', value: 'this' });
+        if (hasBlock) {
+            element.attributes.push({ name: '_blocks', value: blocks });
+        }
 
         var attributes = this._visitJSXAttribute(element, false, false);
         return this._visitJSXDirective(element, 'h(' + normalizeArgs([element.value, attributes.props, 'null', 'null', attributes.key, attributes.ref]) + ')');
@@ -1442,7 +1446,7 @@ Stringifier.prototype = {
             value: blocks.length ? ['function(blocks) {', '    var _blocks = {}, __blocks = extend({}, blocks);', '    return ' + blocks.join(' && ') + ' && __blocks;', '}.call(this, ' + (isRoot ? 'blocks' : '{}') + ')'].join('\n') : isRoot ? 'blocks' : 'null'
         };
 
-        return { blocks: _blocks, children: children.length ? children : null };
+        return { blocks: _blocks, children: children.length ? children : null, hasBlock: blocks.length };
     },
 
     _visitJSXVdt: function _visitJSXVdt(element, isRoot) {
@@ -1577,6 +1581,8 @@ function normalizeChildren(vNodes) {
 function applyKey(vNode, reference) {
     if (isNullOrUndefined(vNode.key)) {
         vNode.key = '.$' + reference.index++;
+    } else if (vNode.key[0] === '.') {
+        vNode.key = '.$' + reference.index++ + vNode.key;
     }
     return vNode;
 }
@@ -4111,7 +4117,7 @@ Intact$1.prototype = {
             }
 
             // 将不存在nextProps中，但存在lastProps中的属性，统统置为默认值
-            var defaults$$1 = result(this, 'defaults') || {};
+            var defaults$$1 = result(this, 'defaults') || EMPTY_OBJ;
             if (lastPropsWithoutEvents) {
                 for (var _prop3 in lastPropsWithoutEvents) {
                     this.set(_prop3, defaults$$1[_prop3], { update: false });
