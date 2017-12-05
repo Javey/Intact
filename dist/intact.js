@@ -1235,7 +1235,7 @@ Stringifier.prototype = {
                 if (!/^\s*$/.test(next.value)) break;
                 // is not the last text node, mark as handled
                 else emptyTextNodes.push(next);
-            } else if (next.type === Type.JSXElement || next.type === Type.JSXWidget || next.type === Type.JSXVdt) {
+            } else if (next.type === Type.JSXElement || next.type === Type.JSXWidget || next.type === Type.JSXVdt || next.type === Type.JSXBlock) {
                 if (!next.directives || !next.directives.length) break;
                 var isContinue = false;
                 for (var i = 0, l = next.directives.length; i < l; i++) {
@@ -1435,7 +1435,7 @@ Stringifier.prototype = {
     },
 
     _visitJSXBlock: function _visitJSXBlock(element, isAncestor) {
-        return '(_blocks.' + element.value + ' = function(parent) {return ' + this._visitJSXChildren(element.children) + ';}) && (__blocks.' + element.value + ' = function(parent) {\n' + 'var self = this;\n' + 'return blocks.' + element.value + ' ? blocks.' + element.value + '.call(this, function() {\n' + 'return _blocks.' + element.value + '.call(self, parent);\n' + '}) : _blocks.' + element.value + '.call(this, parent);\n' + '})' + (isAncestor ? ' && __blocks.' + element.value + '.call(this)' : '');
+        return this._visitJSXDirective(element, '(_blocks.' + element.value + ' = function(parent) {return ' + this._visitJSXChildren(element.children) + ';}) && (__blocks.' + element.value + ' = function(parent) {\n' + 'var self = this;\n' + 'return blocks.' + element.value + ' ? blocks.' + element.value + '.call(this, function() {\n' + 'return _blocks.' + element.value + '.call(self, parent);\n' + '}) : _blocks.' + element.value + '.call(this, parent);\n' + '})' + (isAncestor ? ' && __blocks.' + element.value + '.call(this)' : ''));
     },
 
     _visitJSXBlocks: function _visitJSXBlocks(element, isRoot) {
@@ -3133,6 +3133,9 @@ function renderAttributeToString(key, value) {
 function hydrateRoot(vNode, parentDom, mountedQueue) {
     if (!isNullOrUndefined(parentDom)) {
         var dom = parentDom.firstChild;
+        if (isNullOrUndefined(dom)) {
+            return render(vNode, parentDom, mountedQueue, null, false);
+        }
         var newDom = hydrate(vNode, dom, mountedQueue, parentDom, null, false);
         dom = dom.nextSibling;
         // should only one entry
