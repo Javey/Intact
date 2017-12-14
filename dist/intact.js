@@ -238,6 +238,8 @@ var namespaces = {
 var i = 0;
 var Type = {
     JS: i++,
+    JSImport: i++,
+
     JSXText: i++,
     JSXUnescapeText: i++,
     JSXElement: i++,
@@ -488,7 +490,7 @@ var error$1 = function () {
 
 
 
-var utils = (Object.freeze || Object)({
+var utils$1 = (Object.freeze || Object)({
 	isNullOrUndefined: isNullOrUndefined,
 	isArray: isArray,
 	indexOf: indexOf,
@@ -530,6 +532,7 @@ var Type$1 = Type;
 var TypeName$1 = TypeName;
 
 var elementNameRegexp = /^<\w+:?\s*[\{\w\/>]/;
+// const importRegexp = /^\s*\bimport\b/;
 
 function isJSXIdentifierPart(ch) {
     return ch === 58 || ch === 95 || ch === 45 || ch === 36 || ch === 46 || // : _ (underscore) - $ .
@@ -556,38 +559,44 @@ Parser.prototype = {
 
         this.options = extend({}, configure(), options);
 
-        return this._parseTemplate();
+        return this._parseTemplate(true);
     },
 
-    _parseTemplate: function _parseTemplate() {
+    _parseTemplate: function _parseTemplate(isRoot) {
         var elements = [],
             braces = { count: 0 };
         while (this.index < this.length && braces.count >= 0) {
-            elements.push(this._advance(braces));
+            elements.push(this._advance(braces, isRoot));
         }
 
         return elements;
     },
 
-    _advance: function _advance(braces) {
+    _advance: function _advance(braces, isRoot) {
         var ch = this._char();
-        if (ch !== '<') {
-            return this._scanJS(braces);
+        if (isRoot && this._isJSImport()) {
+            return this._scanJSImport();
+        } else if (ch !== '<') {
+            return this._scanJS(braces, isRoot);
         } else {
             return this._scanJSX();
         }
     },
 
-    _scanJS: function _scanJS(braces) {
+    _scanJS: function _scanJS(braces, isRoot) {
         var start = this.index,
+            tmp,
             Delimiters = this.options.delimiters;
 
         while (this.index < this.length) {
+            this._skipJSComment();
             var ch = this._char();
             if (ch === '\'' || ch === '"' || ch === '`') {
                 // skip element(<div>) in quotes
                 this._scanStringLiteral();
             } else if (this._isElementStart()) {
+                break;
+            } else if (isRoot && this._isJSImport()) {
                 break;
             } else {
                 if (ch === '{') {
@@ -609,6 +618,27 @@ Parser.prototype = {
             value: this.source.slice(start, this.index)
         });
     },
+
+    _scanJSImport: function _scanJSImport() {
+        var start = this.index;
+        this._updateIndex(7); // 'import '.length
+        while (this.index < this.length) {
+            var ch = this._char();
+            this._updateIndex();
+            if ((ch === '\'' || ch === '"') && ((ch = this._char()) === ';' || ch === '\n')) {
+                if (ch === '\n') {
+                    this._updateLine();
+                }
+                this._updateIndex();
+                break;
+            }
+        }
+
+        return this._type(Type$1.JSImport, {
+            value: this.source.slice(start, this.index)
+        });
+    },
+
 
     _scanStringLiteral: function _scanStringLiteral() {
         var quote = this._char(),
@@ -997,6 +1027,34 @@ Parser.prototype = {
         }
     },
 
+    _skipJSComment: function _skipJSComment() {
+        if (this._char() === '/') {
+            var ch = this._char(this.index + 1);
+            if (ch === '/') {
+                this._updateIndex(2);
+                while (this.index < this.length) {
+                    if (this._charCode() === 10) {
+                        // is \n
+                        this._updateLine();
+                        break;
+                    }
+                    this._updateIndex();
+                }
+            } else if (ch === '*') {
+                this._updateIndex(2);
+                while (this.index < this.length) {
+                    if (this._isExpect('*/')) {
+                        this._updateIndex(2);
+                        break;
+                    } else if (this._charCode() === 10) {
+                        this._updateLine();
+                    }
+                    this._updateIndex();
+                }
+            }
+        }
+    },
+
     _expect: function _expect(str) {
         if (!this._isExpect(str)) {
             this._error('expect string ' + str);
@@ -1014,6 +1072,10 @@ Parser.prototype = {
         var index = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.index;
 
         return this._char(index) === '<' && (this._isExpect('<!--') || elementNameRegexp.test(this.source.slice(index)));
+    },
+
+    _isJSImport: function _isJSImport() {
+        return this._isExpect('import ');
     },
 
     _type: function _type(type, ret) {
@@ -1084,6 +1146,7 @@ Stringifier.prototype = {
         }
         this.autoReturn = !!autoReturn;
         this.enterStringExpression = false;
+        this.head = ''; // save import syntax
         return this._visitJSXExpressionContainer(ast, true);
     },
 
@@ -1094,9 +1157,13 @@ Stringifier.prototype = {
         each(ast, function (element, i) {
             // if is root, add `return` keyword
             if (this.autoReturn && isRoot && i === length - 1) {
-                str += 'return ' + this._visit(element, isRoot);
+                str += 'return ';
+            }
+            var tmp = this._visit(element, isRoot);
+            if (isRoot && element.type === Type$2.JSImport) {
+                this.head += tmp;
             } else {
-                str += this._visit(element, isRoot);
+                str += tmp;
             }
         }, this);
 
@@ -1122,7 +1189,8 @@ Stringifier.prototype = {
         element = element || {};
         switch (element.type) {
             case Type$2.JS:
-                return this._visitJS(element, isRoot);
+            case Type$2.JSImport:
+                return this._visitJS(element);
             case Type$2.JSXElement:
                 return this._visitJSXElement(element);
             case Type$2.JSXText:
@@ -3449,6 +3517,7 @@ function compile(source, options) {
             hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, hu = _Vdt.miss.hu, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', '__u = _Vdt.utils, extend = __u.extend, _e = __u.error, _className = __u.className,', '__o = __u.Options, _getModel = __o.getModel, _setModel = __o.setModel,', '_setCheckboxModel = __u.setCheckboxModel, _detectCheckboxChecked = __u.detectCheckboxChecked,', '_setSelectModel = __u.setSelectModel,', (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj, Animate = self && self.Animate, parent = this._super', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
             templateFn = options.onlySource ? function () {} : new Function('obj', '_Vdt', 'blocks', hscript);
             templateFn.source = 'function(obj, _Vdt, blocks) {\n' + hscript + '\n}';
+            templateFn.head = stringifier.head;
             break;
         case 'function':
             templateFn = source;
@@ -3464,7 +3533,7 @@ Vdt$1.parser = parser;
 Vdt$1.stringifier = stringifier;
 Vdt$1.miss = miss;
 Vdt$1.compile = compile;
-Vdt$1.utils = utils;
+Vdt$1.utils = utils$1;
 Vdt$1.setDelimiters = setDelimiters;
 Vdt$1.getDelimiters = getDelimiters;
 Vdt$1.configure = configure;
@@ -3592,7 +3661,32 @@ function result(obj, property, fallback) {
     return isFunction(value) ? value.call(obj) : value;
 }
 
+var executeBound = function executeBound(sourceFunc, boundFunc, context, callingContext, args) {
+    if (!(callingContext instanceof boundFunc)) return sourceFunc.apply(context, args);
+    var self = create(sourceFunc.prototype);
+    var result = sourceFunc.apply(self, args);
+    if (isObject$$1(result)) return result;
+    return self;
+};
+var nativeBind = Function.prototype.bind;
+function bind(func, context) {
+    for (var _len4 = arguments.length, args = Array(_len4 > 2 ? _len4 - 2 : 0), _key4 = 2; _key4 < _len4; _key4++) {
+        args[_key4 - 2] = arguments[_key4];
+    }
 
+    if (nativeBind && func.bind === nativeBind) {
+        return nativeBind.call.apply(nativeBind, [func, context].concat(args));
+    }
+    if (!isFunction(func)) throw new TypeError('Bind must be called on a function');
+    var bound = function bound() {
+        for (var _len5 = arguments.length, args1 = Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
+            args1[_key5] = arguments[_key5];
+        }
+
+        return executeBound(func, bound, context, this, [].concat(args, args1));
+    };
+    return bound;
+}
 
 var toString = Object.prototype.toString;
 // Internal recursive comparison function for `isEqual`.
@@ -3703,7 +3797,13 @@ var keys = Object.keys || function (obj) {
     return ret;
 };
 
-
+function values(obj) {
+    var ret = [];
+    each(obj, function (value) {
+        return ret.push(value);
+    });
+    return ret;
+}
 
 var pathMap = {};
 var reLeadingDot = /^\./;
@@ -3822,6 +3922,35 @@ NextTick.prototype.fire = function (callback, data) {
         this.eachCallback(data);
     }
 };
+
+
+
+var utils = (Object.freeze || Object)({
+	extend: extend,
+	isArray: isArray,
+	each: each,
+	isObject: isObject$$1,
+	hasOwn: hasOwn,
+	isNullOrUndefined: isNullOrUndefined,
+	noop: noop,
+	inBrowser: inBrowser,
+	UA: UA,
+	isIOS: isIOS,
+	inherit: inherit,
+	create: create,
+	isFunction: isFunction,
+	isString: isString,
+	result: result,
+	bind: bind,
+	isEqual: isEqual,
+	uniqueId: uniqueId,
+	keys: keys,
+	values: values,
+	castPath: castPath,
+	get: get$$1,
+	set: set$$1,
+	NextTick: NextTick
+});
 
 function Intact$1(props) {
     var _this = this;
@@ -5242,6 +5371,7 @@ var CSSMatrix = typeof WebKitCSSMatrix !== 'undefined' ? WebKitCSSMatrix : funct
 Intact$1.prototype.Animate = Animate$1;
 Intact$1.Animate = Animate$1;
 Intact$1.Vdt = Vdt$1;
+Intact$1.utils = utils;
 Vdt$1.configure({
     getModel: function getModel(self, key) {
         return self.get(key);
