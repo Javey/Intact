@@ -3595,7 +3595,12 @@ function inherit(Parent, prototype) {
                 proto = Vdt$1.compile(proto);
                 prototype.template = proto;
             }
-            proto._super = Parent.prototype.template;
+            var _super = Parent.template;
+            if (!_super || _super === templateDecorator) {
+                _super = Parent.prototype.template;
+            }
+            proto._super = _super;
+            Child.template = undefined;
             return setPrototype(Parent, Child, 'template', proto);
         } else if (!isFunction(proto)) {
             Child.prototype[name] = proto;
@@ -3637,10 +3642,53 @@ function inherit(Parent, prototype) {
     });
     Child.prototype.constructor = Child;
 
-    extend(Child, Parent);
+    for (var key in Parent) {
+        if (!hasOwn.call(Child, key)) {
+            Child[key] = Parent[key];
+        }
+    }
+
     Child.__super = Parent.prototype;
 
     return Child;
+}
+
+function templateDecorator(options) {
+    return function (target, name, descriptor) {
+        var template = target.template;
+        if (isString(template)) {
+            template = Vdt$1.compile(template, options);
+        }
+        var Parent = Object.getPrototypeOf(target);
+        var _super = void 0;
+        if (typeof Parent === 'function') {
+            // is define by static
+            _super = Parent.template;
+            if (!_super || _super === templateDecorator) {
+                _super = Parent.prototype.template;
+            }
+        } else {
+            // is define by prototype
+            _super = Parent.constructor.template;
+            if (!_super || _super === templateDecorator) {
+                _super = Parent.template;
+            }
+        }
+        template._super = _super;
+
+        if (typeof target === 'function') {
+            // for: static template = ''
+            target.template = template;
+            return template;
+        } else {
+            // for: get template() { }
+            descriptor.get = function () {
+                return template;
+            };
+            // remove static template. Maybe it inherited from parent
+            target.constructor.template = undefined;
+        }
+    };
 }
 
 var nativeCreate = Object.create;
@@ -3942,6 +3990,7 @@ var utils = (Object.freeze || Object)({
 	UA: UA,
 	isIOS: isIOS,
 	inherit: inherit,
+	templateDecorator: templateDecorator,
 	create: create,
 	isFunction: isFunction,
 	isString: isString,
@@ -3960,15 +4009,20 @@ var utils = (Object.freeze || Object)({
 function Intact$1(props) {
     var _this = this;
 
-    if (!this.template) {
-        throw new Error('Can not instantiate when this.template does not exist.');
+    var template = this.constructor.template;
+    // Intact.template is a decorator
+    if (!template || template === templateDecorator) {
+        template = this.template;
+    }
+    if (!template) {
+        throw new Error('Can not instantiate when template does not exist.');
     }
 
     props = extend({}, result(this, 'defaults'), props);
 
     this._events = {};
     this.props = {};
-    this.vdt = Vdt$1(this.template);
+    this.vdt = Vdt$1(template);
     this.set(props, { silent: true });
 
     // for compatibility v1.0
@@ -4551,20 +4605,12 @@ Intact$1.hydrate = function (Component, node) {
 
 // ES7 Decorator for template
 if (Object.defineProperty) {
-    Intact$1.template = function (options) {
-        return function (target, name, descriptor) {
-            var template = target.template;
-            if (isString(template)) {
-                template = Vdt$1.compile(template, options);
-            }
-            var Parent = Object.getPrototypeOf(target);
-            template._super = Parent.template;
-
-            descriptor.get = function () {
-                return template;
-            };
-        };
-    };
+    Object.defineProperty(Intact$1, 'template', {
+        configurable: false,
+        enumerable: false,
+        value: templateDecorator,
+        writable: true
+    });
 }
 
 var Animate = void 0;

@@ -1,7 +1,7 @@
 import {
     inherit, extend, result, each, isFunction, 
     isEqual, uniqueId, get, set, castPath, hasOwn,
-    keys, isObject, isString, NextTick
+    keys, isObject, isString, NextTick, templateDecorator
 } from './utils';
 import Vdt from 'vdt';
 import {hc, render, hydrateRoot, h} from 'misstime';
@@ -10,15 +10,20 @@ import {EMPTY_OBJ} from 'misstime/src/vnode';
 import {isNullOrUndefined, isEventProp, MountedQueue} from 'misstime/src/utils';
 
 export default function Intact(props) {
-    if (!this.template) {
-        throw new Error('Can not instantiate when this.template does not exist.');
+    let template = this.constructor.template;
+    // Intact.template is a decorator
+    if (!template || template === templateDecorator) {
+        template = this.template;
+    }
+    if (!template) {
+        throw new Error('Can not instantiate when template does not exist.');
     }
     
     props = extend({}, result(this, 'defaults'), props);
 
     this._events = {};
     this.props = {};
-    this.vdt = Vdt(this.template);
+    this.vdt = Vdt(template);
     this.set(props, {silent: true});
 
     // for compatibility v1.0
@@ -607,18 +612,10 @@ Intact.hydrate = function(Component, node) {
 
 // ES7 Decorator for template
 if (Object.defineProperty) {
-    Intact.template = function(options) {
-        return function(target, name, descriptor) {
-            let template = target.template;
-            if (isString(template)) {
-                template = Vdt.compile(template, options);
-            }
-            const Parent = Object.getPrototypeOf(target);
-            template._super = Parent.template;
-
-            descriptor.get = function() {
-                return template;
-            };
-        }
-    }
+    Object.defineProperty(Intact, 'template', {
+        configurable: false,
+        enumerable: false,
+        value: templateDecorator,
+        writable: true,
+    });
 }

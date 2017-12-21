@@ -57,7 +57,12 @@ export function inherit(Parent, prototype) {
                 proto = Vdt.compile(proto);
                 prototype.template = proto;
             }
-            proto._super = Parent.prototype.template;
+            let _super = Parent.template;
+            if (!_super || _super === templateDecorator) {
+                _super = Parent.prototype.template;
+            }
+            proto._super = _super; 
+            Child.template = undefined;
             return setPrototype(Parent, Child, 'template', proto);
         } else if (!isFunction(proto)) {
             Child.prototype[name] = proto;
@@ -91,10 +96,53 @@ export function inherit(Parent, prototype) {
     });
     Child.prototype.constructor = Child;
 
-    extend(Child, Parent);
+    for (let key in Parent) {
+        if (!hasOwn.call(Child, key)) {
+            Child[key] = Parent[key];
+        }
+    }
+
     Child.__super = Parent.prototype;
 
     return Child;
+}
+
+export function templateDecorator(options) {
+    return function(target, name, descriptor) {
+        let template = target.template;
+        if (isString(template)) {
+            template = Vdt.compile(template, options);
+        }
+        const Parent = Object.getPrototypeOf(target);
+        let _super;
+        if (typeof Parent === 'function') {
+            // is define by static
+            _super = Parent.template;
+            if (!_super || _super === templateDecorator) {
+                _super = Parent.prototype.template;
+            }
+        } else {
+            // is define by prototype
+            _super = Parent.constructor.template;
+            if (!_super || _super === templateDecorator) {
+                _super = Parent.template;
+            }
+        }
+        template._super = _super;
+
+        if (typeof target === 'function') {
+            // for: static template = ''
+            target.template = template;
+            return template;
+        } else {
+            // for: get template() { }
+            descriptor.get = function() {
+                return template;
+            };
+            // remove static template. Maybe it inherited from parent
+            target.constructor.template = undefined;
+        }
+    }
 }
 
 let nativeCreate = Object.create;
