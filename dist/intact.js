@@ -1531,7 +1531,7 @@ Stringifier.prototype = {
             children = _visitJSXBlocks2.children;
 
         element.attributes.push({ name: 'children', value: children });
-        var ret = ['(function() {', '    var _obj = ' + this._visitJSXAttribute(element, false, false).props + ';', '    if (_obj.hasOwnProperty("arguments")) {', '        extend(_obj, _obj.arguments === true ? obj : _obj.arguments);', '        delete _obj.arguments;', '    }', '    return ' + element.value + '.call(this, _obj, _Vdt, ' + this._visitJS(blocks) + ')', '}).call(this)'].join('\n');
+        var ret = ['(function() {', '    var _obj = ' + this._visitJSXAttribute(element, false, false).props + ';', '    if (_obj.hasOwnProperty("arguments")) {', '        extend(_obj, _obj.arguments === true ? obj : _obj.arguments);', '        delete _obj.arguments;', '    }', '    return ' + element.value + '.call(this, _obj, _Vdt, ' + this._visitJS(blocks) + ', ' + element.value + ')', '}).call(this)'].join('\n');
 
         return this._visitJSXDirective(element, ret);
     },
@@ -3471,7 +3471,7 @@ Vdt$1.prototype = {
         // if (blocks !== undefined) {
         this.blocks = blocks;
         // }
-        this.vNode = this.template(this.data, Vdt$1, this.blocks);
+        this.vNode = this.template(this.data, Vdt$1, this.blocks, this.template);
 
         return this.vNode;
     },
@@ -3514,9 +3514,9 @@ function compile(source, options) {
             var ast = parser.parse(source, options),
                 hscript = stringifier.stringify(ast, options.autoReturn);
 
-            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, hu = _Vdt.miss.hu, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', '__u = _Vdt.utils, extend = __u.extend, _e = __u.error, _className = __u.className,', '__o = __u.Options, _getModel = __o.getModel, _setModel = __o.setModel,', '_setCheckboxModel = __u.setCheckboxModel, _detectCheckboxChecked = __u.detectCheckboxChecked,', '_setSelectModel = __u.setSelectModel,', (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj, Animate = self && self.Animate, parent = this._super', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
-            templateFn = options.onlySource ? function () {} : new Function('obj', '_Vdt', 'blocks', hscript);
-            templateFn.source = 'function(obj, _Vdt, blocks) {\n' + hscript + '\n}';
+            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, hu = _Vdt.miss.hu, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', '__u = _Vdt.utils, extend = __u.extend, _e = __u.error, _className = __u.className,', '__o = __u.Options, _getModel = __o.getModel, _setModel = __o.setModel,', '_setCheckboxModel = __u.setCheckboxModel, _detectCheckboxChecked = __u.detectCheckboxChecked,', '_setSelectModel = __u.setSelectModel,', (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj, Animate = self && self.Animate, parent = ($callee || {})._super', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
+            templateFn = options.onlySource ? function () {} : new Function('obj', '_Vdt', 'blocks', '$callee', hscript);
+            templateFn.source = 'function(obj, _Vdt, blocks, $callee) {\n' + hscript + '\n}';
             templateFn.head = stringifier.head;
             break;
         case 'function':
@@ -3560,6 +3560,22 @@ var isSupportGetDescriptor = function () {
     }
     return true;
 }();
+function setPrototype(Parent, Child, name, value) {
+    var prototype = Child.prototype;
+    var tmp = void 0;
+    if (isSupportGetDescriptor && (tmp = Object.getOwnPropertyDescriptor(Parent.prototype, name)) && tmp.get) {
+        Object.defineProperty(prototype, name, {
+            get: function get$$1() {
+                return value;
+            },
+
+            enumerable: true,
+            configurable: true
+        });
+    } else {
+        prototype[name] = value;
+    }
+}
 function inherit(Parent, prototype) {
     var Child = function Child() {
         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
@@ -3579,6 +3595,8 @@ function inherit(Parent, prototype) {
                 proto = Vdt$1.compile(proto);
                 prototype.template = proto;
             }
+            proto._super = Parent.prototype.template;
+            return setPrototype(Parent, Child, 'template', proto);
         } else if (!isFunction(proto)) {
             Child.prototype[name] = proto;
             return;
@@ -3615,20 +3633,7 @@ function inherit(Parent, prototype) {
                 return returnValue;
             };
         }();
-
-        // if template is define by getter
-        if (isSupportGetDescriptor && name === 'template' && Parent.prototype.template && Object.getOwnPropertyDescriptor(Parent.prototype, 'template').get) {
-            Object.defineProperty(Child.prototype, 'template', {
-                get: function get$$1() {
-                    return fn;
-                },
-
-                enumerable: true,
-                configurable: true
-            });
-        } else {
-            Child.prototype[name] = fn;
-        }
+        setPrototype(Parent, Child, name, fn);
     });
     Child.prototype.constructor = Child;
 
@@ -4553,30 +4558,10 @@ if (Object.defineProperty) {
                 template = Vdt$1.compile(template, options);
             }
             var Parent = Object.getPrototypeOf(target);
-            var _super = function _super() {
-                for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-                    args[_key3] = arguments[_key3];
-                }
+            template._super = Parent.template;
 
-                return Parent.template.apply(this, args);
-            };
             descriptor.get = function () {
-                return function () {
-                    var self = this || {};
-                    var __super = self._super;
-                    var returnValue = void 0;
-
-                    self._super = _super;
-
-                    for (var _len4 = arguments.length, args = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
-                        args[_key4] = arguments[_key4];
-                    }
-
-                    returnValue = template.apply(this, args);
-                    self._super = __super;
-
-                    return returnValue;
-                };
+                return template;
             };
         };
     };

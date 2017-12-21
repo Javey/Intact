@@ -23,6 +23,25 @@ const isSupportGetDescriptor = (() => {
     }
     return true;
 })();
+function setPrototype(Parent, Child, name, value) {
+    const prototype = Child.prototype;
+    let tmp;
+    if (
+        isSupportGetDescriptor && 
+        (tmp = Object.getOwnPropertyDescriptor(Parent.prototype, name)) &&
+        tmp.get
+    ) {
+        Object.defineProperty(prototype, name, {
+            get() {
+                return value;
+            },
+            enumerable: true,
+            configurable: true,
+        });
+    } else {
+        prototype[name] = value;
+    }
+}
 export function inherit(Parent, prototype) {
     let Child = function(...args) {
         return Parent.apply(this, args);
@@ -38,6 +57,8 @@ export function inherit(Parent, prototype) {
                 proto = Vdt.compile(proto);
                 prototype.template = proto;
             }
+            proto._super = Parent.prototype.template;
+            return setPrototype(Parent, Child, 'template', proto);
         } else if (!isFunction(proto)) {
             Child.prototype[name] = proto;
             return;
@@ -66,23 +87,7 @@ export function inherit(Parent, prototype) {
                 return returnValue;
             };
         })();
-        
-        // if template is define by getter
-        if (isSupportGetDescriptor &&
-            name === 'template' && 
-            Parent.prototype.template &&
-            Object.getOwnPropertyDescriptor(Parent.prototype, 'template').get
-        ) {
-            Object.defineProperty(Child.prototype, 'template', {
-                get() {
-                    return fn;
-                },
-                enumerable: true,
-                configurable: true,
-            });
-        } else {
-            Child.prototype[name] = fn;
-        }
+        setPrototype(Parent, Child, name, fn); 
     });
     Child.prototype.constructor = Child;
 

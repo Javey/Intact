@@ -614,21 +614,10 @@ if (Object.defineProperty) {
                 template = Vdt.compile(template, options);
             }
             const Parent = Object.getPrototypeOf(target);
-            const _super = function(...args) {
-                return Parent.template.apply(this, args);
-            }; 
+            template._super = Parent.template;
+
             descriptor.get = function() {
-                return function(...args) {
-                    const self = this || {};
-                    const __super = self._super;
-                    let returnValue;
-
-                    self._super = _super;
-                    returnValue = template.apply(this, args);
-                    self._super = __super;
-
-                    return returnValue;
-                };
+                return template;
             };
         }
     }
