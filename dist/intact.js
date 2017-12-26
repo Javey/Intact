@@ -3471,7 +3471,7 @@ Vdt$1.prototype = {
         // if (blocks !== undefined) {
         this.blocks = blocks;
         // }
-        this.vNode = this.template(this.data, Vdt$1, this.blocks, this.template);
+        this.vNode = this.template(this.data, Vdt$1, this.blocks, this.template) || createCommentVNode('empty');
 
         return this.vNode;
     },
