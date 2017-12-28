@@ -4622,7 +4622,8 @@ var Animate$1 = Animate = Intact$1.extend({
         'a:mode': 'both', // out-in | in-out | both
         'a:disabled': false, // 只做动画管理者，自己不进行动画
         'a:move': true, // 是否执行move动画
-        'a:css': true },
+        'a:css': true, // 是否使用css动画，如果自定义动画函数，可以将它置为false
+        'a:delayDestroy': true },
 
     template: function template() {
         var h = Vdt$1.miss.h;
@@ -4855,7 +4856,9 @@ var Animate$1 = Animate = Intact$1.extend({
             _this2.trigger('a:leaveEnd', element);
             if (!_this2._unmountCancelled) {
                 parentDom.removeChild(element);
-                _this2.destroy(vNode, null, parentDom);
+                if (_this2.get('a:delayDestroy')) {
+                    _this2.destroy(vNode, null, parentDom);
+                }
             }
         };
 
@@ -5219,10 +5222,11 @@ var Animate$1 = Animate = Intact$1.extend({
         //      1): 父元素也要被销毁，此时: !parentDom && lastVNode && !nextVNode
         //      2): 该元素将被替换，此时：!parentDom && lastVNode && nextVNode
         //      对于1)，既然父元素要销毁，那本身也要直接销毁
-        //      对于2)，本省必须待动画结束方能销毁
+        //      对于2)，本身必须待动画结束方能销毁
         // 2: 如果该元素已经动画完成，直接销毁
         // 3: 如果直接调用destroy方法，则直接销毁，此时：!lastVNode && !nextVNode && !parentDom
-        if (!parentDom && !nextVNode && this.parentVNode.dom !== this.element ||
+        // 4: 如果不是延迟destroy子元素，则立即销毁
+        if (!this.get('a:delayDestroy') || !parentDom && !nextVNode && this.parentVNode.dom !== this.element ||
         // this.get('a:disabled') || 
         this._leaving === false) {
             this._super(lastVNode, nextVNode, parentDom);
