@@ -6,7 +6,7 @@ import {
 import Vdt from 'vdt';
 import {hc, render, hydrateRoot, h} from 'misstime';
 import {removeComponentClassOrInstance} from 'misstime/src/vdom';
-import {EMPTY_OBJ} from 'misstime/src/vnode';
+import {EMPTY_OBJ, Types} from 'misstime/src/vnode';
 import {isNullOrUndefined, isEventProp, MountedQueue} from 'misstime/src/utils';
 
 export default function Intact(props) {
@@ -357,9 +357,16 @@ Intact.prototype = {
             if (_lastVNode && !_lastVNode.children.destroyed) {
                 removeComponentClassOrInstance(_lastVNode, null, lastVNode);
             }
-        } else if (!nextVNode || nextVNode.key !== lastVNode.key) {
+        } else if (
+            !nextVNode || 
+            !(nextVNode.type & Types.ComponentClassOrInstance) ||
+            nextVNode.key !== lastVNode.key
+        ) {
             vdt.destroy();
         }
+        // 如果存在nextVNode，并且nextVNode也是一个组件类型，
+        // 并且，它俩的key相等，则不去destroy，而是在下一个组件init时
+        // 复用上一个dom，然后destroy上一个元素
         this._destroy(lastVNode, nextVNode);
         this.destroyed = true;
         this.trigger('$destroyed', this);

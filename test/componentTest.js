@@ -705,6 +705,61 @@ describe('Component Test', function() {
         document.body.removeChild(d.element);
     });
 
+    it('should destroy when patch component with element or component', () => {
+        const bDestroy = sinon.spy();
+        const dDestroy = sinon.spy();
+        const B = Intact.extend({
+            template: `<div>b</div>`,
+            _destroy: bDestroy
+        });
+        const C = Intact.extend({
+            template: `var B = self.B; <div><B />c</div>`,
+            _init() {
+                this.B = B;
+            },
+            _destroy: dDestroy
+        });
+        const D = Intact.extend({
+            template: `var C = self.C; var B = self.B;
+                <div><C v-if={self.get('show')} /><B v-else /></div>
+            `,
+
+            defaults() {
+                return {show: true};
+            },
+
+            _init() {
+                this.C = C;
+                this.B = B;
+            }
+        });
+        const E = Intact.extend({
+            template: `var C = self.C;
+                <div><C v-if={self.get('show')} /><div v-else>d</div></div>
+            `,
+
+            defaults() {
+                return {show: true};
+            },
+
+            _init() {
+                this.C = C;
+            }
+        });
+
+        const d = Intact.mount(D, document.body);
+        d.set('show', false);
+        sEql(bDestroy.callCount, 1);
+        sEql(dDestroy.callCount, 1);
+        document.body.removeChild(d.element);
+
+        const e = Intact.mount(E, document.body);
+        e.set('show', false);
+        sEql(bDestroy.callCount, 2);
+        sEql(dDestroy.callCount, 2);
+        document.body.removeChild(e.element);
+    });
+
     describe('<b:block>', () => {
         let C;
         let d;
