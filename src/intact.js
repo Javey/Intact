@@ -241,7 +241,7 @@ Intact.prototype = {
         // 直接调用update方法，保持parentVNode不变
         this.element = this.vdt.update(
             this, this.parentDom, this.mountedQueue,
-            nextVNode || this.parentVNode, this.isSVG,
+            nextVNode || this.vNode, this.isSVG,
             this.get('_blocks')
         );
         // 让整个更新完成，才去触发_update生命周期函数
