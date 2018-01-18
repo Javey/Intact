@@ -4012,11 +4012,15 @@ if (typeof Object.getPrototypeOf !== "function") {
     }
 }
 
+if (typeof Object.getOwnPropertyNames !== 'function') {
+    Object.getOwnPropertyNames = keys;
+}
+
 function autobind(prototype, context, Intact) {
     if (!prototype) return;
     if (prototype === Intact.prototype) return;
 
-    var toBind = keys(prototype);
+    var toBind = Object.getOwnPropertyNames(prototype);
     each(toBind, function (method) {
         var fn = prototype[method];
         if (fn === undefined) {
