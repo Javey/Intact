@@ -1,5 +1,5 @@
 import {extend, isArray, each, isObject, hasOwn, noop} from 'vdt/src/lib/utils';
-import {isNullOrUndefined} from 'misstime/src/utils';
+import {isNullOrUndefined, indexOf} from 'misstime/src/utils';
 import Vdt from 'vdt';
 
 export {extend, isArray, each, isObject, hasOwn, isNullOrUndefined, noop};
@@ -420,3 +420,74 @@ NextTick.prototype.fire = function(callback, data) {
         this.eachCallback(data);
     }
 };
+
+export const warn = (function() {
+    const hasConsole = typeof console !== 'undefined';
+    return hasConsole ? function() { 
+        console.warn.apply(console, arguments);
+    } : noop;
+})();
+
+const wontBind = [
+    'constructor',
+    'template',
+    'defaults',
+    // '_init',
+    // '_mount',
+    // '_create' ,
+    // '_update',
+    // '_beforeUpdate',
+    // '__update',
+    // '_patchProps',
+    // '_destroy',
+    // 'init',
+    // 'update',
+    // 'mount',
+    // 'destory',
+    // 'toString',
+    // 'hydrate',
+    // 'get',
+    // 'set',
+    // 'on',
+    // 'one',
+    // 'off',
+    // 'trigger',
+    // '_initMountedQueue',
+    // '_triggerMountedQueue',
+    // '_triggerChangedEvent',
+];
+if (typeof Object.getPrototypeOf !== "function") {
+    if (typeof "".__proto__ === "object") {
+        Object.getPrototypeOf = function(object){
+            return object.__proto__;
+        };
+    } else {
+        Object.getPrototypeOf = function(object){
+            // May break if the constructor has been tampered with
+            return object.constructor.prototype;
+        };
+    }
+} 
+
+export function autobind(prototype, context, Intact) {
+    if (!prototype) return;
+    if (prototype === Intact.prototype) return;
+
+    const toBind = keys(prototype);
+    each(toBind, (method) => {
+        const fn = prototype[method];
+        if (fn === undefined) {
+            warn(`Autobind: '${method}' method not found in class.`);
+            return;
+        }
+
+        if (~indexOf(wontBind, method) || typeof fn !== 'function') {
+            return;
+        }
+
+        context[method] = bind(fn, context);
+    });
+
+    // bind super method
+    autobind(Object.getPrototypeOf(prototype), context, Intact);
+}

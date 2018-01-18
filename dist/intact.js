@@ -1797,7 +1797,8 @@ var delegatedEvents = {};
 var unDelegatesEvents = {
     'mouseenter': true,
     'mouseleave': true,
-    'propertychange': true
+    'propertychange': true,
+    'scroll': true
 };
 
 // change event can not be deletegated in IE8 
@@ -3990,6 +3991,44 @@ NextTick.prototype.fire = function (callback, data) {
     }
 };
 
+var warn = function () {
+    var hasConsole = typeof console !== 'undefined';
+    return hasConsole ? function () {
+        console.warn.apply(console, arguments);
+    } : noop;
+}();
+
+var wontBind = ['constructor', 'template', 'defaults', '_init', '_mount', '_create', '_update', '_beforeUpdate', '__update', '_patchProps', '_destroy', 'init', 'update', 'mount', 'destory', 'toString', 'hydrate', 'get', 'set', 'on', 'one', 'off', 'trigger', '_initMountedQueue', '_triggerMountedQueue', '_triggerChangedEvent'];
+if (typeof Object.getPrototypeOf !== "function") {
+    if (_typeof("".__proto__) === "object") {
+        Object.getPrototypeOf = function (object) {
+            return object.__proto__;
+        };
+    } else {
+        Object.getPrototypeOf = function (object) {
+            // May break if the constructor has been tampered with
+            return object.constructor.prototype;
+        };
+    }
+}
+function autobind(context) {
+    var prototype = Object.getPrototypeOf(context);
+    var toBind = keys(prototype);
+    each(toBind, function (method) {
+        var fn = prototype[method];
+        if (fn === undefined) {
+            warn('Autobind: \'' + method + '\' method not found in class.');
+            return;
+        }
+
+        if (~indexOf(wontBind, method) || typeof fn !== 'function') {
+            return;
+        }
+
+        context[method] = bind(fn, context);
+    });
+}
+
 
 
 var utils = (Object.freeze || Object)({
@@ -4017,7 +4056,9 @@ var utils = (Object.freeze || Object)({
 	castPath: castPath,
 	get: get$$1,
 	set: set$$1,
-	NextTick: NextTick
+	NextTick: NextTick,
+	warn: warn,
+	autobind: autobind
 });
 
 function Intact$1(props) {
@@ -4031,6 +4072,8 @@ function Intact$1(props) {
     if (!template) {
         throw new Error('Can not instantiate when template does not exist.');
     }
+
+    autobind(this);
 
     props = extend({}, result(this, 'defaults'), props);
 
@@ -4060,7 +4103,11 @@ function Intact$1(props) {
     // for debug
     this.displayName = this.displayName;
 
-    this.addEvents();
+    each(this.props, function (value, key) {
+        if (isEventProp(key) && isFunction(value)) {
+            _this.on(key.substr(3), value);
+        }
+    });
 
     this._updateCount = 0;
 
@@ -4071,7 +4118,7 @@ function Intact$1(props) {
     var ret = this._init();
     if (ret && ret.then) {
         ret.then(inited, function (err) {
-            console.warn('Unhandled promise rejection in _init: ', err);
+            warn('Unhandled promise rejection in _init: ', err);
             inited();
         });
     } else {
@@ -4083,17 +4130,6 @@ Intact$1.prototype = {
     constructor: Intact$1,
 
     defaults: function defaults$$1() {},
-    addEvents: function addEvents() {
-        var _this2 = this;
-
-        var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.props;
-
-        each(props, function (value, key) {
-            if (isEventProp(key) && isFunction(value)) {
-                _this2.on(key.substr(3), value);
-            }
-        });
-    },
     _init: function _init(props) {},
     _create: function _create(lastVNode, nextVNode) {},
     _mount: function _mount(lastVNode, nextVNode) {},
@@ -4101,17 +4137,17 @@ Intact$1.prototype = {
     _update: function _update(lastVNode, nextVNode) {},
     _destroy: function _destroy(lastVNode, nextVNode, parentDom) {},
     hydrate: function hydrate$$1(vNode, dom) {
-        var _this3 = this;
+        var _this2 = this;
 
         var vdt = this.vdt;
         if (!this.inited) {
             this.one('$inited', function () {
-                var element = _this3.hydrate(vNode, dom);
+                var element = _this2.hydrate(vNode, dom);
                 if (dom !== element) {
                     vNode.dom = element;
                 }
-                _this3._triggerMountedQueue();
-                _this3.mount(null, vNode);
+                _this2._triggerMountedQueue();
+                _this2.mount(null, vNode);
             });
 
             return dom;
@@ -4126,7 +4162,7 @@ Intact$1.prototype = {
         return this.element;
     },
     init: function init(lastVNode, nextVNode) {
-        var _this4 = this;
+        var _this3 = this;
 
         var vdt = this.vdt;
         this._lastVNode = lastVNode;
@@ -4149,7 +4185,7 @@ Intact$1.prototype = {
             }
             // 组件销毁事件也会解绑，所以这里无需判断组件是否销毁了
             this.one('$inited', function () {
-                var element = _this4.init(lastVNode, nextVNode);
+                var element = _this3.init(lastVNode, nextVNode);
                 var dom = nextVNode.dom;
                 // 存在一种情况，组件的第一个元素是一个组件，他们管理的是同一个dom
                 // 但是当第一个元素的dom变更时，父组件的vNode却没有变
@@ -4158,8 +4194,8 @@ Intact$1.prototype = {
                 if (!lastVNode || lastVNode.key !== nextVNode.key) {
                     dom.parentNode.replaceChild(element, dom);
                 }
-                _this4._triggerMountedQueue();
-                _this4.mount(lastVNode, nextVNode);
+                _this3._triggerMountedQueue();
+                _this3.mount(lastVNode, nextVNode);
             });
             vdt.node = placeholder;
             return placeholder;
@@ -4229,7 +4265,7 @@ Intact$1.prototype = {
         if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
     },
     __update: function __update(lastVNode, nextVNode) {
-        var _this5 = this;
+        var _this4 = this;
 
         // 如果不存在nextVNode，则为直接调用update方法更新自己
         // 否则则是父组件触发的子组件更新，此时需要更新一些状态
@@ -4246,7 +4282,7 @@ Intact$1.prototype = {
         // 让整个更新完成，才去触发_update生命周期函数
         if (this.mountedQueue) {
             this.mountedQueue.push(function () {
-                _this5._update(lastVNode, nextVNode);
+                _this4._update(lastVNode, nextVNode);
             });
         } else {
             this._update(lastVNode, nextVNode);
@@ -4375,7 +4411,7 @@ Intact$1.prototype = {
     },
 
     set: function _set(key, val, options) {
-        var _this6 = this;
+        var _this5 = this;
 
         if (isNullOrUndefined(key)) return this;
 
@@ -4467,8 +4503,8 @@ Intact$1.prototype = {
 
             if (options.update && this._startRender) {
                 var triggerChange = function triggerChange(changes, changeKeys) {
-                    _this6.update();
-                    _this6._triggerChangedEvent(changes, changeKeys);
+                    _this5.update();
+                    _this5._triggerChangedEvent(changes, changeKeys);
                 };
                 if (options.async) {
                     if (!this._$nextTick) {
@@ -4496,7 +4532,7 @@ Intact$1.prototype = {
                 // 如果是父组件导致子组件更新，此时存在mountedQueue
                 // 则在组件数更新完毕，触发$changed事件
                 this.mountedQueue.push(function () {
-                    _this6._triggerChangedEvent(changes, changeKeys);
+                    _this5._triggerChangedEvent(changes, changeKeys);
                 });
             }
         }
@@ -4510,15 +4546,15 @@ Intact$1.prototype = {
         return this;
     },
     one: function one(name, callback) {
-        var _this7 = this;
+        var _this6 = this;
 
         var fn = function fn() {
             for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
                 args[_key] = arguments[_key];
             }
 
-            callback.apply(_this7, args);
-            _this7.off(name, fn);
+            callback.apply(_this6, args);
+            _this6.off(name, fn);
         };
         this.on(name, fn);
 

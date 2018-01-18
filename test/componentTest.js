@@ -4,7 +4,7 @@ import App from './components/app';
 import {Promise} from 'es6-promise';
 import {dispatchEvent, eqlOuterHtml, eqlHtml} from './utils';
 import {each} from '../src/utils';
-import {svgNS} from 'misstime/src/utils';
+import {svgNS, browser} from 'misstime/src/utils';
 
 const sEql = assert.strictEqual;
 const dEql = assert.deepStrictEqual;
@@ -839,5 +839,57 @@ describe('Component Test', function() {
             document.body.removeChild(c.element);
             done();
         });
+    });
+
+    it('should autobind method', done => {
+        const test = sinon.spy();
+        const C = Intact.extend({
+            template: `<div ev-click={self.test}>click</div>`,
+            test: test,
+        });
+
+        const c = Intact.mount(C, document.body);
+        dispatchEvent(c.element, 'click');
+        sEql(test.callCount, 1);
+        sEql(test.calledOn(c), true);
+        document.body.removeChild(c.element);
+
+        const D = C.extend({
+            template: `<div ev-click={self.test}>click</div>`
+        });
+        const d = Intact.mount(D, document.body);
+        dispatchEvent(d.element, 'click');
+        sEql(test.callCount, 2);
+        sEql(test.calledOn(d), true);
+        document.body.removeChild(d.element);
+
+        if (!browser.isIE8) {
+            class E extends Intact {
+                @Intact.template()
+                get template() { return `<div ev-click={self.test}>click</div>`; }
+
+                test() {
+                    test.call(this);
+                }
+            }
+
+            const e = Intact.mount(E, document.body);
+            dispatchEvent(e.element, 'click');
+            sEql(test.callCount, 3);
+            sEql(test.calledOn(e), true);
+            document.body.removeChild(e.element);
+
+            class F extends E {
+
+            }
+
+            const f = Intact.mount(F, document.body);
+            dispatchEvent(f.element, 'click');
+            sEql(test.callCount, 4);
+            sEql(test.calledOn(f), true);
+            document.body.removeChild(f.element);
+        }
+
+        done();
     });
 });

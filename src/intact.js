@@ -1,7 +1,8 @@
 import {
-    inherit, extend, result, each, isFunction, 
+    inherit, extend, result, each, isFunction, autobind, 
     isEqual, uniqueId, get, set, castPath, hasOwn,
-    keys, isObject, isString, NextTick, templateDecorator
+    keys, isObject, isString, NextTick, templateDecorator,
+    warn,
 } from './utils';
 import Vdt from 'vdt';
 import {hc, render, hydrateRoot, h} from 'misstime';
@@ -18,6 +19,8 @@ export default function Intact(props) {
     if (!template) {
         throw new Error('Can not instantiate when template does not exist.');
     }
+     
+    autobind(Object.getPrototypeOf(this), this, Intact);
     
     props = extend({}, result(this, 'defaults'), props);
 
@@ -47,7 +50,11 @@ export default function Intact(props) {
     // for debug
     this.displayName = this.displayName;
 
-    this.addEvents();
+    each(this.props , (value, key) => {
+        if (isEventProp(key) && isFunction(value)) {
+            this.on(key.substr(3), value);
+        }
+    });
 
     this._updateCount = 0;
 
@@ -58,7 +65,7 @@ export default function Intact(props) {
     const ret = this._init();
     if (ret && ret.then) {
         ret.then(inited, err => {
-            console.warn('Unhandled promise rejection in _init: ', err);
+            warn('Unhandled promise rejection in _init: ', err);
             inited();
         });
     } else {
@@ -70,14 +77,6 @@ Intact.prototype = {
     constructor: Intact,
 
     defaults() {},
-
-    addEvents(props = this.props) {
-        each(props , (value, key) => {
-            if (isEventProp(key) && isFunction(value)) {
-                this.on(key.substr(3), value);
-            }
-        });
-    },
 
     _init(props) {},
     _create(lastVNode, nextVNode) {},
