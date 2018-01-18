@@ -469,11 +469,15 @@ if (typeof Object.getPrototypeOf !== "function") {
     }
 } 
 
+if (typeof Object.getOwnPropertyNames !== 'function') {
+    Object.getOwnPropertyNames = keys; 
+}
+
 export function autobind(prototype, context, Intact) {
     if (!prototype) return;
     if (prototype === Intact.prototype) return;
 
-    const toBind = keys(prototype);
+    const toBind = Object.getOwnPropertyNames(prototype);
     each(toBind, (method) => {
         const fn = prototype[method];
         if (fn === undefined) {
