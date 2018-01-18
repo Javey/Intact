@@ -3994,7 +3994,7 @@ var warn = function () {
     } : noop;
 }();
 
-var wontBind = ['constructor', 'template', 'defaults', '_init', '_mount', '_create', '_update', '_beforeUpdate', '__update', '_patchProps', '_destroy', 'init', 'update', 'mount', 'destory', 'toString', 'hydrate', 'get', 'set', 'on', 'one', 'off', 'trigger', '_initMountedQueue', '_triggerMountedQueue', '_triggerChangedEvent'];
+var wontBind = ['constructor', 'template', 'defaults'];
 if (typeof Object.getPrototypeOf !== "function") {
     if (_typeof("".__proto__) === "object") {
         Object.getPrototypeOf = function (object) {
@@ -4007,8 +4007,11 @@ if (typeof Object.getPrototypeOf !== "function") {
         };
     }
 }
-function autobind(context) {
-    var prototype = Object.getPrototypeOf(context);
+
+function autobind(prototype, context, Intact) {
+    if (!prototype) return;
+    if (prototype === Intact.prototype) return;
+
     var toBind = keys(prototype);
     each(toBind, function (method) {
         var fn = prototype[method];
@@ -4023,6 +4026,9 @@ function autobind(context) {
 
         context[method] = bind(fn, context);
     });
+
+    // bind super method
+    autobind(Object.getPrototypeOf(prototype), context, Intact);
 }
 
 
@@ -4069,7 +4075,7 @@ function Intact$1(props) {
         throw new Error('Can not instantiate when template does not exist.');
     }
 
-    autobind(this);
+    autobind(Object.getPrototypeOf(this), this, Intact$1);
 
     props = extend({}, result(this, 'defaults'), props);
 
