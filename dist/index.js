@@ -3085,7 +3085,7 @@ function toString$2(vNode, parent, disableSplitText, firstChild) {
                         }
                     }
                 } else {
-                    html += toString$2(children, vNode, true);
+                    html += toString$2(children, vNode, disableSplitText, true);
                 }
             }
 
