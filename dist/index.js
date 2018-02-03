@@ -4012,7 +4012,7 @@ if (typeof Object.getOwnPropertyNames !== 'function') {
     Object.getOwnPropertyNames = keys;
 }
 
-function autobind(prototype, context, Intact) {
+function autobind(prototype, context, Intact, bound) {
     if (!prototype) return;
     if (prototype === Intact.prototype) return;
 
@@ -4024,15 +4024,16 @@ function autobind(prototype, context, Intact) {
             return;
         }
 
-        if (~indexOf(wontBind, method) || typeof fn !== 'function') {
+        if (~indexOf(wontBind, method) || bound[method] || typeof fn !== 'function') {
             return;
         }
 
         context[method] = bind(fn, context);
+        bound[method] = true;
     });
 
     // bind super method
-    autobind(Object.getPrototypeOf(prototype), context, Intact);
+    autobind(Object.getPrototypeOf(prototype), context, Intact, bound);
 }
 
 
@@ -4079,7 +4080,7 @@ function Intact$1(props) {
         throw new Error('Can not instantiate when template does not exist.');
     }
 
-    autobind(Object.getPrototypeOf(this), this, Intact$1);
+    autobind(Object.getPrototypeOf(this), this, Intact$1, {});
 
     props = extend({}, result(this, 'defaults'), props);
 

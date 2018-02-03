@@ -20,7 +20,7 @@ export default function Intact(props) {
         throw new Error('Can not instantiate when template does not exist.');
     }
      
-    autobind(Object.getPrototypeOf(this), this, Intact);
+    autobind(Object.getPrototypeOf(this), this, Intact, {});
     
     props = extend({}, result(this, 'defaults'), props);
 
