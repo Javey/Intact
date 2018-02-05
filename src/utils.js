@@ -473,7 +473,7 @@ if (typeof Object.getOwnPropertyNames !== 'function') {
     Object.getOwnPropertyNames = keys; 
 }
 
-export function autobind(prototype, context, Intact) {
+export function autobind(prototype, context, Intact, bound) {
     if (!prototype) return;
     if (prototype === Intact.prototype) return;
 
@@ -485,13 +485,14 @@ export function autobind(prototype, context, Intact) {
             return;
         }
 
-        if (~indexOf(wontBind, method) || typeof fn !== 'function') {
+        if (~indexOf(wontBind, method) || bound[method] || typeof fn !== 'function') {
             return;
         }
 
         context[method] = bind(fn, context);
+        bound[method] = true;
     });
 
     // bind super method
-    autobind(Object.getPrototypeOf(prototype), context, Intact);
+    autobind(Object.getPrototypeOf(prototype), context, Intact, bound);
 }

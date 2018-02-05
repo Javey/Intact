@@ -863,6 +863,16 @@ describe('Component Test', function() {
         sEql(test.calledOn(d), true);
         document.body.removeChild(d.element);
 
+        const test1 = sinon.spy();
+        const D1 = C.extend({
+            test: test1 
+        });
+        const d1 = Intact.mount(D1, document.body);
+        dispatchEvent(d1.element, 'click');
+        sEql(test.callCount, 2);
+        sEql(test1.callCount, 1);
+        document.body.removeChild(d1.element);
+
         if (!browser.isIE8) {
             class E extends Intact {
                 @Intact.template()
