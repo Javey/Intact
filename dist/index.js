@@ -3450,7 +3450,8 @@ var miss = Object.freeze({
 	MountedQueue: MountedQueue,
 	renderString: toString$2,
 	hydrateRoot: hydrateRoot,
-	hydrate: hydrate
+	hydrate: hydrate,
+	Types: Types
 });
 
 var parser = new Parser();
