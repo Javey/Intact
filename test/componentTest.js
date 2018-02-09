@@ -813,6 +813,16 @@ describe('Component Test', function() {
             sEql(d.element.innerHTML, 'aachildcc');
         });
 
+        it('block with v-if=true directive', () => {
+            render('<C><b:test v-if={true}>c1</b:test></C>');
+            sEql(d.element.innerHTML, 'c1');
+        });
+
+        it('block with v-if=false directive', () => {
+            render('<C><b:test v-if={false}>c1</b:test></C>');
+            sEql(d.element.innerHTML, 'aa');
+        });
+
         it('update', () => {
             render(`<C><b:test>
                 <span v-if={self.get('show')}>show</span>

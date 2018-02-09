@@ -1499,7 +1499,7 @@ Stringifier.prototype = {
     },
 
     _visitJSXBlock: function _visitJSXBlock(element, isAncestor) {
-        return this._visitJSXDirective(element, '(_blocks.' + element.value + ' = function(parent) {return ' + this._visitJSXChildren(element.children) + ';}) && (__blocks.' + element.value + ' = function(parent) {\n' + 'var self = this;\n' + 'return blocks.' + element.value + ' ? blocks.' + element.value + '.call(this, function() {\n' + 'return _blocks.' + element.value + '.call(self, parent);\n' + '}) : _blocks.' + element.value + '.call(this, parent);\n' + '})' + (isAncestor ? ' && __blocks.' + element.value + '.call(this)' : ''));
+        return this._visitJSXDirective(element, '(_blocks["' + element.value + '"] = function(parent) {return ' + this._visitJSXChildren(element.children) + ';}) && (__blocks["' + element.value + '"] = function(parent) {\n' + 'var self = this;\n' + 'return blocks["' + element.value + '"] ? blocks["' + element.value + '"].call(this, function() {\n' + 'return _blocks["' + element.value + '"].call(self, parent);\n' + '}) : _blocks["' + element.value + '"].call(this, parent);\n' + '})' + (isAncestor ? ' && __blocks["' + element.value + '"].call(this)' : ''));
     },
 
     _visitJSXBlocks: function _visitJSXBlocks(element, isRoot) {
@@ -1515,7 +1515,7 @@ Stringifier.prototype = {
 
         var _blocks = {
             type: Type$2.JS,
-            value: blocks.length ? ['function(blocks) {', '    var _blocks = {}, __blocks = extend({}, blocks);', '    return ' + blocks.join(' && ') + ' && __blocks;', '}.call(this, ' + (isRoot ? 'blocks' : '{}') + ')'].join('\n') : isRoot ? 'blocks' : 'null'
+            value: blocks.length ? ['function(blocks) {', '    var _blocks = {}, __blocks = extend({}, blocks);', '    return (' + blocks.join(' && ') + ', __blocks);', '}.call(this, ' + (isRoot ? 'blocks' : '{}') + ')'].join('\n') : isRoot ? 'blocks' : 'null'
         };
 
         return { blocks: _blocks, children: children.length ? children : null, hasBlock: blocks.length };
