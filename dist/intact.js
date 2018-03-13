@@ -111,7 +111,8 @@ var skipProps = {
     className: true,
     checked: true,
     multiple: true,
-    defaultValue: true
+    defaultValue: true,
+    'v-model': true
 };
 
 function isSkipProp(prop) {
@@ -427,10 +428,12 @@ function setCheckboxModel(data, key, trueValue, falseValue, e) {
         checked = e.target.checked;
     if (isArray(value)) {
         value = value.slice(0);
+        var index = indexOf(value, trueValue);
         if (checked) {
-            value.push(trueValue);
+            if (!~index) {
+                value.push(trueValue);
+            }
         } else {
-            var index = indexOf(value, trueValue);
             if (~index) {
                 value.splice(index, 1);
             }
@@ -1664,7 +1667,7 @@ function normalizeChildren(vNodes, isAddKey) {
 function applyKey(vNode, reference, isAddKey) {
     if (!isAddKey) return vNode;
     // start with '.' means the vNode has been set key by index
-    // we will reset the key when it coomes back again
+    // we will reset the key when it comes back again
     if (isNullOrUndefined(vNode.key) || vNode.key[0] === '.') {
         vNode.key = '.$' + reference.index++;
     }
@@ -4024,7 +4027,7 @@ function autobind(prototype, context, Intact, bound) {
     each(toBind, function (method) {
         var fn = prototype[method];
         if (fn === undefined) {
-            warn('Autobind: \'' + method + '\' method not found in class.');
+            // warn(`Autobind: '${method}' method not found in class.`);
             return;
         }
 
