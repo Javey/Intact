@@ -283,10 +283,7 @@ var Options = {
     // skip all whitespaces in template
     skipWhitespace: true,
     setModel: function setModel(data, key, value) {
-
-        // return function(e) {
-        data[key] = value; //typeof e === 'boolean' ? e : e.target.value;
-        // };
+        data[key] = value;
     },
     getModel: function getModel(data, key) {
         return data[key];
@@ -1383,7 +1380,8 @@ Stringifier.prototype = {
                 return;
             } else if (name === 'v-model') {
                 hasModel = value;
-                return;
+                // pass v-model to element, sometimes it is useful
+                // return;
             } else if (name === 'v-model-true') {
                 addition.trueValue = value;
                 return;
@@ -3407,17 +3405,18 @@ function hydrateChildren(children, parentDom, mountedQueue, parentVNode, isSVG) 
     } else {
         if (dom !== null) {
             hydrateElement(children, dom, mountedQueue, parentDom, parentVNode, isSVG);
+            dom = dom.nextSibling;
         } else {
             createElement(children, parentDom, mountedQueue, true, parentVNode, isSVG);
         }
     }
 
     // clear any other DOM nodes, there should be on a single entry for the root
-    // while (dom) {
-    // const nextSibling = dom.nextSibling;
-    // parentDom.removeChild(dom);
-    // dom = nextSibling;
-    // }
+    while (dom) {
+        var _nextSibling = dom.nextSibling;
+        parentDom.removeChild(dom);
+        dom = _nextSibling;
+    }
 }
 
 function normalizeChildren$1(parentDom) {

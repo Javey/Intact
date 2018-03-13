@@ -481,7 +481,7 @@ export function autobind(prototype, context, Intact, bound) {
     each(toBind, (method) => {
         const fn = prototype[method];
         if (fn === undefined) {
-            warn(`Autobind: '${method}' method not found in class.`);
+            // warn(`Autobind: '${method}' method not found in class.`);
             return;
         }
 
