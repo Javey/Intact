@@ -28,6 +28,7 @@ export default function Intact(props) {
     this.props = {};
     this.vdt = Vdt(template);
     this.set(props, {silent: true});
+    // this._patchProps(null, props, {silent: true});
 
     // for compatibility v1.0
     this.widgets = this.vdt.widgets || {};
@@ -50,6 +51,7 @@ export default function Intact(props) {
     // for debug
     this.displayName = this.displayName;
 
+    // bind events
     each(this.props , (value, key) => {
         if (isEventProp(key) && isFunction(value)) {
             this.on(key.substr(3), value);
@@ -262,7 +264,7 @@ Intact.prototype = {
         return this.element;       
     },
 
-    _patchProps(lastProps, nextProps) {
+    _patchProps(lastProps, nextProps, options = {update: false}) {
         lastProps = lastProps || EMPTY_OBJ;
         nextProps = nextProps || EMPTY_OBJ;
         let lastValue;
@@ -314,7 +316,7 @@ Intact.prototype = {
                 }
 
                 if (nextPropsWithoutEvents) {
-                    this.set(nextPropsWithoutEvents, {update: false});
+                    this.set(nextPropsWithoutEvents, options);
                 }
             } else {
                 for (let prop in lastProps) {
@@ -336,7 +338,7 @@ Intact.prototype = {
             const defaults = result(this, 'defaults') || EMPTY_OBJ; 
             if (lastPropsWithoutEvents) {
                 for (let prop in lastPropsWithoutEvents) {
-                    this.set(prop, defaults[prop], {update: false});
+                    this.set(prop, defaults[prop], options);
                 }
             }
         }

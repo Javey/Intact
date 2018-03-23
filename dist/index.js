@@ -1489,7 +1489,7 @@ Stringifier.prototype = {
         element.attributes.push({ name: 'children', value: children });
         element.attributes.push({ name: '_context', value: {
                 type: Type$2.JS,
-                value: 'this'
+                value: '$this'
             } });
         if (hasBlock) {
             element.attributes.push({ name: '_blocks', value: blocks });
@@ -3528,7 +3528,7 @@ function compile(source, options) {
             var ast = parser.parse(source, options),
                 hscript = stringifier.stringify(ast, options.autoReturn);
 
-            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, hu = _Vdt.miss.hu, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', '__u = _Vdt.utils, extend = __u.extend, _e = __u.error, _className = __u.className,', '__o = __u.Options, _getModel = __o.getModel, _setModel = __o.setModel,', '_setCheckboxModel = __u.setCheckboxModel, _detectCheckboxChecked = __u.detectCheckboxChecked,', '_setSelectModel = __u.setSelectModel,', (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj, Animate = self && self.Animate, parent = ($callee || {})._super', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
+            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, hu = _Vdt.miss.hu, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', '__u = _Vdt.utils, extend = __u.extend, _e = __u.error, _className = __u.className,', '__o = __u.Options, _getModel = __o.getModel, _setModel = __o.setModel,', '_setCheckboxModel = __u.setCheckboxModel, _detectCheckboxChecked = __u.detectCheckboxChecked,', '_setSelectModel = __u.setSelectModel,', (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, $this = this, scope = obj, Animate = self && self.Animate, parent = ($callee || {})._super', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
             templateFn = options.onlySource ? function () {} : new Function('obj', '_Vdt', 'blocks', '$callee', hscript);
             templateFn.source = 'function(obj, _Vdt, blocks, $callee) {\n' + hscript + '\n}';
             templateFn.head = stringifier.head;
@@ -4091,6 +4091,7 @@ function Intact$1(props) {
     this.props = {};
     this.vdt = Vdt$1(template);
     this.set(props, { silent: true });
+    // this._patchProps(null, props, {silent: true});
 
     // for compatibility v1.0
     this.widgets = this.vdt.widgets || {};
@@ -4113,6 +4114,7 @@ function Intact$1(props) {
     // for debug
     this.displayName = this.displayName;
 
+    // bind events
     each(this.props, function (value, key) {
         if (isEventProp(key) && isFunction(value)) {
             _this.on(key.substr(3), value);
@@ -4308,6 +4310,8 @@ Intact$1.prototype = {
         return this.element;
     },
     _patchProps: function _patchProps(lastProps, nextProps) {
+        var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : { update: false };
+
         lastProps = lastProps || EMPTY_OBJ;
         nextProps = nextProps || EMPTY_OBJ;
         var lastValue = void 0;
@@ -4359,7 +4363,7 @@ Intact$1.prototype = {
                 }
 
                 if (nextPropsWithoutEvents) {
-                    this.set(nextPropsWithoutEvents, { update: false });
+                    this.set(nextPropsWithoutEvents, options);
                 }
             } else {
                 for (var _prop2 in lastProps) {
@@ -4381,7 +4385,7 @@ Intact$1.prototype = {
             var defaults$$1 = result(this, 'defaults') || EMPTY_OBJ;
             if (lastPropsWithoutEvents) {
                 for (var _prop3 in lastPropsWithoutEvents) {
-                    this.set(_prop3, defaults$$1[_prop3], { update: false });
+                    this.set(_prop3, defaults$$1[_prop3], options);
                 }
             }
         }
@@ -5259,6 +5263,8 @@ var Animate$1 = Animate = Intact$1.extend({
         // TransitionEvents.on(element, this._leaveEnd);
         if (!onlyInit) {
             nextFrame(function () {
+                // 1. 如果leave动画还没得及执行，就enter了，此时啥也不做
+                if (_this5._unmountCancelled) return;
                 // 存在一种情况，当一个enter动画在完成的瞬间，
                 // 这个元素被删除了，由于前面保持动画的连贯性
                 // 添加了leaveActiveClass，则会导致绑定的leaveEnd

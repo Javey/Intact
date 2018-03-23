@@ -603,6 +603,8 @@ export default Animate = Intact.extend({
         // TransitionEvents.on(element, this._leaveEnd);
         if (!onlyInit) {
             nextFrame(() => {
+                // 1. 如果leave动画还没得及执行，就enter了，此时啥也不做
+                if (this._unmountCancelled) return;
                 // 存在一种情况，当一个enter动画在完成的瞬间，
                 // 这个元素被删除了，由于前面保持动画的连贯性
                 // 添加了leaveActiveClass，则会导致绑定的leaveEnd
