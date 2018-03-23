@@ -4909,8 +4909,10 @@ var Animate$1 = Animate = Intact$1.extend({
                 removeClass(element, _this2.leaveClass);
                 removeClass(element, _this2.leaveActiveClass);
             }
-            var s = element.style;
-            s.position = s.top = s.left = s.transform = s.WebkitTransform = '';
+            if (_this2._triggeredLeave) {
+                var s = element.style;
+                s.position = s.top = s.left = s.transform = s.WebkitTransform = '';
+            }
             _this2._leaving = false;
             delete parentDom._reserve[vNode.key];
             TransitionEvents.off(element, _this2._leaveEnd);

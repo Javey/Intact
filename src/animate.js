@@ -253,8 +253,10 @@ export default Animate = Intact.extend({
                 removeClass(element, this.leaveClass);
                 removeClass(element, this.leaveActiveClass);
             }
-            const s = element.style;
-            s.position = s.top = s.left = s.transform = s.WebkitTransform = '';
+            if (this._triggeredLeave) {
+                const s = element.style;
+                s.position = s.top = s.left = s.transform = s.WebkitTransform = '';
+            }
             this._leaving = false;
             delete parentDom._reserve[vNode.key];
             TransitionEvents.off(element, this._leaveEnd);
