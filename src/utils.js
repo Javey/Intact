@@ -369,6 +369,16 @@ export function set(object, path, value) {
     return object;
 }
 
+const hasConsole = typeof console !== 'undefined';
+export const warn = hasConsole ? 
+    function() { 
+        console.warn.apply(console, arguments);
+    } : noop;
+export const error = hasConsole ?
+    function() {
+        console.error.apply(console, arguments);
+    } : noop;
+
 function isNative(Ctor) {
     return typeof Ctor === 'function' && /native code/.test(Ctor.toString());
 }
@@ -376,7 +386,7 @@ const nextTick = (() => {
     if (typeof Promise !== 'undefined' && isNative(Promise)) {
         const p = Promise.resolve();
         return (callback) => {
-            p.then(callback).catch(err => console.error(err));
+            p.then(callback).catch(err => error(err));
             // description in vue
             if (isIOS) setTimeout(noop);
         };
@@ -420,13 +430,6 @@ NextTick.prototype.fire = function(callback, data) {
         this.eachCallback(data);
     }
 };
-
-export const warn = (function() {
-    const hasConsole = typeof console !== 'undefined';
-    return hasConsole ? function() { 
-        console.warn.apply(console, arguments);
-    } : noop;
-})();
 
 const wontBind = [
     'constructor',

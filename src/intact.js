@@ -2,7 +2,7 @@ import {
     inherit, extend, result, each, isFunction, autobind, 
     isEqual, uniqueId, get, set, castPath, hasOwn,
     keys, isObject, isString, NextTick, templateDecorator,
-    warn,
+    warn, error,
 } from './utils';
 import Vdt from 'vdt';
 import {hc, render, hydrateRoot, h} from 'misstime';
@@ -67,7 +67,7 @@ export default function Intact(props) {
     const ret = this._init();
     if (ret && ret.then) {
         ret.then(inited, err => {
-            warn('Unhandled promise rejection in _init: ', err);
+            error('Unhandled promise rejection in _init: ', err);
             inited();
         });
     } else {
@@ -346,7 +346,7 @@ Intact.prototype = {
 
     destroy(lastVNode, nextVNode, parentDom) {
         if (this.destroyed) {
-            return console.warn('destroyed multiple times');
+            return warn('destroyed multiple times');
         }
         const vdt = this.vdt;
         // 异步组件，可能还没有渲染

@@ -477,7 +477,7 @@ function setSelectModel(data, key, e) {
     Options.setModel(data, key, value);
 }
 
-var error$1 = function () {
+var error$2 = function () {
     var hasConsole = typeof console !== 'undefined';
     return hasConsole ? function (e) {
         console.error(e.stack);
@@ -515,7 +515,7 @@ var utils$1 = Object.freeze({
 	setCheckboxModel: setCheckboxModel,
 	detectCheckboxChecked: detectCheckboxChecked,
 	setSelectModel: setSelectModel,
-	error: error$1
+	error: error$2
 });
 
 /**
@@ -3934,6 +3934,14 @@ function set$$1(object, path, value) {
     return object;
 }
 
+var hasConsole = typeof console !== 'undefined';
+var warn = hasConsole ? function () {
+    console.warn.apply(console, arguments);
+} : noop;
+var error$1 = hasConsole ? function () {
+    console.error.apply(console, arguments);
+} : noop;
+
 function isNative(Ctor) {
     return typeof Ctor === 'function' && /native code/.test(Ctor.toString());
 }
@@ -3942,7 +3950,7 @@ var nextTick = function () {
         var p = Promise.resolve();
         return function (callback) {
             p.then(callback).catch(function (err) {
-                return console.error(err);
+                return error$1(err);
             });
             // description in vue
             if (isIOS) setTimeout(noop);
@@ -3989,13 +3997,6 @@ NextTick.prototype.fire = function (callback, data) {
         this.eachCallback(data);
     }
 };
-
-var warn = function () {
-    var hasConsole = typeof console !== 'undefined';
-    return hasConsole ? function () {
-        console.warn.apply(console, arguments);
-    } : noop;
-}();
 
 var wontBind = ['constructor', 'template', 'defaults'];
 if (typeof Object.getPrototypeOf !== "function") {
@@ -4066,8 +4067,9 @@ var utils = Object.freeze({
 	castPath: castPath,
 	get: get$$1,
 	set: set$$1,
-	NextTick: NextTick,
 	warn: warn,
+	error: error$1,
+	NextTick: NextTick,
 	autobind: autobind
 });
 
@@ -4130,7 +4132,7 @@ function Intact$1(props) {
     var ret = this._init();
     if (ret && ret.then) {
         ret.then(inited, function (err) {
-            warn('Unhandled promise rejection in _init: ', err);
+            error$1('Unhandled promise rejection in _init: ', err);
             inited();
         });
     } else {
@@ -4392,7 +4394,7 @@ Intact$1.prototype = {
     },
     destroy: function destroy(lastVNode, nextVNode, parentDom) {
         if (this.destroyed) {
-            return console.warn('destroyed multiple times');
+            return warn('destroyed multiple times');
         }
         var vdt = this.vdt;
         // 异步组件，可能还没有渲染
