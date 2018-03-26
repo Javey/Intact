@@ -48,6 +48,7 @@ module.exports = function(config) {
                 reporter: 'html'
             }
         },
+        concurrency: 1,
         singleRun: true,
         reporters: ['progress', 'coverage-istanbul'],
     });
