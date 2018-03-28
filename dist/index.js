@@ -1771,7 +1771,7 @@ function directClone(vNode) {
 
         newVNode = new VNode(type, vNode.tag, vNode.props, children, vNode.className, vNode.key, vNode.ref);
     } else if (type & Types.TextElement) {
-        newVNode = createTextElement(vNode.children);
+        newVNode = createTextVNode(vNode.children);
     }
 
     return newVNode;
@@ -2096,7 +2096,7 @@ function createElement(vNode, parentDom, mountedQueue, isRender, parentVNode, is
     if (type & Types.Element) {
         return createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode, isSVG);
     } else if (type & Types.Text) {
-        return createTextElement$1(vNode, parentDom);
+        return createTextElement(vNode, parentDom);
     } else if (type & Types.ComponentClassOrInstance) {
         return createComponentClassOrInstance(vNode, parentDom, mountedQueue, null, isRender, parentVNode, isSVG);
         // } else if (type & Types.ComponentFunction) {
@@ -2162,7 +2162,7 @@ function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode
     return dom;
 }
 
-function createTextElement$1(vNode, parentDom) {
+function createTextElement(vNode, parentDom) {
     var dom = doc.createTextNode(vNode.children);
     vNode.dom = dom;
 
@@ -3381,7 +3381,7 @@ function hydrateComment(vNode, dom) {
 
 function hydrateText(vNode, dom) {
     if (dom.nodeType !== 3) {
-        var newDom = createTextElement$1(vNode, null);
+        var newDom = createTextElement(vNode, null);
         dom.parentNode.replaceChild(newDom, dom);
 
         return newDom;
