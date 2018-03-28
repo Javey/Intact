@@ -39,6 +39,10 @@ function isEventProp(propName) {
     return propName.substr(0, 3) === 'ev-';
 }
 
+function isInvalid(o) {
+    return isNullOrUndefined(o) || o === false || o === true;
+}
+
 var indexOf = function () {
     if (Array.prototype.indexOf) {
         return function (arr, value) {
@@ -1628,7 +1632,7 @@ function createVNode(tag, props, children, className, key, ref) {
             }
             return tag(props);
         }
-    } else {
+    } else if (!isNullOrUndefined(children)) {
         children = normalizeChildren(children, true);
     }
 
@@ -1660,6 +1664,8 @@ function normalizeChildren(vNodes, isAddKey) {
         return childNodes.length ? childNodes : null;
     } else if (isComponentInstance(vNodes)) {
         return createComponentInstanceVNode(vNodes);
+    } else if (vNodes.type && !isNullOrUndefined(vNodes.dom)) {
+        return directClone(vNodes);
     }
     return vNodes;
 }
@@ -1701,10 +1707,78 @@ function addChild(vNodes, reference, isAddKey) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
             }
-            newVNodes.push(applyKey(n, reference, isAddKey));
+            if (n.dom || n.key && n.key[0] === '.') {
+                newVNodes.push(applyKey(directClone(n), reference, isAddKey));
+            } else {
+                newVNodes.push(applyKey(n, reference, isAddKey));
+            }
         }
     }
     return newVNodes || vNodes;
+}
+
+function directClone(vNode) {
+    var newVNode = void 0;
+    var type = vNode.type;
+
+    if (type & Types.ComponentClassOrInstance) {
+        var props = void 0;
+        var propsToClone = vNode.props;
+
+        if (propsToClone === EMPTY_OBJ || isNullOrUndefined(propsToClone)) {
+            props = EMPTY_OBJ;
+        } else {
+            props = {};
+            for (var key in propsToClone) {
+                props[key] = propsToClone[key];
+            }
+        }
+
+        newVNode = new VNode(type, vNode.tag, props, vNode.children, null, vNode.key, vNode.ref);
+
+        var newProps = newVNode.props;
+        var newChildren = newProps.children;
+
+        if (newChildren) {
+            if (isArray(newChildren)) {
+                var len = newChildren.length;
+                if (len > 0) {
+                    var tmpArray = [];
+
+                    for (var i = 0; i < len; i++) {
+                        var child = newChildren[i];
+                        if (isStringOrNumber(child)) {
+                            tmpArray.push(child);
+                        } else if (!isInvalid(child) && child.type) {
+                            tmpArray.push(directClone(child));
+                        }
+                    }
+                    newProps.children = tmpArray;
+                }
+            } else if (newChildren.type) {
+                newProps.children = directClone(newChildren);
+            }
+        }
+    } else if (type & Types.Element) {
+        var children = vNode.children;
+        var _props = void 0;
+        var _propsToClone = vNode.props;
+
+        if (_propsToClone === EMPTY_OBJ || isNullOrUndefined(_propsToClone)) {
+            _props = EMPTY_OBJ;
+        } else {
+            _props = {};
+            for (var _key in _propsToClone) {
+                _props[_key] = _propsToClone[_key];
+            }
+        }
+
+        newVNode = new VNode(type, vNode.tag, vNode.props, children, vNode.className, vNode.key, vNode.ref);
+    } else if (type & Types.TextElement) {
+        newVNode = createTextElement(vNode.children);
+    }
+
+    return newVNode;
 }
 
 var ALL_PROPS = ["altKey", "bubbles", "cancelable", "ctrlKey", "eventPhase", "metaKey", "relatedTarget", "shiftKey", "target", "timeStamp", "type", "view", "which"];
@@ -2026,7 +2100,7 @@ function createElement(vNode, parentDom, mountedQueue, isRender, parentVNode, is
     if (type & Types.Element) {
         return createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode, isSVG);
     } else if (type & Types.Text) {
-        return createTextElement(vNode, parentDom);
+        return createTextElement$1(vNode, parentDom);
     } else if (type & Types.ComponentClassOrInstance) {
         return createComponentClassOrInstance(vNode, parentDom, mountedQueue, null, isRender, parentVNode, isSVG);
         // } else if (type & Types.ComponentFunction) {
@@ -2092,7 +2166,7 @@ function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode
     return dom;
 }
 
-function createTextElement(vNode, parentDom) {
+function createTextElement$1(vNode, parentDom) {
     var dom = doc.createTextNode(vNode.children);
     vNode.dom = dom;
 
@@ -3311,7 +3385,7 @@ function hydrateComment(vNode, dom) {
 
 function hydrateText(vNode, dom) {
     if (dom.nodeType !== 3) {
-        var newDom = createTextElement(vNode, null);
+        var newDom = createTextElement$1(vNode, null);
         dom.parentNode.replaceChild(newDom, dom);
 
         return newDom;
