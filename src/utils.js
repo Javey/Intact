@@ -341,7 +341,7 @@ export function get(object, path, defaultValue) {
         object = object[path[index++]];
     }
 
-    return (index && index === length) ? object : defaultValue;
+    return (index && index === length && object !== undefined) ? object : defaultValue;
 }
 export function set(object, path, value) {
     if (hasOwn.call(object, path)) {

@@ -3109,8 +3109,8 @@ function toString$2(vNode, parent, disableSplitText, firstChild) {
                 } else if (prop === 'children' || prop === 'className' || prop === 'key' || prop === 'ref') {
                     // ignore
                 } else if (prop === 'defaultValue') {
-                    if (isNullOrUndefined(props.value)) {
-                        html += ' value="' + escapeText(value) + '"';
+                    if (isNullOrUndefined(props.value) && !isNullOrUndefined(value)) {
+                        html += ' value="' + (isString$1(value) ? escapeText(value) : value) + '"';
                     }
                 } else if (prop === 'defaultChecked') {
                     if (isNullOrUndefined(props.checked) && value === true) {
@@ -3980,7 +3980,7 @@ function get$$1(object, path, defaultValue) {
         object = object[path[index++]];
     }
 
-    return index && index === length ? object : defaultValue;
+    return index && index === length && object !== undefined ? object : defaultValue;
 }
 function set$$1(object, path, value) {
     if (hasOwn.call(object, path)) {
