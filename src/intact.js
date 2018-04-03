@@ -223,12 +223,6 @@ Intact.prototype = {
             this.mountedQueue = null;
         }
 
-        ++this._updateCount;
-        if (this._updateCount > 1) return this.element;
-        if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
-    },
-
-    __update(lastVNode, nextVNode) {
         // 如果不存在nextVNode，则为直接调用update方法更新自己
         // 否则则是父组件触发的子组件更新，此时需要更新一些状态
         // 有一种情况，在父组件初次渲染时，子组件渲染过程中，
@@ -238,6 +232,12 @@ Intact.prototype = {
             this._patchProps(lastVNode.props, nextVNode.props);
         }
 
+        ++this._updateCount;
+        if (this._updateCount > 1) return this.element;
+        if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
+    },
+
+    __update(lastVNode, nextVNode) {
         this._beforeUpdate(lastVNode, nextVNode);
         // 直接调用update方法，保持parentVNode不变
         this.element = this.vdt.update(
