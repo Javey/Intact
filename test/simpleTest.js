@@ -590,6 +590,32 @@ describe('Simple Test', function() {
             sEql(testFn.calledOn(instance), true);
         });
 
+        it('should trigger $receive event when received a different prop', function() {
+            var testFn = sinon.spy();
+            var C = Intact.extend({
+                template: `<div></div>`,
+                _init: function() {
+                    this.on('$receive:a', testFn);
+                }
+            });
+            var Component = Intact.extend({
+                template: 'var C = self.C; <C a={self.get("a")} />',
+                _init: function() {
+                    this.C = C;
+                }
+            });
+
+            var instance = new Component();
+            instance.init();
+            sEql(testFn.callCount, 0);
+            instance.set('a', 1);
+            sEql(testFn.callCount, 1);
+            instance.set('a', 2);
+            sEql(testFn.callCount, 2);
+            instance.update();
+            sEql(testFn.callCount, 2);
+        });
+
         it('change attributes to trigger change event', function() {
             var changeFn = sinon.spy(),
                 changeAFn = sinon.spy(),

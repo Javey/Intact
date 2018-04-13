@@ -4390,7 +4390,7 @@ Intact$1.prototype = {
         return this.element;
     },
     _patchProps: function _patchProps(lastProps, nextProps) {
-        var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : { update: false };
+        var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : { update: false, _fromPatchProps: true };
 
         lastProps = lastProps || EMPTY_OBJ;
         nextProps = nextProps || EMPTY_OBJ;
@@ -4517,7 +4517,8 @@ Intact$1.prototype = {
         options = extend({
             silent: false,
             update: true,
-            async: false
+            async: false,
+            _fromPatchProps: false
         }, options);
         // 兼容老版本
         if (hasOwn.call(options, 'global')) {
@@ -4586,9 +4587,13 @@ Intact$1.prototype = {
         }
 
         if (hasChanged) {
-            // trigger `change*` events
             for (var _prop6 in changes) {
                 var values$$1 = changes[_prop6];
+                if (options._fromPatchProps) {
+                    // trigger a $receive event to show that we received a different prop
+                    this.trigger('$receive:' + _prop6, this, values$$1[1], values$$1[0]);
+                }
+                // trigger `change*` events
                 this.trigger('$change:' + _prop6, this, values$$1[1], values$$1[0]);
             }
             var changeKeys = keys(changes);

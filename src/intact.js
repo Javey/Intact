@@ -264,7 +264,7 @@ Intact.prototype = {
         return this.element;       
     },
 
-    _patchProps(lastProps, nextProps, options = {update: false}) {
+    _patchProps(lastProps, nextProps, options = {update: false, _fromPatchProps: true}) {
         lastProps = lastProps || EMPTY_OBJ;
         nextProps = nextProps || EMPTY_OBJ;
         let lastValue;
@@ -392,7 +392,8 @@ Intact.prototype = {
         options = extend({
             silent: false,
             update: true,
-            async: false
+            async: false,
+            _fromPatchProps: false,
         }, options);
         // 兼容老版本
         if (hasOwn.call(options, 'global')) {
@@ -461,9 +462,13 @@ Intact.prototype = {
         }
 
         if (hasChanged) {
-            // trigger `change*` events
             for (let prop in changes) {
                 let values = changes[prop];
+                if (options._fromPatchProps) {
+                    // trigger a $receive event to show that we received a different prop
+                    this.trigger(`$receive:${prop}`, this, values[1], values[0]);
+                }
+                // trigger `change*` events
                 this.trigger(`$change:${prop}`, this, values[1], values[0]);
             }
             const changeKeys = keys(changes);
