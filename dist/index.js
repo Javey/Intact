@@ -287,8 +287,9 @@ var Options = {
     server: false,
     // skip all whitespaces in template
     skipWhitespace: true,
-    setModel: function setModel(data, key, value) {
+    setModel: function setModel(data, key, value, self) {
         data[key] = value;
+        self.update();
     },
     getModel: function getModel(data, key) {
         return data[key];
@@ -423,7 +424,7 @@ function extend() {
     return dest;
 }
 
-function setCheckboxModel(data, key, trueValue, falseValue, e) {
+function setCheckboxModel(data, key, trueValue, falseValue, e, self) {
     var value = Options.getModel(data, key),
         checked = e.target.checked;
     if (isArray(value)) {
@@ -441,7 +442,7 @@ function setCheckboxModel(data, key, trueValue, falseValue, e) {
     } else {
         value = checked ? trueValue : falseValue;
     }
-    Options.setModel(data, key, value);
+    Options.setModel(data, key, value, self);
 }
 
 function detectCheckboxChecked(data, key, trueValue) {
@@ -453,7 +454,7 @@ function detectCheckboxChecked(data, key, trueValue) {
     }
 }
 
-function setSelectModel(data, key, e) {
+function setSelectModel(data, key, e, self) {
     var target = e.target,
         multiple = target.multiple,
         value,
@@ -478,7 +479,7 @@ function setSelectModel(data, key, e) {
             }
         }
     }
-    Options.setModel(data, key, value);
+    Options.setModel(data, key, value, self);
 }
 
 var error$2 = function () {
@@ -1434,14 +1435,14 @@ Stringifier.prototype = {
                                 inputValue = addition.value;
                             if (isNullOrUndefined(inputValue)) {
                                 ret.push('checked: _getModel(self, ' + value + ') === ' + trueValue);
-                                ret.push('\'ev-change\': function(__e) {\n                                    _setModel(self, ' + value + ', __e.target.checked ? ' + trueValue + ' : ' + falseValue + ');\n                                }');
+                                ret.push('\'ev-change\': function(__e) {\n                                    _setModel(self, ' + value + ', __e.target.checked ? ' + trueValue + ' : ' + falseValue + ', $this);\n                                }');
                             } else {
                                 if (type === "'radio'") {
                                     ret.push('checked: _getModel(self, ' + value + ') === ' + inputValue);
-                                    ret.push('\'ev-change\': function(__e) { \n                                        _setModel(self, ' + value + ', __e.target.checked ? ' + inputValue + ' : ' + falseValue + ');\n                                    }');
+                                    ret.push('\'ev-change\': function(__e) { \n                                        _setModel(self, ' + value + ', __e.target.checked ? ' + inputValue + ' : ' + falseValue + ', $this);\n                                    }');
                                 } else {
                                     ret.push('checked: _detectCheckboxChecked(self, ' + value + ', ' + inputValue + ')');
-                                    ret.push('\'ev-change\': function(__e) { \n                                        _setCheckboxModel(self, ' + value + ', ' + inputValue + ', ' + falseValue + ', __e);\n                                    }');
+                                    ret.push('\'ev-change\': function(__e) { \n                                        _setCheckboxModel(self, ' + value + ', ' + inputValue + ', ' + falseValue + ', __e, $this);\n                                    }');
                                 }
                             }
                             return;
@@ -1452,7 +1453,7 @@ Stringifier.prototype = {
                     break;
                 case 'select':
                     ret.push('value: _getModel(self, ' + value + ')');
-                    ret.push('\'ev-change\': function(__e) {\n                        _setSelectModel(self, ' + value + ', __e);\n                    }');
+                    ret.push('\'ev-change\': function(__e) {\n                        _setSelectModel(self, ' + value + ', __e, $this);\n                    }');
                     return;
                 case 'textarea':
                     eventName = 'input';
@@ -1461,10 +1462,10 @@ Stringifier.prototype = {
                     break;
             }
             ret.push(valueName + ': _getModel(self, ' + value + ')');
-            ret.push('\'ev-' + eventName + '\': function(__e) { _setModel(self, ' + value + ', __e.target.value) }');
+            ret.push('\'ev-' + eventName + '\': function(__e) { _setModel(self, ' + value + ', __e.target.value, $this) }');
         } else if (element.type === Type$2.JSXWidget) {
             ret.push('value: _getModel(self, ' + value + ')');
-            ret.push('\'ev-$change:value\': function(__c, __n) { _setModel(self, ' + value + ', __n) }');
+            ret.push('\'ev-$change:value\': function(__c, __n) { _setModel(self, ' + value + ', __n, $this) }');
         }
     },
 
@@ -1901,7 +1902,7 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
             if (items.delete(dom)) {
                 if (items.size === 0) {
                     removeEventListener(doc, name, delegatedRoots.docEvent);
-                    delete delegatedRoots[name];
+                    delete delegatedEvents[name];
                 }
             }
         }
@@ -2274,7 +2275,7 @@ function removeHtmlElement(vNode, parentDom) {
     for (var name in props) {
         var prop = props[name];
         if (!isNullOrUndefined(prop) && isEventProp(name)) {
-            handleEvent(name.substr(0, 3), prop, null, dom);
+            handleEvent(name.substr(3), prop, null, dom);
         }
     }
 
