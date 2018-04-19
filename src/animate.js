@@ -100,7 +100,7 @@ export default Animate = Intact.extend({
 
         const element = this.element;
 
-        const initClassName = () => {
+        const initClassName = (c, newValue, oldValue) => {
             const transition = this.get('a:transition');
             let enterClass;
             let enterActiveClass;
@@ -119,6 +119,13 @@ export default Animate = Intact.extend({
             this.leaveActiveClass = `${transition}-leave-active`;
             this.moveClass = `${transition}-move`;
             this.enterEventName = isAppear ? 'a:appear' : 'a:enter';
+
+            if (oldValue) {
+                element.className = element.className.replace(
+                    new RegExp(`\\b(${oldValue}(?=\\-(appear|enter|leave|move)))`, 'g'),
+                    newValue
+                );
+            }
         };
         this.on('$change:a:transition', initClassName);
         initClassName();
