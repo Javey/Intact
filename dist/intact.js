@@ -4848,7 +4848,7 @@ var Animate$1 = Animate = Intact$1.extend({
 
         var element = this.element;
 
-        var initClassName = function initClassName() {
+        var initClassName = function initClassName(c, newValue, oldValue) {
             var transition = _this.get('a:transition');
             var enterClass = void 0;
             var enterActiveClass = void 0;
@@ -4867,6 +4867,10 @@ var Animate$1 = Animate = Intact$1.extend({
             _this.leaveActiveClass = transition + '-leave-active';
             _this.moveClass = transition + '-move';
             _this.enterEventName = isAppear ? 'a:appear' : 'a:enter';
+
+            if (oldValue) {
+                element.className = element.className.replace(new RegExp('\\b(' + oldValue + '(?=\\-(appear|enter|leave|move)))', 'g'), newValue);
+            }
         };
         this.on('$change:a:transition', initClassName);
         initClassName();
