@@ -4970,7 +4970,7 @@ var Animate$1 = Animate = Intact$1.extend({
             }
         }
     },
-    _unmount: function _unmount(onlyInit) {
+    _unmount: function _unmount() {
         var _this2 = this;
 
         if (this.get('a:disabled')) return;
@@ -5021,7 +5021,7 @@ var Animate$1 = Animate = Intact$1.extend({
             }
         };
 
-        this._leave(onlyInit);
+        this._leave();
         // 存在一种情况，相同的dom，同时被子组件和父组件管理的情况
         // 所以unmount后，将其置为空函数，以免再次unmount
         element._unmount = noop;
@@ -5257,7 +5257,7 @@ var Animate$1 = Animate = Intact$1.extend({
             this._needMove = false;
         }
     },
-    _move: function _move(onlyInit) {
+    _move: function _move() {
         var _this3 = this;
 
         if (this.get('a:disabled')) return;
@@ -5276,16 +5276,14 @@ var Animate$1 = Animate = Intact$1.extend({
             }
         };
         TransitionEvents.on(element, this._moveEnd);
-        if (!onlyInit) {
-            this._triggerMove();
-            // nextFrame(() => this._triggerMove());
-        }
+        this._triggerMove();
+        // nextFrame(() => this._triggerMove());
     },
     _triggerMove: function _triggerMove() {
         var s = this.element.style;
         s.transform = s.WebkitTransform = 'translate(' + (0 - this.dx) + 'px, ' + (0 - this.dy) + 'px)';
     },
-    _enter: function _enter(onlyInit) {
+    _enter: function _enter() {
         var _this4 = this;
 
         if (this.get('a:disabled')) return;
@@ -5294,6 +5292,13 @@ var Animate$1 = Animate = Intact$1.extend({
         var enterClass = this.enterClass;
         var enterActiveClass = this.enterActiveClass;
         var isCss = this.get('a:css');
+
+        // getAnimateType将添加enter-active className，在firefox下将导致动画提前执行
+        // 我们应该先于添加`enter` className去调用该函数
+        var isTransition = false;
+        if (isCss && getAnimateType(element, enterActiveClass) !== 'animation') {
+            isTransition = true;
+        }
 
         // 如果这个元素是上一个删除的元素，则从当前状态回到原始状态
         if (this.lastInstance) {
@@ -5317,15 +5322,13 @@ var Animate$1 = Animate = Intact$1.extend({
 
         this.trigger(this.enterEventName + 'Start', element);
 
-        if (!onlyInit) {
-            if (isCss && getAnimateType(element, enterActiveClass) !== 'animation') {
-                nextFrame(function () {
-                    return _this4._triggerEnter();
-                });
-            } else {
-                // 对于animation动画，同步添加enterActiveClass，避免闪动
-                this._triggerEnter();
-            }
+        if (isTransition) {
+            nextFrame(function () {
+                return _this4._triggerEnter();
+            });
+        } else {
+            // 对于animation动画，同步添加enterActiveClass，避免闪动
+            this._triggerEnter();
         }
     },
     _triggerEnter: function _triggerEnter() {
@@ -5341,7 +5344,7 @@ var Animate$1 = Animate = Intact$1.extend({
         }
         this.trigger(this.enterEventName, element, this._enterEnd);
     },
-    _leave: function _leave(onlyInit) {
+    _leave: function _leave() {
         var _this5 = this;
 
         var element = this.element;
@@ -5353,18 +5356,16 @@ var Animate$1 = Animate = Intact$1.extend({
             addClass(element, this.leaveActiveClass);
         }
         // TransitionEvents.on(element, this._leaveEnd);
-        if (!onlyInit) {
-            nextFrame(function () {
-                // 1. 如果leave动画还没得及执行，就enter了，此时啥也不做
-                if (_this5._unmountCancelled) return;
-                // 存在一种情况，当一个enter动画在完成的瞬间，
-                // 这个元素被删除了，由于前面保持动画的连贯性
-                // 添加了leaveActiveClass，则会导致绑定的leaveEnd
-                // 立即执行，所以这里放到下一帧来绑定
-                TransitionEvents.on(element, _this5._leaveEnd);
-                _this5._triggerLeave();
-            });
-        }
+        nextFrame(function () {
+            // 1. 如果leave动画还没得及执行，就enter了，此时啥也不做
+            if (_this5._unmountCancelled) return;
+            // 存在一种情况，当一个enter动画在完成的瞬间，
+            // 这个元素被删除了，由于前面保持动画的连贯性
+            // 添加了leaveActiveClass，则会导致绑定的leaveEnd
+            // 立即执行，所以这里放到下一帧来绑定
+            TransitionEvents.on(element, _this5._leaveEnd);
+            _this5._triggerLeave();
+        });
     },
     _triggerLeave: function _triggerLeave() {
         this._triggeredLeave = true;

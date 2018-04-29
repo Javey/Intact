@@ -233,7 +233,7 @@ export default Animate = Intact.extend({
         }
     },
    
-    _unmount(onlyInit) {
+    _unmount() {
         if (this.get('a:disabled')) return;
         const element = this.element;
         const vNode = this.vNode;
@@ -284,7 +284,7 @@ export default Animate = Intact.extend({
             }
         };
 
-        this._leave(onlyInit);
+        this._leave();
         // 存在一种情况，相同的dom，同时被子组件和父组件管理的情况
         // 所以unmount后，将其置为空函数，以免再次unmount
         element._unmount = noop;
@@ -518,7 +518,7 @@ export default Animate = Intact.extend({
         }
     },
 
-    _move(onlyInit) {
+    _move() {
         if (this.get('a:disabled')) return;
         this._moving = true;
         const element = this.element;
@@ -535,10 +535,8 @@ export default Animate = Intact.extend({
             }
         };
         TransitionEvents.on(element, this._moveEnd);
-        if (!onlyInit) {
-            this._triggerMove();
+        this._triggerMove();
             // nextFrame(() => this._triggerMove());
-        }
     },
 
     _triggerMove() {
@@ -546,13 +544,20 @@ export default Animate = Intact.extend({
         s.transform = s.WebkitTransform = `translate(${0 - this.dx}px, ${0 - this.dy}px)`;
     },
 
-    _enter(onlyInit) {
+    _enter() {
         if (this.get('a:disabled')) return;
         this._entering = true;
         const element = this.element;
         const enterClass = this.enterClass;
         const enterActiveClass = this.enterActiveClass;
         const isCss = this.get('a:css');
+
+        // getAnimateType将添加enter-active className，在firefox下将导致动画提前执行
+        // 我们应该先于添加`enter` className去调用该函数
+        let isTransition = false;
+        if (isCss && getAnimateType(element, enterActiveClass) !== 'animation') {
+            isTransition = true;
+        }
 
         // 如果这个元素是上一个删除的元素，则从当前状态回到原始状态
         if (this.lastInstance) {
@@ -576,13 +581,11 @@ export default Animate = Intact.extend({
 
         this.trigger(`${this.enterEventName}Start`, element);
 
-        if (!onlyInit) {
-            if (isCss && getAnimateType(element, enterActiveClass) !== 'animation') {
-                nextFrame(() => this._triggerEnter());
-            } else {
-                // 对于animation动画，同步添加enterActiveClass，避免闪动
-                this._triggerEnter();
-            }
+        if (isTransition) {
+            nextFrame(() => this._triggerEnter());
+        } else {
+            // 对于animation动画，同步添加enterActiveClass，避免闪动
+            this._triggerEnter();
         }
     },
 
@@ -600,7 +603,7 @@ export default Animate = Intact.extend({
         this.trigger(this.enterEventName, element, this._enterEnd);
     },
 
-    _leave(onlyInit) {
+    _leave() {
         const element = this.element;
         // 为了保持动画连贯，我们立即添加leaveActiveClass
         // 但如果当前元素还没有来得及做enter动画，就被删除
@@ -610,18 +613,16 @@ export default Animate = Intact.extend({
             addClass(element, this.leaveActiveClass);
         }
         // TransitionEvents.on(element, this._leaveEnd);
-        if (!onlyInit) {
-            nextFrame(() => {
-                // 1. 如果leave动画还没得及执行，就enter了，此时啥也不做
-                if (this._unmountCancelled) return;
-                // 存在一种情况，当一个enter动画在完成的瞬间，
-                // 这个元素被删除了，由于前面保持动画的连贯性
-                // 添加了leaveActiveClass，则会导致绑定的leaveEnd
-                // 立即执行，所以这里放到下一帧来绑定
-                TransitionEvents.on(element, this._leaveEnd);
-                this._triggerLeave();
-            });
-        }
+        nextFrame(() => {
+            // 1. 如果leave动画还没得及执行，就enter了，此时啥也不做
+            if (this._unmountCancelled) return;
+            // 存在一种情况，当一个enter动画在完成的瞬间，
+            // 这个元素被删除了，由于前面保持动画的连贯性
+            // 添加了leaveActiveClass，则会导致绑定的leaveEnd
+            // 立即执行，所以这里放到下一帧来绑定
+            TransitionEvents.on(element, this._leaveEnd);
+            this._triggerLeave();
+        });
     },
 
     _triggerLeave() {
