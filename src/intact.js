@@ -2,7 +2,7 @@ import {
     inherit, extend, result, each, isFunction, autobind, 
     isEqual, uniqueId, get, set, castPath, hasOwn,
     keys, isObject, isString, NextTick, templateDecorator,
-    warn, error,
+    warn, error
 } from './utils';
 import Vdt from 'vdt';
 import {hc, render, hydrateRoot, h} from 'misstime';
@@ -20,7 +20,8 @@ export default function Intact(props) {
         throw new Error('Can not instantiate when template does not exist.');
     }
      
-    autobind(Object.getPrototypeOf(this), this, Intact, {});
+    // in ie 8 we must get prototype through constructor first time
+    autobind(this.constructor.prototype, this, Intact, {});
     
     props = extend({}, result(this, 'defaults'), props);
 

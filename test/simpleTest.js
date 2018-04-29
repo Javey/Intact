@@ -154,6 +154,14 @@ describe('Simple Test', function() {
             const i = new SubComponent();
             i.init();
             sEql(i.element.outerHTML, '<div><div>aa</div>bb</div>');
+
+            class GrandSubComponent extends SubComponent {
+                @Intact.template()
+                static template = `<div><t:parent /></div>`;
+            }
+            const j = new GrandSubComponent();
+            j.init();
+            sEql(j.element.outerHTML, '<div><div><div>aa</div>bb</div></div>');
         });
 
         it('es6 class with static template', () => {

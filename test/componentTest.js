@@ -585,10 +585,12 @@ describe('Component Test', function() {
             eqlHtml(div, '<div>2</div>');
             document.body.removeChild(div);
             done();
-        }, 100);
+        }, 200);
     });
 
     describe('SVG', () => {
+        if (browser.isIE8) return;
+        
         let container;
 
         beforeEach(() => {
@@ -674,7 +676,7 @@ describe('Component Test', function() {
         });
         const d = Intact.mount(D, document.body);
         d.set('a', undefined);
-        sEql(d.element.innerHTML, '<div>a</div><div>default</div>');
+        eqlHtml(d.element, '<div>a</div><div>default</div>', '<div>a</div>\r\n<div>default</div>');
         document.body.removeChild(d.element);
     });
 
@@ -693,7 +695,7 @@ describe('Component Test', function() {
             _destroy() {
                 // update child component
                 this.set('value', 1);
-                sEql(d.element.outerHTML, '<div>1<p>1</p></div>');
+                eqlOuterHtml(d.element, '<div>1<p>1</p></div>', '<div>1\r\n<p>1</p></div>');
             }
         });
 
@@ -701,7 +703,7 @@ describe('Component Test', function() {
         d.destroy();
         // should no update when destroyed
         d.set('value', 2);
-        sEql(d.element.outerHTML, '<div>1<p>1</p></div>');
+        eqlOuterHtml(d.element, '<div>1<p>1</p></div>', '<div>1\r\n<p>1</p></div>');
         document.body.removeChild(d.element);
     });
 
@@ -783,7 +785,7 @@ describe('Component Test', function() {
 
         it('render one block', () => {
             render('<C><b:test>cc</b:test></C>');
-            sEql(d.element.outerHTML, '<div>cc</div>');
+            eqlOuterHtml(d.element, '<div>cc</div>', '<div>cc</div>');
         });
 
         it('render multiple blocks', () => {
@@ -829,7 +831,7 @@ describe('Component Test', function() {
                 <i v-else>i</i>
             </b:test></C>`);
             d.set('show', true);
-            sEql(d.element.innerHTML, '<span>show</span>');
+            eqlHtml(d.element, '<span>show</span>');
         });
     });
 
@@ -845,7 +847,7 @@ describe('Component Test', function() {
 
         const c = Intact.mount(C, document.body);
         setTimeout(() => {
-            sEql(c.element.outerHTML, '<div></div>');
+            eqlOuterHtml(c.element, '<div></div>');
             document.body.removeChild(c.element);
             done();
         });

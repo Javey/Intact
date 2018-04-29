@@ -8,6 +8,34 @@ export const inBrowser = typeof window !== 'undefined';
 export const UA = inBrowser && window.navigator.userAgent.toLowerCase();
 export const isIOS = UA && /iphone|ipad|ipod|ios/.test(UA);
 
+if (!(Object.setPrototypeOf || {}.__proto__)) {
+    // ie <= 10 exists getPrototypeOf but not setPrototypeOf
+    let nativeGetPrototypeOf = Object.getPrototypeOf;
+
+    if (typeof nativeGetPrototypeOf !== 'function') {
+        Object.getPrototypeOf = function(object) {
+            // May break if the constructor has been tampered with
+            return object.__proto__ || object.constructor.prototype;;
+        }
+    } else {
+        Object.getPrototypeOf = function(object) {
+            // in ie <= 10 __proto__ is not supported
+            // getPrototypeOf will return a native function
+            // but babel will set __proto__ prototyp to target
+            // so we get __proto__ in this case
+            return object.__proto__ || nativeGetPrototypeOf.call(Object, object);
+        }
+    }
+    
+    // fix that if ie <= 10 babel can't inherit class static methods
+    Object.setPrototypeOf = function(O, proto) {
+        extend(O, proto);
+        O.__proto__ = proto;
+    }
+}
+let getPrototypeOf = Object.getPrototypeOf;
+export {getPrototypeOf};
+
 /**
  * inherit
  * @param Parent
@@ -48,6 +76,8 @@ export function inherit(Parent, prototype) {
     };
 
     Child.prototype = create(Parent.prototype);
+    // for ie 8 which does not support getPrototypeOf
+    Child.prototype.__proto__ = Parent.prototype;
     each(prototype, function(proto, name) {
         if (name === 'displayName') {
             Child.displayName = proto;
@@ -113,7 +143,7 @@ export function templateDecorator(options) {
         if (isString(template)) {
             template = Vdt.compile(template, options);
         }
-        const Parent = Object.getPrototypeOf(target);
+        const Parent = getPrototypeOf(target);
         let _super;
         if (typeof Parent === 'function') {
             // is define by static
@@ -369,7 +399,8 @@ export function set(object, path, value) {
     return object;
 }
 
-const hasConsole = typeof console !== 'undefined';
+// in ie8 console.log is an object
+const hasConsole = typeof console !== 'undefined' && typeof console.log === 'function';
 export const warn = hasConsole ? 
     function() { 
         console.warn.apply(console, arguments);
@@ -459,28 +490,16 @@ const wontBind = [
     // '_triggerMountedQueue',
     // '_triggerChangedEvent',
 ];
-if (typeof Object.getPrototypeOf !== "function") {
-    if (typeof "".__proto__ === "object") {
-        Object.getPrototypeOf = function(object){
-            return object.__proto__;
-        };
-    } else {
-        Object.getPrototypeOf = function(object){
-            // May break if the constructor has been tampered with
-            return object.constructor.prototype;
-        };
-    }
-} 
 
-if (typeof Object.getOwnPropertyNames !== 'function') {
-    Object.getOwnPropertyNames = keys; 
-}
+const getOwnPropertyNames = typeof Object.getOwnPropertyNames !== 'function' ?
+    keys:
+    Object.getOwnPropertyNames;
 
 export function autobind(prototype, context, Intact, bound) {
     if (!prototype) return;
     if (prototype === Intact.prototype) return;
 
-    const toBind = Object.getOwnPropertyNames(prototype);
+    const toBind = getOwnPropertyNames(prototype);
     each(toBind, (method) => {
         const fn = prototype[method];
         if (fn === undefined) {
@@ -497,5 +516,5 @@ export function autobind(prototype, context, Intact, bound) {
     });
 
     // bind super method
-    autobind(Object.getPrototypeOf(prototype), context, Intact, bound);
+    autobind(getPrototypeOf(prototype), context, Intact, bound);
 }

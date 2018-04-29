@@ -13,6 +13,7 @@ module.exports = function(config) {
                 rules: [
                     {
                         test: /\.js$/,
+                        // exclude: [/node_modules(?!([\/\\]vdt)|([\/\\]misstime))/],
                         loader: 'babel-loader',
 
                         // use: {
@@ -31,7 +32,7 @@ module.exports = function(config) {
                         loader: 'vdt-loader?skipWhitespace'
                     }
                 ]
-            }
+            },
         },
         frameworks: [
             'mocha'
