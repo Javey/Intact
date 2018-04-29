@@ -1902,7 +1902,7 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
             if (items.delete(dom)) {
                 if (items.size === 0) {
                     removeEventListener(doc, name, delegatedRoots.docEvent);
-                    delete delegatedEvents[name];
+                    delete delegatedRoots[name];
                 }
             }
         }
@@ -2275,7 +2275,7 @@ function removeHtmlElement(vNode, parentDom) {
     for (var name in props) {
         var prop = props[name];
         if (!isNullOrUndefined(prop) && isEventProp(name)) {
-            handleEvent(name.substr(3), prop, null, dom);
+            handleEvent(name.substr(0, 3), prop, null, dom);
         }
     }
 
@@ -3634,6 +3634,32 @@ var inBrowser = typeof window !== 'undefined';
 var UA = inBrowser && window.navigator.userAgent.toLowerCase();
 var isIOS = UA && /iphone|ipad|ipod|ios/.test(UA);
 
+if (!(Object.setPrototypeOf || {}.__proto__)) {
+    // ie <= 10 exists getPrototypeOf but not setPrototypeOf
+    var nativeGetPrototypeOf = Object.getPrototypeOf;
+
+    if (typeof nativeGetPrototypeOf !== 'function') {
+        Object.getPrototypeOf = function (object) {
+            // May break if the constructor has been tampered with
+            return object.__proto__ || object.constructor.prototype;
+        };
+    } else {
+        Object.getPrototypeOf = function (object) {
+            // in ie <= 10 __proto__ is not supported
+            // getPrototypeOf will return a native function
+            // but babel will set __proto__ prototyp to target
+            // so we get __proto__ in this case
+            return object.__proto__ || nativeGetPrototypeOf.call(Object, object);
+        };
+    }
+
+    // fix that if ie <= 10 babel can't inherit class static methods
+    Object.setPrototypeOf = function (O, proto) {
+        extend(O, proto);
+        O.__proto__ = proto;
+    };
+}
+var getPrototypeOf = Object.getPrototypeOf;
 /**
  * inherit
  * @param Parent
@@ -3675,6 +3701,8 @@ function inherit(Parent, prototype) {
     };
 
     Child.prototype = create(Parent.prototype);
+    // for ie 8 which does not support getPrototypeOf
+    Child.prototype.__proto__ = Parent.prototype;
     each(prototype, function (proto, name) {
         if (name === 'displayName') {
             Child.displayName = proto;
@@ -3748,7 +3776,7 @@ function templateDecorator(options) {
         if (isString(template)) {
             template = Vdt$1.compile(template, options);
         }
-        var Parent = Object.getPrototypeOf(target);
+        var Parent = getPrototypeOf(target);
         var _super = void 0;
         if (typeof Parent === 'function') {
             // is define by static
@@ -4009,7 +4037,8 @@ function set$$1(object, path, value) {
     return object;
 }
 
-var hasConsole = typeof console !== 'undefined';
+// in ie8 console.log is an object
+var hasConsole = typeof console !== 'undefined' && typeof console.log === 'function';
 var warn = hasConsole ? function () {
     console.warn.apply(console, arguments);
 } : noop;
@@ -4074,28 +4103,14 @@ NextTick.prototype.fire = function (callback, data) {
 };
 
 var wontBind = ['constructor', 'template', 'defaults'];
-if (typeof Object.getPrototypeOf !== "function") {
-    if (_typeof("".__proto__) === "object") {
-        Object.getPrototypeOf = function (object) {
-            return object.__proto__;
-        };
-    } else {
-        Object.getPrototypeOf = function (object) {
-            // May break if the constructor has been tampered with
-            return object.constructor.prototype;
-        };
-    }
-}
 
-if (typeof Object.getOwnPropertyNames !== 'function') {
-    Object.getOwnPropertyNames = keys;
-}
+var getOwnPropertyNames = typeof Object.getOwnPropertyNames !== 'function' ? keys : Object.getOwnPropertyNames;
 
 function autobind(prototype, context, Intact, bound) {
     if (!prototype) return;
     if (prototype === Intact.prototype) return;
 
-    var toBind = Object.getOwnPropertyNames(prototype);
+    var toBind = getOwnPropertyNames(prototype);
     each(toBind, function (method) {
         var fn = prototype[method];
         if (fn === undefined) {
@@ -4112,7 +4127,7 @@ function autobind(prototype, context, Intact, bound) {
     });
 
     // bind super method
-    autobind(Object.getPrototypeOf(prototype), context, Intact, bound);
+    autobind(getPrototypeOf(prototype), context, Intact, bound);
 }
 
 
@@ -4128,6 +4143,7 @@ var utils = Object.freeze({
 	inBrowser: inBrowser,
 	UA: UA,
 	isIOS: isIOS,
+	getPrototypeOf: getPrototypeOf,
 	inherit: inherit,
 	templateDecorator: templateDecorator,
 	create: create,
@@ -4160,7 +4176,8 @@ function Intact$1(props) {
         throw new Error('Can not instantiate when template does not exist.');
     }
 
-    autobind(Object.getPrototypeOf(this), this, Intact$1, {});
+    // in ie 8 we must get prototype through constructor first time
+    autobind(this.constructor.prototype, this, Intact$1, {});
 
     props = extend({}, result(this, 'defaults'), props);
 
@@ -4772,7 +4789,8 @@ var Animate$1 = Animate = Intact$1.extend({
         'a:disabled': false, // 只做动画管理者，自己不进行动画
         'a:move': true, // 是否执行move动画
         'a:css': true, // 是否使用css动画，如果自定义动画函数，可以将它置为false
-        'a:delayDestroy': true },
+        'a:delayDestroy': true // 是否动画完成才destroy子元素
+    },
 
     template: function template() {
         var h = Vdt$1.miss.h;
