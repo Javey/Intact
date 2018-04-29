@@ -1,6 +1,6 @@
 <p align="center">
-    <a href="https://saucelabs.com/u/Intactjs">
-        <img src="https://saucelabs.com/buildstatus/Intactjs?saucy" alt="Build Status">
+    <a href="https://travis-ci.org/Javey/Intact.svg?branch=master">
+        <img src="https://travis-ci.org/Javey/Intact.svg?branch=master" alt="Build Status">
     </a>
     <br />
     <a href="https://saucelabs.com/u/Intactjs">
