@@ -850,7 +850,7 @@ describe('Component Test', function() {
             eqlOuterHtml(c.element, '<div></div>');
             document.body.removeChild(c.element);
             done();
-        });
+        }, 100);
     });
 
     it('should autobind method', done => {
