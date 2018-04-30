@@ -11,7 +11,7 @@ module.exports = {
         path: path.resolve(root, './dist'),
         filename: '[name].js',
         chunkFilename: 'static/chunk/[chunkhash].js',
-        // publicPath: process.env.NODE_ENV === 'production' ? './dist/' : '/dist/'
+        publicPath: process.env.NODE_ENV === 'production' ? './dist/' : '/dist/'
     },
     devtool: process.env.NODE_ENV !== 'production' ? '#inline-source-map' : undefined,
     module: {
