@@ -49,7 +49,7 @@ module.exports = function(config) {
                 reporter: 'html'
             }
         },
-        concurrency: 1,
+        concurrency: 2,
         singleRun: true,
         reporters: ['progress', 'coverage-istanbul'],
     });
