@@ -1,0 +1,119 @@
+const layout = require('../layout.vdt');
+
+const catalogs = [
+    {
+        title: '基础',
+        subCatalogs: [
+            {
+                title: '开始',
+                href: 'start'
+            },
+            {
+                title: 'Intact实例',
+                href: 'instance'
+            },
+            {
+                title: '组件生命周期',
+                href: 'lifecycle'
+            },
+            {
+                title: '模板语法',
+                href: 'syntax'
+            },
+            {
+                title: '事件处理',
+                href: 'event'
+            },
+            {
+                title: '表单处理',
+                href: 'form'
+            },
+            {
+                title: '组件',
+                href: 'component'
+            },
+            {
+                title: '组件继承',
+                href: 'extend'
+            }
+        ]
+    },
+    {
+        title: '进阶',
+        subCatalogs: [
+            {
+                title: '动画',
+                href: 'animation'
+            },
+            {
+                title: '模板template',
+                href: 'template'
+            },
+            {
+                title: '路由',
+                href: 'router'
+            },
+            {
+                title: 'webpack实践',
+                href: 'project'
+            },
+            {
+                title: '服务器端渲染',
+                href: 'ssr'
+            }
+        ]
+    }
+];
+let currentNav = {};
+
+const Subs = function(attr) {
+    return <ul v-if={attr.subs} class="sub-catalogs">
+        <li v-for={attr.subs} class={{
+            active: self.get(attr.subs.active) === value.title
+        }}>
+            <a ev-click={self.scrollTo.bind(self, value.title, attr.subs.active)}
+            >{value.title}</a>
+            <Subs subs={value.subs} />
+        </li>
+    </ul>
+};
+<t:layout navIndex="document" class="document-page">
+    <b:content>
+        <aside>
+            <div class="aside-wrapper">
+                <div class="catalog-section" v-for={catalogs}>
+                    <h5>{value.title}</h5>
+                    <ul>
+                        <li v-for={value.subCatalogs} class={{
+                            active: value.href === self.get('title')
+                        }}>
+                            {(() => {
+                                if (value.href === self.get('title')) {
+                                    currentNav = value;
+                                }
+                            })()}
+                            <a href={'#/document/' + value.href}>{value.title}</a>
+                            <Subs v-if={value.href === self.get('title')}
+                                subs={self.get('subCatalogs')} 
+                            />                       
+                        </li>
+                    </ul>
+                </div>
+                <div class="aside-border transition"></div>
+            </div>
+        </aside>
+        <article>
+            <div class="article-head">
+                <div class="title">{currentNav.title}</div>
+                <div class="edit-link">
+                    如果你发现文档有问题，请帮忙在
+                    <a target="_blank" 
+                        href={`https://github.com/Javey/javey.github.io/blob/master/intact/docs/${self.get('title')}.md`}
+                    >github</a>
+                    上修正该文档
+                </div>
+            </div>
+            <div innerHTML={self.get('content')}></div>
+        </article>
+    </b:content>
+</t:layout>

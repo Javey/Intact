@@ -1,0 +1,32 @@
+const nav = [
+    {
+        title: '教程',
+        href: 'document'
+    },
+    {
+        title: 'API',
+        href: 'api'
+    },
+    // {
+        // title: '示例',
+        // href: 'examples'
+    // }
+]
+<div class={'main-wrapper ' + (scope.className || '')}>
+    <div class="header-wrapper">
+        <header>
+            <b:header>
+                <a class="logo" href="#/">Intact</a>
+                <nav>
+                    <a v-for={nav} class={{
+                        active: value.href === scope.navIndex
+                    }} href={`#/${value.href}`}>{value.title}</a>
+                    <div class="border"></div>
+                </nav>
+            </b:header>
+        </header>
+    </div>
+    <div class="content-wrapper">
+        <b:content />
+    </div>
+</div>
