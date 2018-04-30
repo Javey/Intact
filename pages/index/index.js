@@ -4,6 +4,7 @@ import {highlight, marked} from '../../lib/utils';
 import Layout from '../layout';
 
 export default class extends Layout {
+    @Intact.template()
     get template() { return template; }
 
     _mount() {

@@ -1,6 +1,4 @@
-var layout = require('../layout.vdt');
-
-<t:layout class="index-page">
+<t:parent class="index-page">
     <b:content>
         <article class="home-header">
             <!-- <img src="images/logo.png" /> -->
@@ -79,4 +77,4 @@ Intact.mount(Page, document.getElementById('app'));
             </div>
         </article>
     </b:content>
-</t:layout>
+</t:parent>

@@ -12,7 +12,8 @@ window._ = {throttle, shuffle, debounce};
 window.$ = $;
 
 export default class extends Layout {
-    get template() { return template; }
+    @Intact.template()
+    static template = template;
 
     _init() {
         return fetch(`./docs/${this.get('title')}.md`).then(response => {
@@ -139,7 +140,7 @@ export default class extends Layout {
                 active1: active1.text 
             });
 
-            $activeA = $aside.find('.active').last().children('a');
+            const $activeA = $aside.find('.active').last().children('a');
             if ($activeA.length) {
                 let height = $activeA.height();
                 let top = $activeA.position().top;

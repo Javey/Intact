@@ -2,6 +2,25 @@ import App from './components/app';
 import {Router} from 'director';
 import css from './css/layout.styl';
 
+Router.prototype.replaceRoute = function (i, v, val) {
+  var url = this.explode();
+
+  if (typeof i === 'number' && typeof v === 'string') {
+    url[i] = v;
+  }
+  else if (typeof val === 'string') {
+    url.splice(i, v, s);
+  }
+  else {
+    url = [i];
+  }
+
+  var s = url;
+
+  document.location.replace((s[0] === '#') ? s : '#' + s);
+  return url;
+}
+
 const app = Intact.mount(App, document.getElementById('page'));
 
 const router = Router({

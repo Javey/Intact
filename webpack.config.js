@@ -23,11 +23,6 @@ module.exports = {
                         loader: 'babel-loader',
                         options: {
                             cacheDirectory: path.resolve(root, '.cache'),
-                            presets: [['es2015', {"loose": true}]],
-                            plugins: [
-                                'add-module-exports',
-                                "transform-remove-strict-mode"
-                            ]
                         }
                     }
                 ]
@@ -39,7 +34,6 @@ module.exports = {
                         loader: 'babel-loader',
                         options: {
                             cacheDirectory: path.resolve(root, '.cache'),
-                            presets: ['es2015'],
                         }
                     },
                     {

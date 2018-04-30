@@ -1,5 +1,3 @@
-const layout = require('../layout.vdt');
-
 const Subs = function(attr) {
     return <ul v-if={attr.subs} class={{"sub-catalogs": !attr.isFirst}}>
         <li v-for={attr.subs} class={{
@@ -11,7 +9,7 @@ const Subs = function(attr) {
         </li>
     </ul>
 };
-<t:layout navIndex="api" class="document-page api-page">
+<t:parent navIndex="api" class="document-page api-page">
     <b:content>
         <aside>
             <div class="aside-wrapper">
@@ -23,4 +21,4 @@ const Subs = function(attr) {
             <div innerHTML={self.get('content')}></div>
         </article>
     </b:content>
-</t:layout>
+</t:parent>

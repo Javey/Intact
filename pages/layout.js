@@ -1,4 +1,9 @@
+import template from './layout.vdt';
+
 export default class extends Intact {
+    @Intact.template()
+    static template = template;
+
     _mount() {
         this.$border = $(this.element).find('.border');
         this._updateBorder();

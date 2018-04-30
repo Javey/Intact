@@ -1,5 +1,3 @@
-const layout = require('../layout.vdt');
-
 const catalogs = [
     {
         title: '基础',
@@ -77,7 +75,7 @@ const Subs = function(attr) {
         </li>
     </ul>
 };
-<t:layout navIndex="document" class="document-page">
+<t:parent navIndex="document" class="document-page" {...scope}>
     <b:content>
         <aside>
             <div class="aside-wrapper">
@@ -116,4 +114,4 @@ const Subs = function(attr) {
             <div innerHTML={self.get('content')}></div>
         </article>
     </b:content>
-</t:layout>
+</t:parent>
