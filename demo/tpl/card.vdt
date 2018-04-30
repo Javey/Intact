@@ -1,5 +1,0 @@
-<div ev-click={_.bind(self.click, this)}>
-    {self.get('title')}
-    {/* 在这里挖个坑 */}
-    <b:body />
-</div>
