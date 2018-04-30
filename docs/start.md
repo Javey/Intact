@@ -488,11 +488,15 @@ class App extends Intact {
     get template() {
         return '<div>Hello {self.get("name")}!</div>'
     }
-    // 或者也可以定义成类的静态属性
+    // 或者也可以定义成类的静态属性 @since v2.2.0
     // @Intact.template()
     // static template = '<div>Hello {self.get("name")}!</div>';
 }
 ```
+
+> `static`语法需要`stage-0`支持
+> `npm install babel-preset-stage-0 --save-dev`
+> 同时修改`.babelrc`，添加`presets: ['stage-0']`
 
 ## 进一步了解
 
