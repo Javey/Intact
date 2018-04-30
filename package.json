@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "NODE_ENV=development webpack-dev-server",
-    "build": "NODE_ENV=production rm -rf ./dist && webpack --config webpack.config.js",
+    "build": "rm -rf ./dist && NODE_ENV=production webpack --config webpack.config.js",
     "deploy": "npm run build && git add -A && git commit -am 'build' && git push"
   },
   "author": "",
