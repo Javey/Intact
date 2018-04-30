@@ -54,7 +54,7 @@ module.exports = {
 
 # 使用
 
-> 文档中的例子尽量使用es5编写，当然你也可以使用es6语法，
+> 为了方便浏览器直接运行，文档中的例子尽量使用es5编写，当然你也可以使用es6语法，
 > 如有必要，文档中会标明es6写法的差异
 
 ## Hello Intact 
@@ -63,8 +63,10 @@ module.exports = {
 
 ```js
 var App = Intact.extend({
-    defaults: {
-        name: 'Intact'
+    defaults: function() {
+        return {
+            name: 'Intact'
+        };
     },
     template: '<div>Hello {self.get("name")}!</div>'
 });
@@ -117,8 +119,8 @@ app.set('name', 'World')
 
 ```js
 var App = Intact.extend({
-    defaults: {
-        show: true
+    defaults: function() {
+        return {show: true};
     },
     template: '<div><div v-if={self.get("show")}>展示出来</div></div>'
 });
@@ -145,8 +147,10 @@ v-for指令可以遍历数组和对象。在循环中，被循环的元素以及
 
 ```js
 var App = Intact.extend({
-    defaults: {
-        list: ['Javascript', 'PHP', 'Java']
+    defaults: function() {
+        return {
+            list: ['Javascript', 'PHP', 'Java']
+        };
     },
     template: '<ul>' +
         '<li v-for={self.get("list")} class={value}>{value}</li>' +
@@ -178,8 +182,8 @@ appvfor.set('list', appvfor.get('list').concat(['C++']));
 
 ```js
 var App = Intact.extend({
-    defaults: {
-        show: true
+    defaults: function() {
+        return {show: true};
     },
 
     template: '<div>' +
@@ -242,8 +246,10 @@ Intact.mount(App, document.getElementById('appvmodel'));
 
 ```js
 var TodoItem = Intact.extend({
-    defaults: {
-        todo: ''
+    defaults: function() {
+        return {
+            todo: ''
+        };
     },
     template: '<div>{self.get("todo")}</div>'
 });
@@ -257,8 +263,10 @@ var TodoItem = Intact.extend({
 
 ```js
 var TodoItem = Intact.extend({
-    defaults: {
-        todo: ''
+    defaults: function() {
+        return {
+            todo: ''
+        };
     },
     template: '<div>' +
         '{self.get("todo")}' +
@@ -391,8 +399,8 @@ var Layout = Intact.extend({
     '</div>',
 
     // 定义默认数据
-    defaults: {
-        title: 'Layout'
+    defaults: function() {
+        return {title: 'Layout'};
     }
 });
 ```
@@ -405,8 +413,8 @@ var A = Layout.extend({
     template: '<t:parent>' +
         '<b:content>A页面</b:content>' +
     '</t:parent>',
-    defaults: {
-        title: 'Page A'
+    defaults: function() {
+        return {title: 'Page A'};
     }
 });
 ```
@@ -419,8 +427,8 @@ var B = Layout.extend({
     template: '<t:parent>' +
         '<b:content>B页面</b:content>' +
     '</t:parent>',
-    defaults: {
-        title: 'Page B'
+    defaults: function() {
+        return {title: 'Page B'};
     }
 });
 ```
@@ -430,8 +438,8 @@ var B = Layout.extend({
 
 ```js
 var App = Intact.extend({
-    defaults: {
-        Page: A
+    defaults: function() {
+        return {Page: A};
     },
     template: 'var Page = self.get("Page");' +
         '<div>' +
@@ -480,6 +488,9 @@ class App extends Intact {
     get template() {
         return '<div>Hello {self.get("name")}!</div>'
     }
+    // 或者也可以定义成类的静态属性
+    // @Intact.template()
+    // static template = '<div>Hello {self.get("name")}!</div>';
 }
 ```
 
