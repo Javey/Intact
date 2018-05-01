@@ -9,7 +9,7 @@ const Subs = function(attr) {
         </li>
     </ul>
 };
-<t:parent navIndex="api" class="document-page api-page">
+<t:parent navIndex="api" class="document-page api-page" {...scope}>
     <b:content>
         <aside>
             <div class="aside-wrapper">

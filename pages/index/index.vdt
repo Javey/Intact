@@ -3,7 +3,7 @@
         <article class="home-header">
             <!-- <img src="images/logo.png" /> -->
             <h1>Intact</h1>
-            <p>可继承的前端开发框架</p>
+            <p>可继承，强逻辑模板的前端开发框架</p>
             <div class="actions">
                 <a href="#/document/start" class="button">开始</a>
                 <a href="https://github.com/Javey/intact" class="button white"
@@ -25,7 +25,7 @@
                     </div>
                 </div>
                 <div class="feature">
-                    <h2 class="red">可继承</h2>
+                    <h2 class="red">可继承，强逻辑模板</h2>
                     <div>
                         充分发挥继承的优势，实现组件逻辑和模板的继承扩展，
                         让你更快速方便地构建复杂的应用

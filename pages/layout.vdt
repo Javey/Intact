@@ -7,10 +7,10 @@ const nav = [
         title: 'API',
         href: 'api'
     },
-    // {
-        // title: '示例',
-        // href: 'examples'
-    // }
+    {
+        title: 'Blog',
+        href: 'blog'
+    }
 ]
 <div class={'main-wrapper ' + (scope.className || '')}>
     <div class="header-wrapper">

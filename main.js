@@ -43,7 +43,17 @@ const router = Router({
         require(['./pages/api'], app.run({
             title: 'api'
         }));
-    }
+    },
+    '/blog': {
+        '/:title': {
+            on: function(title) {
+                require(['./pages/blog'], app.run({title}));
+            },
+        },
+        on: function() {
+            router.replaceRoute('/blog/intact-v2-2-0');
+        }
+    },
 }).configure({
     notfound: function() {
         router.replaceRoute('/');

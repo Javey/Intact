@@ -15,8 +15,14 @@ export default class extends Layout {
     @Intact.template()
     static template = template;
 
+    defaults() {
+        return {
+            docPath: './docs'
+        };
+    }
+
     _init() {
-        return fetch(`./docs/${this.get('title')}.md`).then(response => {
+        return fetch(`${this.get('docPath')}/${this.get('title')}.md`).then(response => {
             return response.text();
         }).then(md => {
             this.set('content', marked.render(md));
