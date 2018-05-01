@@ -60,6 +60,15 @@ const catalogs = [
                 href: 'ssr'
             }
         ]
+    },
+    {
+        title: '其它',
+        subCatalogs: [
+            {
+                title: '更新日志',
+                href: 'changelog'
+            }
+        ]
     }
 ];
 let currentNav = {};

@@ -97,4 +97,8 @@ _beforeUpdate调用后，就会执行_update，此时组件更新完成。
 
 组件挂载后触发，对应`mounted`为`true`
 
-> `$updated`和`$destroyed`由于暂时没有找到适用场景，没有暴露出来
+## $destroyed
+
+*@since v2.1.0*
+
+组件销毁时触发，对应`destroyed`为`true`

@@ -7,15 +7,15 @@ Intact中，事件分为两类：浏览器原生事件和组件事件。
 ## 监听原生事件
 
 ```html
-<button ev-click={self.onClick.bind(self)}>点击了{self.get('count')}次</button>
+<button ev-click={self.onClick}>点击了{self.get('count')}次</button>
 ```
 <!-- {.example} -->
 
 ```js
 var App = Intact.extend({
     template: template,
-    defaults: {
-        count: 0
+    defaults: function() {
+        return {count: 0};
     },
     onClick: function(e) {
         this.set('count', this.get('count') + 1);
@@ -29,6 +29,8 @@ Intact.mount(App, document.getElementById('appevent'));
 <div class="output"><div id="appevent"></div></div>
 
 > 原生事件的处理函数记得`bind(self)`，否则函数中`this`将会指向`window`
+>
+> @since v2.2.0 默认会`bind(self)`，所以无需再次`bind`
 
 利用`bind`方法，我们可以往事件处理函数传递参数。
 
@@ -44,8 +46,8 @@ Intact.mount(App, document.getElementById('appevent'));
 ```js
 var App = Intact.extend({
     template: template,
-    defaults: {
-        count: 0
+    defaults: function() {
+        return {count: 0};
     },
     onClick: function(num, e) {
         this.set('count', this.get('count') + num);
@@ -63,7 +65,7 @@ Intact.mount(App, document.getElementById('appevent1'));
 阻止冒泡`stopPropagation()`等等。
 
 ```html
-<a href="/" ev-click={self.onClick.bind(self)}>阻止默认行为</a>
+<a href="/" ev-click={self.onClick}>阻止默认行为</a>
 ```
 <!-- {.example} -->
 
@@ -88,7 +90,7 @@ Intact.mount(App, document.getElementById('appevent2'));
 ```html
 var Component = self.Component;
 <div>
-    <Component ev-increase={self.add.bind(self)} />
+    <Component ev-increase={self.add} />
     组件被点击{self.get('count')}次
 </div>
 ```
@@ -96,7 +98,7 @@ var Component = self.Component;
 
 ```js
 var Component = Intact.extend({
-    template: '<button ev-click={self.onClick.bind(self)}>+1</button>',
+    template: '<button ev-click={self.onClick}>+1</button>',
     onClick: function() {
         this.trigger('increase');
     }
@@ -122,6 +124,8 @@ Intact.mount(App, document.getElementById('appevent3'));
 
 > 对于组件事件的处理函数，记得`bind(self)`，否则处理函数的`this`
 > 指向触发事件的组件实例（上例中：Component实例），而非绑定事件的实例。
+>
+> @since v2.2.0 无需`bind(self)`，默认会指向绑定事件的实例
 
 # 触发事件
 
@@ -136,7 +140,7 @@ Intact.mount(App, document.getElementById('appevent3'));
 通过它我们还可以为事件处理函数传递数据。
 
 ```html
-<li ev-click={self.likeThisBook.bind(self)}>{self.get('book')}</li>
+<li ev-click={self.likeThisBook}>{self.get('book')}</li>
 ```
 <!-- {.example} -->
 
@@ -156,7 +160,7 @@ var Book = self.Book;
 
 <ul>
     <Book 
-        ev-like={self.like.bind(self)}
+        ev-like={self.like}
         v-for={self.get('books')} 
         book={value} 
     />
@@ -194,7 +198,7 @@ Intact.mount(App, document.getElementById('apptrigger'));
 显式地抛出事件。
 
 ```html
-<button ev-click={self.add.bind(self)}>+1</button>
+<button ev-click={self.add}>+1</button>
 ```
 <!-- {.example} -->
 
@@ -215,7 +219,7 @@ var Component = Intact.extend({
 var Component = self.Component;
 
 <div>
-    <Component ev-$change:count={self.setCount.bind(self)} />
+    <Component ev-$change:count={self.setCount} />
     子组件被点击了{self.get('count') || 0}次
 </div>
 ```
@@ -242,6 +246,84 @@ Intact.mount(App, document.getElementById('apptrigger1'));
 
 > 监听`$change:count`设置数据，还是有点麻烦，后面将介绍如何通过`v-model`简化操作
 
+### $receive事件
+
+@since v2.2.0
+
+从v2.2.0开始，组件还提供了一个`$receive`事件，它会在组件接收到父组件传给子组件的变更后的新属性
+时触发。与`$change`事件不同的是，`$change`事件只要属性变更就会，不管属性的来源是父组件传递新属性
+值导致，还是内部自己改变的。通过`receive`事件，我们可以很方便地修正父组件传给自己的属性值。
+
+例如：下例中，我们将父组件传递的字符串转为数字
+
+```html
+<div>
+    <button ev-click={self.add}>+1</button>
+    value: {self.get('value')} type: {typeof self.get('value')}
+</div>
+```
+<!-- {.example} -->
+
+```js
+var Component = Intact.extend({
+    template: template,
+    defaults: function() {
+        return {value: 0}
+    },
+
+    _init: function() {
+        // 初始化时，也修正
+        this._fixValue();
+        // 接收到新值时，修正
+        this.on('$receive:value', this._fixValue);
+    },
+
+    _fixValue: function() {
+        // 如果你打开调试工具，可以看到log信息打印的时机
+        // 内部改变，或者数据没有变更时不会执行
+        console.log('fix value');
+        var value = this.get('value');
+        this.set('value', Number(value));
+    },
+
+    add: function() {
+        this.set('value', this.get('value') + 1)
+    }
+});
+```
+<!-- {.example} -->
+
+```html
+var Component = self.Component;
+
+<div>
+    <Component v-model="count" />
+    <button ev-click={self._set}>点击这里，将count设为"10"</button>
+</div>
+```
+<!-- {.example} -->
+
+```js
+var App = Intact.extend({
+    template: template,
+    defaults: function() {
+        this.Component = Component;
+        return {count: '100'};
+    },
+    _set: function() {
+        this.set('count', 10);
+    }
+});
+
+Intact.mount(App, document.getElementById('receive'));
+```
+<!-- {.example} -->
+
+<div class="output"><div id="receive"></div></div>
+
+
+> `$receive`事件只有在更新子组件传递新的属性值时触发，而不会在初始化时触发
+
 ### 组件生命周期事件
 
 组件的默认事件除了`$change`类，还有一组跟生命周期相关的事件。详见[组件生命周期][1]
@@ -257,7 +339,7 @@ Intact.mount(App, document.getElementById('apptrigger1'));
 
 ```html
 <div>
-    <button ev-click={self.add.bind(self)}>被点击了{self.get('count')}次</button>
+    <button ev-click={self.add}>被点击了{self.get('count')}次</button>
     当点击5次时，会弹出alert
 </div>
 ```

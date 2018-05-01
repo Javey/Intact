@@ -1,7 +1,7 @@
 # 什么是组件
 
 生活中，组件的概念无处不在，小到你正在使用的计算机，大到宏伟的建筑，无不都是通过一个个小组件构成。
-本质上Intact是一个组件基础类库，它仅仅规范了组件的定义与使用方式，并没有规范代码结构等东西。
+本质上Intact是一个组件基础类库，它仅仅规范了组件的定义与使用方式，并没有规范代码结构等方面。
 对于web开发来说，每一个html标签也可以看做一个组件，为了满足更高级的封装，W3C提出了`Web Components`
 的概念，它让我们可以基于简单的html标签，构建更复杂的标签，并且赋予它样式以及逻辑。
 
@@ -44,6 +44,8 @@ var SubComponent = Component.extend({
 
 ### `Object`类型
 
+@deprecated
+
 ```js
 var Component;
 Component = Intact.extend({
@@ -76,7 +78,7 @@ SubComponent = Component.extend({
 ```js
 var Component = Intact.extend({
     template: '<div>\
-        <button ev-click={self.add.bind(self)}>+1</button>\
+        <button ev-click={self.add}>+1</button>\
         a.a = {self.get("a.a")}\
     </div>',
     defaults: {
@@ -117,7 +119,7 @@ Intact.extend({
 
 所以在你的数据存在引用嵌套时，我们应该使用`Function`定义`defaults`，它每次都会返回一份新数据。
 
-> 如果你不确定数据嵌套层次，每次使用`Function`定义`defaults`是推荐的做法
+> `Object`定义方式，将被废弃，请使用`Function`的定义方式 
 
 ### `Function`类型
 
@@ -126,7 +128,7 @@ Intact.extend({
 ```js
 var Component = Intact.extend({
     template: '<div>\
-        <button ev-click={self.add.bind(self)}>+1</button>\
+        <button ev-click={self.add}>+1</button>\
         a.a = {self.get("a.a")}\
     </div>',
     defaults: function() {
@@ -297,7 +299,7 @@ Intact.extend({
 ```js
 var SubComponent = Intact.extend({
     template: '<input \
-        ev-input={self.changeValue.bind(self)} \
+        ev-input={self.changeValue} \
         value={self.get("value")}\
     />',
     changeValue: function(e) {
@@ -426,7 +428,7 @@ Intact.extend({
 * 如果用一个异步组件去更新之前的元素，当数据没有加载完成时，会保留当前元素不变，
   待数据加载完毕后，替换成最终的元素
 
-异步组件在当你的组件逻辑依赖异步加载的数据时非常有用，因为数据没记载完成，组件
+异步组件在当你的组件逻辑依赖异步加载的数据时非常有用，因为数据没加载完成，组件
 不会渲染，能避免处理数据时，由于数据未定义造成报错。
 
 定义一个异步组件很简单，只需要在组件的`_init()`周期函数中返回`Promise`对象即可。
@@ -454,7 +456,7 @@ var AsyncComponent = self.AsyncComponent;
 <div>
     <AsyncComponent v-if={self.get('show')} />
     <button ev-click={self.set.bind(self, 'show', !self.get('show'))}>
-        渲染/销毁异步组件
+    {self.get('show') ? '销毁' : '渲染'}异步组件
     </button>
 </div>
 ```
@@ -470,9 +472,9 @@ Intact.extend({
 ```
 <!-- {.example.auto} -->
 
-> `_init()`如果返回`Promise`，请保证该`Promise` `then(success)`中的成功回调能被执行，
-> 否则组件将永远不会渲染。
->
+可以看到，当渲染组件时，并不会立即渲染，而是等待1s后才渲染。Intact内部会很好地管理
+异步组件，所以即使你连续多次点击，它也会被正确地创建和销毁。
+
 > 将一个异步组件改为同步组件只需一步：去掉`_init()`中关键词`return`即可。
 
 # 实例组件
@@ -534,7 +536,7 @@ var PageB = Intact.extend({
 <div>
     {self.get('view')}
     <div v-if={self.get('loading')}>Loading...</div>
-    <button ev-click={self.toggle.bind(self)}>加载组件</button>
+    <button ev-click={self.toggle}>加载组件</button>
 </div>
 ```
 <!-- {.example} -->
@@ -573,7 +575,8 @@ Intact.extend({
 
 实例组件让你可以控制组件的实例化，这在前端路由中很实用。例如：`/user/1`和`/user/2`两个页面都对应同一个组件，只是
 参数不同，这样你可以为每个页面实例化一个组件传入不同的用户ID。如果不采用实例组件，你可能需要为每个组件指定一个唯一
-的`key`，否则因为是同一个组件，两个页面不是替换关系，而是更新，这样上一个页面的数据就会带到下一页了。
+的`key`，否则因为是同一个组件，两个页面不是替换关系，而是更新，这样上一个页面的数据就会带到下一页了。当然你也可以
+监听用户ID的变化，只是这样处理起来不如实例组件来的简单。
 
 
 [1]: #/document/syntax

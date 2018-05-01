@@ -12,6 +12,17 @@ var Component = Intact.extend({
 
 > 组件必须具有`template`属性，才能被实例化
 
+然后，我们可以直接通过`Intact.mount()`方法，将组件挂载到某个元素下
+
+```js
+var instance = Intact.mount(Component, document.getElementById('app'));
+```
+
+## 实例化挂载 
+
+如果你想更多地控制组件的挂载细节，例如：挂载时传入数据，或者待异步组件初始化完成
+才挂载，可以像下面这样自己完成组件的实例化和挂载。
+
 组件创建好后，可以通过`new`操作符直接创建实例
 
 ```js
@@ -64,11 +75,6 @@ document.getElementById('app').appendChild(dom);
 这样，我们就完成了组件的从实例化到挂载渲染的工作。虽然步骤比较多，但我们可以
 控制整个过程的每个细节，这在有些组件的使用中会提供极大的定制化和便利性。
 
-当然，如果你不需要控制细节，上述整个过程，我们可以直接通过`Intact.mount()`一步到位
-
-```js
-var instance = Intact.mount(Component, document.getElementById('app'));
-```
 
 # 操作数据 
 
@@ -88,8 +94,8 @@ Intact组件的数据由两部分组成，首先是定义组件时指定的数�
 
 ```js
 var Component = Intact.extend({
-    defaults: {
-        num: 1        
+    defaults: function() {
+        return {num: 1};
     },
     template: "<div>{self.get('num')}</div>"
 });
@@ -120,7 +126,7 @@ instance.set({
 
 ```js
 // 即使改变了num，也不会更新界面，也不会有相应的$change事件触发
-// 关于事件，后面再讲
+// 关于事件，请参考事件章节
 instance.set('num', 5, {silent: true}); 
 
 // 即使改边了num，也不会更新界面，但会有相应的$change事件触发

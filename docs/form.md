@@ -220,15 +220,15 @@ Intact.extend({
 属性即可，而`$change:value`事件是组件的默认事件，无需显式触发。
 
 ```html
-<button ev-click={self.add.bind(self)}>+1</button>
+<button ev-click={self.add}>+1</button>
 ```
 <!-- {.example} -->
 
 ```js
 var Component = Intact.extend({
     template: template,
-    defaults: {
-        value: 0
+    defaults: function() {
+        return {value: 0};
     },
     add: function() {
         this.set('value', this.get('value') + 1);
@@ -250,8 +250,8 @@ var Component = self.Component;
 ```js
 Intact.extend({
     template: template,
-    defaults: {
-        count: 0
+    defaults: function() {
+        return {count: 0};
     },
     _init: function() {
         this.Component = Component;
@@ -264,15 +264,15 @@ Intact.extend({
 要达到这个目的，只需要在组件的`_init()`生命周期函数中，触发`$change:value`即可。
 
 ```html
-<button ev-click={self.add.bind(self)}>+1</button>
+<button ev-click={self.add}>+1</button>
 ```
 <!-- {.example} -->
 
 ```js
 var Component = Intact.extend({
     template: template,
-    defaults: {
-        value: 0
+    defaults: function() {
+        return {value: 0};
     },
     _init: function() {
         // 组件初始化时，如果父组件传入的绑定属性值为undefined
@@ -309,4 +309,9 @@ Intact.extend({
 <!-- {.example.auto} -->
 
 通过上例可以看到，即使使用组件`Component`时，绑定的属性未定义，依然能将`count`初始化为0。
-这在使用组件操作表单时，能提供便利性，你无需为每一个元素初始化属性值。
+这在使用组件操作表单时，能提供便利性，你无需为每一个元素初始化属性值。当然在`v2.2.0`版本中，
+我们还以通过`$receive`事件，在组件更新再次接收到`undefined`值时，将它设为0
+
+> 由于`v-model`被编译成了`ev-$change:value`，所以我们不能再次添加该属性，如果你需要确实需要
+> 在属性变更后，执行某个方法，可以在组件中通过`on`监听绑定的属性变更事件，或者大多数情况下，
+> 我们也可以通过`$changed:value`事件达到类似的目的。

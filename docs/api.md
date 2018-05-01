@@ -464,6 +464,12 @@ this.props.a === this.get('a') // true
 
 * @type `{Boolean}`
 
+## vNode
+
+@since v2.2.0
+
+指向组件的vNode
+
 ## parentVNode
 
 指向组件的父vNode
@@ -772,6 +778,8 @@ var child = Intact.Vdt.compile('<t:layout>\
 使用`parent()`函数引入父模板对应的`block`的内容。如果不扩展父模板对应的`block`，则父模板定义的
 内容会完整地继承下来。
 
+> @since v2.2.0 对组件同样有效
+
 * @param `block` 要扩展模板的`block`名称
 
 # 内置组件
@@ -788,6 +796,7 @@ var child = Intact.Vdt.compile('<t:layout>\
 * @prop `a:move` 指定是否当元素进入或离开，导致兄弟元素改变位置时，是否使用动画移动位置，默认`true`
 * @prop `a:disabled` 指定当前组件是否只做动画管理者，自身不进行动画，默认`false`，表示即做动画管理者，
   自身也进行动画
+* @prop `a:delayDestroy` 当为`true`，表示动画完成后才销毁组件，否则先执行`destroy`方法再进行动画，默认为`true`
 * @event `a:enterStart` 进入动画开始时触发
 * @event `a:enter` 进入动画进行时触发
 * @event `a:enterEnd` 进入动画结束时触发

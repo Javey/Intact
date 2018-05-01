@@ -8,8 +8,8 @@
 
 ```bash
 npm install webpack babel-core babel-loader \
-babel-plugin-add-module-exports \
-babel-preset-es2015 vdt-loader --save-dev
+    babel-preset-env \
+    vdt vdt-loader --save-dev
 ```
 
 
@@ -28,8 +28,7 @@ module.exports = {
                     {
                         loader: 'babel-loader',
                         options: {
-                            presets: ['es2015'],
-                            plugins: ['add-module-exports']
+                            presets: ['env'],
                         }
                     },
                     {
@@ -56,9 +55,9 @@ module.exports = {
 
 ```js
 // @file user.vdt
-// 可以直接使用require引入模板所需依赖
-const Button = require('./components/button');
-const Menu = require('./components/menu');
+// 可以直接使用import引入模板所需依赖
+import Button from './components/buttton';
+import Menu from './components/menu';
 
 <div>
     <Button>按钮</Button>
@@ -80,7 +79,7 @@ export defaults extends Intact {
 除了在模板中引入组件外，你还可以引入另一个模板，例如，在继承`layout.vdt`时：
 
 ```html
-var layout = require('./layout.vdt');
+import layout from './layout.vdt';
 
 <t:layout>
     <b:content>content</b:content>
@@ -142,7 +141,7 @@ import css from './user.styl';
 
 ```html
 // @file layout.vdt
-var css = require('./layout.styl');
+import './layout.styl';
 
 <div>
     <b:content />

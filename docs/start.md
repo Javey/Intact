@@ -188,7 +188,7 @@ var App = Intact.extend({
 
     template: '<div>' +
         '<div v-if={self.get("show")}>展示出来</div>' + 
-        '<button ev-click={self.toggle.bind(self)}>展示/隐藏内容</button>' +
+        '<button ev-click={self.toggle}>展示/隐藏内容</button>' +
     '</div>',
 
     toggle: function() {
@@ -205,6 +205,8 @@ Intact.mount(App, document.getElementById('appev'));
 并且还可以通过它来绑定参数，例如：`bind(self, 'test')`。
 另外可以看到，给组件添加方法很简单，直接定义即可，并不需要
 挂载到某个变量下。
+
+> @since v2.2.0 事件回调函数会自动`bind(self)`，对于无需传递参数的情况，不用再次`bind`
 
 > `ev-*`指令不仅可以绑定原生浏览器事件，对于组件暴露的事件
 > 也可以直接绑定
@@ -270,7 +272,7 @@ var TodoItem = Intact.extend({
     },
     template: '<div>' +
         '{self.get("todo")}' +
-        '<button ev-click={self.delete.bind(self)} type="button">X</button>' +
+        '<button ev-click={self.delete} type="button">X</button>' +
     '</div>',
     
     delete: function() {
@@ -330,7 +332,7 @@ var TodoList = Intact.extend({
         }
     },
     template: 'var TodoItem = self.TodoItem;' +
-        '<form ev-submit={self.addNewItem.bind(self)}>' +
+        '<form ev-submit={self.addNewItem}>' +
             '<input v-model="newItem" style="margin-bottom: 10px;" />' +
             '<TodoItem v-for={self.get("list")} todo={value}' + 
                 'ev-delete={self.delete.bind(self, key)}' +
@@ -444,7 +446,7 @@ var App = Intact.extend({
     template: 'var Page = self.get("Page");' +
         '<div>' +
             '<Page />' +
-            '<button ev-click={self.toggle.bind(self)}>切换页面</button>' +
+            '<button ev-click={self.toggle}>切换页面</button>' +
         '</div>',
 
     toggle: function() {
