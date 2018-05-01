@@ -1,5 +1,5 @@
 import {extend, isArray, each, isObject, hasOwn, noop} from 'vdt/src/lib/utils';
-import {isNullOrUndefined} from 'misstime/src/utils';
+import {isNullOrUndefined, indexOf} from 'misstime/src/utils';
 import Vdt from 'vdt';
 
 export {extend, isArray, each, isObject, hasOwn, isNullOrUndefined, noop};
@@ -8,18 +8,76 @@ export const inBrowser = typeof window !== 'undefined';
 export const UA = inBrowser && window.navigator.userAgent.toLowerCase();
 export const isIOS = UA && /iphone|ipad|ipod|ios/.test(UA);
 
+if (!(Object.setPrototypeOf || {}.__proto__)) {
+    // ie <= 10 exists getPrototypeOf but not setPrototypeOf
+    let nativeGetPrototypeOf = Object.getPrototypeOf;
+
+    if (typeof nativeGetPrototypeOf !== 'function') {
+        Object.getPrototypeOf = function(object) {
+            // May break if the constructor has been tampered with
+            return object.__proto__ || object.constructor.prototype;;
+        }
+    } else {
+        Object.getPrototypeOf = function(object) {
+            // in ie <= 10 __proto__ is not supported
+            // getPrototypeOf will return a native function
+            // but babel will set __proto__ prototyp to target
+            // so we get __proto__ in this case
+            return object.__proto__ || nativeGetPrototypeOf.call(Object, object);
+        }
+    }
+    
+    // fix that if ie <= 10 babel can't inherit class static methods
+    Object.setPrototypeOf = function(O, proto) {
+        extend(O, proto);
+        O.__proto__ = proto;
+    }
+}
+let getPrototypeOf = Object.getPrototypeOf;
+export {getPrototypeOf};
+
 /**
  * inherit
  * @param Parent
  * @param prototype
  * @returns {Function}
  */
+const isSupportGetDescriptor = (() => {
+    const a = {};
+    try {
+        Object.getOwnPropertyDescriptor(a, 'a');
+    } catch (e) {
+        return false;
+    }
+    return true;
+})();
+function setPrototype(Parent, Child, name, value) {
+    const prototype = Child.prototype;
+    let tmp;
+    if (
+        isSupportGetDescriptor && 
+        (tmp = Object.getOwnPropertyDescriptor(Parent.prototype, name)) &&
+        tmp.get
+    ) {
+        Object.defineProperty(prototype, name, {
+            get() {
+                return value;
+            },
+            enumerable: true,
+            configurable: true,
+        });
+    } else {
+        prototype[name] = value;
+    }
+}
 export function inherit(Parent, prototype) {
     let Child = function(...args) {
         return Parent.apply(this, args);
     };
 
     Child.prototype = create(Parent.prototype);
+    // for ie 8 which does not support getPrototypeOf
+    Child.prototype.__proto__ = Parent.prototype;
     each(prototype, function(proto, name) {
         if (name === 'displayName') {
             Child.displayName = proto;
@@ -29,11 +87,18 @@ export function inherit(Parent, prototype) {
                 proto = Vdt.compile(proto);
                 prototype.template = proto;
             }
+            let _super = Parent.template;
+            if (!_super || _super === templateDecorator) {
+                _super = Parent.prototype.template;
+            }
+            proto._super = _super; 
+            Child.template = undefined;
+            return setPrototype(Parent, Child, 'template', proto);
         } else if (!isFunction(proto)) {
             Child.prototype[name] = proto;
             return;
         }
-        Child.prototype[name] = (() => {
+        const fn = (() => {
             let _super = function(...args) {
                     return Parent.prototype[name].apply(this, args);
                 }, 
@@ -57,13 +122,57 @@ export function inherit(Parent, prototype) {
                 return returnValue;
             };
         })();
+        setPrototype(Parent, Child, name, fn); 
     });
     Child.prototype.constructor = Child;
 
-    extend(Child, Parent);
+    for (let key in Parent) {
+        if (!hasOwn.call(Child, key)) {
+            Child[key] = Parent[key];
+        }
+    }
+
     Child.__super = Parent.prototype;
 
     return Child;
+}
+
+export function templateDecorator(options) {
+    return function(target, name, descriptor) {
+        let template = target.template;
+        if (isString(template)) {
+            template = Vdt.compile(template, options);
+        }
+        const Parent = getPrototypeOf(target);
+        let _super;
+        if (typeof Parent === 'function') {
+            // is define by static
+            _super = Parent.template;
+            if (!_super || _super === templateDecorator) {
+                _super = Parent.prototype.template;
+            }
+        } else {
+            // is define by prototype
+            _super = Parent.constructor.template;
+            if (!_super || _super === templateDecorator) {
+                _super = Parent.template;
+            }
+        }
+        template._super = _super;
+
+        if (typeof target === 'function') {
+            // for: static template = ''
+            target.template = template;
+            return template;
+        } else {
+            // for: get template() { }
+            descriptor.get = function() {
+                return template;
+            };
+            // remove static template. Maybe it inherited from parent
+            target.constructor.template = undefined;
+        }
+    }
 }
 
 let nativeCreate = Object.create;
@@ -262,7 +371,7 @@ export function get(object, path, defaultValue) {
         object = object[path[index++]];
     }
 
-    return (index && index === length) ? object : defaultValue;
+    return (index && index === length && object !== undefined) ? object : defaultValue;
 }
 export function set(object, path, value) {
     if (hasOwn.call(object, path)) {
@@ -290,6 +399,17 @@ export function set(object, path, value) {
     return object;
 }
 
+// in ie8 console.log is an object
+const hasConsole = typeof console !== 'undefined' && typeof console.log === 'function';
+export const warn = hasConsole ? 
+    function() { 
+        console.warn.apply(console, arguments);
+    } : noop;
+export const error = hasConsole ?
+    function() {
+        console.error.apply(console, arguments);
+    } : noop;
+
 function isNative(Ctor) {
     return typeof Ctor === 'function' && /native code/.test(Ctor.toString());
 }
@@ -297,7 +417,7 @@ const nextTick = (() => {
     if (typeof Promise !== 'undefined' && isNative(Promise)) {
         const p = Promise.resolve();
         return (callback) => {
-            p.then(callback).catch(err => console.error(err));
+            p.then(callback).catch(err => error(err));
             // description in vue
             if (isIOS) setTimeout(noop);
         };
@@ -341,3 +461,60 @@ NextTick.prototype.fire = function(callback, data) {
         this.eachCallback(data);
     }
 };
+
+const wontBind = [
+    'constructor',
+    'template',
+    'defaults',
+    // '_init',
+    // '_mount',
+    // '_create' ,
+    // '_update',
+    // '_beforeUpdate',
+    // '__update',
+    // '_patchProps',
+    // '_destroy',
+    // 'init',
+    // 'update',
+    // 'mount',
+    // 'destory',
+    // 'toString',
+    // 'hydrate',
+    // 'get',
+    // 'set',
+    // 'on',
+    // 'one',
+    // 'off',
+    // 'trigger',
+    // '_initMountedQueue',
+    // '_triggerMountedQueue',
+    // '_triggerChangedEvent',
+];
+
+const getOwnPropertyNames = typeof Object.getOwnPropertyNames !== 'function' ?
+    keys:
+    Object.getOwnPropertyNames;
+
+export function autobind(prototype, context, Intact, bound) {
+    if (!prototype) return;
+    if (prototype === Intact.prototype) return;
+
+    const toBind = getOwnPropertyNames(prototype);
+    each(toBind, (method) => {
+        const fn = prototype[method];
+        if (fn === undefined) {
+            // warn(`Autobind: '${method}' method not found in class.`);
+            return;
+        }
+
+        if (~indexOf(wontBind, method) || bound[method] || typeof fn !== 'function') {
+            return;
+        }
+
+        context[method] = bind(fn, context);
+        bound[method] = true;
+    });
+
+    // bind super method
+    autobind(getPrototypeOf(prototype), context, Intact, bound);
+}

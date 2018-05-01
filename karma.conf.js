@@ -8,10 +8,12 @@ module.exports = function(config) {
             'test/**/*.js': ['webpack'],
         },
         webpack: {
+            devtool: 'inline-source-map',
             module: {
                 rules: [
                     {
                         test: /\.js$/,
+                        // exclude: [/node_modules(?!([\/\\]vdt)|([\/\\]misstime))/],
                         loader: 'babel-loader',
 
                         // use: {
@@ -30,7 +32,7 @@ module.exports = function(config) {
                         loader: 'vdt-loader?skipWhitespace'
                     }
                 ]
-            }
+            },
         },
         frameworks: [
             'mocha'
@@ -47,6 +49,7 @@ module.exports = function(config) {
                 reporter: 'html'
             }
         },
+        concurrency: 2,
         singleRun: true,
         reporters: ['progress', 'coverage-istanbul'],
     });

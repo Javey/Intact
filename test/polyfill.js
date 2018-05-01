@@ -1,5 +1,5 @@
-import {keys, create, each} from '../src/utils';
-import a from 'core-js/es5';
+import '../src/utils';
+import 'core-js/es5';
 
 // if (!Object.keys) {
     // Object.keys = keys;
@@ -17,4 +17,3 @@ import a from 'core-js/es5';
 // if (!Array.prototype.forEach) {
     // Array.prototype.forEach = each;
 // }
-

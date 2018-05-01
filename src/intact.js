@@ -1,30 +1,43 @@
 import {
-    inherit, extend, result, each, isFunction, 
+    inherit, extend, result, each, isFunction, autobind, 
     isEqual, uniqueId, get, set, castPath, hasOwn,
-    keys, isObject, isString, NextTick
+    keys, isObject, isString, NextTick, templateDecorator,
+    warn, error
 } from './utils';
 import Vdt from 'vdt';
 import {hc, render, hydrateRoot, h} from 'misstime';
 import {removeComponentClassOrInstance} from 'misstime/src/vdom';
-import {EMPTY_OBJ} from 'misstime/src/vnode';
+import {EMPTY_OBJ, Types} from 'misstime/src/vnode';
 import {isNullOrUndefined, isEventProp, MountedQueue} from 'misstime/src/utils';
 
 export default function Intact(props) {
-    if (!this.template) {
-        throw new Error('Can not instantiate when this.template does not exist.');
+    let template = this.constructor.template;
+    // Intact.template is a decorator
+    if (!template || template === templateDecorator) {
+        template = this.template;
     }
+    if (!template) {
+        throw new Error('Can not instantiate when template does not exist.');
+    }
+     
+    // in ie 8 we must get prototype through constructor first time
+    autobind(this.constructor.prototype, this, Intact, {});
     
     props = extend({}, result(this, 'defaults'), props);
 
     this._events = {};
     this.props = {};
-    this.vdt = Vdt(this.template);
+    this.vdt = Vdt(template);
     this.set(props, {silent: true});
+    // this._patchProps(null, props, {silent: true});
 
     // for compatibility v1.0
     this.widgets = this.vdt.widgets || {};
     this._widget = this.props.widget || uniqueId('widget');
     this.attributes = this.props;
+
+    // for string ref
+    this.refs = this.widgets;
 
     this.uniqueId = this._widget;
 
@@ -39,19 +52,25 @@ export default function Intact(props) {
     // for debug
     this.displayName = this.displayName;
 
-    this.addEvents();
+    // bind events
+    each(this.props , (value, key) => {
+        if (isEventProp(key) && isFunction(value)) {
+            this.on(key.substr(3), value);
+        }
+    });
 
     this._updateCount = 0;
 
     const inited = () => {
         this.inited = true;
-        // 为了兼容之前change事件必update的用法
-        // this.on('change', () => this.update());
         this.trigger('$inited', this);
     };
     const ret = this._init();
     if (ret && ret.then) {
-        ret.then(inited);
+        ret.then(inited, err => {
+            error('Unhandled promise rejection in _init: ', err);
+            inited();
+        });
     } else {
         inited();
     }
@@ -61,14 +80,6 @@ Intact.prototype = {
     constructor: Intact,
 
     defaults() {},
-
-    addEvents(props = this.props) {
-        each(props , (value, key) => {
-            if (isEventProp(key) && isFunction(value)) {
-                this.on(key.substr(3), value);
-            }
-        });
-    },
 
     _init(props) {},
     _create(lastVNode, nextVNode) {},
@@ -93,7 +104,11 @@ Intact.prototype = {
         }
 
         this._startRender = true;
-        this.element = vdt.hydrate(this, dom, this.mountedQueue, this.parentDom, vNode, this.isSVG);
+        this.element = vdt.hydrate(
+            this, dom, this.mountedQueue, 
+            this.parentDom, vNode, this.isSVG,
+            this.get('_blocks')
+        );
         this.rendered = true;
         this.trigger('$rendered', this);
         this._create(null, vNode);
@@ -114,13 +129,14 @@ Intact.prototype = {
                 // 如果上一个组件是异步组件，并且也还没渲染完成，则直接destroy掉
                 // 让它不再渲染了
                 if (!lastInstance.inited) {
-                    this.__destroyVNode(lastVNode, nextVNode);
+                    removeComponentClassOrInstance(lastVNode, null, nextVNode);
                 }
             } else {
                 const vNode = hc('!');
                 placeholder = render(vNode);
                 vdt.vNode = vNode;
             }
+            // 组件销毁事件也会解绑，所以这里无需判断组件是否销毁了
             this.one('$inited', () => {
                 const element = this.init(lastVNode, nextVNode);
                 const dom = nextVNode.dom;
@@ -143,17 +159,25 @@ Intact.prototype = {
         if (lastVNode && lastVNode.key === nextVNode.key) {
             // destroy the last component
             if (!lastVNode.children.destroyed) {
-                this.__destroyVNode(lastVNode, nextVNode);
+                removeComponentClassOrInstance(lastVNode, null, nextVNode);
             }
         
             // make the dom not be replaced, but update the last one
             vdt.vNode = lastVNode.children.vdt.vNode;
-            this.element = vdt.update(this, this.parentDom, this.mountedQueue, nextVNode, this.isSVG);
+            this.element = vdt.update(
+                this, this.parentDom, this.mountedQueue,
+                nextVNode, this.isSVG,
+                this.get('_blocks')
+            );
         } else {
             if (lastVNode) {
-                this.__destroyVNode(lastVNode, nextVNode);
+                removeComponentClassOrInstance(lastVNode, null, nextVNode);
             }
-            this.element = vdt.render(this, this.parentDom, this.mountedQueue, nextVNode, this.isSVG);
+            this.element = vdt.render(
+                this, this.parentDom, this.mountedQueue, 
+                nextVNode, this.isSVG,
+                this.get('_blocks')
+            );
         }
         this.rendered = true;
         if (this._pendingUpdate) {
@@ -167,11 +191,7 @@ Intact.prototype = {
     },
 
     toString() {
-        return this.vdt.renderString(this); 
-    },
-
-    __destroyVNode(lastVNode, nextVNode) {
-        removeComponentClassOrInstance(lastVNode, null, nextVNode);
+        return this.vdt.renderString(this, this.get('_blocks')); 
     },
 
     mount(lastVNode, nextVNode) {
@@ -184,7 +204,9 @@ Intact.prototype = {
 
     update(lastVNode, nextVNode, fromPending) {
         // 如果该组件已被销毁，则不更新
-        if (this.destroyed) {
+        // 组件的销毁顺序是从自下而上逐步销毁的，对于子组件，即使将要销毁也要更新
+        // 只有父组件被销毁了才不去更新，父组件的更新是没有vNode参数
+        if (!lastVNode && !nextVNode && this.destroyed) {
             return lastVNode ? lastVNode.dom : undefined;
         }
         // 如果还没有渲染，则等待结束再去更新
@@ -202,12 +224,6 @@ Intact.prototype = {
             this.mountedQueue = null;
         }
 
-        ++this._updateCount;
-        if (this._updateCount > 1) return this.element;
-        if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
-    },
-
-    __update(lastVNode, nextVNode) {
         // 如果不存在nextVNode，则为直接调用update方法更新自己
         // 否则则是父组件触发的子组件更新，此时需要更新一些状态
         // 有一种情况，在父组件初次渲染时，子组件渲染过程中，
@@ -217,9 +233,19 @@ Intact.prototype = {
             this._patchProps(lastVNode.props, nextVNode.props);
         }
 
+        ++this._updateCount;
+        if (this._updateCount > 1) return this.element;
+        if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
+    },
+
+    __update(lastVNode, nextVNode) {
         this._beforeUpdate(lastVNode, nextVNode);
         // 直接调用update方法，保持parentVNode不变
-        this.element = this.vdt.update(this, this.parentDom, this.mountedQueue, nextVNode || this.parentVNode, this.isSVG);
+        this.element = this.vdt.update(
+            this, this.parentDom, this.mountedQueue,
+            nextVNode || this.vNode, this.isSVG,
+            this.get('_blocks')
+        );
         // 让整个更新完成，才去触发_update生命周期函数
         if (this.mountedQueue) {
             this.mountedQueue.push(() => {
@@ -239,7 +265,7 @@ Intact.prototype = {
         return this.element;       
     },
 
-    _patchProps(lastProps, nextProps) {
+    _patchProps(lastProps, nextProps, options = {update: false, _fromPatchProps: true}) {
         lastProps = lastProps || EMPTY_OBJ;
         nextProps = nextProps || EMPTY_OBJ;
         let lastValue;
@@ -291,7 +317,7 @@ Intact.prototype = {
                 }
 
                 if (nextPropsWithoutEvents) {
-                    this.set(nextPropsWithoutEvents, {update: false});
+                    this.set(nextPropsWithoutEvents, options);
                 }
             } else {
                 for (let prop in lastProps) {
@@ -309,10 +335,11 @@ Intact.prototype = {
                 }
             }
 
-            // 将不存在nextProps中，但存在lastProps中的属性，统统置为空
+            // 将不存在nextProps中，但存在lastProps中的属性，统统置为默认值
+            const defaults = result(this, 'defaults') || EMPTY_OBJ; 
             if (lastPropsWithoutEvents) {
                 for (let prop in lastPropsWithoutEvents) {
-                    this.set(prop, undefined, {update: false});
+                    this.set(prop, defaults[prop], options);
                 }
             }
         }
@@ -320,7 +347,7 @@ Intact.prototype = {
 
     destroy(lastVNode, nextVNode, parentDom) {
         if (this.destroyed) {
-            return console.warn('destroyed multiple times');
+            return warn('destroyed multiple times');
         }
         const vdt = this.vdt;
         // 异步组件，可能还没有渲染
@@ -332,9 +359,16 @@ Intact.prototype = {
             if (_lastVNode && !_lastVNode.children.destroyed) {
                 removeComponentClassOrInstance(_lastVNode, null, lastVNode);
             }
-        } else if (!nextVNode || nextVNode.key !== lastVNode.key) {
+        } else if (
+            !nextVNode || 
+            !(nextVNode.type & Types.ComponentClassOrInstance) ||
+            nextVNode.key !== lastVNode.key
+        ) {
             vdt.destroy();
         }
+        // 如果存在nextVNode，并且nextVNode也是一个组件类型，
+        // 并且，它俩的key相等，则不去destroy，而是在下一个组件init时
+        // 复用上一个dom，然后destroy上一个元素
         this._destroy(lastVNode, nextVNode);
         this.destroyed = true;
         this.trigger('$destroyed', this);
@@ -359,7 +393,8 @@ Intact.prototype = {
         options = extend({
             silent: false,
             update: true,
-            async: false
+            async: false,
+            _fromPatchProps: false,
         }, options);
         // 兼容老版本
         if (hasOwn.call(options, 'global')) {
@@ -428,9 +463,13 @@ Intact.prototype = {
         }
 
         if (hasChanged) {
-            // trigger `change*` events
             for (let prop in changes) {
                 let values = changes[prop];
+                if (options._fromPatchProps) {
+                    // trigger a $receive event to show that we received a different prop
+                    this.trigger(`$receive:${prop}`, this, values[1], values[0]);
+                }
+                // trigger `change*` events
                 this.trigger(`$change:${prop}`, this, values[1], values[0]);
             }
             const changeKeys = keys(changes);
@@ -587,29 +626,10 @@ Intact.hydrate = function(Component, node) {
 
 // ES7 Decorator for template
 if (Object.defineProperty) {
-    Intact.template = function(options) {
-        return function(target, name, descriptor) {
-            let template = target.template;
-            if (isString(template)) {
-                template = Vdt.compile(template, options);
-            }
-            const Parent = Object.getPrototypeOf(target);
-            const _super = function(...args) {
-                return Parent.template.apply(this, args);
-            }; 
-            descriptor.get = function() {
-                return function(...args) {
-                    const self = this || {};
-                    const __super = self._super;
-                    let returnValue;
-
-                    self._super = _super;
-                    returnValue = template.apply(this, args);
-                    self._super = __super;
-
-                    return returnValue;
-                };
-            };
-        }
-    }
+    Object.defineProperty(Intact, 'template', {
+        configurable: false,
+        enumerable: false,
+        value: templateDecorator,
+        writable: true,
+    });
 }

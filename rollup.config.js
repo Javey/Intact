@@ -19,7 +19,7 @@ module.exports = {
             ],
             babelrc: false
         }),
-        nodeResolve({module: true, jsnext: true, main: true, browser: true}),
+        nodeResolve({module: true}),
         commonjs(),
         replace({
             'process.env.NODE_ENV': "'production'"

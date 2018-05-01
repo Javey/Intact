@@ -4,7 +4,7 @@ import App from './components/app';
 import {Promise} from 'es6-promise';
 import {dispatchEvent, eqlOuterHtml, eqlHtml} from './utils';
 import {each} from '../src/utils';
-import {svgNS} from 'misstime/src/utils';
+import {svgNS, browser} from 'misstime/src/utils';
 
 const sEql = assert.strictEqual;
 const dEql = assert.deepStrictEqual;
@@ -585,10 +585,12 @@ describe('Component Test', function() {
             eqlHtml(div, '<div>2</div>');
             document.body.removeChild(div);
             done();
-        }, 100);
+        }, 200);
     });
 
     describe('SVG', () => {
+        if (browser.isIE8) return;
+        
         let container;
 
         beforeEach(() => {
@@ -650,5 +652,266 @@ describe('Component Test', function() {
             sEql(container.firstChild.firstChild.namespaceURI, svgNS);
             sEql(container.firstChild.firstChild.tagName.toLowerCase(), 'circle');
         });
+    });
+
+    it('should reset to default value when prop in lastProps but not in nextProps', () => {
+        const C = Intact.extend({
+            template: `<div>{self.get('value')}</div>`,
+            defaults() {
+                return {
+                    value: 'default'
+                }
+            }
+        });
+        const D = Intact.extend({
+            template: `var C = self.C;
+                <div>{self.get('a')}<C value="a" /><C /></div>
+            `,
+            defaults() {
+                this.C = C;
+                return {
+                    a: 'test'
+                }
+            }
+        });
+        const d = Intact.mount(D, document.body);
+        d.set('a', undefined);
+        eqlHtml(d.element, '<div>a</div><div>default</div>', '<div>a</div>\r\n<div>default</div>');
+        document.body.removeChild(d.element);
+    });
+
+    it('should update when destroying', () => {
+        const C = Intact.extend({
+            template: `<p>{self.get('value')}</p>`
+        });
+
+        const D = Intact.extend({
+            template: `var C = self.C;
+                <div>{self.get('value')}<C value={self.get('value')} key="c" /></div>
+            `,
+            _init() {
+                this.C = C;
+            },
+            _destroy() {
+                // update child component
+                this.set('value', 1);
+                eqlOuterHtml(d.element, '<div>1<p>1</p></div>', '<div>1\r\n<p>1</p></div>');
+            }
+        });
+
+        const d = Intact.mount(D, document.body);
+        d.destroy();
+        // should no update when destroyed
+        d.set('value', 2);
+        eqlOuterHtml(d.element, '<div>1<p>1</p></div>', '<div>1\r\n<p>1</p></div>');
+        document.body.removeChild(d.element);
+    });
+
+    it('should destroy when patch component with element or component', () => {
+        const bDestroy = sinon.spy();
+        const dDestroy = sinon.spy();
+        const B = Intact.extend({
+            template: `<div>b</div>`,
+            _destroy: bDestroy
+        });
+        const C = Intact.extend({
+            template: `var B = self.B; <div><B />c</div>`,
+            _init() {
+                this.B = B;
+            },
+            _destroy: dDestroy
+        });
+        const D = Intact.extend({
+            template: `var C = self.C; var B = self.B;
+                <div><C v-if={self.get('show')} /><B v-else /></div>
+            `,
+
+            defaults() {
+                return {show: true};
+            },
+
+            _init() {
+                this.C = C;
+                this.B = B;
+            }
+        });
+        const E = Intact.extend({
+            template: `var C = self.C;
+                <div><C v-if={self.get('show')} /><div v-else>d</div></div>
+            `,
+
+            defaults() {
+                return {show: true};
+            },
+
+            _init() {
+                this.C = C;
+            }
+        });
+
+        const d = Intact.mount(D, document.body);
+        d.set('show', false);
+        sEql(bDestroy.callCount, 1);
+        sEql(dDestroy.callCount, 1);
+        document.body.removeChild(d.element);
+
+        const e = Intact.mount(E, document.body);
+        e.set('show', false);
+        sEql(bDestroy.callCount, 2);
+        sEql(dDestroy.callCount, 2);
+        document.body.removeChild(e.element);
+    });
+
+    describe('<b:block>', () => {
+        let C;
+        let d;
+        beforeEach(() => {
+            C = Intact.extend({
+                template: `<div><b:test>aa</b:test><b:body></b:body></div>`
+            });
+        });
+
+        afterEach(() => {
+            document.body.removeChild(d.element);
+        });
+
+        function render(template) {
+            const D = Intact.extend({
+                template: `var C = self.C; ${template}`,
+                _init() { this.C = C; }
+            });
+            d = Intact.mount(D, document.body);
+        }
+
+        it('render one block', () => {
+            render('<C><b:test>cc</b:test></C>');
+            eqlOuterHtml(d.element, '<div>cc</div>', '<div>cc</div>');
+        });
+
+        it('render multiple blocks', () => {
+            render('<C><b:test>c1</b:test><b:body>c2</b:body></C>');
+            sEql(d.element.innerHTML, 'c1c2');
+        });
+
+        it('redundant block should not be rendered', () => {
+            render('<C><b:test>c1</b:test><b:body>c2</b:body><b:aa>aa</b:aa></C>');
+            sEql(d.element.innerHTML, 'c1c2');
+        });
+
+        it('render parent', () => {
+            render('<C><b:test>{parent()}child</b:test></C>');
+            sEql(d.element.innerHTML, 'aachild');
+        });
+
+        it('block extendable', () => {
+            const CC = C.extend({
+                template: `<t:parent><b:body>cc</b:body></t:parent>`
+            });
+            const D = Intact.extend({
+                template: `var CC = self.CC; <CC><b:test>{parent()}child</b:test></CC>`,
+                _init() { this.CC = CC; }
+            });
+            d = Intact.mount(D, document.body);
+            sEql(d.element.innerHTML, 'aachildcc');
+        });
+
+        it('block with v-if=true directive', () => {
+            render('<C><b:test v-if={true}>c1</b:test></C>');
+            sEql(d.element.innerHTML, 'c1');
+        });
+
+        it('block with v-if=false directive', () => {
+            render('<C><b:test v-if={false}>c1</b:test></C>');
+            sEql(d.element.innerHTML, 'aa');
+        });
+
+        it('update', () => {
+            render(`<C><b:test>
+                <span v-if={self.get('show')}>show</span>
+                <i v-else>i</i>
+            </b:test></C>`);
+            d.set('show', true);
+            eqlHtml(d.element, '<span>show</span>');
+        });
+    });
+
+    it('should render when promise.reject in _init', (done) => {
+        const C = Intact.extend({
+            template: `<div>{self.get('a')}</div>`,
+            _init() {
+                return new Promise((resolve, reject) => {
+                    reject();
+                });
+            }
+        });
+
+        const c = Intact.mount(C, document.body);
+        setTimeout(() => {
+            eqlOuterHtml(c.element, '<div></div>');
+            document.body.removeChild(c.element);
+            done();
+        }, 100);
+    });
+
+    it('should autobind method', done => {
+        const test = sinon.spy();
+        const C = Intact.extend({
+            template: `<div ev-click={self.test}>click</div>`,
+            test: test,
+        });
+
+        const c = Intact.mount(C, document.body);
+        dispatchEvent(c.element, 'click');
+        sEql(test.callCount, 1);
+        sEql(test.calledOn(c), true);
+        document.body.removeChild(c.element);
+
+        const D = C.extend({
+            template: `<div ev-click={self.test}>click</div>`
+        });
+        const d = Intact.mount(D, document.body);
+        dispatchEvent(d.element, 'click');
+        sEql(test.callCount, 2);
+        sEql(test.calledOn(d), true);
+        document.body.removeChild(d.element);
+
+        const test1 = sinon.spy();
+        const D1 = C.extend({
+            test: test1 
+        });
+        const d1 = Intact.mount(D1, document.body);
+        dispatchEvent(d1.element, 'click');
+        sEql(test.callCount, 2);
+        sEql(test1.callCount, 1);
+        document.body.removeChild(d1.element);
+
+        if (!browser.isIE8) {
+            class E extends Intact {
+                @Intact.template()
+                get template() { return `<div ev-click={self.test}>click</div>`; }
+
+                test() {
+                    test.call(this);
+                }
+            }
+
+            const e = Intact.mount(E, document.body);
+            dispatchEvent(e.element, 'click');
+            sEql(test.callCount, 3);
+            sEql(test.calledOn(e), true);
+            document.body.removeChild(e.element);
+
+            class F extends E {
+
+            }
+
+            const f = Intact.mount(F, document.body);
+            dispatchEvent(f.element, 'click');
+            sEql(test.callCount, 4);
+            sEql(test.calledOn(f), true);
+            document.body.removeChild(f.element);
+        }
+
+        done();
     });
 });

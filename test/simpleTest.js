@@ -103,6 +103,23 @@ describe('Simple Test', function() {
             sEql(instance._i instanceof Component, true);
         });
 
+        it('string ref', () => {
+            var TestComponent = Intact.extend({
+                template: '<div ref="dom"><Component ref="test" /></div>',
+                _init: function() {
+                    this.Component = Component;
+                }
+            });
+            var instance = new TestComponent();
+            sEql(instance.refs.test, undefined);
+            instance.init();
+            sEql(instance.refs.test instanceof Component, true);
+            sEql(instance.refs.dom, instance.element);
+            instance.destroy();
+            sEql(instance.refs.test, null);
+            sEql(instance.refs.dom, null);
+        });
+
         it('es6 class extend', () => {
             if (browser.isIE8) return;
 
@@ -120,6 +137,108 @@ describe('Simple Test', function() {
             i = new SubComponent();
             i.init();
             sEql(i.element.outerHTML, '<div>2</div>');
+        });
+
+        it('es6 class with function class extend', () => {
+            if (browser.isIE8) return;
+
+            class TestComponent extends Intact {
+                @Intact.template()
+                get template() { return `<div>aa</div>`; }
+            }
+
+            const SubComponent = TestComponent.extend({
+                template: `<div><t:parent />bb</div>`
+            });
+
+            const i = new SubComponent();
+            i.init();
+            sEql(i.element.outerHTML, '<div><div>aa</div>bb</div>');
+
+            class GrandSubComponent extends SubComponent {
+                @Intact.template()
+                static template = `<div><t:parent /></div>`;
+            }
+            const j = new GrandSubComponent();
+            j.init();
+            sEql(j.element.outerHTML, '<div><div><div>aa</div>bb</div></div>');
+        });
+
+        it('es6 class with static template', () => {
+            if (browser.isIE8) return;
+
+            class TestComponent extends Intact {
+                @Intact.template()
+                static template = '<div>aa</div>';
+            }
+            class SubComponent extends TestComponent {
+                @Intact.template()
+                static template = `<div><t:parent />bb</div>`
+            }
+            const i = new SubComponent();
+            i.init();
+            sEql(i.element.outerHTML, '<div><div>aa</div>bb</div>');
+        });
+
+        it('es6 class inherit static template default', () => {
+            if (browser.isIE8) return;
+
+            class TestComponent extends Intact {
+                @Intact.template()
+                static template = '<div>aa</div>';
+            }
+            class SubComponent extends TestComponent {
+            }
+            const i = new SubComponent();
+            i.init();
+            sEql(i.element.outerHTML, '<div>aa</div>');
+        });
+
+        it('es6 class with static template and prototype template', () => {
+            if (browser.isIE8) return;
+
+            class TestComponent extends Intact {
+                @Intact.template()
+                static template = '<div>aa</div>';
+            }
+            class SubComponent extends TestComponent {
+                @Intact.template()
+                get template() { return `<div><t:parent />bb</div>`; }
+            }
+            const i = new SubComponent();
+            i.init();
+            sEql(i.element.outerHTML, '<div><div>aa</div>bb</div>');
+        });
+
+        it('es6 class with prototype template and static template', () => {
+            if (browser.isIE8) return;
+
+            class TestComponent extends Intact {
+                @Intact.template()
+                get template() { return '<div>aa</div>'; }
+            }
+            class SubComponent extends TestComponent {
+                @Intact.template()
+                static template = `<div><t:parent />bb</div>`;
+            }
+            const i = new SubComponent();
+            i.init();
+            sEql(i.element.outerHTML, '<div><div>aa</div>bb</div>');
+        });
+
+        it('es6 class static template with extend method', () => {
+            if (browser.isIE8) return;
+
+            class TestComponent extends Intact {
+                @Intact.template()
+                static template = '<div>aa</div>';
+            }
+            const SubComponent = TestComponent.extend({
+                template: '<div><t:parent />bb</div>'
+            });
+            const i = new SubComponent();
+            i.init();
+            sEql(i.element.outerHTML, '<div><div>aa</div>bb</div>');
         });
 
         it('defaults can be function', () => {
@@ -477,6 +596,32 @@ describe('Simple Test', function() {
             sEql(testFn.callCount, 1);
             sEql(testFn.calledWith(1, 2, [3]), true);
             sEql(testFn.calledOn(instance), true);
+        });
+
+        it('should trigger $receive event when received a different prop', function() {
+            var testFn = sinon.spy();
+            var C = Intact.extend({
+                template: `<div></div>`,
+                _init: function() {
+                    this.on('$receive:a', testFn);
+                }
+            });
+            var Component = Intact.extend({
+                template: 'var C = self.C; <C a={self.get("a")} />',
+                _init: function() {
+                    this.C = C;
+                }
+            });
+
+            var instance = new Component();
+            instance.init();
+            sEql(testFn.callCount, 0);
+            instance.set('a', 1);
+            sEql(testFn.callCount, 1);
+            instance.set('a', 2);
+            sEql(testFn.callCount, 2);
+            instance.update();
+            sEql(testFn.callCount, 2);
         });
 
         it('change attributes to trigger change event', function() {

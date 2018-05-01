@@ -10,3 +10,5 @@ npm-debug.log
 publish.js
 rollup.*
 server.js
+bower_components/
+coverage/

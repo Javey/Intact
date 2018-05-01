@@ -13,6 +13,7 @@ export default Animate = Intact.extend({
         'a:disabled': false, // 只做动画管理者，自己不进行动画
         'a:move': true, // 是否执行move动画
         'a:css': true, // 是否使用css动画，如果自定义动画函数，可以将它置为false
+        'a:delayDestroy': true, // 是否动画完成才destroy子元素
     },
 
     template() {
@@ -99,7 +100,7 @@ export default Animate = Intact.extend({
 
         const element = this.element;
 
-        const initClassName = () => {
+        const initClassName = (c, newValue, oldValue) => {
             const transition = this.get('a:transition');
             let enterClass;
             let enterActiveClass;
@@ -118,6 +119,13 @@ export default Animate = Intact.extend({
             this.leaveActiveClass = `${transition}-leave-active`;
             this.moveClass = `${transition}-move`;
             this.enterEventName = isAppear ? 'a:appear' : 'a:enter';
+
+            if (oldValue) {
+                element.className = element.className.replace(
+                    new RegExp(`\\b(${oldValue}(?=\\-(appear|enter|leave|move)))`, 'g'),
+                    newValue
+                );
+            }
         };
         this.on('$change:a:transition', initClassName);
         initClassName();
@@ -225,7 +233,7 @@ export default Animate = Intact.extend({
         }
     },
    
-    _unmount(onlyInit) {
+    _unmount() {
         if (this.get('a:disabled')) return;
         const element = this.element;
         const vNode = this.vNode;
@@ -252,8 +260,10 @@ export default Animate = Intact.extend({
                 removeClass(element, this.leaveClass);
                 removeClass(element, this.leaveActiveClass);
             }
-            const s = element.style;
-            s.position = s.top = s.left = s.transform = s.WebkitTransform = '';
+            if (this._triggeredLeave) {
+                const s = element.style;
+                s.position = s.top = s.left = s.transform = s.WebkitTransform = '';
+            }
             this._leaving = false;
             delete parentDom._reserve[vNode.key];
             TransitionEvents.off(element, this._leaveEnd);
@@ -268,11 +278,13 @@ export default Animate = Intact.extend({
             this.trigger('a:leaveEnd', element);
             if (!this._unmountCancelled) {
                 parentDom.removeChild(element);
-                this.destroy(vNode, null, parentDom);
+                if (this.get('a:delayDestroy')) {
+                    this.destroy(vNode, null, parentDom);
+                }
             }
         };
 
-        this._leave(onlyInit);
+        this._leave();
         // 存在一种情况，相同的dom，同时被子组件和父组件管理的情况
         // 所以unmount后，将其置为空函数，以免再次unmount
         element._unmount = noop;
@@ -506,7 +518,7 @@ export default Animate = Intact.extend({
         }
     },
 
-    _move(onlyInit) {
+    _move() {
         if (this.get('a:disabled')) return;
         this._moving = true;
         const element = this.element;
@@ -523,10 +535,8 @@ export default Animate = Intact.extend({
             }
         };
         TransitionEvents.on(element, this._moveEnd);
-        if (!onlyInit) {
-            this._triggerMove();
+        this._triggerMove();
             // nextFrame(() => this._triggerMove());
-        }
     },
 
     _triggerMove() {
@@ -534,13 +544,20 @@ export default Animate = Intact.extend({
         s.transform = s.WebkitTransform = `translate(${0 - this.dx}px, ${0 - this.dy}px)`;
     },
 
-    _enter(onlyInit) {
+    _enter() {
         if (this.get('a:disabled')) return;
         this._entering = true;
         const element = this.element;
         const enterClass = this.enterClass;
         const enterActiveClass = this.enterActiveClass;
         const isCss = this.get('a:css');
+
+        // getAnimateType将添加enter-active className，在firefox下将导致动画提前执行
+        // 我们应该先于添加`enter` className去调用该函数
+        let isTransition = false;
+        if (isCss && getAnimateType(element, enterActiveClass) !== 'animation') {
+            isTransition = true;
+        }
 
         // 如果这个元素是上一个删除的元素，则从当前状态回到原始状态
         if (this.lastInstance) {
@@ -564,13 +581,11 @@ export default Animate = Intact.extend({
 
         this.trigger(`${this.enterEventName}Start`, element);
 
-        if (!onlyInit) {
-            if (isCss && getAnimateType(element, enterActiveClass) !== 'animation') {
-                nextFrame(() => this._triggerEnter());
-            } else {
-                // 对于animation动画，同步添加enterActiveClass，避免闪动
-                this._triggerEnter();
-            }
+        if (isTransition) {
+            nextFrame(() => this._triggerEnter());
+        } else {
+            // 对于animation动画，同步添加enterActiveClass，避免闪动
+            this._triggerEnter();
         }
     },
 
@@ -588,7 +603,7 @@ export default Animate = Intact.extend({
         this.trigger(this.enterEventName, element, this._enterEnd);
     },
 
-    _leave(onlyInit) {
+    _leave() {
         const element = this.element;
         // 为了保持动画连贯，我们立即添加leaveActiveClass
         // 但如果当前元素还没有来得及做enter动画，就被删除
@@ -598,16 +613,16 @@ export default Animate = Intact.extend({
             addClass(element, this.leaveActiveClass);
         }
         // TransitionEvents.on(element, this._leaveEnd);
-        if (!onlyInit) {
-            nextFrame(() => {
-                // 存在一种情况，当一个enter动画在完成的瞬间，
-                // 这个元素被删除了，由于前面保持动画的连贯性
-                // 添加了leaveActiveClass，则会导致绑定的leaveEnd
-                // 立即执行，所以这里放到下一帧来绑定
-                TransitionEvents.on(element, this._leaveEnd);
-                this._triggerLeave();
-            });
-        }
+        nextFrame(() => {
+            // 1. 如果leave动画还没得及执行，就enter了，此时啥也不做
+            if (this._unmountCancelled) return;
+            // 存在一种情况，当一个enter动画在完成的瞬间，
+            // 这个元素被删除了，由于前面保持动画的连贯性
+            // 添加了leaveActiveClass，则会导致绑定的leaveEnd
+            // 立即执行，所以这里放到下一帧来绑定
+            TransitionEvents.on(element, this._leaveEnd);
+            this._triggerLeave();
+        });
     },
 
     _triggerLeave() {
@@ -624,11 +639,16 @@ export default Animate = Intact.extend({
     },
 
     destroy(lastVNode, nextVNode, parentDom) {
-        // 不存在parentDom，则表示parentDom将被删除
-        // 那子组件也要直接销毁掉，
-        // 否则，所有的动画组件，都等到动画结束才销毁
-        if (!parentDom && (!lastVNode || !nextVNode) &&
-            (this.parentVNode.dom !== this.element) ||
+        // 1: 不存在parentDom，有两种情况：
+        //      1): 父元素也要被销毁，此时: !parentDom && lastVNode && !nextVNode
+        //      2): 该元素将被替换，此时：!parentDom && lastVNode && nextVNode
+        //      对于1)，既然父元素要销毁，那本身也要直接销毁
+        //      对于2)，本身必须待动画结束方能销毁
+        // 2: 如果该元素已经动画完成，直接销毁
+        // 3: 如果直接调用destroy方法，则直接销毁，此时：!lastVNode && !nextVNode && !parentDom
+        // 4: 如果不是延迟destroy子元素，则立即销毁
+        if (!this.get('a:delayDestroy') ||
+            !parentDom && !nextVNode && this.parentVNode.dom !== this.element ||
             // this.get('a:disabled') || 
             this._leaving === false
         ) {
