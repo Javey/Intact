@@ -4194,6 +4194,7 @@ function Intact$1(props) {
     props = extend({}, result(this, 'defaults'), props);
 
     this._events = {};
+    this._keptEvents = {}; // save the events that do not off when destroyed
     this.props = {};
     this.vdt = Vdt$1(template);
     this.set(props, { silent: true });
@@ -4665,8 +4666,13 @@ Intact$1.prototype = {
         return this;
     },
 
-    on: function on(name, callback) {
+    on: function on(name, callback, options) {
         (this._events[name] || (this._events[name] = [])).push(callback);
+
+        // save the kept event
+        if (options && options.keep) {
+            (this._keptEvents[name] || (this._keptEvents[name] = [])).push(callback);
+        }
 
         return this;
     },
@@ -4687,7 +4693,7 @@ Intact$1.prototype = {
     },
     off: function off(name, callback) {
         if (name === undefined) {
-            this._events = {};
+            this._events = extend({}, this._keptEvents);
             return this;
         }
 

@@ -697,6 +697,21 @@ describe('Simple Test', function() {
             sEql(changeFn.called, false);
         });
 
+        it('should keep the kept events when destroyed', () => {
+            const testFn = sinon.spy();
+            const instance = new Component({
+                'ev-test': testFn
+            });
+            instance.on('test', testFn, {keep: true});
+
+            instance.trigger('test');
+            sEql(testFn.callCount, 2);
+
+            instance.destroy();
+            instance.trigger('test');
+            sEql(testFn.callCount, 3);
+        });
+
         it('should trigger $inited event when instantiate', function() {
             var testFn = sinon.spy(),
                 instance = new Component({

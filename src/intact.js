@@ -26,6 +26,7 @@ export default function Intact(props) {
     props = extend({}, result(this, 'defaults'), props);
 
     this._events = {};
+    this._keptEvents = {}; // save the events that do not off when destroyed
     this.props = {};
     this.vdt = Vdt(template);
     this.set(props, {silent: true});
@@ -515,8 +516,13 @@ Intact.prototype = {
         return this;
     },
 
-    on(name, callback) {
+    on(name, callback, options) {
         (this._events[name] || (this._events[name] = [])).push(callback);
+
+        // save the kept event
+        if (options && options.keep) {
+            (this._keptEvents[name] || (this._keptEvents[name] = [])).push(callback);
+        }
 
         return this;
     },
@@ -533,7 +539,7 @@ Intact.prototype = {
 
     off(name, callback) {
         if (name === undefined) {
-            this._events = {};
+            this._events = extend({}, this._keptEvents);
             return this;
         }
 
