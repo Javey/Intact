@@ -10,7 +10,7 @@
 
 # Intact
 
-[文档 Documents](http://javey.github.io/intact/#/document/start)
+[文档 Documents](http://javey.github.io/Intact/#/document/start)
 
 ## 简介
 
