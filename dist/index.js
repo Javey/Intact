@@ -3577,9 +3577,10 @@ Vdt$1.prototype = {
         return this.vNode;
     },
     renderString: function renderString$$1(data, blocks) {
-        this.renderVNode(data, blocks);
+        this.data = data;
+        var vNode = this.template(data, Vdt$1, blocks, this.template) || createCommentVNode('empty');
 
-        return toString$2(this.vNode, null, Vdt$1.configure().disableSplitText);
+        return toString$2(vNode, null, Vdt$1.configure().disableSplitText);
     },
     update: function update(data, parentDom, queue, parentVNode, isSVG, blocks) {
         var oldVNode = this.vNode;
