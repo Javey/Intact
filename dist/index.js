@@ -35,6 +35,10 @@ function isEventProp(propName) {
     return propName.substr(0, 3) === 'ev-';
 }
 
+function isInvalid(o) {
+    return isNullOrUndefined(o) || o === false || o === true;
+}
+
 var indexOf = function () {
     if (Array.prototype.indexOf) {
         return function (arr, value) {
@@ -107,7 +111,8 @@ var skipProps = {
     className: true,
     checked: true,
     multiple: true,
-    defaultValue: true
+    defaultValue: true,
+    'v-model': true
 };
 
 function isSkipProp(prop) {
@@ -282,11 +287,9 @@ var Options = {
     server: false,
     // skip all whitespaces in template
     skipWhitespace: true,
-    setModel: function setModel(data, key, value) {
-
-        // return function(e) {
-        data[key] = value; //typeof e === 'boolean' ? e : e.target.value;
-        // };
+    setModel: function setModel(data, key, value, self) {
+        data[key] = value;
+        self.update();
     },
     getModel: function getModel(data, key) {
         return data[key];
@@ -421,15 +424,17 @@ function extend() {
     return dest;
 }
 
-function setCheckboxModel(data, key, trueValue, falseValue, e) {
+function setCheckboxModel(data, key, trueValue, falseValue, e, self) {
     var value = Options.getModel(data, key),
         checked = e.target.checked;
     if (isArray(value)) {
         value = value.slice(0);
+        var index = indexOf(value, trueValue);
         if (checked) {
-            value.push(trueValue);
+            if (!~index) {
+                value.push(trueValue);
+            }
         } else {
-            var index = indexOf(value, trueValue);
             if (~index) {
                 value.splice(index, 1);
             }
@@ -437,7 +442,7 @@ function setCheckboxModel(data, key, trueValue, falseValue, e) {
     } else {
         value = checked ? trueValue : falseValue;
     }
-    Options.setModel(data, key, value);
+    Options.setModel(data, key, value, self);
 }
 
 function detectCheckboxChecked(data, key, trueValue) {
@@ -449,7 +454,7 @@ function detectCheckboxChecked(data, key, trueValue) {
     }
 }
 
-function setSelectModel(data, key, e) {
+function setSelectModel(data, key, e, self) {
     var target = e.target,
         multiple = target.multiple,
         value,
@@ -474,7 +479,7 @@ function setSelectModel(data, key, e) {
             }
         }
     }
-    Options.setModel(data, key, value);
+    Options.setModel(data, key, value, self);
 }
 
 var error$2 = function () {
@@ -1383,7 +1388,8 @@ Stringifier.prototype = {
                 return;
             } else if (name === 'v-model') {
                 hasModel = value;
-                return;
+                // pass v-model to element, sometimes it is useful
+                // return;
             } else if (name === 'v-model-true') {
                 addition.trueValue = value;
                 return;
@@ -1429,14 +1435,14 @@ Stringifier.prototype = {
                                 inputValue = addition.value;
                             if (isNullOrUndefined(inputValue)) {
                                 ret.push('checked: _getModel(self, ' + value + ') === ' + trueValue);
-                                ret.push('\'ev-change\': function(__e) {\n                                    _setModel(self, ' + value + ', __e.target.checked ? ' + trueValue + ' : ' + falseValue + ');\n                                }');
+                                ret.push('\'ev-change\': function(__e) {\n                                    _setModel(self, ' + value + ', __e.target.checked ? ' + trueValue + ' : ' + falseValue + ', $this);\n                                }');
                             } else {
                                 if (type === "'radio'") {
                                     ret.push('checked: _getModel(self, ' + value + ') === ' + inputValue);
-                                    ret.push('\'ev-change\': function(__e) { \n                                        _setModel(self, ' + value + ', __e.target.checked ? ' + inputValue + ' : ' + falseValue + ');\n                                    }');
+                                    ret.push('\'ev-change\': function(__e) { \n                                        _setModel(self, ' + value + ', __e.target.checked ? ' + inputValue + ' : ' + falseValue + ', $this);\n                                    }');
                                 } else {
                                     ret.push('checked: _detectCheckboxChecked(self, ' + value + ', ' + inputValue + ')');
-                                    ret.push('\'ev-change\': function(__e) { \n                                        _setCheckboxModel(self, ' + value + ', ' + inputValue + ', ' + falseValue + ', __e);\n                                    }');
+                                    ret.push('\'ev-change\': function(__e) { \n                                        _setCheckboxModel(self, ' + value + ', ' + inputValue + ', ' + falseValue + ', __e, $this);\n                                    }');
                                 }
                             }
                             return;
@@ -1447,7 +1453,7 @@ Stringifier.prototype = {
                     break;
                 case 'select':
                     ret.push('value: _getModel(self, ' + value + ')');
-                    ret.push('\'ev-change\': function(__e) {\n                        _setSelectModel(self, ' + value + ', __e);\n                    }');
+                    ret.push('\'ev-change\': function(__e) {\n                        _setSelectModel(self, ' + value + ', __e, $this);\n                    }');
                     return;
                 case 'textarea':
                     eventName = 'input';
@@ -1456,10 +1462,10 @@ Stringifier.prototype = {
                     break;
             }
             ret.push(valueName + ': _getModel(self, ' + value + ')');
-            ret.push('\'ev-' + eventName + '\': function(__e) { _setModel(self, ' + value + ', __e.target.value) }');
+            ret.push('\'ev-' + eventName + '\': function(__e) { _setModel(self, ' + value + ', __e.target.value, $this) }');
         } else if (element.type === Type$2.JSXWidget) {
             ret.push('value: _getModel(self, ' + value + ')');
-            ret.push('\'ev-$change:value\': function(__c, __n) { _setModel(self, ' + value + ', __n) }');
+            ret.push('\'ev-$change:value\': function(__c, __n) { _setModel(self, ' + value + ', __n, $this) }');
         }
     },
 
@@ -1488,7 +1494,7 @@ Stringifier.prototype = {
         element.attributes.push({ name: 'children', value: children });
         element.attributes.push({ name: '_context', value: {
                 type: Type$2.JS,
-                value: 'this'
+                value: '$this'
             } });
         if (hasBlock) {
             element.attributes.push({ name: '_blocks', value: blocks });
@@ -1499,7 +1505,7 @@ Stringifier.prototype = {
     },
 
     _visitJSXBlock: function _visitJSXBlock(element, isAncestor) {
-        return this._visitJSXDirective(element, '(_blocks.' + element.value + ' = function(parent) {return ' + this._visitJSXChildren(element.children) + ';}) && (__blocks.' + element.value + ' = function(parent) {\n' + 'var self = this;\n' + 'return blocks.' + element.value + ' ? blocks.' + element.value + '.call(this, function() {\n' + 'return _blocks.' + element.value + '.call(self, parent);\n' + '}) : _blocks.' + element.value + '.call(this, parent);\n' + '})' + (isAncestor ? ' && __blocks.' + element.value + '.call(this)' : ''));
+        return this._visitJSXDirective(element, '(_blocks["' + element.value + '"] = function(parent) {return ' + this._visitJSXChildren(element.children) + ';}) && (__blocks["' + element.value + '"] = function(parent) {\n' + 'var self = this;\n' + 'return blocks["' + element.value + '"] ? blocks["' + element.value + '"].call(this, function() {\n' + 'return _blocks["' + element.value + '"].call(self, parent);\n' + '}) : _blocks["' + element.value + '"].call(this, parent);\n' + '})' + (isAncestor ? ' && __blocks["' + element.value + '"].call(this)' : ''));
     },
 
     _visitJSXBlocks: function _visitJSXBlocks(element, isRoot) {
@@ -1515,7 +1521,7 @@ Stringifier.prototype = {
 
         var _blocks = {
             type: Type$2.JS,
-            value: blocks.length ? ['function(blocks) {', '    var _blocks = {}, __blocks = extend({}, blocks);', '    return ' + blocks.join(' && ') + ' && __blocks;', '}.call(this, ' + (isRoot ? 'blocks' : '{}') + ')'].join('\n') : isRoot ? 'blocks' : 'null'
+            value: blocks.length ? ['function(blocks) {', '    var _blocks = {}, __blocks = extend({}, blocks);', '    return (' + blocks.join(' && ') + ', __blocks);', '}.call(this, ' + (isRoot ? 'blocks' : '{}') + ')'].join('\n') : isRoot ? 'blocks' : 'null'
         };
 
         return { blocks: _blocks, children: children.length ? children : null, hasBlock: blocks.length };
@@ -1623,7 +1629,7 @@ function createVNode(tag, props, children, className, key, ref) {
             }
             return tag(props);
         }
-    } else {
+    } else if (!isNullOrUndefined(children)) {
         children = normalizeChildren(children, true);
     }
 
@@ -1655,6 +1661,8 @@ function normalizeChildren(vNodes, isAddKey) {
         return childNodes.length ? childNodes : null;
     } else if (isComponentInstance(vNodes)) {
         return createComponentInstanceVNode(vNodes);
+    } else if (vNodes.type && !isNullOrUndefined(vNodes.dom)) {
+        return directClone(vNodes);
     }
     return vNodes;
 }
@@ -1662,7 +1670,7 @@ function normalizeChildren(vNodes, isAddKey) {
 function applyKey(vNode, reference, isAddKey) {
     if (!isAddKey) return vNode;
     // start with '.' means the vNode has been set key by index
-    // we will reset the key when it coomes back again
+    // we will reset the key when it comes back again
     if (isNullOrUndefined(vNode.key) || vNode.key[0] === '.') {
         vNode.key = '.$' + reference.index++;
     }
@@ -1696,10 +1704,78 @@ function addChild(vNodes, reference, isAddKey) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
             }
-            newVNodes.push(applyKey(n, reference, isAddKey));
+            if (n.dom || n.key && n.key[0] === '.') {
+                newVNodes.push(applyKey(directClone(n), reference, isAddKey));
+            } else {
+                newVNodes.push(applyKey(n, reference, isAddKey));
+            }
         }
     }
     return newVNodes || vNodes;
+}
+
+function directClone(vNode) {
+    var newVNode = void 0;
+    var type = vNode.type;
+
+    if (type & Types.ComponentClassOrInstance) {
+        var props = void 0;
+        var propsToClone = vNode.props;
+
+        if (propsToClone === EMPTY_OBJ || isNullOrUndefined(propsToClone)) {
+            props = EMPTY_OBJ;
+        } else {
+            props = {};
+            for (var key in propsToClone) {
+                props[key] = propsToClone[key];
+            }
+        }
+
+        newVNode = new VNode(type, vNode.tag, props, vNode.children, null, vNode.key, vNode.ref);
+
+        var newProps = newVNode.props;
+        var newChildren = newProps.children;
+
+        if (newChildren) {
+            if (isArray(newChildren)) {
+                var len = newChildren.length;
+                if (len > 0) {
+                    var tmpArray = [];
+
+                    for (var i = 0; i < len; i++) {
+                        var child = newChildren[i];
+                        if (isStringOrNumber(child)) {
+                            tmpArray.push(child);
+                        } else if (!isInvalid(child) && child.type) {
+                            tmpArray.push(directClone(child));
+                        }
+                    }
+                    newProps.children = tmpArray;
+                }
+            } else if (newChildren.type) {
+                newProps.children = directClone(newChildren);
+            }
+        }
+    } else if (type & Types.Element) {
+        var children = vNode.children;
+        var _props = void 0;
+        var _propsToClone = vNode.props;
+
+        if (_propsToClone === EMPTY_OBJ || isNullOrUndefined(_propsToClone)) {
+            _props = EMPTY_OBJ;
+        } else {
+            _props = {};
+            for (var _key in _propsToClone) {
+                _props[_key] = _propsToClone[_key];
+            }
+        }
+
+        newVNode = new VNode(type, vNode.tag, vNode.props, children, vNode.className, vNode.key, vNode.ref);
+    } else if (type & Types.TextElement) {
+        newVNode = createTextVNode(vNode.children);
+    }
+
+    return newVNode;
 }
 
 var ALL_PROPS = ["altKey", "bubbles", "cancelable", "ctrlKey", "eventPhase", "metaKey", "relatedTarget", "shiftKey", "target", "timeStamp", "type", "view", "which"];
@@ -1826,7 +1902,7 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
             if (items.delete(dom)) {
                 if (items.size === 0) {
                     removeEventListener(doc, name, delegatedRoots.docEvent);
-                    delete delegatedRoots[name];
+                    delete delegatedEvents[name];
                 }
             }
         }
@@ -2199,7 +2275,7 @@ function removeHtmlElement(vNode, parentDom) {
     for (var name in props) {
         var prop = props[name];
         if (!isNullOrUndefined(prop) && isEventProp(name)) {
-            handleEvent(name.substr(0, 3), prop, null, dom);
+            handleEvent(name.substr(3), prop, null, dom);
         }
     }
 
@@ -2388,9 +2464,15 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode
             }
         }
 
+        var lastRef = lastVNode.ref;
         var nextRef = nextVNode.ref;
-        if (!isNullOrUndefined(nextRef) && lastVNode.ref !== nextRef) {
-            createRef(dom, nextRef, mountedQueue);
+        if (lastRef !== nextRef) {
+            if (!isNullOrUndefined(lastRef)) {
+                lastRef(null);
+            }
+            if (!isNullOrUndefined(nextRef)) {
+                createRef(dom, nextRef, mountedQueue);
+            }
         }
     }
 }
@@ -2423,9 +2505,15 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
         // for intact.js, the dom will not be removed and
         // the component will not be destoryed, so the ref
         // function need be called in update method.
-        var ref = nextVNode.ref;
-        if (typeof ref === 'function') {
-            ref(instance);
+        var lastRef = lastVNode.ref;
+        var nextRef = nextVNode.ref;
+        if (lastRef !== nextRef) {
+            if (!isNullOrUndefined(lastRef)) {
+                lastRef(null);
+            }
+            if (!isNullOrUndefined(nextRef)) {
+                nextRef(instance);
+            }
         }
     }
 
@@ -3034,8 +3122,8 @@ function toString$2(vNode, parent, disableSplitText, firstChild) {
                 } else if (prop === 'children' || prop === 'className' || prop === 'key' || prop === 'ref') {
                     // ignore
                 } else if (prop === 'defaultValue') {
-                    if (isNullOrUndefined(props.value)) {
-                        html += ' value="' + escapeText(value) + '"';
+                    if (isNullOrUndefined(props.value) && !isNullOrUndefined(value)) {
+                        html += ' value="' + (isString$1(value) ? escapeText(value) : value) + '"';
                     }
                 } else if (prop === 'defaultChecked') {
                     if (isNullOrUndefined(props.checked) && value === true) {
@@ -3407,17 +3495,18 @@ function hydrateChildren(children, parentDom, mountedQueue, parentVNode, isSVG) 
     } else {
         if (dom !== null) {
             hydrateElement(children, dom, mountedQueue, parentDom, parentVNode, isSVG);
+            dom = dom.nextSibling;
         } else {
             createElement(children, parentDom, mountedQueue, true, parentVNode, isSVG);
         }
     }
 
     // clear any other DOM nodes, there should be on a single entry for the root
-    // while (dom) {
-    // const nextSibling = dom.nextSibling;
-    // parentDom.removeChild(dom);
-    // dom = nextSibling;
-    // }
+    while (dom) {
+        var _nextSibling = dom.nextSibling;
+        parentDom.removeChild(dom);
+        dom = _nextSibling;
+    }
 }
 
 function normalizeChildren$1(parentDom) {
@@ -3450,7 +3539,8 @@ var miss = Object.freeze({
 	MountedQueue: MountedQueue,
 	renderString: toString$2,
 	hydrateRoot: hydrateRoot,
-	hydrate: hydrate
+	hydrate: hydrate,
+	Types: Types
 });
 
 var parser = new Parser();
@@ -3525,7 +3615,7 @@ function compile(source, options) {
             var ast = parser.parse(source, options),
                 hscript = stringifier.stringify(ast, options.autoReturn);
 
-            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, hu = _Vdt.miss.hu, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', '__u = _Vdt.utils, extend = __u.extend, _e = __u.error, _className = __u.className,', '__o = __u.Options, _getModel = __o.getModel, _setModel = __o.setModel,', '_setCheckboxModel = __u.setCheckboxModel, _detectCheckboxChecked = __u.detectCheckboxChecked,', '_setSelectModel = __u.setSelectModel,', (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, scope = obj, Animate = self && self.Animate, parent = ($callee || {})._super', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
+            hscript = ['_Vdt || (_Vdt = Vdt);', 'obj || (obj = {});', 'blocks || (blocks = {});', 'var h = _Vdt.miss.h, hc = _Vdt.miss.hc, hu = _Vdt.miss.hu, widgets = this && this.widgets || {}, _blocks = {}, __blocks = {},', '__u = _Vdt.utils, extend = __u.extend, _e = __u.error, _className = __u.className,', '__o = __u.Options, _getModel = __o.getModel, _setModel = __o.setModel,', '_setCheckboxModel = __u.setCheckboxModel, _detectCheckboxChecked = __u.detectCheckboxChecked,', '_setSelectModel = __u.setSelectModel,', (options.server ? 'require = function(file) { return _Vdt.require(file, "' + options.filename.replace(/\\/g, '\\\\') + '") }, ' : '') + 'self = this.data, $this = this, scope = obj, Animate = self && self.Animate, parent = ($callee || {})._super', options.noWith ? hscript : ['with (obj) {', hscript, '}'].join('\n')].join('\n');
             templateFn = options.onlySource ? function () {} : new Function('obj', '_Vdt', 'blocks', '$callee', hscript);
             templateFn.source = 'function(obj, _Vdt, blocks, $callee) {\n' + hscript + '\n}';
             templateFn.head = stringifier.head;
