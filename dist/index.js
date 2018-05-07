@@ -1674,6 +1674,9 @@ function applyKey(vNode, reference, isAddKey) {
     if (isNullOrUndefined(vNode.key) || vNode.key[0] === '.') {
         vNode.key = '.$' + reference.index++;
     }
+    // add a flag to indicate that we have handle the vNode
+    // when it came back we should clone it
+    vNode.$ = true;
     return vNode;
 }
 
@@ -1704,7 +1707,7 @@ function addChild(vNodes, reference, isAddKey) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
             }
-            if (n.dom || n.key && n.key[0] === '.') {
+            if (n.dom || n.$) {
                 newVNodes.push(applyKey(directClone(n), reference, isAddKey));
             } else {
                 newVNodes.push(applyKey(n, reference, isAddKey));
