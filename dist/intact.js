@@ -4627,6 +4627,13 @@ Intact$1.prototype = {
                 if (options._fromPatchProps) {
                     // trigger a $receive event to show that we received a different prop
                     this.trigger('$receive:' + _prop6, this, values$$1[1], values$$1[0]);
+                    // 存在如下情况
+                    // 当prop为value通过v-model进行双向绑定时，receive事件有可能会修正该value
+                    // 而修正的过程中，触发了change事件，会去修改绑定的属性
+                    // 但是下面触发的change事件，又会将绑定的属性置为未修正的值
+                    // 这会导致死循坏
+                    // 所以这里将values[1]设为修正后的值，避免死循坏发生
+                    values$$1[1] = this.get(_prop6);
                 }
                 // trigger `change*` events
                 this.trigger('$change:' + _prop6, this, values$$1[1], values$$1[0]);
