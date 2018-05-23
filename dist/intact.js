@@ -1778,8 +1778,10 @@ function directClone(vNode) {
         }
 
         newVNode = new VNode(type, vNode.tag, vNode.props, children, vNode.className, vNode.key, vNode.ref);
-    } else if (type & Types.TextElement) {
+    } else if (type & Types.Text) {
         newVNode = createTextVNode(vNode.children);
+    } else if (type & Types.HtmlComment) {
+        newVNode = createCommentVNode(vNode.children);
     }
 
     return newVNode;
@@ -2405,7 +2407,7 @@ function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, 
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
             }
         } else if (nextType & Types.TextElement) {
-            if (lastType & Types.TextElement) {
+            if (lastType === nextType) {
                 patchText(lastVNode, nextVNode);
             } else {
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, isSVG);
