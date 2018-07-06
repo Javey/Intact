@@ -1180,8 +1180,8 @@ Stringifier.prototype = {
                 str = str.substr(3);
             }
             // add [][0] for return /* comment */
-            str = 'function() {try {return [' + str + '][0]} catch(e) {_e(e)}}.call(this)';
-            // str = 'function() {try {return (' + str + ')} catch(e) {_e(e)}}.call(this)';
+            str = 'function() {try {return [' + str + '][0]} catch(e) {_e(e)}}.call($this)';
+            // str = 'function() {try {return (' + str + ')} catch(e) {_e(e)}}.call($this)';
             if (hasDestructuring) {
                 str = '...' + str;
             }
@@ -1509,7 +1509,7 @@ Stringifier.prototype = {
     },
 
     _visitJSXBlock: function _visitJSXBlock(element, isAncestor) {
-        return this._visitJSXDirective(element, '(_blocks["' + element.value + '"] = function(parent) {return ' + this._visitJSXChildren(element.children) + ';}) && (__blocks["' + element.value + '"] = function(parent) {\n' + 'var self = this;\n' + 'return blocks["' + element.value + '"] ? blocks["' + element.value + '"].call(this, function() {\n' + 'return _blocks["' + element.value + '"].call(self, parent);\n' + '}) : _blocks["' + element.value + '"].call(this, parent);\n' + '})' + (isAncestor ? ' && __blocks["' + element.value + '"].call(this)' : ''));
+        return this._visitJSXDirective(element, '(_blocks["' + element.value + '"] = function(parent) {return ' + this._visitJSXChildren(element.children) + ';}) && (__blocks["' + element.value + '"] = function(parent) {\n' + 'return blocks["' + element.value + '"] ? blocks["' + element.value + '"].call($this, function() {\n' + 'return _blocks["' + element.value + '"].call($this, parent);\n' + '}) : _blocks["' + element.value + '"].call($this, parent);\n' + '})' + (isAncestor ? ' && __blocks["' + element.value + '"].call($this)' : ''));
     },
 
     _visitJSXBlocks: function _visitJSXBlocks(element, isRoot) {
@@ -1525,7 +1525,7 @@ Stringifier.prototype = {
 
         var _blocks = {
             type: Type$2.JS,
-            value: blocks.length ? ['function(blocks) {', '    var _blocks = {}, __blocks = extend({}, blocks);', '    return (' + blocks.join(' && ') + ', __blocks);', '}.call(this, ' + (isRoot ? 'blocks' : '{}') + ')'].join('\n') : isRoot ? 'blocks' : 'null'
+            value: blocks.length ? ['function(blocks) {', '    var _blocks = {}, __blocks = extend({}, blocks);', '    return (' + blocks.join(' && ') + ', __blocks);', '}.call($this, ' + (isRoot ? 'blocks' : '{}') + ')'].join('\n') : isRoot ? 'blocks' : 'null'
         };
 
         return { blocks: _blocks, children: children.length ? children : null, hasBlock: blocks.length };
@@ -1537,7 +1537,7 @@ Stringifier.prototype = {
             children = _visitJSXBlocks2.children;
 
         element.attributes.push({ name: 'children', value: children });
-        var ret = ['(function() {', '    var _obj = ' + this._visitJSXAttribute(element, false, false).props + ';', '    if (_obj.hasOwnProperty("arguments")) {', '        extend(_obj, _obj.arguments === true ? obj : _obj.arguments);', '        delete _obj.arguments;', '    }', '    return ' + element.value + '.call(this, _obj, _Vdt, ' + this._visitJS(blocks) + ', ' + element.value + ')', '}).call(this)'].join('\n');
+        var ret = ['(function() {', '    var _obj = ' + this._visitJSXAttribute(element, false, false).props + ';', '    if (_obj.hasOwnProperty("arguments")) {', '        extend(_obj, _obj.arguments === true ? obj : _obj.arguments);', '        delete _obj.arguments;', '    }', '    return ' + element.value + '.call($this, _obj, _Vdt, ' + this._visitJS(blocks) + ', ' + element.value + ')', '}).call($this)'].join('\n');
 
         return this._visitJSXDirective(element, ret);
     },
@@ -2338,7 +2338,11 @@ function replaceChild(parentDom, lastVNode, nextVNode) {
     if (lastDom._unmount) {
         lastDom._unmount(lastVNode, parentDom);
         if (!nextDom.parentNode) {
-            parentDom.appendChild(nextDom);
+            if (parentDom.lastChild === lastDom) {
+                parentDom.appendChild(nextDom);
+            } else {
+                parentDom.insertBefore(nextDom, lastDom.nextSibling);
+            }
         }
     } else {
         parentDom.replaceChild(nextDom, lastDom);
@@ -4316,8 +4320,8 @@ Intact$1.prototype = {
             this.one('$inited', function () {
                 var element = _this3.init(lastVNode, nextVNode);
                 var dom = nextVNode.dom;
-                // 存在一种情况，组件的第一个元素是一个组件，他们管理的是同一个dom
-                // 但是当第一个元素的dom变更时，父组件的vNode却没有变
+                // 存在一种情况，组件的返回的元素是一个组件，他们指向同一个dom
+                // 但是当嵌套组件的dom变更时，父组件的vNode却没有变
                 // 所以这里强制保持一致
                 nextVNode.dom = element;
                 if (!lastVNode || lastVNode.key !== nextVNode.key) {
@@ -4422,6 +4426,26 @@ Intact$1.prototype = {
             // --this._updateCount会将该值设为0，所以这里设为1
             this._updateCount = 1;
             return this.__update();
+        }
+
+        // 组件模板可能根据情况返回不同的dom，这种情况下，当组件自身更新(即：直接调用update)
+        // 组件的dom可能变更了，但是当前组件的vNode的dom属性却不会变更，此后该dom如果被v-if
+        // 指令删除，会报错
+        // 所以这里要强制更新
+        var vNode = this.vNode;
+        if (vNode) {
+            // 有可能直接new组件，所以这里判断vNode是否存在
+            var lastDom = vNode.dom;
+            var nextDom = this.element;
+            if (lastDom !== nextDom) {
+                vNode.dom = nextDom;
+                var parentVNode = vNode.parentVNode;
+                // 需要递归判断父组件是不是也指向同一个元素
+                while (parentVNode && parentVNode.type & Types.ComponentClassOrInstance && parentVNode.dom === lastDom) {
+                    parentVNode.dom = nextDom;
+                    parentVNode = parentVNode.parentVNode;
+                }
+            }
         }
 
         return this.element;
@@ -4824,7 +4848,8 @@ var Animate$1 = Animate = Intact$1.extend({
         'a:disabled': false, // 只做动画管理者，自己不进行动画
         'a:move': true, // 是否执行move动画
         'a:css': true, // 是否使用css动画，如果自定义动画函数，可以将它置为false
-        'a:delayDestroy': true },
+        'a:delayDestroy': true // 是否动画完成才destroy子元素
+    },
 
     template: function template() {
         var h = Vdt$1.miss.h;

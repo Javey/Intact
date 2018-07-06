@@ -141,8 +141,8 @@ Intact.prototype = {
             this.one('$inited', () => {
                 const element = this.init(lastVNode, nextVNode);
                 const dom = nextVNode.dom;
-                // 存在一种情况，组件的第一个元素是一个组件，他们管理的是同一个dom
-                // 但是当第一个元素的dom变更时，父组件的vNode却没有变
+                // 存在一种情况，组件的返回的元素是一个组件，他们指向同一个dom
+                // 但是当嵌套组件的dom变更时，父组件的vNode却没有变
                 // 所以这里强制保持一致
                 nextVNode.dom = element;
                 if (!lastVNode || lastVNode.key !== nextVNode.key) {
@@ -261,6 +261,30 @@ Intact.prototype = {
             // --this._updateCount会将该值设为0，所以这里设为1
             this._updateCount = 1;
             return this.__update();
+        }
+
+        // 组件模板可能根据情况返回不同的dom，这种情况下，当组件自身更新(即：直接调用update)
+        // 组件的dom可能变更了，但是当前组件的vNode的dom属性却不会变更，此后该dom如果被v-if
+        // 指令删除，会报错
+        // 所以这里要强制更新
+        let vNode = this.vNode;
+        if (vNode) {
+            // 有可能直接new组件，所以这里判断vNode是否存在
+            let lastDom = vNode.dom;    
+            let nextDom = this.element;
+            if (lastDom !== nextDom) {
+                vNode.dom = nextDom;
+                let parentVNode = vNode.parentVNode;
+                // 需要递归判断父组件是不是也指向同一个元素
+                while (
+                    parentVNode &&
+                    (parentVNode.type & Types.ComponentClassOrInstance) &&
+                    parentVNode.dom === lastDom
+                ) {
+                    parentVNode.dom = nextDom;
+                    parentVNode = parentVNode.parentVNode;
+                }
+            }
         }
 
         return this.element;       
