@@ -498,6 +498,11 @@ describe('Simple Test', function() {
                 });
             });
         });
+
+        it('set with path', function() {
+            instance.set({'a.b': 1}, {path: true});
+            console.log(instance.get('a'));
+        });
     });
 
     describe('Life cycle', function() {

@@ -414,12 +414,18 @@ Intact.prototype = {
         if (typeof key === 'object') {
             options = val;
             isSetByObject = true;
+        } else {
+            // 如果不是批量设置，则强制分析path
+            options = extend({}, options, {
+                path: true
+            });
         }
         options = extend({
             silent: false,
             update: true,
             async: false,
             _fromPatchProps: false,
+            path: false,
         }, options);
         // 兼容老版本
         if (hasOwn.call(options, 'global')) {
