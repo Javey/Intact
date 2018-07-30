@@ -1,9 +1,146 @@
+import prototype from './prototype';
+import {CSSMatrix} from './utils';
+import enter from './enter';
+import leave from './leave';
 import {
     getAnimateType, addClass, 
     removeClass, TransitionEvents
 } from './utils';
 
-export function initMove(o, isUnmount) {
+prototype._beforeUpdate = function(lastVNode, vNode) {
+    // 更新之前，这里的children不包含本次更新mount进来的元素
+    const children = this.children;
+    const reservedChildren = [];
+    const isMove = this.get('a:move');
+
+    for (let i = 0; i < children.length; i++) {
+        let instance = children[i];
+        if (!instance._leaving && isMove) {
+            instance.position = getPosition(instance);
+        }
+        if (instance._delayLeave) {
+            reservedChildren.push(instance);
+            this.updateChildren.push(instance);
+        }
+    }
+
+    this.children = reservedChildren;
+};
+
+prototype._update = function(lastVNode, vNode, isFromCheckMode) {
+    let parentInstance;
+    if (!this.get('a:disabled')) {
+        parentInstance = this.parentInstance;
+        if (parentInstance) {
+            parentInstance.updateChildren.push(this);
+            parentInstance.children.push(this);
+        }
+    }
+
+    // 更新之后，这里的children包括当前mount/update/unmount的元素
+    const children = this.children;
+    // 不存在children，则表示没有子动画元素要管理，直接返回
+    if (!children.length) return;
+
+    let mountChildren = this.mountChildren;
+    let unmountChildren = this.unmountChildren;
+    const updateChildren = this.updateChildren;
+    const isMove = this.get('a:move');
+
+    // 如果是in-out模式，但是没有元素enter，则直接leave
+    if (!isFromCheckMode && this._enteringAmount === 0 && 
+        parentInstance && parentInstance.get('a:mode') === 'in-out'
+    ) {
+        for (let i = 0; i < updateChildren.length; i++) {
+            let instance = updateChildren[i];
+            if (instance._delayLeave) {
+                unmountChildren.push(instance);
+                updateChildren.splice(i, 1);
+                instance._delayLeave = false;
+                i--;
+            }
+        } 
+    }
+
+    // 进行mount元素的进入动画
+    // 因为存在moving元素被unmount又被mount的情况
+    // 所以最先处理
+    if (isMove) {
+        mountChildren.forEach(instance => {
+            // 如果当前元素是从上一个unmount的元素来的，
+            // 则要初始化最新位置，因为beforeUpdate中
+            // 不包括当前mount元素的位置初始化
+            // 这样才能保持位置的连贯性
+            if (instance.lastInstance) {
+                instance.position = getPosition(instance);
+            }
+        });
+    }
+    mountChildren.forEach(instance => enter(instance));
+
+    // 先将之前的动画清空
+    // 只有既在move又在enter的unmount元素才清空动画
+    // 这种情况保持不了连贯性
+    if (isMove) {
+        unmountChildren.forEach(instance => {
+            if (instance._moving) {
+                instance._moveEnd();
+                if (instance._entering) {
+                    instance._enterEnd();
+                }
+            }
+        });
+
+        // 对于更新的元素，如果正在move，则将位置清空，以便确定最终位置
+        updateChildren.forEach(instance => {
+            if (instance._moving) {
+                const s = instance.element.style;
+                s.left = s.top = '';
+            }
+        });
+
+        // 将要删除的元素，设为absolute，以便确定其它元素最终位置
+        unmountChildren.forEach(instance => {
+            instance.element.style.position = 'absolute';
+        });
+
+        // 获取所有元素的新位置
+        children.forEach(instance => {
+            instance.newPosition = getPosition(instance);
+        });
+
+        // 分别判断元素是否需要移动，并保持当前位置不变
+        // unmount的元素，从当前位置直接leave，不要move了
+        unmountChildren.forEach(instance => initMove(instance, true));
+        updateChildren.forEach(instance => initMove(instance));
+        mountChildren.forEach(instance => initMove(instance));
+
+        // 对于animation动画，enterEnd了entering元素
+        // 需要re-layout，来触发move动画
+        document.body.offsetWidth;
+
+        // 如果元素需要移动，则进行move动画
+        children.forEach((instance) => {
+            if (instance._needMove) {
+                if (!instance._moving) {
+                    move(instance);
+                } else {
+                    // 如果已经在移动了，那直接改变translate，保持动画连贯
+                    triggerMove(instance);
+                }
+            }
+        });
+    }
+
+    // unmount元素做leave动画
+    unmountChildren.forEach(instance => leave(instance));
+
+    this.mountChildren = [];
+    this.updateChildren = [];
+    this.unmountChildren = [];
+};
+
+function initMove(o, isUnmount) {
     const {element, position: oldPosition, newPosition} = o;
 
     o.position = newPosition;
@@ -42,7 +179,7 @@ export function initMove(o, isUnmount) {
     }
 }
 
-export function move(o) {
+function move(o) {
     if (o.get('a:disabled')) return;
 
     o._moving = true;
@@ -68,7 +205,27 @@ export function move(o) {
     // nextFrame(() => o._triggerMove());
 }
 
-export function triggerMove(o) {
+function triggerMove(o) {
     const s = o.element.style;
     s.transform = s.WebkitTransform = `translate(${0 - o.dx}px, ${0 - o.dy}px)`;
+}
+
+function getPosition(o) {
+    const element = o.element;
+    const style = getComputedStyle(element);
+    const transform = style.transform || style.WebkitTransform;
+
+    if (transform === 'none') {
+        return {
+            top: element.offsetTop,
+            left: element.offsetLeft
+        };
+    }
+
+    // const transform = element.style.transform;
+    const matrix = new CSSMatrix(transform);
+    return {
+        top: element.offsetTop + matrix.m42,
+        left: element.offsetLeft + matrix.m41
+    };
 }

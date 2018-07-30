@@ -1,5 +1,4 @@
 import {endEvents} from './utils';
-import {inBrowser} from '../utils';
 import Vdt from 'vdt';
 
 const prototype = {
@@ -53,19 +52,6 @@ const prototype = {
         this._enteringAmount = 0;
         this._leavingAmount = 0;
     },
-
-    init: inBrowser ? 
-        function(lastVNode, nextVNode) {
-            const parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
-            if (parentDom && parentDom._reserve) {
-                lastVNode = parentDom._reserve[nextVNode.key];
-            }
-
-            return this._super(lastVNode, nextVNode);
-        } : 
-        function() { 
-            return this._superApply(arguments); 
-        },
 };
 
 export default prototype;
