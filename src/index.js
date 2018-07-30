@@ -1,7 +1,6 @@
-// import Intact from './intact';
 import Intact from './instance';
 import Vdt from 'vdt';
-import Animate from './animate/index';
+import Animate from './animate';
 import * as utils from './utils';
 
 Intact.prototype.Animate = Animate;
