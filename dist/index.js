@@ -1543,7 +1543,7 @@ Stringifier.prototype = {
     }
 };
 
-var Types = {
+var Types$1 = {
     Text: 1,
     HtmlElement: 1 << 1,
 
@@ -1560,10 +1560,10 @@ var Types = {
 
     UnescapeText: 1 << 10 // for server side render unescape text
 };
-Types.FormElement = Types.InputElement | Types.SelectElement | Types.TextareaElement;
-Types.Element = Types.HtmlElement | Types.FormElement | Types.SvgElement;
-Types.ComponentClassOrInstance = Types.ComponentClass | Types.ComponentInstance;
-Types.TextElement = Types.Text | Types.HtmlComment;
+Types$1.FormElement = Types$1.InputElement | Types$1.SelectElement | Types$1.TextareaElement;
+Types$1.Element = Types$1.HtmlElement | Types$1.FormElement | Types$1.SvgElement;
+Types$1.ComponentClassOrInstance = Types$1.ComponentClass | Types$1.ComponentInstance;
+Types$1.TextElement = Types$1.Text | Types$1.HtmlComment;
 
 var EMPTY_OBJ = {};
 if (process.env.NODE_ENV !== 'production' && !browser.isIE) {
@@ -1586,23 +1586,23 @@ function createVNode(tag, props, children, className, key, ref) {
     switch (typeof tag === 'undefined' ? 'undefined' : _typeof(tag)) {
         case 'string':
             if (tag === 'input') {
-                type = Types.InputElement;
+                type = Types$1.InputElement;
             } else if (tag === 'select') {
-                type = Types.SelectElement;
+                type = Types$1.SelectElement;
             } else if (tag === 'textarea') {
-                type = Types.TextareaElement;
+                type = Types$1.TextareaElement;
             } else if (tag === 'svg') {
-                type = Types.SvgElement;
+                type = Types$1.SvgElement;
             } else {
-                type = Types.HtmlElement;
+                type = Types$1.HtmlElement;
             }
             break;
         case 'function':
             if (tag.prototype.init) {
-                type = Types.ComponentClass;
+                type = Types$1.ComponentClass;
             } else {
                 // return tag(props);
-                type = Types.ComponentFunction;
+                type = Types$1.ComponentFunction;
             }
             break;
         case 'object':
@@ -1613,7 +1613,7 @@ function createVNode(tag, props, children, className, key, ref) {
             throw new Error('unknown vNode type: ' + tag);
     }
 
-    if (type & (Types.ComponentClass | Types.ComponentFunction)) {
+    if (type & (Types$1.ComponentClass | Types$1.ComponentFunction)) {
         if (!isNullOrUndefined(children)) {
             if (props === EMPTY_OBJ) props = {};
             props.children = normalizeChildren(children, false);
@@ -1621,7 +1621,7 @@ function createVNode(tag, props, children, className, key, ref) {
         } else if (!isNullOrUndefined(props.children)) {
             props.children = normalizeChildren(props.children, false);
         }
-        if (type & Types.ComponentFunction) {
+        if (type & Types$1.ComponentFunction) {
             if (key || ref) {
                 if (props === EMPTY_OBJ) props = {};
                 if (key) props.key = key;
@@ -1637,22 +1637,22 @@ function createVNode(tag, props, children, className, key, ref) {
 }
 
 function createCommentVNode(children) {
-    return new VNode(Types.HtmlComment, null, EMPTY_OBJ, children);
+    return new VNode(Types$1.HtmlComment, null, EMPTY_OBJ, children);
 }
 
 function createUnescapeTextVNode(children) {
-    return new VNode(Types.UnescapeText, null, EMPTY_OBJ, children);
+    return new VNode(Types$1.UnescapeText, null, EMPTY_OBJ, children);
 }
 
 function createTextVNode(text) {
-    return new VNode(Types.Text, null, EMPTY_OBJ, text);
+    return new VNode(Types$1.Text, null, EMPTY_OBJ, text);
 }
 
 
 
 function createComponentInstanceVNode(instance) {
     var props = instance.props || EMPTY_OBJ;
-    return new VNode(Types.ComponentInstance, instance.constructor, props, instance, null, props.key, props.ref);
+    return new VNode(Types$1.ComponentInstance, instance.constructor, props, instance, null, props.key, props.ref);
 }
 
 function normalizeChildren(vNodes, isAddKey) {
@@ -1721,7 +1721,7 @@ function directClone(vNode) {
     var newVNode = void 0;
     var type = vNode.type;
 
-    if (type & Types.ComponentClassOrInstance) {
+    if (type & Types$1.ComponentClassOrInstance) {
         var props = void 0;
         var propsToClone = vNode.props;
 
@@ -1759,7 +1759,7 @@ function directClone(vNode) {
                 newProps.children = directClone(newChildren);
             }
         }
-    } else if (type & Types.Element) {
+    } else if (type & Types$1.Element) {
         var children = vNode.children;
         var _props = void 0;
         var _propsToClone = vNode.props;
@@ -1774,9 +1774,9 @@ function directClone(vNode) {
         }
 
         newVNode = new VNode(type, vNode.tag, vNode.props, children, vNode.className, vNode.key, vNode.ref);
-    } else if (type & Types.Text) {
+    } else if (type & Types$1.Text) {
         newVNode = createTextVNode(vNode.children);
-    } else if (type & Types.HtmlComment) {
+    } else if (type & Types$1.HtmlComment) {
         newVNode = createCommentVNode(vNode.children);
     }
 
@@ -2000,7 +2000,7 @@ function updateChildOptionGroup(vNode, value, flag) {
 
 function updateChildOption(vNode, value, flag) {
     // skip text and comment node
-    if (vNode.type & Types.HtmlElement) {
+    if (vNode.type & Types$1.HtmlElement) {
         var props = vNode.props;
         var dom = vNode.dom;
 
@@ -2073,11 +2073,11 @@ function processTextarea(vNode, dom, nextProps, isRender) {
 
 function processForm(vNode, dom, nextProps, isRender) {
     var type = vNode.type;
-    if (type & Types.InputElement) {
+    if (type & Types$1.InputElement) {
         processInput(vNode, dom, nextProps, isRender);
-    } else if (type & Types.TextareaElement) {
+    } else if (type & Types$1.TextareaElement) {
         processTextarea(vNode, dom, nextProps, isRender);
-    } else if (type & Types.SelectElement) {
+    } else if (type & Types$1.SelectElement) {
         processSelect(vNode, dom, nextProps, isRender);
     }
 }
@@ -2099,17 +2099,17 @@ function render(vNode, parentDom, mountedQueue, parentVNode, isSVG) {
 
 function createElement(vNode, parentDom, mountedQueue, isRender, parentVNode, isSVG) {
     var type = vNode.type;
-    if (type & Types.Element) {
+    if (type & Types$1.Element) {
         return createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode, isSVG);
-    } else if (type & Types.Text) {
+    } else if (type & Types$1.Text) {
         return createTextElement(vNode, parentDom);
-    } else if (type & Types.ComponentClassOrInstance) {
+    } else if (type & Types$1.ComponentClassOrInstance) {
         return createComponentClassOrInstance(vNode, parentDom, mountedQueue, null, isRender, parentVNode, isSVG);
         // } else if (type & Types.ComponentFunction) {
         // return createComponentFunction(vNode, parentDom, mountedQueue, isNotAppendChild, isRender);
         // } else if (type & Types.ComponentInstance) {
         // return createComponentInstance(vNode, parentDom, mountedQueue);
-    } else if (type & Types.HtmlComment) {
+    } else if (type & Types$1.HtmlComment) {
         return createCommentElement(vNode, parentDom);
     } else {
         throw new Error('unknown vnode type ' + type);
@@ -2119,7 +2119,7 @@ function createElement(vNode, parentDom, mountedQueue, isRender, parentVNode, is
 function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode, isSVG) {
     var type = vNode.type;
 
-    isSVG = isSVG || (type & Types.SvgElement) > 0;
+    isSVG = isSVG || (type & Types$1.SvgElement) > 0;
 
     var dom = documentCreateElement(vNode.tag, isSVG);
     var children = vNode.children;
@@ -2146,7 +2146,7 @@ function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode
     // work. So processForm after it has be appended to parent dom.
     var isFormElement = void 0;
     if (props !== EMPTY_OBJ) {
-        isFormElement = (vNode.type & Types.FormElement) > 0;
+        isFormElement = (vNode.type & Types$1.FormElement) > 0;
         for (var prop in props) {
             patchProp(prop, null, props[prop], dom, isFormElement, isSVG);
         }
@@ -2181,7 +2181,7 @@ function createTextElement(vNode, parentDom) {
 
 function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
     var props = vNode.props;
-    var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
+    var instance = vNode.type & Types$1.ComponentClass ? new vNode.tag(props) : vNode.children;
     instance.parentDom = parentDom;
     instance.mountedQueue = mountedQueue;
     instance.isRender = isRender;
@@ -2254,13 +2254,13 @@ function removeElements(vNodes, parentDom) {
 
 function removeElement(vNode, parentDom, nextVNode) {
     var type = vNode.type;
-    if (type & Types.Element) {
+    if (type & Types$1.Element) {
         return removeHtmlElement(vNode, parentDom);
-    } else if (type & Types.TextElement) {
+    } else if (type & Types$1.TextElement) {
         return removeText(vNode, parentDom);
-    } else if (type & Types.ComponentClassOrInstance) {
+    } else if (type & Types$1.ComponentClassOrInstance) {
         return removeComponentClassOrInstance(vNode, parentDom, nextVNode);
-    } else if (type & Types.ComponentFunction) {
+    } else if (type & Types$1.ComponentFunction) {
         return removeComponentFunction(vNode, parentDom);
     }
 }
@@ -2400,20 +2400,20 @@ function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, 
         var nextType = nextVNode.type;
         var lastType = lastVNode.type;
 
-        if (nextType & Types.Element) {
-            if (lastType & Types.Element) {
+        if (nextType & Types$1.Element) {
+            if (lastType & Types$1.Element) {
                 patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
             } else {
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
             }
-        } else if (nextType & Types.TextElement) {
+        } else if (nextType & Types$1.TextElement) {
             if (lastType === nextType) {
                 patchText(lastVNode, nextVNode);
             } else {
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, isSVG);
             }
-        } else if (nextType & Types.ComponentClass) {
-            if (lastType & Types.ComponentClass) {
+        } else if (nextType & Types$1.ComponentClass) {
+            if (lastType & Types$1.ComponentClass) {
                 patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
             } else {
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
@@ -2424,8 +2424,8 @@ function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, 
             // } else {
             // replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
             // }
-        } else if (nextType & Types.ComponentInstance) {
-            if (lastType & Types.ComponentInstance) {
+        } else if (nextType & Types$1.ComponentInstance) {
+            if (lastType & Types$1.ComponentInstance) {
                 patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
             } else {
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
@@ -2448,7 +2448,7 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode
     nextVNode.dom = dom;
     nextVNode.parentVNode = parentVNode;
 
-    isSVG = isSVG || (nextType & Types.SvgElement) > 0;
+    isSVG = isSVG || (nextType & Types$1.SvgElement) > 0;
 
     if (lastVNode.tag !== nextVNode.tag || lastVNode.key !== nextVNode.key) {
         replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
@@ -2876,7 +2876,7 @@ function patchProps(lastVNode, nextVNode, isSVG) {
     var dom = nextVNode.dom;
     var prop = void 0;
     if (nextProps !== EMPTY_OBJ) {
-        var isFormElement = (nextVNode.type & Types.FormElement) > 0;
+        var isFormElement = (nextVNode.type & Types$1.FormElement) > 0;
         for (prop in nextProps) {
             patchProp(prop, lastProps[prop], nextProps[prop], dom, isFormElement, isSVG);
         }
@@ -3107,12 +3107,12 @@ function toString$2(vNode, parent, disableSplitText, firstChild) {
     var children = vNode.children;
 
     var html = void 0;
-    if (type & Types.ComponentClass) {
+    if (type & Types$1.ComponentClass) {
         var instance = new tag(props);
         html = instance.toString();
-    } else if (type & Types.ComponentInstance) {
+    } else if (type & Types$1.ComponentInstance) {
         html = vNode.children.toString();
-    } else if (type & Types.Element) {
+    } else if (type & Types$1.Element) {
         var innerHTML = void 0;
         html = '<' + tag;
 
@@ -3173,7 +3173,7 @@ function toString$2(vNode, parent, disableSplitText, firstChild) {
                         } else if (isNumber(child)) {
                             html += child;
                         } else if (!isNullOrUndefined(child)) {
-                            if (!(child.type & Types.Text)) {
+                            if (!(child.type & Types$1.Text)) {
                                 index = -1;
                             } else {
                                 index++;
@@ -3188,11 +3188,11 @@ function toString$2(vNode, parent, disableSplitText, firstChild) {
 
             html += '</' + tag + '>';
         }
-    } else if (type & Types.Text) {
+    } else if (type & Types$1.Text) {
         html = (firstChild || disableSplitText ? '' : '<!---->') + (children === '' ? ' ' : escapeText(children));
-    } else if (type & Types.HtmlComment) {
+    } else if (type & Types$1.HtmlComment) {
         html = '<!--' + children + '-->';
-    } else if (type & Types.UnescapeText) {
+    } else if (type & Types$1.UnescapeText) {
         html = isNullOrUndefined(children) ? '' : children;
     } else {
         throw new Error('Unknown vNode: ' + vNode);
@@ -3343,20 +3343,20 @@ function hydrate(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
 function hydrateElement(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
     var type = vNode.type;
 
-    if (type & Types.Element) {
+    if (type & Types$1.Element) {
         return hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG);
-    } else if (type & Types.Text) {
+    } else if (type & Types$1.Text) {
         return hydrateText(vNode, dom);
-    } else if (type & Types.HtmlComment) {
+    } else if (type & Types$1.HtmlComment) {
         return hydrateComment(vNode, dom);
-    } else if (type & Types.ComponentClassOrInstance) {
+    } else if (type & Types$1.ComponentClassOrInstance) {
         return hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG);
     }
 }
 
 function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
     var props = vNode.props;
-    var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
+    var instance = vNode.type & Types$1.ComponentClass ? new vNode.tag(props) : vNode.children;
     instance.parentDom = parentDom;
     instance.mountedQueue = mountedQueue;
     instance.isRender = true;
@@ -3426,7 +3426,7 @@ function hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode, is
     var ref = vNode.ref;
 
     vNode.parentVNode = parentVNode;
-    isSVG = isSVG || (type & Types.SvgElement) > 0;
+    isSVG = isSVG || (type & Types$1.SvgElement) > 0;
 
     if (dom.nodeType !== 1 || dom.tagName.toLowerCase() !== vNode.tag) {
         warning('Server-side markup doesn\'t match client-side markup');
@@ -3444,7 +3444,7 @@ function hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode, is
     }
 
     if (props !== EMPTY_OBJ) {
-        var isFormElement = (type & Types.FormElement) > 0;
+        var isFormElement = (type & Types$1.FormElement) > 0;
         for (var prop in props) {
             patchProp(prop, null, props[prop], dom, isFormElement, isSVG);
         }
@@ -3549,7 +3549,7 @@ var miss = Object.freeze({
 	renderString: toString$2,
 	hydrateRoot: hydrateRoot,
 	hydrate: hydrate,
-	Types: Types
+	Types: Types$1
 });
 
 var parser = new Parser();
@@ -4186,9 +4186,7 @@ var utils = Object.freeze({
 	autobind: autobind
 });
 
-function Intact$1(props) {
-    var _this = this;
-
+function Intact$2(props) {
     var template = this.constructor.template;
     // Intact.template is a decorator
     if (!template || template === templateDecorator) {
@@ -4198,38 +4196,220 @@ function Intact$1(props) {
         throw new Error('Can not instantiate when template does not exist.');
     }
 
-    // in ie 8 we must get prototype through constructor first time
-    autobind(this.constructor.prototype, this, Intact$1, {});
+    // for debug
+    this.displayName = this.displayName;
 
+    // autobind this for methods
+    // in ie 8 we must get prototype through constructor first time
+    autobind(this.constructor.prototype, this, Intact$2, {});
+
+    for (var i = 0; i < Intact$2._constructors.length; i++) {
+        Intact$2._constructors[i].call(this, props);
+    }
+
+    this.vdt = Vdt$1(template);
+
+    // for string ref
+    this.refs = this.vdt.widgets || {};
+
+    // for compatibility v1.0
+    this.widgets = this.refs;
+    this._widget = this.props.widget || uniqueId('widget');
+
+    this.uniqueId = this._widget;
+}
+
+Intact$2._constructors = [];
+
+// ES7 Decorator for template
+if (Object.defineProperty) {
+    Object.defineProperty(Intact$2, 'template', {
+        configurable: false,
+        enumerable: false,
+        value: templateDecorator,
+        writable: true
+    });
+}
+
+Intact$2._constructors.push(function (props) {
     props = extend({}, result(this, 'defaults'), props);
+
+    this.props = {};
+    this.set(props, { silent: true });
+
+    // for compatibility v1.0
+    this.attributes = this.props;
+});
+
+// function name conflict with utils.get
+Intact$2.prototype.get = function _get(key, defaultValue) {
+    if (key === undefined) return this.props;
+
+    return get$$1(this.props, key, defaultValue);
+};
+
+Intact$2.prototype.set = function _set(key, val, options) {
+    var _this = this;
+
+    if (isNullOrUndefined(key)) return this;
+
+    var isSetByObject = false;
+    if ((typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object') {
+        options = val;
+        isSetByObject = true;
+    } else {
+        // 如果不是批量设置，则强制分析path
+        options = extend({}, options, {
+            path: true
+        });
+    }
+    options = extend({
+        silent: false,
+        update: true,
+        async: false,
+        _fromPatchProps: false,
+        path: false
+    }, options);
+    // 兼容老版本
+    if (hasOwn.call(options, 'global')) {
+        options.update = options.global;
+    }
+
+    var props = this.props;
+    var changes = {};
+
+    var hasChanged = false;
+
+    // 前面做了undefined的判断，这里不可能为undefined了
+    if (isSetByObject) {
+        if (!options.silent) {
+            for (var prop in key) {
+                var nextValue = key[prop];
+                var lastValue = props[prop];
+                if (!isEqual(lastValue, nextValue)) {
+                    changes[prop] = [lastValue, nextValue];
+                    hasChanged = true;
+                }
+                // 即使相等，也要重新复制，因为有可能引用地址变更
+                props[prop] = nextValue;
+            }
+        } else {
+            // 如果静默更新，则直接赋值
+            extend(props, key);
+        }
+    } else {
+        if (!options.silent) {
+            var _lastValue2 = get$$1(props, key);
+            if (!isEqual(_lastValue2, val)) {
+                if (!hasOwn.call(props, key)) {
+                    changes[key] = [_lastValue2, val];
+                    var path = castPath(key);
+                    // 如果是像'a.b.c'这样设置属性，而该属性不存在
+                    // 依次触发change:a.b.c、change:a.b、change:a这样的事件
+                    // 先不设置props，去取老值
+                    var _props = [];
+                    for (var i = path.length - 1; i > 0; i--) {
+                        var _prop = path.slice(0, i).join('.');
+                        var _lastValue = get$$1(props, _prop);
+                        changes[_prop] = [_lastValue];
+                        _props.push(_prop);
+                    }
+                    // 设置props后，去取新值
+                    // 对于引用数据类型，新老值可能一样
+                    set$$1(props, key, val);
+                    for (var _i = 0; _i < _props.length; _i++) {
+                        var _prop2 = _props[_i];
+                        changes[_prop2].push(get$$1(props, _prop2));
+                    }
+                } else {
+                    // 否则，只触发change:a.b.c
+                    changes[key] = [_lastValue2, val];
+                    set$$1(props, key, val);
+                }
+
+                hasChanged = true;
+            } else {
+                set$$1(props, key, val);
+            }
+        } else {
+            set$$1(props, key, val);
+        }
+    }
+
+    if (hasChanged) {
+        for (var _prop3 in changes) {
+            var values$$1 = changes[_prop3];
+            if (options._fromPatchProps) {
+                // trigger a $receive event to show that we received a different prop
+                this.trigger('$receive:' + _prop3, this, values$$1[1], values$$1[0]);
+                // 存在如下情况
+                // 当prop为value通过v-model进行双向绑定时，receive事件有可能会修正该value
+                // 而修正的过程中，触发了change事件，会去修改绑定的属性
+                // 但是下面触发的change事件，又会将绑定的属性置为未修正的值
+                // 这会导致死循坏
+                // 所以这里将values[1]设为修正后的值，避免死循坏发生
+                values$$1[1] = this.get(_prop3);
+            }
+            // trigger `change*` events
+            this.trigger('$change:' + _prop3, this, values$$1[1], values$$1[0]);
+        }
+        var changeKeys = keys(changes);
+
+        this.trigger('$change', this, changeKeys);
+
+        if (options.update && this._startRender) {
+            if (options.async) {
+                if (!this._$nextTick) {
+                    this._$nextTick = new NextTick(function (data) {
+                        // 将每次改变的属性放入数组
+                        this.args.push(data);
+                    });
+                    this._$nextTick.args = [];
+                }
+                var self = this;
+                this._$nextTick.fire(function () {
+                    // 合并执行更新后，触发所有$changed事件
+                    var args = this.args;
+                    var changes = {};
+                    for (var _i2 = 0; _i2 < args.length; _i2++) {
+                        extend(changes, args[_i2]);
+                    }
+                    self._$nextTick = null;
+                    triggerChange(self, changes, keys(changes));
+                }, changes);
+            } else {
+                triggerChange(this, changes, changeKeys);
+            }
+        } else if (this.mountedQueue && this._startRender) {
+            // 如果是父组件导致子组件更新，此时存在mountedQueue
+            // 则在组件数更新完毕，触发$changed事件
+            this.mountedQueue.push(function () {
+                triggerChangedEvent(_this, changes, changeKeys);
+            });
+        }
+    }
+
+    return this;
+};
+
+function triggerChange(o, changes, changeKeys) {
+    o.update();
+    triggerChangedEvent(o, changes, changeKeys);
+}
+
+function triggerChangedEvent(o, changes, changeKeys) {
+    for (var prop in changes) {
+        var values$$1 = changes[prop];
+        o.trigger('$changed:' + prop, o, values$$1[1], values$$1[0]);
+    }
+    o.trigger('$changed', o, changeKeys);
+}
+
+Intact$2._constructors.push(function () {
+    var _this = this;
 
     this._events = {};
     this._keptEvents = {}; // save the events that do not off when destroyed
-    this.props = {};
-    this.vdt = Vdt$1(template);
-    this.set(props, { silent: true });
-    // this._patchProps(null, props, {silent: true});
-
-    // for compatibility v1.0
-    this.widgets = this.vdt.widgets || {};
-    this._widget = this.props.widget || uniqueId('widget');
-    this.attributes = this.props;
-
-    // for string ref
-    this.refs = this.widgets;
-
-    this.uniqueId = this._widget;
-
-    this.inited = false;
-    this.rendered = false;
-    this.mounted = false;
-    this.destroyed = false;
-
-    // if the flag is false, every set operation will not lead to update 
-    this._startRender = false;
-
-    // for debug
-    this.displayName = this.displayName;
 
     // bind events
     each(this.props, function (value, key) {
@@ -4237,8 +4417,94 @@ function Intact$1(props) {
             _this.on(key.substr(3), value);
         }
     });
+});
+
+Intact$2.prototype.on = function (name, callback, options) {
+    (this._events[name] || (this._events[name] = [])).push(callback);
+
+    // save the kept event
+    if (options && options.keep) {
+        (this._keptEvents[name] || (this._keptEvents[name] = [])).push(callback);
+    }
+
+    return this;
+};
+
+Intact$2.prototype.one = function (name, callback) {
+    var _this2 = this;
+
+    var fn = function fn() {
+        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+        }
+
+        callback.apply(_this2, args);
+        _this2.off(name, fn);
+    };
+    this.on(name, fn);
+
+    return this;
+};
+
+Intact$2.prototype.off = function (name, callback) {
+    if (name === undefined) {
+        this._events = extend({}, this._keptEvents);
+        return this;
+    }
+
+    var callbacks = this._events[name];
+    if (!callbacks) return this;
+
+    if (callback === undefined) {
+        delete this._events[name];
+        return this;
+    }
+
+    for (var cb, i = 0; i < callbacks.length; i++) {
+        cb = callbacks[i];
+        if (cb === callback) {
+            callbacks.splice(i, 1);
+            i--;
+        }
+    }
+
+    return this;
+};
+
+Intact$2.prototype.trigger = function (name) {
+    var callbacks = this._events[name];
+
+    if (callbacks) {
+        callbacks = callbacks.slice();
+
+        for (var _len2 = arguments.length, args = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+            args[_key2 - 1] = arguments[_key2];
+        }
+
+        for (var i = 0, l = callbacks.length; i < l; i++) {
+            callbacks[i].apply(this, args);
+        }
+    }
+
+    return this;
+};
+
+Intact$2._constructors.push(function () {
+    var _this = this;
+
+    // lifecycle states
+    this.inited = false;
+    this.rendered = false;
+    this.mounted = false;
+    this.destroyed = false;
+
+    // if the flag is false, any set operation will not lead to update 
+    this._startRender = false;
 
     this._updateCount = 0;
+    this._pendingUpdate = null;
+
+    this.mountedQueue = null;
 
     var inited = function inited() {
         _this.inited = true;
@@ -4253,535 +4519,339 @@ function Intact$1(props) {
     } else {
         inited();
     }
+});
+
+Intact$2.prototype._init = noop;
+Intact$2.prototype._create = noop;
+Intact$2.prototype._mount = noop;
+Intact$2.prototype._beforeUpdate = noop;
+Intact$2.prototype._update = noop;
+Intact$2.prototype._destroy = noop;
+
+Intact$2.prototype.init = function (lastVNode, nextVNode) {
+    this._lastVNode = lastVNode;
+    if (!this.inited) {
+        return initAsyncComponnet(this, lastVNode, nextVNode);
+    }
+    return initSyncComponent(this, lastVNode, nextVNode);
+};
+
+Intact$2.prototype.mount = function (lastVNode, nextVNode) {
+    // 异步组件，直接返回
+    if (!this.inited) return;
+    this.mounted = true;
+    this.trigger('$mounted', this);
+    this._mount(lastVNode, nextVNode);
+};
+
+Intact$2.prototype.update = function (lastVNode, nextVNode, fromPending) {
+    // 如果该组件已被销毁，则不更新
+    // 组件的销毁顺序是从自下而上逐步销毁的，对于子组件，即使将要销毁也要更新
+    // 只有父组件被销毁了才不去更新，父组件的更新是没有vNode参数
+    if (!lastVNode && !nextVNode && this.destroyed) {
+        return lastVNode ? lastVNode.dom : undefined;
+    }
+
+    // 如果还没有渲染，则等待结束再去更新
+    if (!this.rendered) {
+        this._pendingUpdate = function (lastVNode, nextVNode) {
+            this.update(lastVNode, nextVNode, true);
+        };
+        return lastVNode ? lastVNode.dom : undefined;
+    }
+
+    if (!nextVNode && !fromPending && this._updateCount === 0) {
+        // 如果直接调用update方法，则要清除mountedQueue
+        // 如果在render的过程中，又触发了update，则此时
+        // 不能清空
+        this.mountedQueue = null;
+    }
+
+    // 如果不存在nextVNode，则为直接调用update方法更新自己
+    // 否则则是父组件触发的子组件更新，此时需要更新一些状态
+    // 有一种情况，在父组件初次渲染时，子组件渲染过程中，
+    // 又触发了父组件的数据变更，此时父组件渲染完成执行_pendingUpdate
+    // 是没有lastVNode的
+    if (nextVNode && lastVNode) {
+        patchProps$1(this, lastVNode.props, nextVNode.props);
+    }
+
+    ++this._updateCount;
+    if (this._updateCount > 1) {
+        return this.element;
+    }
+    if (this._updateCount === 1) {
+        return updateComponent(this, lastVNode, nextVNode);
+    }
+};
+
+Intact$2.prototype.destroy = function (lastVNode, nextVNode, parentDom) {
+    if (this.destroyed) {
+        return warn('destroyed multiple times');
+    }
+
+    var vdt = this.vdt;
+
+    // 异步组件，可能还没有渲染
+    if (!this.rendered) {
+        // 异步组件，只有开始渲染时才销毁上一个组件
+        // 如果没有渲染当前异步组件就被销毁了，则要
+        // 在这里销毁上一个组件
+        var _lastVNode = this._lastVNode;
+        if (_lastVNode && !_lastVNode.children.destroyed) {
+            removeComponentClassOrInstance(_lastVNode, null, lastVNode);
+        }
+    } else if (!nextVNode || !(nextVNode.type & Types$1.ComponentClassOrInstance) || nextVNode.key !== lastVNode.key) {
+        vdt.destroy();
+    }
+
+    // 如果存在nextVNode，并且nextVNode也是一个组件类型，
+    // 并且，它俩的key相等，则不去destroy，而是在下一个组件init时
+    // 复用上一个dom，然后destroy上一个元素
+    this._destroy(lastVNode, nextVNode);
+    this.destroyed = true;
+    this.trigger('$destroyed', this);
+    this.off();
+};
+
+Intact$2.prototype._initMountedQueue = function () {
+    this.mountedQueue = new MountedQueue();
+};
+
+Intact$2.prototype._triggerMountedQueue = function () {
+    this.mountedQueue.trigger();
+};
+
+function initSyncComponent(o, lastVNode, nextVNode) {
+    var vdt = o.vdt;
+
+    o._startRender = true;
+    // 如果key不相同，则不复用dom，直接返回新dom来替换
+    if (lastVNode && lastVNode.key === nextVNode.key) {
+        // destroy the last component
+        if (!lastVNode.children.destroyed) {
+            removeComponentClassOrInstance(lastVNode, null, nextVNode);
+        }
+
+        // make the dom not be replaced, but update the last one
+        vdt.vNode = lastVNode.children.vdt.vNode;
+        o.element = vdt.update(o, o.parentDom, o.mountedQueue, nextVNode, o.isSVG, o.get('_blocks'));
+    } else {
+        if (lastVNode) {
+            removeComponentClassOrInstance(lastVNode, null, nextVNode);
+        }
+        o.element = vdt.render(o, o.parentDom, o.mountedQueue, nextVNode, o.isSVG, o.get('_blocks'));
+    }
+    o.rendered = true;
+    if (o._pendingUpdate) {
+        o._pendingUpdate(lastVNode, nextVNode);
+        o._pendingUpdate = null;
+    }
+    o.trigger('$rendered', o);
+    o._create(lastVNode, nextVNode);
+
+    return o.element;
 }
 
-Intact$1.prototype = {
-    constructor: Intact$1,
+function initAsyncComponnet(o, lastVNode, nextVNode) {
+    var vdt = o.vdt;
+    var placeholder = void 0;
 
-    defaults: function defaults$$1() {},
-    _init: function _init(props) {},
-    _create: function _create(lastVNode, nextVNode) {},
-    _mount: function _mount(lastVNode, nextVNode) {},
-    _beforeUpdate: function _beforeUpdate(lastVNode, nextVNode) {},
-    _update: function _update(lastVNode, nextVNode) {},
-    _destroy: function _destroy(lastVNode, nextVNode, parentDom) {},
-    hydrate: function hydrate$$1(vNode, dom) {
-        var _this2 = this;
-
-        var vdt = this.vdt;
-        if (!this.inited) {
-            this.one('$inited', function () {
-                var element = _this2.hydrate(vNode, dom);
-                if (dom !== element) {
-                    vNode.dom = element;
-                }
-                _this2._triggerMountedQueue();
-                _this2.mount(null, vNode);
-            });
-
-            return dom;
+    if (lastVNode) {
+        placeholder = lastVNode.dom;
+        var lastInstance = lastVNode.children;
+        vdt.vNode = lastInstance.vdt.vNode;
+        // 如果上一个组件是异步组件，并且也还没渲染完成，则直接destroy掉
+        // 让它不再渲染了
+        if (!lastInstance.inited) {
+            removeComponentClassOrInstance(lastVNode, null, nextVNode);
         }
-
-        this._startRender = true;
-        this.element = vdt.hydrate(this, dom, this.mountedQueue, this.parentDom, vNode, this.isSVG, this.get('_blocks'));
-        this.rendered = true;
-        this.trigger('$rendered', this);
-        this._create(null, vNode);
-
-        return this.element;
-    },
-    init: function init(lastVNode, nextVNode) {
-        var _this3 = this;
-
-        var vdt = this.vdt;
-        this._lastVNode = lastVNode;
-        if (!this.inited) {
-            // 支持异步组件
-            var placeholder = void 0;
-            if (lastVNode) {
-                placeholder = lastVNode.dom;
-                var lastInstance = lastVNode.children;
-                vdt.vNode = lastInstance.vdt.vNode;
-                // 如果上一个组件是异步组件，并且也还没渲染完成，则直接destroy掉
-                // 让它不再渲染了
-                if (!lastInstance.inited) {
-                    removeComponentClassOrInstance(lastVNode, null, nextVNode);
-                }
-            } else {
-                var vNode = createCommentVNode('!');
-                placeholder = render(vNode);
-                vdt.vNode = vNode;
-            }
-            // 组件销毁事件也会解绑，所以这里无需判断组件是否销毁了
-            this.one('$inited', function () {
-                var element = _this3.init(lastVNode, nextVNode);
-                var dom = nextVNode.dom;
-                // 存在一种情况，组件的返回的元素是一个组件，他们指向同一个dom
-                // 但是当嵌套组件的dom变更时，父组件的vNode却没有变
-                // 所以这里强制保持一致
-                nextVNode.dom = element;
-                if (!lastVNode || lastVNode.key !== nextVNode.key) {
-                    dom.parentNode.replaceChild(element, dom);
-                }
-                _this3._triggerMountedQueue();
-                _this3.mount(lastVNode, nextVNode);
-            });
-            vdt.node = placeholder;
-            return placeholder;
-        }
-
-        this._startRender = true;
-        // 如果key不相同，则不复用dom，直接返回新dom来替换
-        if (lastVNode && lastVNode.key === nextVNode.key) {
-            // destroy the last component
-            if (!lastVNode.children.destroyed) {
-                removeComponentClassOrInstance(lastVNode, null, nextVNode);
-            }
-
-            // make the dom not be replaced, but update the last one
-            vdt.vNode = lastVNode.children.vdt.vNode;
-            this.element = vdt.update(this, this.parentDom, this.mountedQueue, nextVNode, this.isSVG, this.get('_blocks'));
-        } else {
-            if (lastVNode) {
-                removeComponentClassOrInstance(lastVNode, null, nextVNode);
-            }
-            this.element = vdt.render(this, this.parentDom, this.mountedQueue, nextVNode, this.isSVG, this.get('_blocks'));
-        }
-        this.rendered = true;
-        if (this._pendingUpdate) {
-            this._pendingUpdate(lastVNode, nextVNode);
-            this._pendingUpdate = null;
-        }
-        this.trigger('$rendered', this);
-        this._create(lastVNode, nextVNode);
-
-        return this.element;
-    },
-    toString: function toString() {
-        return this.vdt.renderString(this, this.get('_blocks'));
-    },
-    mount: function mount(lastVNode, nextVNode) {
-        // 异步组件，直接返回
-        if (!this.inited) return;
-        this.mounted = true;
-        this.trigger('$mounted', this);
-        this._mount(lastVNode, nextVNode);
-    },
-    update: function update(lastVNode, nextVNode, fromPending) {
-        // 如果该组件已被销毁，则不更新
-        // 组件的销毁顺序是从自下而上逐步销毁的，对于子组件，即使将要销毁也要更新
-        // 只有父组件被销毁了才不去更新，父组件的更新是没有vNode参数
-        if (!lastVNode && !nextVNode && this.destroyed) {
-            return lastVNode ? lastVNode.dom : undefined;
-        }
-        // 如果还没有渲染，则等待结束再去更新
-        if (!this.rendered) {
-            this._pendingUpdate = function (lastVNode, nextVNode) {
-                this.update(lastVNode, nextVNode, true);
-            };
-            return lastVNode ? lastVNode.dom : undefined;
-        }
-
-        if (!nextVNode && !fromPending && this._updateCount === 0) {
-            // 如果直接调用update方法，则要清除mountedQueue
-            // 如果在render的过程中，又触发了update，则此时
-            // 不能清空
-            this.mountedQueue = null;
-        }
-
-        // 如果不存在nextVNode，则为直接调用update方法更新自己
-        // 否则则是父组件触发的子组件更新，此时需要更新一些状态
-        // 有一种情况，在父组件初次渲染时，子组件渲染过程中，
-        // 又触发了父组件的数据变更，此时父组件渲染完成执行_pendingUpdate
-        // 是没有lastVNode的
-        if (nextVNode && lastVNode) {
-            this._patchProps(lastVNode.props, nextVNode.props);
-        }
-
-        ++this._updateCount;
-        if (this._updateCount > 1) return this.element;
-        if (this._updateCount === 1) return this.__update(lastVNode, nextVNode);
-    },
-    __update: function __update(lastVNode, nextVNode) {
-        var _this4 = this;
-
-        this._beforeUpdate(lastVNode, nextVNode);
-        // 直接调用update方法，保持parentVNode不变
-        this.element = this.vdt.update(this, this.parentDom, this.mountedQueue, nextVNode || this.vNode, this.isSVG, this.get('_blocks'));
-        // 让整个更新完成，才去触发_update生命周期函数
-        if (this.mountedQueue) {
-            this.mountedQueue.push(function () {
-                _this4._update(lastVNode, nextVNode);
-            });
-        } else {
-            this._update(lastVNode, nextVNode);
-        }
-        if (--this._updateCount > 0) {
-            // 如果更新完成，发现还有更新，则是在更新过程中又触发了更新
-            // 此时直接将_updateCount置为1，因为所有数据都已更新，只做最后一次模板更新即可
-            // --this._updateCount会将该值设为0，所以这里设为1
-            this._updateCount = 1;
-            return this.__update();
-        }
-
-        // 组件模板可能根据情况返回不同的dom，这种情况下，当组件自身更新(即：直接调用update)
-        // 组件的dom可能变更了，但是当前组件的vNode的dom属性却不会变更，此后该dom如果被v-if
-        // 指令删除，会报错
-        // 所以这里要强制更新
-        var vNode = this.vNode;
-        if (vNode) {
-            // 有可能直接new组件，所以这里判断vNode是否存在
-            var lastDom = vNode.dom;
-            var nextDom = this.element;
-            if (lastDom !== nextDom) {
-                vNode.dom = nextDom;
-                var parentVNode = vNode.parentVNode;
-                // 需要递归判断父组件是不是也指向同一个元素
-                while (parentVNode && parentVNode.type & Types.ComponentClassOrInstance && parentVNode.dom === lastDom) {
-                    parentVNode.dom = nextDom;
-                    parentVNode = parentVNode.parentVNode;
-                }
-            }
-        }
-
-        return this.element;
-    },
-    _patchProps: function _patchProps(lastProps, nextProps) {
-        var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : { update: false, _fromPatchProps: true };
-
-        lastProps = lastProps || EMPTY_OBJ;
-        nextProps = nextProps || EMPTY_OBJ;
-        var lastValue = void 0;
-        var nextValue = void 0;
-        if (lastProps !== nextProps) {
-            // 需要先处理事件，因为prop变更可能触发相应的事件
-            var lastPropsWithoutEvents = void 0;
-            var nextPropsWithoutEvents = void 0;
-            if (nextProps !== EMPTY_OBJ) {
-                for (var prop in nextProps) {
-                    nextValue = nextProps[prop];
-                    if (isEventProp(prop)) {
-                        this.set(prop, nextValue, { silent: true });
-                        lastValue = lastProps[prop];
-                        if (isFunction(nextValue)) {
-                            // 更换事件监听函数
-                            var eventName = prop.substr(3);
-                            if (isFunction(lastValue)) {
-                                this.off(eventName, lastValue);
-                            }
-                            this.on(eventName, nextValue);
-                        } else if (isFunction(lastValue)) {
-                            // 解绑事件监听函数
-                            this.off(prop.substr(3), lastValue);
-                        }
-                    } else {
-                        if (!nextPropsWithoutEvents) {
-                            nextPropsWithoutEvents = {};
-                        }
-                        nextPropsWithoutEvents[prop] = nextValue;
-                    }
-                }
-                if (lastProps !== EMPTY_OBJ) {
-                    for (var _prop in lastProps) {
-                        if (!hasOwn.call(nextProps, _prop)) {
-                            lastValue = lastProps[_prop];
-                            if (isEventProp(_prop) && isFunction(lastValue)) {
-                                this.set(_prop, undefined, { silent: true });
-                                // 如果是事件，则要解绑事件
-                                this.off(_prop.substr(3), lastValue);
-                            } else {
-                                if (!lastPropsWithoutEvents) {
-                                    lastPropsWithoutEvents = {};
-                                }
-                                lastPropsWithoutEvents[_prop] = lastValue;
-                            }
-                        }
-                    }
-                }
-
-                if (nextPropsWithoutEvents) {
-                    this.set(nextPropsWithoutEvents, options);
-                }
-            } else {
-                for (var _prop2 in lastProps) {
-                    lastValue = lastProps[_prop2];
-                    if (isEventProp(_prop2) && isFunction(lastValue)) {
-                        this.set(_prop2, undefined, { silent: true });
-                        // 如果是事件，则要解绑事件
-                        this.off(_prop2.substr(3), lastValue);
-                    } else {
-                        if (!lastPropsWithoutEvents) {
-                            lastPropsWithoutEvents = {};
-                        }
-                        lastPropsWithoutEvents[_prop2] = lastValue;
-                    }
-                }
-            }
-
-            // 将不存在nextProps中，但存在lastProps中的属性，统统置为默认值
-            var defaults$$1 = result(this, 'defaults') || EMPTY_OBJ;
-            if (lastPropsWithoutEvents) {
-                for (var _prop3 in lastPropsWithoutEvents) {
-                    this.set(_prop3, defaults$$1[_prop3], options);
-                }
-            }
-        }
-    },
-    destroy: function destroy(lastVNode, nextVNode, parentDom) {
-        if (this.destroyed) {
-            return warn('destroyed multiple times');
-        }
-        var vdt = this.vdt;
-        // 异步组件，可能还没有渲染
-        if (!this.rendered) {
-            // 异步组件，只有开始渲染时才销毁上一个组件
-            // 如果没有渲染当前异步组件就被销毁了，则要
-            // 在这里销毁上一个组件
-            var _lastVNode = this._lastVNode;
-            if (_lastVNode && !_lastVNode.children.destroyed) {
-                removeComponentClassOrInstance(_lastVNode, null, lastVNode);
-            }
-        } else if (!nextVNode || !(nextVNode.type & Types.ComponentClassOrInstance) || nextVNode.key !== lastVNode.key) {
-            vdt.destroy();
-        }
-        // 如果存在nextVNode，并且nextVNode也是一个组件类型，
-        // 并且，它俩的key相等，则不去destroy，而是在下一个组件init时
-        // 复用上一个dom，然后destroy上一个元素
-        this._destroy(lastVNode, nextVNode);
-        this.destroyed = true;
-        this.trigger('$destroyed', this);
-        this.off();
-    },
-
-
-    // function name conflict with utils.get
-    get: function _get(key, defaultValue) {
-        if (key === undefined) return this.props;
-
-        return get$$1(this.props, key, defaultValue);
-    },
-
-    set: function _set(key, val, options) {
-        var _this5 = this;
-
-        if (isNullOrUndefined(key)) return this;
-
-        var isSetByObject = false;
-        if ((typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object') {
-            options = val;
-            isSetByObject = true;
-        }
-        options = extend({
-            silent: false,
-            update: true,
-            async: false,
-            _fromPatchProps: false
-        }, options);
-        // 兼容老版本
-        if (hasOwn.call(options, 'global')) {
-            options.update = options.global;
-        }
-
-        var props = this.props;
-        var changes = {};
-
-        var hasChanged = false;
-
-        // 前面做了undefined的判断，这里不可能为undefined了
-        if (isSetByObject) {
-            if (!options.silent) {
-                for (var prop in key) {
-                    var nextValue = key[prop];
-                    var lastValue = props[prop];
-                    if (!isEqual(lastValue, nextValue)) {
-                        changes[prop] = [lastValue, nextValue];
-                        hasChanged = true;
-                    }
-                    // 即使相等，也要重新复制，因为有可能引用地址变更
-                    props[prop] = nextValue;
-                }
-            } else {
-                // 如果静默更新，则直接赋值
-                extend(props, key);
-            }
-        } else {
-            if (!options.silent) {
-                var _lastValue2 = get$$1(props, key);
-                if (!isEqual(_lastValue2, val)) {
-                    if (!hasOwn.call(props, key)) {
-                        changes[key] = [_lastValue2, val];
-                        var path = castPath(key);
-                        // 如果是像'a.b.c'这样设置属性，而该属性不存在
-                        // 依次触发change:a.b.c、change:a.b、change:a这样的事件
-                        // 先不设置props，去取老值
-                        var _props = [];
-                        for (var i = path.length - 1; i > 0; i--) {
-                            var _prop4 = path.slice(0, i).join('.');
-                            var _lastValue = get$$1(props, _prop4);
-                            changes[_prop4] = [_lastValue];
-                            _props.push(_prop4);
-                        }
-                        // 设置props后，去取新值
-                        // 对于引用数据类型，新老值可能一样
-                        set$$1(props, key, val);
-                        for (var _i = 0; _i < _props.length; _i++) {
-                            var _prop5 = _props[_i];
-                            changes[_prop5].push(get$$1(props, _prop5));
-                        }
-                    } else {
-                        // 否则，只触发change:a.b.c
-                        changes[key] = [_lastValue2, val];
-                        set$$1(props, key, val);
-                    }
-
-                    hasChanged = true;
-                } else {
-                    set$$1(props, key, val);
-                }
-            } else {
-                set$$1(props, key, val);
-            }
-        }
-
-        if (hasChanged) {
-            for (var _prop6 in changes) {
-                var values$$1 = changes[_prop6];
-                if (options._fromPatchProps) {
-                    // trigger a $receive event to show that we received a different prop
-                    this.trigger('$receive:' + _prop6, this, values$$1[1], values$$1[0]);
-                    // 存在如下情况
-                    // 当prop为value通过v-model进行双向绑定时，receive事件有可能会修正该value
-                    // 而修正的过程中，触发了change事件，会去修改绑定的属性
-                    // 但是下面触发的change事件，又会将绑定的属性置为未修正的值
-                    // 这会导致死循坏
-                    // 所以这里将values[1]设为修正后的值，避免死循坏发生
-                    values$$1[1] = this.get(_prop6);
-                }
-                // trigger `change*` events
-                this.trigger('$change:' + _prop6, this, values$$1[1], values$$1[0]);
-            }
-            var changeKeys = keys(changes);
-
-            this.trigger('$change', this, changeKeys);
-
-            if (options.update && this._startRender) {
-                var triggerChange = function triggerChange(changes, changeKeys) {
-                    _this5.update();
-                    _this5._triggerChangedEvent(changes, changeKeys);
-                };
-                if (options.async) {
-                    if (!this._$nextTick) {
-                        this._$nextTick = new NextTick(function (data) {
-                            // 将每次改变的属性放入数组
-                            this.args.push(data);
-                        });
-                        this._$nextTick.args = [];
-                    }
-                    var self = this;
-                    this._$nextTick.fire(function () {
-                        // 合并执行更新后，触发所有$changed事件
-                        var args = this.args;
-                        var changes = {};
-                        for (var _i2 = 0; _i2 < args.length; _i2++) {
-                            extend(changes, args[_i2]);
-                        }
-                        self._$nextTick = null;
-                        triggerChange(changes, keys(changes));
-                    }, changes);
-                } else {
-                    triggerChange(changes, changeKeys);
-                }
-            } else if (this.mountedQueue && this._startRender) {
-                // 如果是父组件导致子组件更新，此时存在mountedQueue
-                // 则在组件数更新完毕，触发$changed事件
-                this.mountedQueue.push(function () {
-                    _this5._triggerChangedEvent(changes, changeKeys);
-                });
-            }
-        }
-
-        return this;
-    },
-
-    on: function on(name, callback, options) {
-        (this._events[name] || (this._events[name] = [])).push(callback);
-
-        // save the kept event
-        if (options && options.keep) {
-            (this._keptEvents[name] || (this._keptEvents[name] = [])).push(callback);
-        }
-
-        return this;
-    },
-    one: function one(name, callback) {
-        var _this6 = this;
-
-        var fn = function fn() {
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            callback.apply(_this6, args);
-            _this6.off(name, fn);
-        };
-        this.on(name, fn);
-
-        return this;
-    },
-    off: function off(name, callback) {
-        if (name === undefined) {
-            this._events = extend({}, this._keptEvents);
-            return this;
-        }
-
-        var callbacks = this._events[name];
-        if (!callbacks) return this;
-
-        if (callback === undefined) {
-            delete this._events[name];
-            return this;
-        }
-
-        for (var cb, i = 0; i < callbacks.length; i++) {
-            cb = callbacks[i];
-            if (cb === callback) {
-                callbacks.splice(i, 1);
-                i--;
-            }
-        }
-
-        return this;
-    },
-    trigger: function trigger(name) {
-        var callbacks = this._events[name];
-
-        if (callbacks) {
-            callbacks = callbacks.slice();
-
-            for (var _len2 = arguments.length, args = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-                args[_key2 - 1] = arguments[_key2];
-            }
-
-            for (var i = 0, l = callbacks.length; i < l; i++) {
-                callbacks[i].apply(this, args);
-            }
-        }
-
-        return this;
-    },
-    _initMountedQueue: function _initMountedQueue() {
-        this.mountedQueue = new MountedQueue();
-    },
-    _triggerMountedQueue: function _triggerMountedQueue() {
-        this.mountedQueue.trigger();
-    },
-    _triggerChangedEvent: function _triggerChangedEvent(changes, changeKeys) {
-        for (var prop in changes) {
-            var values$$1 = changes[prop];
-            this.trigger('$changed:' + prop, this, values$$1[1], values$$1[0]);
-        }
-        this.trigger('$changed', this, changeKeys);
+    } else {
+        var vNode = createCommentVNode('!');
+        placeholder = render(vNode);
+        vdt.vNode = vNode;
     }
+
+    // 组件销毁事件也会解绑，所以这里无需判断组件是否销毁了
+    o.one('$inited', function () {
+        var element = o.init(lastVNode, nextVNode);
+        var dom = nextVNode.dom;
+        // 存在一种情况，组件的返回的元素是一个组件，他们指向同一个dom
+        // 但是当嵌套组件的dom变更时，父组件的vNode却没有变
+        // 所以这里强制保持一致
+        nextVNode.dom = element;
+        if (!lastVNode || lastVNode.key !== nextVNode.key) {
+            dom.parentNode.replaceChild(element, dom);
+        }
+        o._triggerMountedQueue();
+        o.mount(lastVNode, nextVNode);
+    });
+
+    vdt.node = placeholder;
+
+    return placeholder;
+}
+
+function updateComponent(o, lastVNode, nextVNode) {
+    o._beforeUpdate(lastVNode, nextVNode);
+    // 直接调用update方法，保持parentVNode不变
+    o.element = o.vdt.update(o, o.parentDom, o.mountedQueue, nextVNode || o.vNode, o.isSVG, o.get('_blocks'));
+    // 让整个更新完成，才去触发_update生命周期函数
+    if (o.mountedQueue) {
+        o.mountedQueue.push(function () {
+            o._update(lastVNode, nextVNode);
+        });
+    } else {
+        o._update(lastVNode, nextVNode);
+    }
+    if (--o._updateCount > 0) {
+        // 如果更新完成，发现还有更新，则是在更新过程中又触发了更新
+        // 此时直接将_updateCount置为1，因为所有数据都已更新，只做最后一次模板更新即可
+        // --o._updateCount会将该值设为0，所以这里设为1
+        o._updateCount = 1;
+        return updateComponent(o, lastVNode, nextVNode);
+    }
+
+    // 组件模板可能根据情况返回不同的dom，这种情况下，当组件自身更新(即：直接调用update)
+    // 组件的dom可能变更了，但是当前组件的vNode的dom属性却不会变更，此后该dom如果被v-if
+    // 指令删除，会报错
+    // 所以这里要强制更新
+    var vNode = o.vNode;
+    if (vNode) {
+        // 有可能直接new组件，所以这里判断vNode是否存在
+        var lastDom = vNode.dom;
+        var nextDom = o.element;
+        if (lastDom !== nextDom) {
+            vNode.dom = nextDom;
+            var parentVNode = vNode.parentVNode;
+            // 需要递归判断父组件是不是也指向同一个元素
+            while (parentVNode && parentVNode.type & Types$1.ComponentClassOrInstance && parentVNode.dom === lastDom) {
+                parentVNode.dom = nextDom;
+                parentVNode = parentVNode.parentVNode;
+            }
+        }
+    }
+
+    return o.element;
+}
+
+function patchProps$1(o, lastProps, nextProps) {
+    var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : { update: false, _fromPatchProps: true };
+
+    lastProps = lastProps || EMPTY_OBJ;
+    nextProps = nextProps || EMPTY_OBJ;
+    var lastValue = void 0;
+    var nextValue = void 0;
+
+    if (lastProps !== nextProps) {
+        // 需要先处理事件，因为prop变更可能触发相应的事件
+        var lastPropsWithoutEvents = void 0;
+        var nextPropsWithoutEvents = void 0;
+
+        if (nextProps !== EMPTY_OBJ) {
+            for (var prop in nextProps) {
+                nextValue = nextProps[prop];
+
+                if (isEventProp(prop)) {
+                    o.set(prop, nextValue, { silent: true });
+                    lastValue = lastProps[prop];
+
+                    if (isFunction(nextValue)) {
+                        // 更换事件监听函数
+                        var eventName = prop.substr(3);
+                        if (isFunction(lastValue)) {
+                            o.off(eventName, lastValue);
+                        }
+                        o.on(eventName, nextValue);
+                    } else if (isFunction(lastValue)) {
+                        // 解绑事件监听函数
+                        o.off(prop.substr(3), lastValue);
+                    }
+                } else {
+                    if (!nextPropsWithoutEvents) {
+                        nextPropsWithoutEvents = {};
+                    }
+                    nextPropsWithoutEvents[prop] = nextValue;
+                }
+            }
+
+            if (lastProps !== EMPTY_OBJ) {
+                for (var _prop in lastProps) {
+                    if (!hasOwn.call(nextProps, _prop)) {
+                        lastValue = lastProps[_prop];
+
+                        if (isEventProp(_prop) && isFunction(lastValue)) {
+                            o.set(_prop, undefined, { silent: true });
+                            // 如果是事件，则要解绑事件
+                            o.off(_prop.substr(3), lastValue);
+                        } else {
+                            if (!lastPropsWithoutEvents) {
+                                lastPropsWithoutEvents = {};
+                            }
+                            lastPropsWithoutEvents[_prop] = lastValue;
+                        }
+                    }
+                }
+            }
+
+            if (nextPropsWithoutEvents) {
+                o.set(nextPropsWithoutEvents, options);
+            }
+        } else {
+            for (var _prop2 in lastProps) {
+                lastValue = lastProps[_prop2];
+
+                if (isEventProp(_prop2) && isFunction(lastValue)) {
+                    o.set(_prop2, undefined, { silent: true });
+                    // 如果是事件，则要解绑事件
+                    o.off(_prop2.substr(3), lastValue);
+                } else {
+                    if (!lastPropsWithoutEvents) {
+                        lastPropsWithoutEvents = {};
+                    }
+                    lastPropsWithoutEvents[_prop2] = lastValue;
+                }
+            }
+        }
+
+        // 将不存在nextProps中，但存在lastProps中的属性，统统置为默认值
+        var defaults = result(o, 'defaults') || EMPTY_OBJ;
+        if (lastPropsWithoutEvents) {
+            for (var _prop3 in lastPropsWithoutEvents) {
+                o.set(_prop3, defaults[_prop3], options);
+            }
+        }
+    }
+}
+
+Intact$2.prototype.hydrate = function (vNode, dom) {
+    var _this = this;
+
+    var vdt = this.vdt;
+    if (!this.inited) {
+        this.one('$inited', function () {
+            var element = _this.hydrate(vNode, dom);
+            if (dom !== element) {
+                vNode.dom = element;
+            }
+            _this._triggerMountedQueue();
+            _this.mount(null, vNode);
+        });
+
+        return dom;
+    }
+
+    this._startRender = true;
+    this.element = vdt.hydrate(this, dom, this.mountedQueue, this.parentDom, vNode, this.isSVG, this.get('_blocks'));
+    this.rendered = true;
+    this.trigger('$rendered', this);
+    this._create(null, vNode);
+
+    return this.element;
+};
+
+Intact$2.prototype.toString = function () {
+    return this.vdt.renderString(this, this.get('_blocks'));
 };
 
 /**
@@ -4789,7 +4859,7 @@ Intact$1.prototype = {
  *
  * @param prototype
  */
-Intact$1.extend = function () {
+Intact$2.extend = function () {
     var prototype = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
     if (_typeof(this.prototype.defaults) === 'object' && _typeof(prototype.defaults) === 'object') {
@@ -4803,7 +4873,7 @@ Intact$1.extend = function () {
  * @param Component {Intact} Intact类或子类
  * @param node {Node} html节点
  */
-Intact$1.mount = function (Component, node) {
+Intact$2.mount = function (Component, node) {
     if (!node) throw new Error('expect a parent dom to mount Component, but got ' + node);
     var vNode = createVNode(Component);
     var mountedQueue = new MountedQueue();
@@ -4817,653 +4887,12 @@ Intact$1.mount = function (Component, node) {
     return instance;
 };
 
-Intact$1.hydrate = function (Component, node) {
+Intact$2.hydrate = function (Component, node) {
     if (!node) throw new Error('expect a parent dom to hydrate Component, but got ' + node);
     var vNode = createVNode(Component);
     hydrateRoot(vNode, node);
     return vNode.children;
 };
-
-// ES7 Decorator for template
-if (Object.defineProperty) {
-    Object.defineProperty(Intact$1, 'template', {
-        configurable: false,
-        enumerable: false,
-        value: templateDecorator,
-        writable: true
-    });
-}
-
-var Animate = void 0;
-var Animate$1 = Animate = Intact$1.extend({
-    defaults: {
-        'a:tag': 'div',
-        'a:transition': 'animate',
-        'a:appear': false,
-        'a:mode': 'both', // out-in | in-out | both
-        'a:disabled': false, // 只做动画管理者，自己不进行动画
-        'a:move': true, // 是否执行move动画
-        'a:css': true, // 是否使用css动画，如果自定义动画函数，可以将它置为false
-        'a:delayDestroy': true // 是否动画完成才destroy子元素
-    },
-
-    template: function template() {
-        var h = Vdt$1.miss.h;
-        var self = this.data;
-        var tagName = self.get('a:tag');
-        var props = {};
-        var _props = self.get();
-        for (var key in _props) {
-            if (key !== 'ref' && key !== 'key' && (key[0] !== 'a' || key[1] !== ':') && key.substr(0, 5) !== 'ev-a:') {
-                props[key] = _props[key];
-            }
-        }
-        return h(tagName, props, self.get('children'));
-    },
-    _init: function _init() {
-        this.isSupportCssTransition = endEvents.length;
-        if (!this.isSupportCssTransition) {
-            // 如果不支持css动画，则关闭css
-            this.set({
-                'a:css': false,
-                'a:move': false
-            }, { silent: true });
-        }
-
-        this.mountChildren = [];
-        this.unmountChildren = [];
-        this.updateChildren = [];
-        this.children = [];
-        this._enteringAmount = 0;
-        this._leavingAmount = 0;
-    },
-    _hasJsTransition: function _hasJsTransition() {
-        var events = this._events;
-        for (var key in events) {
-            if (key[0] === 'a' && key[1] === ':') {
-                if (events[key].length) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    },
-
-
-    init: inBrowser ? function (lastVNode, nextVNode) {
-        // if (this.get('a:disabled')) {
-        // return this._super(lastVNode, nextVNode);
-        // }
-
-        var parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
-        if (parentDom && parentDom._reserve) {
-            lastVNode = parentDom._reserve[nextVNode.key];
-        }
-        return this._super(lastVNode, nextVNode);
-    } : function () {
-        return this._superApply(arguments);
-    },
-
-    _mount: function _mount(lastVNode, vNode) {
-        var _this = this;
-
-        var isAppear = false;
-        if (this.isRender) {
-            var parent = void 0;
-            if (this.get('a:appear') && (this.parentDom || (parent = this.parentVNode) && parent.type & Types.ComponentClassOrInstance && !parent.children.isRender)) {
-                isAppear = true;
-            }
-        }
-
-        var element = this.element;
-
-        var initClassName = function initClassName(c, newValue, oldValue) {
-            var transition = _this.get('a:transition');
-            var enterClass = void 0;
-            var enterActiveClass = void 0;
-            if (isAppear) {
-                enterClass = transition + '-appear';
-                enterActiveClass = transition + '-appear-active';
-            } else {
-                enterClass = transition + '-enter';
-                enterActiveClass = transition + '-enter-active';
-            }
-
-            _this.isAppear = isAppear;
-            _this.enterClass = enterClass;
-            _this.enterActiveClass = enterActiveClass;
-            _this.leaveClass = transition + '-leave';
-            _this.leaveActiveClass = transition + '-leave-active';
-            _this.moveClass = transition + '-move';
-            _this.enterEventName = isAppear ? 'a:appear' : 'a:enter';
-
-            if (oldValue) {
-                element.className = element.className.replace(new RegExp('\\b(' + oldValue + '(?=\\-(appear|enter|leave|move)))', 'g'), newValue);
-            }
-        };
-        this.on('$change:a:transition', initClassName);
-        initClassName();
-
-        // 一个动画元素被删除后，会被保存
-        // 如果在删除的过程中，又添加了，则要清除上一个动画状态
-        // 将这种情况记录下来
-        if (this._lastVNode && this._lastVNode !== lastVNode) {
-            var lastInstance = this._lastVNode.children;
-            if (lastInstance._leaving) {
-                this.lastInstance = lastInstance;
-            }
-        }
-
-        var parentInstance = this.parentInstance = this._getParentAnimate();
-
-        this._enterEnd = function (e) {
-            if (e && e.target !== element) return;
-
-            if (_this.get('a:css') && !_this.get('a:disabled')) {
-                e && e.stopPropagation && e.stopPropagation();
-                removeClass(element, _this.enterClass);
-                removeClass(element, _this.enterActiveClass);
-            }
-            TransitionEvents.off(element, _this._enterEnd);
-            _this._entering = false;
-            if (parentInstance) {
-                if (--parentInstance._enteringAmount === 0 && parentInstance.get('a:mode') === 'in-out') {
-                    nextFrame(function () {
-                        parentInstance._checkMode();
-                    });
-                }
-            }
-            _this.trigger(_this.enterEventName + 'End', element);
-        };
-
-        element._unmount = function (nouse, parentDom) {
-            // 如果该元素是延迟mount的元素，则直接删除
-            if (_this._delayEnter) {
-                parentDom.removeChild(element);
-                _this.destroy(vNode);
-                parentInstance._enteringAmount--;
-                return;
-            }
-            var isNotAnimate = !_this.get('a:css') && !_this._hasJsTransition() || _this.get('a:disabled');
-            _this.vNode = vNode;
-            _this.parentDom = parentDom;
-            if (parentInstance && !isNotAnimate) {
-                parentInstance._leavingAmount++;
-                if (parentInstance.get('a:mode') === 'in-out') {
-                    parentInstance.updateChildren.push(_this);
-                    _this._delayLeave = true;
-                } else {
-                    parentInstance.unmountChildren.push(_this);
-                }
-                parentInstance.children.push(_this);
-            } else if (isNotAnimate) {
-                parentDom.removeChild(element);
-                _this.destroy(vNode);
-            } else {
-                _this._unmount();
-            }
-        };
-
-        if (parentInstance) {
-            // 如果存在父动画组件，则使用父级进行管理
-            // 统一做动画
-            if (isAppear || !this.isRender) {
-                if (this.lastInstance && this.lastInstance._delayLeave) {
-                    parentInstance.updateChildren.push(this);
-                } else {
-                    parentInstance._enteringAmount++;
-                    // 如果没有unmount的元素，则直接enter
-                    if (parentInstance._leavingAmount > 0 && parentInstance.get('a:mode') === 'out-in') {
-                        this._delayEnter = true;
-                        element.style.display = 'none';
-                    } else {
-                        parentInstance.mountChildren.push(this);
-                    }
-                }
-            }
-            parentInstance.children.push(this);
-        } else if (isAppear || !this.isRender) {
-            // 否则单个元素自己动画
-            this._enter();
-        }
-    },
-    _getParentAnimate: function _getParentAnimate() {
-        // 根节点为Animate，不存在parentVNode
-        if (!this.parentVNode) return;
-        // this.parentVNode是animate的tag，所以要拿this.parentVNode.parentVNode
-        var parentVNode = this.parentVNode.parentVNode;
-        if (parentVNode) {
-            var parentInstance = parentVNode.children;
-            if (parentInstance instanceof Animate) {
-                return parentInstance;
-            }
-        }
-    },
-    _unmount: function _unmount() {
-        var _this2 = this;
-
-        if (this.get('a:disabled')) return;
-        var element = this.element;
-        var vNode = this.vNode;
-        var parentDom = this.parentDom;
-        // vNode都会被添加key，当只有一个子元素时，vNode.key === undefined
-        // 这种情况，我们也当成有key处理，此时key为undefined
-        if (!parentDom._reserve) {
-            parentDom._reserve = {};
-        }
-        parentDom._reserve[vNode.key] = vNode;
-
-        this._leaving = true;
-
-        if (this._entering) {
-            TransitionEvents.off(element, this._enterEnd);
-            this._enterEnd();
-        }
-
-        this._leaveEnd = function (e) {
-            if (e && e.target !== element) return;
-
-            if (_this2.get('a:css') && !_this2.get('a:disabled')) {
-                e && e.stopPropagation && e.stopPropagation();
-                removeClass(element, _this2.leaveClass);
-                removeClass(element, _this2.leaveActiveClass);
-            }
-            if (_this2._triggeredLeave) {
-                var s = element.style;
-                s.position = s.top = s.left = s.transform = s.WebkitTransform = '';
-            }
-            _this2._leaving = false;
-            delete parentDom._reserve[vNode.key];
-            TransitionEvents.off(element, _this2._leaveEnd);
-            var parentInstance = _this2.parentInstance;
-            if (parentInstance) {
-                if (--parentInstance._leavingAmount === 0 && parentInstance.get('a:mode') === 'out-in') {
-                    parentInstance._checkMode();
-                }
-            }
-            _this2.trigger('a:leaveEnd', element);
-            if (!_this2._unmountCancelled) {
-                parentDom.removeChild(element);
-                if (_this2.get('a:delayDestroy')) {
-                    _this2.destroy(vNode, null, parentDom);
-                }
-            }
-        };
-
-        this._leave();
-        // 存在一种情况，相同的dom，同时被子组件和父组件管理的情况
-        // 所以unmount后，将其置为空函数，以免再次unmount
-        element._unmount = noop;
-
-        this.trigger('a:leaveStart', element);
-    },
-    _beforeUpdate: function _beforeUpdate(lastVNode, vNode) {
-        // 更新之前，这里的children不包含本次更新mount进来的元素
-        var children = this.children;
-        var reservedChildren = [];
-        var isMove = this.get('a:move');
-        for (var i = 0; i < children.length; i++) {
-            var instance = children[i];
-            if (!instance._leaving && isMove) {
-                instance.position = instance._getPosition();
-            }
-            if (instance._delayLeave) {
-                reservedChildren.push(instance);
-                this.updateChildren.push(instance);
-            }
-        }
-        this.children = reservedChildren;
-    },
-    _getPosition: function _getPosition() {
-        var element = this.element;
-        var style = getComputedStyle(element);
-        var transform = style.transform || style.WebkitTransform;
-        if (transform === 'none') {
-            return {
-                top: element.offsetTop,
-                left: element.offsetLeft
-            };
-        }
-        // const transform = element.style.transform;
-        var matrix = new CSSMatrix(transform);
-        return {
-            top: element.offsetTop + matrix.m42,
-            left: element.offsetLeft + matrix.m41
-        };
-    },
-
-
-    /**
-     * 尽量保持动画的连贯性
-     */
-    _update: function _update(lastVNode, vNode, isFromCheckMode) {
-        var parentInstance = void 0;
-        if (!this.get('a:disabled')) {
-            parentInstance = this.parentInstance;
-            if (parentInstance) {
-                parentInstance.updateChildren.push(this);
-                parentInstance.children.push(this);
-            }
-        }
-
-        // 更新之后，这里的children包括当前mount/update/unmount的元素
-        var children = this.children;
-        // 不存在children，则表示没有子动画元素要管理，直接返回
-        if (!children.length) return;
-
-        var mountChildren = this.mountChildren;
-        var unmountChildren = this.unmountChildren;
-        var updateChildren = this.updateChildren;
-        var isMove = this.get('a:move');
-
-        // 如果是in-out模式，但是没有元素enter，则直接leave
-        if (!isFromCheckMode && this._enteringAmount === 0 && parentInstance && parentInstance.get('a:mode') === 'in-out') {
-            for (var i = 0; i < updateChildren.length; i++) {
-                var instance = updateChildren[i];
-                if (instance._delayLeave) {
-                    unmountChildren.push(instance);
-                    updateChildren.splice(i, 1);
-                    instance._delayLeave = false;
-                    i--;
-                }
-            }
-        }
-
-        // 进行mount元素的进入动画
-        // 因为存在moving元素被unmount又被mount的情况
-        // 所以最先处理
-        if (isMove) {
-            mountChildren.forEach(function (instance) {
-                // 如果当前元素是从上一个unmount的元素来的，
-                // 则要初始化最新位置，因为beforeUpdate中
-                // 不包括当前mount元素的位置初始化
-                // 这样才能保持位置的连贯性
-                if (instance.lastInstance) {
-                    instance.position = instance._getPosition();
-                }
-            });
-        }
-        mountChildren.forEach(function (instance) {
-            return instance._enter();
-        });
-
-        // 先将之前的动画清空
-        // 只有既在move又在enter的unmount元素才清空动画
-        // 这种情况保持不了连贯性
-        if (isMove) {
-            unmountChildren.forEach(function (instance) {
-                if (instance._moving) {
-                    instance._moveEnd();
-                    if (instance._entering) {
-                        instance._enterEnd();
-                    }
-                }
-            });
-
-            // 对于更新的元素，如果正在move，则将位置清空，以便确定最终位置
-            updateChildren.forEach(function (instance) {
-                if (instance._moving) {
-                    var s = instance.element.style;
-                    s.left = s.top = '';
-                }
-            });
-
-            // 将要删除的元素，设为absolute，以便确定其它元素最终位置
-            unmountChildren.forEach(function (instance) {
-                instance.element.style.position = 'absolute';
-            });
-
-            // 获取所有元素的新位置
-            children.forEach(function (instance) {
-                instance.newPosition = instance._getPosition();
-            });
-
-            // 分别判断元素是否需要移动，并保持当前位置不变
-            // unmount的元素，从当前位置直接leave，不要move了
-            unmountChildren.forEach(function (instance) {
-                return instance._initMove(true);
-            });
-            updateChildren.forEach(function (instance) {
-                return instance._initMove();
-            });
-            mountChildren.forEach(function (instance) {
-                return instance._initMove();
-            });
-
-            // 对于animation动画，enterEnd了entering元素
-            // 需要re-layout，来触发move动画
-            document.body.offsetWidth;
-
-            // 如果元素需要移动，则进行move动画
-            children.forEach(function (instance) {
-                if (instance._needMove) {
-                    if (!instance._moving) {
-                        instance._move();
-                    } else {
-                        // 如果已经在移动了，那直接改变translate，保持动画连贯
-                        instance._triggerMove();
-                    }
-                }
-            });
-        }
-
-        // unmount元素做leave动画
-        unmountChildren.forEach(function (instance) {
-            return instance._unmount();
-        });
-
-        this.mountChildren = [];
-        this.updateChildren = [];
-        this.unmountChildren = [];
-    },
-    _checkMode: function _checkMode() {
-        var mountChildren = [];
-        var updateChildren = [];
-        var unmountChildren = [];
-        var children = this.children = this.children.filter(function (instance) {
-            if (instance._delayEnter) {
-                instance._delayEnter = false;
-                mountChildren.push(instance);
-                return false;
-            } else if (instance._delayLeave) {
-                instance._delayLeave = false;
-                unmountChildren.push(instance);
-                return true;
-            } else if (instance._leaving !== false) {
-                updateChildren.push(instance);
-                return true;
-            }
-            return false;
-        });
-        this._beforeUpdate();
-        mountChildren.forEach(function (instance) {
-            instance.element.style.display = '';
-            instance.position = null;
-        });
-        this.mountChildren = mountChildren;
-        this.updateChildren = updateChildren;
-        this.unmountChildren = unmountChildren;
-        this.children = children.concat(mountChildren);
-        this._update(null, null, true);
-    },
-    _initMove: function _initMove(isUnmount) {
-        var element = this.element;
-        var oldPosition = this.position;
-        var newPosition = this.newPosition;
-
-        this.position = newPosition;
-
-        // 对于新mount的元素，不进行move判断
-        if (!oldPosition) return;
-
-        var dx = oldPosition.left - newPosition.left;
-        var dy = oldPosition.top - newPosition.top;
-        var oDx = this.dx;
-        var oDy = this.dy;
-
-        this.dx = dx;
-        this.dy = dy;
-
-        if (dx || dy || oDx || oDy) {
-            // 对于move中的元素，需要将它重新回到0
-            var s = element.style;
-            if (isUnmount) {
-                s.left = oldPosition.left + 'px';
-                s.top = oldPosition.top + 'px';
-                this._needMove = false;
-            } else {
-                // 如果当前元素正在enter，而且是animation动画，则要enterEnd
-                // 否则无法move
-                if (this._entering && getAnimateType(element) !== 'transition') {
-                    this._enterEnd();
-                }
-                this._needMove = true;
-                s.position = 'relative';
-                s.left = dx + 'px';
-                s.top = dy + 'px';
-            }
-        } else {
-            this._needMove = false;
-        }
-    },
-    _move: function _move() {
-        var _this3 = this;
-
-        if (this.get('a:disabled')) return;
-        this._moving = true;
-        var element = this.element;
-        var s = element.style;
-        addClass(element, this.moveClass);
-        this._moveEnd = function (e) {
-            e && e.stopPropagation();
-            if (!e || /transform$/.test(e.propertyName)) {
-                TransitionEvents.off(element, _this3._moveEnd);
-                removeClass(element, _this3.moveClass);
-                s.position = s.left = s.top = s.transform = s.WebkitTransform = '';
-                _this3.dx = _this3.dy = 0;
-                _this3._moving = false;
-            }
-        };
-        TransitionEvents.on(element, this._moveEnd);
-        this._triggerMove();
-        // nextFrame(() => this._triggerMove());
-    },
-    _triggerMove: function _triggerMove() {
-        var s = this.element.style;
-        s.transform = s.WebkitTransform = 'translate(' + (0 - this.dx) + 'px, ' + (0 - this.dy) + 'px)';
-    },
-    _enter: function _enter() {
-        var _this4 = this;
-
-        if (this.get('a:disabled')) return;
-        this._entering = true;
-        var element = this.element;
-        var enterClass = this.enterClass;
-        var enterActiveClass = this.enterActiveClass;
-        var isCss = this.get('a:css');
-
-        // getAnimateType将添加enter-active className，在firefox下将导致动画提前执行
-        // 我们应该先于添加`enter` className去调用该函数
-        var isTransition = false;
-        if (isCss && getAnimateType(element, enterActiveClass) !== 'animation') {
-            isTransition = true;
-        }
-
-        // 如果这个元素是上一个删除的元素，则从当前状态回到原始状态
-        if (this.lastInstance) {
-            this.lastInstance._unmountCancelled = true;
-            this.lastInstance._leaveEnd();
-
-            if (isCss) {
-                if (this.lastInstance._triggeredLeave) {
-                    // addClass(element, enterActiveClass);
-                    // 保持连贯，添加leaveActiveClass
-                    addClass(element, this.leaveActiveClass);
-                } else {
-                    // 如果上一个元素还没来得及做动画，则当做新元素处理
-                    addClass(element, enterClass);
-                }
-            }
-        } else if (isCss) {
-            addClass(element, enterClass);
-        }
-        TransitionEvents.on(element, this._enterEnd);
-
-        this.trigger(this.enterEventName + 'Start', element);
-
-        if (isTransition) {
-            nextFrame(function () {
-                return _this4._triggerEnter();
-            });
-        } else {
-            // 对于animation动画，同步添加enterActiveClass，避免闪动
-            this._triggerEnter();
-        }
-    },
-    _triggerEnter: function _triggerEnter() {
-        var element = this.element;
-        this._triggeredEnter = true;
-        if (this.get('a:css')) {
-            if (this._entering === false) {
-                return removeClass(element, this.enterActiveClass);
-            }
-            addClass(element, this.enterActiveClass);
-            removeClass(element, this.enterClass);
-            removeClass(element, this.leaveActiveClass);
-        }
-        this.trigger(this.enterEventName, element, this._enterEnd);
-    },
-    _leave: function _leave() {
-        var _this5 = this;
-
-        var element = this.element;
-        // 为了保持动画连贯，我们立即添加leaveActiveClass
-        // 但如果当前元素还没有来得及做enter动画，就被删除
-        // 则leaveActiveClass和leaveClass都放到下一帧添加
-        // 否则leaveClass和enterClass一样就不会有动画效果
-        if (this._triggeredEnter && this.get('a:css')) {
-            addClass(element, this.leaveActiveClass);
-        }
-        // TransitionEvents.on(element, this._leaveEnd);
-        nextFrame(function () {
-            // 1. 如果leave动画还没得及执行，就enter了，此时啥也不做
-            if (_this5._unmountCancelled) return;
-            // 存在一种情况，当一个enter动画在完成的瞬间，
-            // 这个元素被删除了，由于前面保持动画的连贯性
-            // 添加了leaveActiveClass，则会导致绑定的leaveEnd
-            // 立即执行，所以这里放到下一帧来绑定
-            TransitionEvents.on(element, _this5._leaveEnd);
-            _this5._triggerLeave();
-        });
-    },
-    _triggerLeave: function _triggerLeave() {
-        this._triggeredLeave = true;
-        if (this._leaving === false) {
-            return;
-        }
-        var element = this.element;
-        if (this.get('a:css')) {
-            addClass(element, this.leaveActiveClass);
-            addClass(element, this.leaveClass);
-        }
-        this.trigger('a:leave', element, this._leaveEnd);
-    },
-    destroy: function destroy(lastVNode, nextVNode, parentDom) {
-        // 1: 不存在parentDom，有两种情况：
-        //      1): 父元素也要被销毁，此时: !parentDom && lastVNode && !nextVNode
-        //      2): 该元素将被替换，此时：!parentDom && lastVNode && nextVNode
-        //      对于1)，既然父元素要销毁，那本身也要直接销毁
-        //      对于2)，本身必须待动画结束方能销毁
-        // 2: 如果该元素已经动画完成，直接销毁
-        // 3: 如果直接调用destroy方法，则直接销毁，此时：!lastVNode && !nextVNode && !parentDom
-        // 4: 如果不是延迟destroy子元素，则立即销毁
-        if (!this.get('a:delayDestroy') || !parentDom && !nextVNode && this.parentVNode.dom !== this.element ||
-        // this.get('a:disabled') || 
-        this._leaving === false) {
-            this._super(lastVNode, nextVNode, parentDom);
-        }
-    }
-});
 
 function addClass(element, className) {
     if (className) {
@@ -5634,10 +5063,721 @@ var CSSMatrix = typeof WebKitCSSMatrix !== 'undefined' ? WebKitCSSMatrix : funct
     }
 };
 
-Intact$1.prototype.Animate = Animate$1;
-Intact$1.Animate = Animate$1;
-Intact$1.Vdt = Vdt$1;
-Intact$1.utils = utils;
+var prototype = {
+    defaults: function defaults() {
+        return {
+            'a:tag': 'div',
+            'a:transition': 'animate',
+            'a:appear': false,
+            'a:mode': 'both', // out-in | in-out | both
+            'a:disabled': false, // 只做动画管理者，自己不进行动画
+            'a:move': true, // 是否执行move动画
+            'a:css': true, // 是否使用css动画，如果自定义动画函数，可以将它置为false
+            'a:delayDestroy': true // 是否动画完成才destroy子元素
+        };
+    },
+    template: function template() {
+        var h = Vdt$1.miss.h;
+        var self = this.data;
+        var tagName = self.get('a:tag');
+        var props = {};
+        var _props = self.get();
+
+        for (var key in _props) {
+            if (key !== 'ref' && key !== 'key' && (key[0] !== 'a' || key[1] !== ':') && key.substr(0, 5) !== 'ev-a:') {
+                props[key] = _props[key];
+            }
+        }
+
+        return h(tagName, props, self.get('children'));
+    },
+    _init: function _init() {
+        if (!endEvents.length) {
+            // 如果不支持css动画，则关闭css
+            this.set({
+                'a:css': false,
+                'a:move': false
+            }, { silent: true });
+        }
+
+        this.mountChildren = [];
+        this.unmountChildren = [];
+        this.updateChildren = [];
+        this.children = [];
+        this._enteringAmount = 0;
+        this._leavingAmount = 0;
+    }
+};
+
+function checkMode(o) {
+    var mountChildren = [];
+    var updateChildren = [];
+    var unmountChildren = [];
+
+    var children = o.children = o.children.filter(function (instance) {
+        if (instance._delayEnter) {
+            instance._delayEnter = false;
+            mountChildren.push(instance);
+
+            return false;
+        } else if (instance._delayLeave) {
+            instance._delayLeave = false;
+            unmountChildren.push(instance);
+
+            return true;
+        } else if (instance._leaving !== false) {
+            updateChildren.push(instance);
+
+            return true;
+        }
+
+        return false;
+    });
+
+    o._beforeUpdate();
+
+    mountChildren.forEach(function (instance) {
+        instance.element.style.display = '';
+        instance.position = null;
+    });
+
+    o.mountChildren = mountChildren;
+    o.updateChildren = updateChildren;
+    o.unmountChildren = unmountChildren;
+    o.children = children.concat(mountChildren);
+
+    o._update(null, null, true);
+}
+
+prototype.init = inBrowser ? function (lastVNode, nextVNode) {
+    var parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
+    if (parentDom && parentDom._reserve) {
+        lastVNode = parentDom._reserve[nextVNode.key];
+    }
+
+    return this._super(lastVNode, nextVNode);
+} : function () {
+    return this._superApply(arguments);
+};
+
+prototype.destroy = function (lastVNode, nextVNode, parentDom) {
+    // 1: 不存在parentDom，有两种情况：
+    //      1): 父元素也要被销毁，此时: !parentDom && lastVNode && !nextVNode
+    //      2): 该元素将被替换，此时：!parentDom && lastVNode && nextVNode
+    //      对于1)，既然父元素要销毁，那本身也要直接销毁
+    //      对于2)，本身必须待动画结束方能销毁
+    // 2: 如果该元素已经动画完成，直接销毁
+    // 3: 如果直接调用destroy方法，则直接销毁，此时：!lastVNode && !nextVNode && !parentDom
+    // 4: 如果不是延迟destroy子元素，则立即销毁
+    if (!this.get('a:delayDestroy') || !parentDom && !nextVNode && this.parentVNode.dom !== this.element ||
+    // this.get('a:disabled') || 
+    this._leaving === false) {
+        this._super(lastVNode, nextVNode, parentDom);
+    }
+};
+
+function leave(o) {
+    if (o.get('a:disabled')) return;
+
+    var element = o.element;
+    var vNode = o.vNode;
+    var parentDom = o.parentDom;
+    // vNode都会被添加key，当只有一个子元素时，vNode.key === undefined
+    // 这种情况，我们也当成有key处理，此时key为undefined
+    if (!parentDom._reserve) {
+        parentDom._reserve = {};
+    }
+    parentDom._reserve[vNode.key] = vNode;
+
+    o._leaving = true;
+
+    if (o._entering) {
+        TransitionEvents.off(element, o._enterEnd);
+        o._enterEnd();
+    }
+
+    addLeaveEndCallback(o);
+
+    // 为了保持动画连贯，我们立即添加leaveActiveClass
+    // 但如果当前元素还没有来得及做enter动画，就被删除
+    // 则leaveActiveClass和leaveClass都放到下一帧添加
+    // 否则leaveClass和enterClass一样就不会有动画效果
+    if (o._triggeredEnter && o.get('a:css')) {
+        addClass(element, o.leaveActiveClass);
+    }
+
+    // TransitionEvents.on(element, o._leaveEnd);
+    nextFrame(function () {
+        // 1. 如果leave动画还没得及执行，就enter了，此时啥也不做
+        if (o._unmountCancelled) return;
+        // 存在一种情况，当一个enter动画在完成的瞬间，
+        // 这个元素被删除了，由于前面保持动画的连贯性
+        // 添加了leaveActiveClass，则会导致绑定的leaveEnd
+        // 立即执行，所以这里放到下一帧来绑定
+        TransitionEvents.on(element, o._leaveEnd);
+        triggerLeave(o);
+    });
+
+    // 存在一种情况，相同的dom，同时被子组件和父组件管理的情况
+    // 所以unmount后，将其置为空函数，以免再次unmount
+    element._unmount = noop;
+
+    o.trigger('a:leaveStart', element);
+}
+
+function triggerLeave(o) {
+    o._triggeredLeave = true;
+    if (o._leaving === false) {
+        return;
+    }
+
+    var element = o.element;
+    if (o.get('a:css')) {
+        addClass(element, o.leaveActiveClass);
+        addClass(element, o.leaveClass);
+    }
+
+    o.trigger('a:leave', element, o._leaveEnd);
+}
+
+function addLeaveEndCallback(o) {
+    var element = o.element,
+        parentDom = o.parentDom,
+        vNode = o.vNode;
+
+
+    o._leaveEnd = function (e) {
+        if (e && e.target !== element) return;
+
+        if (o.get('a:css') && !o.get('a:disabled')) {
+            e && e.stopPropagation && e.stopPropagation();
+            removeClass(element, o.leaveClass);
+            removeClass(element, o.leaveActiveClass);
+        }
+        if (o._triggeredLeave) {
+            var s = element.style;
+            s.position = s.top = s.left = s.transform = s.WebkitTransform = '';
+        }
+
+        o._leaving = false;
+        delete parentDom._reserve[vNode.key];
+        TransitionEvents.off(element, o._leaveEnd);
+
+        var parentInstance = o.parentInstance;
+        if (parentInstance) {
+            if (--parentInstance._leavingAmount === 0 && parentInstance.get('a:mode') === 'out-in') {
+                checkMode(parentInstance);
+            }
+        }
+
+        o.trigger('a:leaveEnd', element);
+        if (!o._unmountCancelled) {
+            parentDom.removeChild(element);
+            if (o.get('a:delayDestroy')) {
+                o.destroy(vNode, null, parentDom);
+            }
+        }
+    };
+}
+
+prototype._mount = function (lastVNode, vNode) {
+    this.isAppear = detectIsAppear(this);
+
+    this.on('$change:a:transition', initClassName);
+    initClassName(this);
+
+    // 一个动画元素被删除后，会被保存
+    // 如果在删除的过程中，又添加了，则要清除上一个动画状态
+    // 将这种情况记录下来
+    if (this._lastVNode && this._lastVNode !== lastVNode) {
+        var lastInstance = this._lastVNode.children;
+        if (lastInstance._leaving) {
+            this.lastInstance = lastInstance;
+        }
+    }
+
+    this.parentInstance = getParentAnimate(this);
+
+    addEnterEndCallback(this);
+    addUnmountCallback(this, vNode);
+
+    if (this.parentInstance) {
+        // 如果存在父动画组件，则使用父级进行管理
+        // 统一做动画
+        animateList(this);
+    } else if (this.isAppear || !this.isRender) {
+        // 否则单个元素自己动画
+        enter(this);
+    }
+};
+
+function enter(o) {
+    if (o.get('a:disabled')) return;
+
+    o._entering = true;
+
+    var element = o.element;
+    var enterClass = o.enterClass;
+    var enterActiveClass = o.enterActiveClass;
+    var isCss = o.get('a:css');
+
+    // getAnimateType将添加enter-active className，在firefox下将导致动画提前执行
+    // 我们应该先于添加`enter` className去调用该函数
+    var isTransition = false;
+    if (isCss && getAnimateType(element, enterActiveClass) !== 'animation') {
+        isTransition = true;
+    }
+
+    // 如果这个元素是上一个删除的元素，则从当前状态回到原始状态
+    if (o.lastInstance) {
+        o.lastInstance._unmountCancelled = true;
+        o.lastInstance._leaveEnd();
+
+        if (isCss) {
+            if (o.lastInstance._triggeredLeave) {
+                // addClass(element, enterActiveClass);
+                // 保持连贯，添加leaveActiveClass
+                addClass(element, o.leaveActiveClass);
+            } else {
+                // 如果上一个元素还没来得及做动画，则当做新元素处理
+                addClass(element, enterClass);
+            }
+        }
+    } else if (isCss) {
+        addClass(element, enterClass);
+    }
+    TransitionEvents.on(element, o._enterEnd);
+
+    o.trigger(o.enterEventName + 'Start', element);
+
+    if (isTransition) {
+        nextFrame(function () {
+            return triggerEnter(o);
+        });
+    } else {
+        // 对于animation动画，同步添加enterActiveClass，避免闪动
+        triggerEnter(o);
+    }
+}
+
+function triggerEnter(o) {
+    var element = o.element;
+
+    o._triggeredEnter = true;
+
+    if (o.get('a:css')) {
+        if (o._entering === false) {
+            return removeClass(element, o.enterActiveClass);
+        }
+        addClass(element, o.enterActiveClass);
+        removeClass(element, o.enterClass);
+        removeClass(element, o.leaveActiveClass);
+    }
+
+    o.trigger(o.enterEventName, element, o._enterEnd);
+}
+
+function detectIsAppear(o) {
+    var isAppear = false;
+    if (o.isRender) {
+        var parent = void 0;
+        if (o.get('a:appear') && (o.parentDom || (parent = o.parentVNode) && parent.type & Types.ComponentClassOrInstance && !parent.children.isRender)) {
+            isAppear = true;
+        }
+    }
+
+    return isAppear;
+}
+
+function initClassName(o, newValue, oldValue) {
+    var transition = o.get('a:transition');
+    var element = o.element,
+        isAppear = o.isAppear;
+
+
+    var enterClass = void 0;
+    var enterActiveClass = void 0;
+
+    if (isAppear) {
+        enterClass = transition + '-appear';
+        enterActiveClass = transition + '-appear-active';
+    } else {
+        enterClass = transition + '-enter';
+        enterActiveClass = transition + '-enter-active';
+    }
+
+    o.isAppear = isAppear;
+    o.enterClass = enterClass;
+    o.enterActiveClass = enterActiveClass;
+    o.leaveClass = transition + '-leave';
+    o.leaveActiveClass = transition + '-leave-active';
+    o.moveClass = transition + '-move';
+    o.enterEventName = isAppear ? 'a:appear' : 'a:enter';
+
+    if (oldValue) {
+        element.className = element.className.replace(new RegExp('\\b(' + oldValue + '(?=\\-(appear|enter|leave|move)))', 'g'), newValue);
+    }
+}
+
+function addEnterEndCallback(o) {
+    var element = o.element,
+        parentInstance = o.parentInstance;
+
+
+    o._enterEnd = function (e) {
+        if (e && e.target !== element) return;
+
+        if (o.get('a:css') && !o.get('a:disabled')) {
+            e && e.stopPropagation && e.stopPropagation();
+            removeClass(element, o.enterClass);
+            removeClass(element, o.enterActiveClass);
+        }
+
+        TransitionEvents.off(element, o._enterEnd);
+        o._entering = false;
+
+        if (parentInstance) {
+            if (--parentInstance._enteringAmount === 0 && parentInstance.get('a:mode') === 'in-out') {
+                nextFrame(function () {
+                    checkMode(parentInstance);
+                });
+            }
+        }
+
+        o.trigger(o.enterEventName + 'End', element);
+    };
+}
+
+function addUnmountCallback(o, vNode) {
+    var element = o.element,
+        parentInstance = o.parentInstance;
+
+
+    element._unmount = function (nouse, parentDom) {
+        // 如果该元素是延迟mount的元素，则直接删除
+        if (o._delayEnter) {
+            parentDom.removeChild(element);
+            o.destroy(vNode);
+            parentInstance._enteringAmount--;
+
+            return;
+        }
+
+        var isNotAnimate = !o.get('a:css') && !hasJsTransition(o) || o.get('a:disabled');
+
+        o.vNode = vNode;
+        o.parentDom = parentDom;
+
+        if (parentInstance && !isNotAnimate) {
+            parentInstance._leavingAmount++;
+            if (parentInstance.get('a:mode') === 'in-out') {
+                parentInstance.updateChildren.push(o);
+                o._delayLeave = true;
+            } else {
+                parentInstance.unmountChildren.push(o);
+            }
+            parentInstance.children.push(o);
+        } else if (isNotAnimate) {
+            parentDom.removeChild(element);
+            o.destroy(vNode);
+        } else {
+            leave(o);
+        }
+    };
+}
+
+function animateList(o) {
+    var element = o.element,
+        isAppear = o.isAppear,
+        parentInstance = o.parentInstance;
+
+
+    if (isAppear || !o.isRender) {
+        if (o.lastInstance && o.lastInstance._delayLeave) {
+            parentInstance.updateChildren.push(o);
+        } else {
+            parentInstance._enteringAmount++;
+            // 如果没有unmount的元素，则直接enter
+            if (parentInstance._leavingAmount > 0 && parentInstance.get('a:mode') === 'out-in') {
+                o._delayEnter = true;
+                element.style.display = 'none';
+            } else {
+                parentInstance.mountChildren.push(o);
+            }
+        }
+    }
+
+    parentInstance.children.push(o);
+}
+
+function getParentAnimate(o) {
+    // 根节点为Animate，不存在parentVNode
+    if (!o.parentVNode) return;
+
+    // o.parentVNode是animate的tag，所以要拿o.parentVNode.parentVNode
+    var parentVNode = o.parentVNode.parentVNode;
+    if (parentVNode) {
+        var parentInstance = parentVNode.children;
+        if (parentInstance instanceof o.constructor) {
+            return parentInstance;
+        }
+    }
+}
+
+function hasJsTransition(o) {
+    var events = o._events;
+
+    for (var key in events) {
+        if (key[0] === 'a' && key[1] === ':') {
+            if (events[key].length) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+prototype._beforeUpdate = function (lastVNode, vNode) {
+    // 更新之前，这里的children不包含本次更新mount进来的元素
+    var children = this.children;
+    var reservedChildren = [];
+    var isMove = this.get('a:move');
+
+    for (var i = 0; i < children.length; i++) {
+        var instance = children[i];
+        if (!instance._leaving && isMove) {
+            instance.position = getPosition(instance);
+        }
+        if (instance._delayLeave) {
+            reservedChildren.push(instance);
+            this.updateChildren.push(instance);
+        }
+    }
+
+    this.children = reservedChildren;
+};
+
+prototype._update = function (lastVNode, vNode, isFromCheckMode) {
+    var parentInstance = void 0;
+    if (!this.get('a:disabled')) {
+        parentInstance = this.parentInstance;
+        if (parentInstance) {
+            parentInstance.updateChildren.push(this);
+            parentInstance.children.push(this);
+        }
+    }
+
+    // 更新之后，这里的children包括当前mount/update/unmount的元素
+    var children = this.children;
+    // 不存在children，则表示没有子动画元素要管理，直接返回
+    if (!children.length) return;
+
+    var mountChildren = this.mountChildren;
+    var unmountChildren = this.unmountChildren;
+    var updateChildren = this.updateChildren;
+    var isMove = this.get('a:move');
+
+    // 如果是in-out模式，但是没有元素enter，则直接leave
+    if (!isFromCheckMode && this._enteringAmount === 0 && parentInstance && parentInstance.get('a:mode') === 'in-out') {
+        for (var i = 0; i < updateChildren.length; i++) {
+            var instance = updateChildren[i];
+            if (instance._delayLeave) {
+                unmountChildren.push(instance);
+                updateChildren.splice(i, 1);
+                instance._delayLeave = false;
+                i--;
+            }
+        }
+    }
+
+    // 进行mount元素的进入动画
+    // 因为存在moving元素被unmount又被mount的情况
+    // 所以最先处理
+    if (isMove) {
+        mountChildren.forEach(function (instance) {
+            // 如果当前元素是从上一个unmount的元素来的，
+            // 则要初始化最新位置，因为beforeUpdate中
+            // 不包括当前mount元素的位置初始化
+            // 这样才能保持位置的连贯性
+            if (instance.lastInstance) {
+                instance.position = getPosition(instance);
+            }
+        });
+    }
+    mountChildren.forEach(function (instance) {
+        return enter(instance);
+    });
+
+    // 先将之前的动画清空
+    // 只有既在move又在enter的unmount元素才清空动画
+    // 这种情况保持不了连贯性
+    if (isMove) {
+        unmountChildren.forEach(function (instance) {
+            if (instance._moving) {
+                instance._moveEnd();
+                if (instance._entering) {
+                    instance._enterEnd();
+                }
+            }
+        });
+
+        // 对于更新的元素，如果正在move，则将位置清空，以便确定最终位置
+        updateChildren.forEach(function (instance) {
+            if (instance._moving) {
+                var s = instance.element.style;
+                s.left = s.top = '';
+            }
+        });
+
+        // 将要删除的元素，设为absolute，以便确定其它元素最终位置
+        unmountChildren.forEach(function (instance) {
+            instance.element.style.position = 'absolute';
+        });
+
+        // 获取所有元素的新位置
+        children.forEach(function (instance) {
+            instance.newPosition = getPosition(instance);
+        });
+
+        // 分别判断元素是否需要移动，并保持当前位置不变
+        // unmount的元素，从当前位置直接leave，不要move了
+        unmountChildren.forEach(function (instance) {
+            return initMove(instance, true);
+        });
+        updateChildren.forEach(function (instance) {
+            return initMove(instance);
+        });
+        mountChildren.forEach(function (instance) {
+            return initMove(instance);
+        });
+
+        // 对于animation动画，enterEnd了entering元素
+        // 需要re-layout，来触发move动画
+        document.body.offsetWidth;
+
+        // 如果元素需要移动，则进行move动画
+        children.forEach(function (instance) {
+            if (instance._needMove) {
+                if (!instance._moving) {
+                    move(instance);
+                } else {
+                    // 如果已经在移动了，那直接改变translate，保持动画连贯
+                    triggerMove(instance);
+                }
+            }
+        });
+    }
+
+    // unmount元素做leave动画
+    unmountChildren.forEach(function (instance) {
+        return leave(instance);
+    });
+
+    this.mountChildren = [];
+    this.updateChildren = [];
+    this.unmountChildren = [];
+};
+
+function initMove(o, isUnmount) {
+    var element = o.element,
+        oldPosition = o.position,
+        newPosition = o.newPosition;
+
+
+    o.position = newPosition;
+
+    // 对于新mount的元素，不进行move判断
+    if (!oldPosition) return;
+
+    var dx = oldPosition.left - newPosition.left;
+    var dy = oldPosition.top - newPosition.top;
+    var oDx = o.dx;
+    var oDy = o.dy;
+
+    o.dx = dx;
+    o.dy = dy;
+
+    if (dx || dy || oDx || oDy) {
+        // 对于move中的元素，需要将它重新回到0
+        var s = element.style;
+        if (isUnmount) {
+            s.left = oldPosition.left + 'px';
+            s.top = oldPosition.top + 'px';
+            o._needMove = false;
+        } else {
+            // 如果当前元素正在enter，而且是animation动画，则要enterEnd
+            // 否则无法move
+            if (o._entering && getAnimateType(element) !== 'transition') {
+                o._enterEnd();
+            }
+            o._needMove = true;
+            s.position = 'relative';
+            s.left = dx + 'px';
+            s.top = dy + 'px';
+        }
+    } else {
+        o._needMove = false;
+    }
+}
+
+function move(o) {
+    if (o.get('a:disabled')) return;
+
+    o._moving = true;
+
+    var element = o.element;
+    var s = element.style;
+
+    addClass(element, o.moveClass);
+
+    o._moveEnd = function (e) {
+        e && e.stopPropagation();
+        if (!e || /transform$/.test(e.propertyName)) {
+            TransitionEvents.off(element, o._moveEnd);
+            removeClass(element, o.moveClass);
+            s.position = s.left = s.top = s.transform = s.WebkitTransform = '';
+            o.dx = o.dy = 0;
+            o._moving = false;
+        }
+    };
+    TransitionEvents.on(element, o._moveEnd);
+
+    triggerMove(o);
+    // nextFrame(() => o._triggerMove());
+}
+
+function triggerMove(o) {
+    var s = o.element.style;
+    s.transform = s.WebkitTransform = 'translate(' + (0 - o.dx) + 'px, ' + (0 - o.dy) + 'px)';
+}
+
+function getPosition(o) {
+    var element = o.element;
+    var style = getComputedStyle(element);
+    var transform = style.transform || style.WebkitTransform;
+
+    if (transform === 'none') {
+        return {
+            top: element.offsetTop,
+            left: element.offsetLeft
+        };
+    }
+
+    // const transform = element.style.transform;
+    var matrix = new CSSMatrix(transform);
+    return {
+        top: element.offsetTop + matrix.m42,
+        left: element.offsetLeft + matrix.m41
+    };
+}
+
+var Animate = Intact$2.extend(prototype);
+
+Intact$2.prototype.Animate = Animate;
+Intact$2.Animate = Animate;
+Intact$2.Vdt = Vdt$1;
+Intact$2.utils = utils;
 Vdt$1.configure({
     getModel: function getModel(self, key) {
         return self.get(key);
@@ -5648,4 +5788,4 @@ Vdt$1.configure({
     }
 });
 
-module.exports = Intact$1;
+module.exports = Intact$2;
