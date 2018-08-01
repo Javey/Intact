@@ -2116,7 +2116,7 @@ function createElement(vNode, parentDom, mountedQueue, isRender, parentVNode, is
     } else if (type & Types$1.HtmlComment) {
         return createCommentElement(vNode, parentDom);
     } else {
-        throw new Error('unknown vnode type ' + type);
+        throw new Error('expect a vNode but got ' + vNode);
     }
 }
 
@@ -4236,10 +4236,7 @@ if (Object.defineProperty) {
 }
 
 Intact$2._constructors.push(function (props) {
-    props = extend({}, result(this, 'defaults'), props);
-
-    this.props = {};
-    this.set(props, { silent: true });
+    this.props = extend({}, result(this, 'defaults'), props);
 
     // for compatibility v1.0
     this.attributes = this.props;
@@ -4257,22 +4254,18 @@ Intact$2.prototype.set = function _set(key, val, options) {
 
     if (isNullOrUndefined(key)) return this;
 
-    var isSetByObject = false;
     if ((typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object') {
         options = val;
-        isSetByObject = true;
     } else {
-        // 如果不是批量设置，则强制分析path
-        options = extend({}, options, {
-            path: true
-        });
+        var obj = {};
+        obj[key] = val;
+        key = obj;
     }
     options = extend({
         silent: false,
         update: true,
         async: false,
-        _fromPatchProps: false,
-        path: false
+        _fromPatchProps: false
     }, options);
     // 兼容老版本
     if (hasOwn.call(options, 'global')) {
@@ -4280,84 +4273,42 @@ Intact$2.prototype.set = function _set(key, val, options) {
     }
 
     var props = this.props;
-    var changes = {};
 
-    var hasChanged = false;
+    var changes = [];
 
-    // 前面做了undefined的判断，这里不可能为undefined了
-    if (isSetByObject) {
-        if (!options.silent) {
-            for (var prop in key) {
-                var nextValue = key[prop];
-                var lastValue = props[prop];
-                if (!isEqual(lastValue, nextValue)) {
-                    changes[prop] = [lastValue, nextValue];
-                    hasChanged = true;
-                }
-                // 即使相等，也要重新复制，因为有可能引用地址变更
-                props[prop] = nextValue;
-            }
-        } else {
-            // 如果静默更新，则直接赋值
-            extend(props, key);
-        }
+    if (!options.silent) {
+        changes = setProps(key, props);
     } else {
-        if (!options.silent) {
-            var _lastValue2 = get$$1(props, key);
-            if (!isEqual(_lastValue2, val)) {
-                if (!hasOwn.call(props, key)) {
-                    changes[key] = [_lastValue2, val];
-                    var path = castPath(key);
-                    // 如果是像'a.b.c'这样设置属性，而该属性不存在
-                    // 依次触发change:a.b.c、change:a.b、change:a这样的事件
-                    // 先不设置props，去取老值
-                    var _props = [];
-                    for (var i = path.length - 1; i > 0; i--) {
-                        var _prop = path.slice(0, i).join('.');
-                        var _lastValue = get$$1(props, _prop);
-                        changes[_prop] = [_lastValue];
-                        _props.push(_prop);
-                    }
-                    // 设置props后，去取新值
-                    // 对于引用数据类型，新老值可能一样
-                    set$$1(props, key, val);
-                    for (var _i = 0; _i < _props.length; _i++) {
-                        var _prop2 = _props[_i];
-                        changes[_prop2].push(get$$1(props, _prop2));
-                    }
-                } else {
-                    // 否则，只触发change:a.b.c
-                    changes[key] = [_lastValue2, val];
-                    set$$1(props, key, val);
-                }
-
-                hasChanged = true;
-            } else {
-                set$$1(props, key, val);
-            }
-        } else {
-            set$$1(props, key, val);
+        // 如果静默更新，则直接赋值
+        for (var prop in key) {
+            set$$1(props, prop, key[prop]);
         }
     }
 
-    if (hasChanged) {
-        for (var _prop3 in changes) {
-            var values$$1 = changes[_prop3];
+    if (changes.length) {
+        var changeKeys = [];
+        for (var i = 0; i < changes.length; i++) {
+            var _changes$i = changes[i],
+                _prop = _changes$i[0],
+                values$$1 = _changes$i[1];
+
+            changeKeys.push(_prop);
+
             if (options._fromPatchProps) {
                 // trigger a $receive event to show that we received a different prop
-                this.trigger('$receive:' + _prop3, this, values$$1[1], values$$1[0]);
+                this.trigger('$receive:' + _prop, this, values$$1[1], values$$1[0]);
                 // 存在如下情况
                 // 当prop为value通过v-model进行双向绑定时，receive事件有可能会修正该value
                 // 而修正的过程中，触发了change事件，会去修改绑定的属性
                 // 但是下面触发的change事件，又会将绑定的属性置为未修正的值
                 // 这会导致死循坏
                 // 所以这里将values[1]设为修正后的值，避免死循坏发生
-                values$$1[1] = this.get(_prop3);
+                values$$1[1] = this.get(_prop);
             }
+
             // trigger `change*` events
-            this.trigger('$change:' + _prop3, this, values$$1[1], values$$1[0]);
+            this.trigger('$change:' + _prop, this, values$$1[1], values$$1[0]);
         }
-        var changeKeys = keys(changes);
 
         this.trigger('$change', this, changeKeys);
 
@@ -4370,25 +4321,26 @@ Intact$2.prototype.set = function _set(key, val, options) {
                     });
                     this._$nextTick.args = [];
                 }
+
                 var self = this;
                 this._$nextTick.fire(function () {
                     // 合并执行更新后，触发所有$changed事件
                     var args = this.args;
-                    var changes = {};
-                    for (var _i2 = 0; _i2 < args.length; _i2++) {
-                        extend(changes, args[_i2]);
+                    var changes = [];
+                    for (var _i = 0; _i < args.length; _i++) {
+                        changes = changes.concat(args[_i]);
                     }
                     self._$nextTick = null;
-                    triggerChange(self, changes, keys(changes));
+                    triggerChange(self, changes);
                 }, changes);
             } else {
-                triggerChange(this, changes, changeKeys);
+                triggerChange(this, changes);
             }
         } else if (this.mountedQueue && this._startRender) {
             // 如果是父组件导致子组件更新，此时存在mountedQueue
             // 则在组件数更新完毕，触发$changed事件
             this.mountedQueue.push(function () {
-                triggerChangedEvent(_this, changes, changeKeys);
+                triggerChangedEvent(_this, changes);
             });
         }
     }
@@ -4396,18 +4348,90 @@ Intact$2.prototype.set = function _set(key, val, options) {
     return this;
 };
 
-function triggerChange(o, changes, changeKeys) {
+function triggerChange(o, changes) {
     o.update();
-    triggerChangedEvent(o, changes, changeKeys);
+    triggerChangedEvent(o, changes);
 }
 
-function triggerChangedEvent(o, changes, changeKeys) {
-    for (var prop in changes) {
-        var values$$1 = changes[prop];
+function triggerChangedEvent(o, changes) {
+    var changeKeys = [];
+    for (var i = 0; i < changes.length; i++) {
+        var _changes$i2 = changes[i],
+            prop = _changes$i2[0],
+            values$$1 = _changes$i2[1];
+
+        changeKeys.push(prop);
+
         o.trigger('$changed:' + prop, o, values$$1[1], values$$1[0]);
     }
     o.trigger('$changed', o, changeKeys);
 }
+
+function setProps(newProps, props) {
+    var propsPathTree = {};
+    var changes = {};
+    var changesWithoutNextValue = [];
+    for (var prop in newProps) {
+        var nextValue = newProps[prop];
+        var lastValue = get$$1(props, prop);
+
+        if (!isEqual(lastValue, nextValue)) {
+            var tree = propsPathTree;
+            changes[prop] = [lastValue, nextValue];
+
+            if (!hasOwn.call(props, prop)) {
+                // a.b.c => ['a', 'b', 'c']
+                var paths = castPath(prop);
+                var length = paths.length;
+                for (var i = 0; i < length; i++) {
+                    var name = paths[i];
+                    if (!tree[name]) {
+                        if (i < length - 1) {
+                            tree[name] = {};
+                            var path = paths.slice(0, i + 1).join('.');
+                            changes[path] = [get$$1(props, path)];
+                            changesWithoutNextValue.push(path);
+                        } else {
+                            tree[name] = null;
+                        }
+                    }
+                    tree = tree[name];
+                }
+                // tree = {a: {b: {c: {}}}}
+                // changes = {'a.b.c': [v1, v2], 'a': [v1], 'a.b': [v1]}
+            } else {
+                tree[prop] = null;
+            }
+        }
+
+        // 即使相等，也要重新复制，因为有可能引用地址变更
+        set$$1(props, prop, nextValue);
+    }
+
+    for (var _i2 = 0; _i2 < changesWithoutNextValue.length; _i2++) {
+        var _path2 = changesWithoutNextValue[_i2];
+        changes[_path2].push(get$$1(props, _path2));
+    }
+
+    return getChanges(propsPathTree, changes);
+}
+
+// 深度优先遍历，得到正确的事件触发顺序
+function getChanges(tree, data, path) {
+    var changes = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+
+    for (var key in tree) {
+        var _path = path === undefined ? key : path + '.' + key;
+        if (tree[key]) {
+            getChanges(tree[key], data, _path, changes);
+        }
+        changes.push([_path, data[_path]]);
+    }
+
+    return changes;
+}
+
+setProps({ 'a': 1, 'b.a': 2, 'b.b': 3 }, {});
 
 Intact$2._constructors.push(function () {
     var _this = this;

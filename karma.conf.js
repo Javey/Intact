@@ -33,6 +33,9 @@ module.exports = function(config) {
                     }
                 ]
             },
+            resolve: {
+                mainFields: ['module', 'browser', 'main']
+            }
         },
         frameworks: [
             'mocha'

@@ -405,18 +405,20 @@ describe('Simple Test', function() {
 
         beforeEach(function() {
             var Component = Intact.extend({
-                defaults: {
-                    a: 1,
-                    bb: {
-                        bb: 2
-                    },
-                    cc: [
-                        {cc: 2}
-                    ],
-                    'a.a': 1
+                defaults() {
+                    return {
+                        a: 1,
+                        bb: {
+                            bb: 2
+                        },
+                        cc: [
+                            {cc: 2}
+                        ],
+                        'a.a': 1
+                    }
                 },
 
-                template: '<div>{self.get("a")}</div>'
+                template: '<div>{JSON.stringify(self.get("a"))}</div>'
             });
             instance = new Component({c: 3});
         });
@@ -454,19 +456,47 @@ describe('Simple Test', function() {
         });
 
         it('set sync', function() {
-            instance.set('a', 1);
-            sEql(instance.get('a'), 1);
+            instance.init();
+
+            const $changeA = sinon.spy();
+            instance.on('$change:a', $changeA);
+            instance.set('a', 2);
+            sEql(instance.get('a'), 2);
+            sEql($changeA.callCount, 1);
+            sEql($changeA.calledWith(instance, 2, 1), true);
             instance.set({a: 11});
             sEql(instance.get('a'), 11);
-            sEql(instance.defaults.a, 1);
+            sEql($changeA.callCount, 2);
+            sEql($changeA.calledWith(instance, 11, 2), true);
+
+            const $change_aa_a = sinon.spy();
+            const $change_aa = sinon.spy();
+            const $change = sinon.spy();
+            const $changed_aa_a = sinon.spy();
+            const $changed_aa = sinon.spy();
+            const $changed = sinon.spy();
+            instance.on('$change:aa.a', $change_aa_a);
+            instance.on('$change:aa', $change_aa);
+            instance.on('$change', $change);
+            instance.on('$changed:aa.a', $changed_aa_a);
+            instance.on('$changed:aa', $changed_aa);
+            instance.on('$changed', $changed);
             instance.set({'aa.a': 1});
             sEql(instance.get('aa.a'), 1);
-            sEql(instance.get('aa'), undefined);
-            instance.set('aa.a', 2);
-            sEql(instance.get('aa'), undefined);
-            sEql(instance.get('aa.a'), 2);
+            dEql(instance.get('aa'), {a: 1});
+            sEql($change_aa_a.callCount, 1);
+            sEql($change_aa.callCount, 1);
+            sEql($change.callCount, 1);
+            sEql($changed_aa_a.callCount, 1);
+            sEql($changed_aa.callCount, 1);
+            sEql($changed.callCount, 1);
+
             instance.set('aaa.a', 1);
             dEql(instance.get('aaa'), {a: 1});
+
+            instance.set('a.a', 2);
+            sEql(instance.get('a'), 11);
+            sEql(instance.get('a.a'), 2);
         });
 
         it('set async', function(done) {
@@ -499,9 +529,37 @@ describe('Simple Test', function() {
             });
         });
 
-        it('set with path', function() {
-            instance.set({'a.b': 1}, {path: true});
-            console.log(instance.get('a'));
+        it('set with path object', function() {
+            instance.init();
+            const $change_a_b = sinon.spy();
+            const $change_a_c = sinon.spy();
+            const $change_a = sinon.spy();
+            const $change_a_a = sinon.spy();
+            const $change = sinon.spy();
+            instance.on('$change:a.b', $change_a_b);
+            instance.on('$change:a.c', $change_a_c);
+            instance.on('$change:a', $change_a);
+            instance.on('$change:a.a', $change_a_a);
+            instance.on('$change', $change);
+            instance.set({
+                'a.b': 1,
+                'a.c': 2,
+                'a.a': 2,
+            });
+            dEql(instance.get('a'), {b: 1, c: 2});
+            sEql(instance.get('a.a'), 2);
+            sEql(instance.get('a.b'), 1);
+            sEql($change_a_b.callCount, 1);
+            sEql($change_a_c.callCount, 1);
+            sEql($change_a.callCount, 1);
+            sEql($change_a_a.callCount, 1);
+            sEql($change.callCount, 1);
+
+            // order
+            sEql($change_a_b.calledBefore($change_a_c), true);
+            sEql($change_a_c.calledBefore($change_a), true);
+            sEql($change_a.calledBefore($change_a_a), true);
+            sEql($change_a_a.calledBefore($change), true);
         });
     });
 
