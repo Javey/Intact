@@ -1,0 +1,24 @@
+const Subs = function(attr) {
+    return <ul v-if={attr.subs} class={{"sub-catalogs": !attr.isFirst}}>
+        <li v-for={attr.subs} class={{
+            active: self.get(attr.subs.active) === value.title
+        }}>
+            <a ev-click={self.scrollTo.bind(self, value.title, attr.subs.active)}
+            >{value.title}</a>
+            <Subs subs={value.subs} />
+        </li>
+    </ul>
+};
+<t:parent navIndex="api" class="document-page api-page" {...scope}>
+    <b:content>
+        <aside>
+            <div class="aside-wrapper">
+                <Subs subs={self.get('subCatalogs')} isFirst={true}/>
+                <div class="aside-border transition"></div>
+            </div>
+        </aside>
+        <article>
+            <div innerHTML={self.get('content')}></div>
+        </article>
+    </b:content>
+</t:parent>

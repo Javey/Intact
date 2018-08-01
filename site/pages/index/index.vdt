@@ -1,0 +1,141 @@
+<t:parent class="index-page">
+    <b:content>
+        <article class="home-header">
+            <!-- <img src="images/logo.png" /> -->
+            <h1>Intact</h1>
+            <p>可继承，强逻辑模板的前端开发框架</p>
+            <div class="actions">
+                <a href="#/document/start" class="button">开始</a>
+                <a href="https://github.com/Javey/intact" class="button white"
+                    target="_blank"
+                >GitHub</a>
+            </div>
+            <div class="features">
+                <div class="feature">
+                    <h2 class="blue">简单</h2>
+                    <div>
+                        没有复杂的概念，你仅仅只需要了解HTML，CSS和JavaScript即可
+                    </div>
+                </div>
+                <div class="feature">
+                    <h2 class="yellow">高效</h2>
+                    <div>
+                        22KB min+gzip 大小，包含前端编译模块；<br />
+                        fork自目前最快的虚拟DOM引擎之一（inferno）构建
+                    </div>
+                </div>
+                <div class="feature">
+                    <h2 class="red">可继承，强逻辑模板</h2>
+                    <div>
+                        充分发挥继承的优势，实现组件逻辑和模板的继承扩展，
+                        让你更快速方便地构建复杂的应用
+                    </div>
+                </div>
+            </div>
+        </article>
+        <article class="home-components">
+            <!-- <h1>可继承的响应式组件</h1> -->
+            <h3>通过继承的思想，来扩展父组件逻辑和模板。同时组件数据变更，界面会立即自动做出相应更新</h3>
+            <div class="code-wrapper">
+                <script class="show" type="text/md" v-raw>
+```html
+// @file layout.vdt
+<div>
+    <header>
+        <b:header>Extendable and Reactive Component</b:header>
+    </header>
+    <div>
+        <b:body>
+            <div class="count">{self.get("count")}</div>
+        </b:body>
+    </div>
+</div>
+```
+
+```js
+// @file layout.js
+import Intact from 'intact';
+import template from './layout.vdt';
+
+export default class Layout extends Intact {
+    @Intact.template()
+    static template = template;
+
+    defaults() {
+        return {count: 0};
+    }
+}
+```
+
+```html
+// @file page.vdt
+<t:parent>
+    <b:body>
+        {parent()}
+        <button class="button"
+            ev-click={self.add}
+        >Click me!</button>
+    </b:body>
+</t:parent>
+```
+
+```js
+// @file page.js
+import Intact from 'intact';
+import template from './page.vdt';
+import Layout from './layout';
+
+export default class Page extends Layout {
+    @Intact.template()
+    static template = template;
+
+    add() {
+        this.set('count', this.get('count') + 1);
+    }
+}
+
+
+Intact.mount(Page, document.getElementById('app'));
+```
+                </script>
+                <script class="run" type="text/md" v-raw>
+```js
+var Layout = Intact.extend({
+    template: '<div>\
+        <header>\
+            <b:header>Extendable and Reactive Component</b:header>\
+        </header>\
+        <div>\
+            <b:body>\
+                <div class="count">{self.get("count")}</div>\
+            </b:body>\
+        </div>\
+    </div>',
+    defaults: function() {
+        return {count: 0};
+    }
+});
+
+var Page = Layout.extend({
+    template: '<t:parent>\
+        <b:body>\
+            {parent()}\
+            <button class="button"\
+                ev-click={self.add.bind(self)}\
+            >Click me!</button>\
+        </b:body>\
+    </t:parent>',
+    add: function() {
+        this.set('count', this.get('count') + 1);
+    }
+});
+
+Intact.mount(Page, document.getElementById('app'));
+```
+                </script>
+                <div class="code"></div>
+                <div class="output" id="app"></div>
+            </div>
+        </article>
+    </b:content>
+</t:parent>
