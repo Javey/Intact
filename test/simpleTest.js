@@ -908,5 +908,35 @@ describe('Simple Test', function() {
 
             document.body.removeChild(dom);
         });
+
+        it('v-model:{name}', function() {
+            const Component = Intact.extend({
+                template: `<div>{self.get('name')}</div>`,
+            });
+
+            const Page = Intact.extend({
+                template: `<C v-model:name="name" ref="c" />`,
+                defaults() {
+                    return {name: 'test'}
+                },
+                _init() {
+                    this.C = Component;
+                }
+            });
+
+            const i = Intact.mount(Page, document.body);
+            const dom = i.element;
+
+            eqlOuterHtml(dom, '<div>test</div>');
+
+            i.set('name', 'a');
+            eqlOuterHtml(dom, '<div>a</div>');
+
+            i.refs.c.set('name', 'b');
+            eqlOuterHtml(dom, '<div>b</div>');
+            sEql(i.get('name'), 'b');
+
+            document.body.removeChild(dom);
+        });
     });
 });

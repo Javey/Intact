@@ -64,6 +64,7 @@ module.exports.files = [
     'node_modules/sinon/pkg/sinon.js',
     'test/simpleTest.js',
     'test/componentTest.js',
+    'test/lifecycle.js',
     'test/animateTest.js',
 ];
 

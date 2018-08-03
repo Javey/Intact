@@ -1,6 +1,6 @@
 import Intact from './constructor';
 import {isEventProp} from 'misstime/src/utils';
-import {isFunction, each, extend} from '../utils';
+import {isArray, each, extend} from '../utils';
 
 Intact._constructors.push(function() {
     this._events = {};
@@ -8,8 +8,16 @@ Intact._constructors.push(function() {
 
     // bind events
     each(this.props , (value, key) => {
-        if (isEventProp(key) && isFunction(value)) {
-            this.on(key.substr(3), value);
+        if (isEventProp(key)) {
+            if (isArray(value)) {
+                for (let i = 0; i < value.length; i++) {
+                    if (value[i]) {
+                        this.on(key.substr(3), value[i]);
+                    }
+                }
+            } else if (value) {
+                this.on(key.substr(3), value);
+            }
         }
     });
 });
@@ -53,7 +61,8 @@ Intact.prototype.off = function(name, callback) {
         cb = callbacks[i];
         if (cb === callback) {
             callbacks.splice(i, 1);
-            i--;
+            // i--;
+            break;
         }
     }
 

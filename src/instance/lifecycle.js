@@ -2,7 +2,7 @@ import Intact from './constructor';
 import {hc, render, h} from 'misstime';
 import {removeComponentClassOrInstance} from 'misstime/src/vdom';
 import {Types, EMPTY_OBJ} from 'misstime/src/vnode';
-import {warn, error, isFunction, hasOwn, result, noop} from '../utils';
+import {warn, error, isFunction, hasOwn, result, noop, isArray} from '../utils';
 import {MountedQueue, isEventProp} from 'misstime/src/utils';
 
 Intact._constructors.push(function() {
@@ -271,7 +271,7 @@ function updateComponent(o, lastVNode, nextVNode) {
     return o.element;       
 }
 
-export default function patchProps(o, lastProps, nextProps, options = {update: false, _fromPatchProps: true}) {
+export function patchProps(o, lastProps, nextProps, options = {update: false, _fromPatchProps: true}) {
     lastProps = lastProps || EMPTY_OBJ;
     nextProps = nextProps || EMPTY_OBJ;
     let lastValue;
@@ -282,25 +282,31 @@ export default function patchProps(o, lastProps, nextProps, options = {update: f
         let lastPropsWithoutEvents;
         let nextPropsWithoutEvents;
 
+        // 如果该属性只存在lastProps中，则是事件就解绑；
+        // 是属性就加入lastPropsWithoutEvents对象，待会儿再处理
+        const handlePropOnlyInLastProps = (prop) => {
+            const lastValue = lastProps[prop];
+
+            if (isEventProp(prop)) {
+                // 解绑上一个属性中的事件
+                removeEvents(o, prop, lastValue);
+            } else {
+                if (!lastPropsWithoutEvents) {
+                    lastPropsWithoutEvents = {};
+                }
+                lastPropsWithoutEvents[prop] = lastValue;
+            }
+        };
+
         if (nextProps !== EMPTY_OBJ) {
             for (let prop in nextProps) {
                 nextValue = nextProps[prop];
 
                 if (isEventProp(prop)) {
-                    o.set(prop, nextValue, {silent: true});
                     lastValue = lastProps[prop];
-                    
-                    if (isFunction(nextValue)) {
-                        // 更换事件监听函数
-                        let eventName = prop.substr(3);
-                        if (isFunction(lastValue)) {
-                            o.off(eventName, lastValue);
-                        }
-                        o.on(eventName, nextValue);
-                    } else if (isFunction(lastValue)) {
-                        // 解绑事件监听函数
-                        o.off(prop.substr(3), lastValue);
-                    }
+                    if (lastValue === nextValue) continue;
+
+                    patchEventProps(o, prop, lastValue, nextValue);
                 } else {
                     if (!nextPropsWithoutEvents) {
                         nextPropsWithoutEvents = {};
@@ -312,18 +318,7 @@ export default function patchProps(o, lastProps, nextProps, options = {update: f
             if (lastProps !== EMPTY_OBJ) {
                 for (let prop in lastProps) {
                     if (!hasOwn.call(nextProps, prop)) {
-                        lastValue = lastProps[prop];
-
-                        if (isEventProp(prop) && isFunction(lastValue)) {
-                            o.set(prop, undefined, {silent: true});
-                            // 如果是事件，则要解绑事件
-                            o.off(prop.substr(3), lastValue);
-                        } else {
-                            if (!lastPropsWithoutEvents) {
-                                lastPropsWithoutEvents = {};
-                            }
-                            lastPropsWithoutEvents[prop] = lastValue;
-                        }
+                        handlePropOnlyInLastProps(prop);
                     }
                 }
             }
@@ -333,18 +328,7 @@ export default function patchProps(o, lastProps, nextProps, options = {update: f
             }
         } else {
             for (let prop in lastProps) {
-                lastValue = lastProps[prop];
-
-                if (isEventProp(prop) && isFunction(lastValue)) {
-                    o.set(prop, undefined, {silent: true});
-                    // 如果是事件，则要解绑事件
-                    o.off(prop.substr(3), lastValue);
-                } else {
-                    if (!lastPropsWithoutEvents) {
-                        lastPropsWithoutEvents = {};
-                    }
-                    lastPropsWithoutEvents[prop] = lastValue;
-                }
+                handlePropOnlyInLastProps(prop);
             }
         }
 
@@ -356,4 +340,117 @@ export default function patchProps(o, lastProps, nextProps, options = {update: f
             }
         }
     }
+}
+
+function patchEventProps(o, prop, lastValue, nextValue) {
+    o.set(prop, nextValue, {silent: true});
+    const eventName = prop.substr(3);
+    
+    if (isArray(nextValue)) {
+        if (isArray(lastValue)) {
+            // 由于实际应用中，nextValue和lastValue一般长度相等，
+            // 而且顺序也不会变化，极有可能仅仅只是改变了数组中
+            // 的一项或几项，所以可以一一对比处理
+            const nextLength = nextValue.length;
+            const lastLength = lastValue.length; 
+            let i = 0;
+            const l = Math.min(nextLength, lastLength);
+            for (; i < l; i++) {
+                const _lastValue = lastValue[i];
+                const _nextValue = nextValue[i];
+                if (_lastValue !== _nextValue) {
+                    if (_nextValue) {
+                        o.on(eventName, _nextValue);
+                    }
+                    if (_lastValue) {
+                        o.off(eventName, _lastValue);
+                    }
+                }
+            } 
+            if (i < nextLength) {
+                // 如果nextValue > lastValue
+                // 则绑定剩下的事件函数
+                for (; i < nextLength; i++) {
+                    const _nextValue = nextValue[i];
+                    if (_nextValue) {
+                        o.on(eventName, _nextValue);
+                    }
+                }
+            } else if (i < lastLength) {
+                // 如果nextValue < lastValue
+                // 则解绑剩下的事件函数
+                for (; i < lastLength; i++) {
+                    const _lastValue = lastValue[i];
+                    if (_lastValue) {
+                        o.off(eventName, _lastValue);
+                    }
+                }
+            }
+        } else if (lastValue) {
+            let found = false;
+            for (let i = 0; i < nextValue.length; i++) {
+                const _nextValue = nextValue[i];
+                if (_nextValue) {
+                    if (_nextValue !== lastValue) {
+                        o.on(eventName, _nextValue)
+                    } else {
+                        found = true;
+                    }
+                }
+            }
+            // 如果上一个事件函数不在下一个数组中，则解绑
+            if (!found) {
+                o.off(eventName, lastValue);
+            }
+        } else {
+            for (let i = 0; i < nextValue.length; i++) {
+                const _nextValue = nextValue[i];
+                if (_nextValue) {
+                    o.on(eventName, _nextValue);
+                }
+            }
+        }
+    } else if (nextValue) {
+        if (isArray(lastValue)) {
+            let found = false;
+            for (let i = 0; i < lastValue.length; i++) {
+                const _lastValue= lastValue[i];
+                if (_lastValue) {
+                    if (_lastValue !== nextValue) {
+                        o.off(eventName, _lastValue)
+                    } else {
+                        found = true;
+                    }
+                }
+            }
+            // 如果下一个事件函数不在上一个数组中，则绑定
+            if (!found) {
+                o.on(eventName, nextValue);
+            }
+        } else if (lastValue) {
+            o.off(eventName, lastValue);
+            o.on(eventName, nextValue);
+        } else {
+            o.on(eventName, nextValue);
+        }
+    } else {
+        removeEvents(o, prop, lastValue);
+    }
+}
+
+function removeEvents(o, prop, value) {
+    let eventName;
+    if (isArray(value)) {
+        eventName = prop.substr(3);
+        for (let i = 0; i < value.length; i++) {
+            const v = value[i];
+            if (v) {
+                o.off(eventName, v);
+            }
+        }
+    } else if (value) {
+        eventName = prop.substr(3);
+        o.off(eventName, value);
+    }
+    o.set(prop, undefined, {silent: true});
 }

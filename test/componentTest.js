@@ -157,7 +157,7 @@ describe('Component Test', function() {
         const i = Intact.mount(C, document.body);
         dispatchEvent(i.element.firstChild, 'click');
         eqlOuterHtml(i.element, '<div></div>');
-        document.body.removeChild(i.element);
+        // document.body.removeChild(i.element);
     });
 
     it('update when updating', function() {
@@ -231,6 +231,81 @@ describe('Component Test', function() {
         sEql(changeData.calledOnce, true);
         a.set('a', 1);
         sEql(changeData.calledTwice, true);
+    });
+
+    it('should add events by array', function() {
+        const A = Intact.extend({
+            template: `<div></div>`,
+        });
+        const fn1 = sinon.spy();
+        const fn2 = sinon.spy();
+        const a = new A({'ev-click': [fn1, fn2]});
+
+        a.trigger('click');
+
+        sEql(fn1.callCount, 1);
+        sEql(fn2.callCount, 1);
+    });
+
+    it('should patch events by array', function() {
+        const fn1 = sinon.spy();
+        const fn2 = sinon.spy();
+        const A = Intact.extend({
+            template: `<div></div>`
+        });
+        const B = Intact.extend({
+            template: `<A ref="a" ev-click={self.get('click1') ? self.fn1 : null} ev-click={self.get('click2') ? self.fn2 : null} />`,
+            defaults() {
+                return {click1: true, click2: true};
+            },
+            _init() {
+                this.A = A;
+                this.fn1 = fn1;
+                this.fn2 = fn2;
+            }
+        });
+
+        const b = new B();
+        b.init();
+
+        b.refs.a.trigger('click');
+        sEql(fn1.callCount, 1);
+        sEql(fn2.callCount, 1);
+
+        b.set('click1', false);
+        b.refs.a.trigger('click');
+        sEql(fn1.callCount, 1);
+        sEql(fn2.callCount, 2);
+
+        b.set({click1: true, click2: false});
+        b.refs.a.trigger('click');
+        sEql(fn1.callCount, 2);
+        sEql(fn2.callCount, 2);
+
+        b.set({click1: false, click2: false});
+        b.refs.a.trigger('click');
+        sEql(fn1.callCount, 2);
+        sEql(fn2.callCount, 2);
+    });
+
+    it('v-model and $change:value property both added', () => {
+        const fn = sinon.spy();
+        const A = Intact.extend({
+            template: `<div></div>`
+        });
+        const B = Intact.extend({
+            template: `<A ref="a" v-model="a" ev-$change:value={self.fn} />`,
+            _init() {
+                this.A = A;
+                this.fn = fn;
+            }
+        });
+        const b = new B();
+        b.init();
+
+        b.refs.a.set('value', 1);
+        sEql(b.get('a'), 1);
+        sEql(fn.callCount, 1);
     });
 
     it('with promise', function(done) {
