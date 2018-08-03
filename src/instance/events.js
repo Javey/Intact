@@ -2,12 +2,12 @@ import Intact from './constructor';
 import {isEventProp} from 'misstime/src/utils';
 import {isArray, each, extend} from '../utils';
 
-Intact._constructors.push(function() {
+Intact._constructors.push(function(props) {
     this._events = {};
     this._keptEvents = {}; // save the events that do not off when destroyed
 
     // bind events
-    each(this.props , (value, key) => {
+    each(props, (value, key) => {
         if (isEventProp(key)) {
             if (isArray(value)) {
                 for (let i = 0; i < value.length; i++) {

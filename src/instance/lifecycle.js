@@ -2,10 +2,10 @@ import Intact from './constructor';
 import {hc, render, h} from 'misstime';
 import {removeComponentClassOrInstance} from 'misstime/src/vdom';
 import {Types, EMPTY_OBJ} from 'misstime/src/vnode';
-import {warn, error, isFunction, hasOwn, result, noop, isArray} from '../utils';
+import {warn, error, isFunction, hasOwn, result, noop, isArray, each} from '../utils';
 import {MountedQueue, isEventProp} from 'misstime/src/utils';
 
-Intact._constructors.push(function() {
+Intact._constructors.push(function(props) {
     // lifecycle states
     this.inited = false;
     this.rendered = false;
@@ -22,9 +22,15 @@ Intact._constructors.push(function() {
 
     const inited = () => {
         this.inited = true;
+
+        // trigger $receive event when initialize component
+        each(props, (value, key) => {
+            this.trigger(`$receive:${key}`, this, value);
+        });
         this.trigger('$inited', this);
     };
     const ret = this._init();
+
     if (ret && ret.then) {
         ret.then(inited, err => {
             error('Unhandled promise rejection in _init: ', err);
