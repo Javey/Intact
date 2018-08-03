@@ -952,4 +952,24 @@ describe('Simple Test', function() {
             document.body.removeChild(dom);
         });
     });
+
+    describe('validate props', () => {
+        it('should warn when pass invalid prop', () => {
+            const A = Intact.extend({
+                template: `<div></div>`
+            });
+            A.propTypes = {
+                a: Boolean,
+                b: Number,
+                c: String,
+                d: Array,
+                e: Object,
+                f: Date,
+                g: Function,
+                h: (value) => value === 1,
+            };
+
+            new A({a: 1});
+        });
+    });
 });

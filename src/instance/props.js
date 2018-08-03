@@ -2,10 +2,13 @@ import Intact from './constructor';
 import {
     result, extend, get, set, castPath, hasOwn,
     keys, isEqual, NextTick, isNullOrUndefined,
+    each,
 } from '../utils';
 
 Intact._constructors.push(function(props) {
     this.props = extend({}, result(this, 'defaults'), props);
+
+    validateProps(props, this.constructor.propTypes);
 
     // for compatibility v1.0
     this.attributes = this.props;
@@ -190,4 +193,9 @@ function getChanges(tree, data, path, changes = []) {
     return changes;
 }
 
-setProps({'a': 1, 'b.a': 2, 'b.b': 3}, {});
+export function validateProps(props, propTypes) {
+    console.log(props, propTypes);
+    each(props, (value, prop) => {
+
+    });
+}
