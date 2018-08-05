@@ -63,7 +63,7 @@
     "style-loader": "^0.18.2",
     "stylus": "^0.54.5",
     "stylus-loader": "^3.0.2",
-    "vdt-loader": "^1.0.0",
+    "vdt-loader": "^1.4.4",
     "webpack": "^2.4.1",
     "webpack-cli": "^3.1.0",
     "webpack-dev-server": "^2.9.1"
