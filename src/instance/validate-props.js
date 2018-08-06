@@ -32,12 +32,20 @@ export default function validateProps(props, propTypes) {
                 type = [type];
             }
 
+            let _valid = false;
+            const expectedTypes = [];
             for (let i = 0; i < type.length; i++) {
                 const {expectedType, valid} = assertType(value, type[i]);
-                if (!valid) {
-                    error(`Invalid type of prop "${prop}". Expected ${expectedType}, got ${toRawType(value)}.`);
-                    return;
+                expectedTypes.push(expectedType || '');
+                if (valid) {
+                    _valid = valid;
+                    break;
                 }
+            }
+
+            if (!_valid) {
+                error(`Invalid type of prop "${prop}". Expected ${expectedTypes.join(', ')}, got ${toRawType(value)}.`);
+                return;
             }
         }
 

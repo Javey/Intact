@@ -973,7 +973,8 @@ describe('Simple Test', function() {
             h: {
                 validator: (value) => value === 1
             },
-            i: A
+            i: A,
+            j: [Array, Number],
         };
 
         const error = console.error;
@@ -1010,6 +1011,7 @@ describe('Simple Test', function() {
             test({b: 1, g: {}}, 'Invalid type of prop "g". Expected Function, got Object.');
             test({b: 1, h: 2}, 'Invalid prop "h": custom validator check failed.');
             test({b: 1, i: () => {}}, 'Invalid type of prop "i". Expected Child, got Function.');
+            test({b: 1, j: 'a'}, 'Invalid type of prop "j". Expected Array, Number, got String.');
 
             test({b: 1});
             test({b: 1, a: true});
@@ -1020,6 +1022,8 @@ describe('Simple Test', function() {
             test({b: 1, g: () => {}});
             test({b: 1, h: 1});
             test({b: 1, i: new A({b: 1})});
+            test({b: 1, j: 1});
+            test({b: 1, j: []});
         });
 
         it('should warn when pass invalid prop on update', () => {
@@ -1058,6 +1062,7 @@ describe('Simple Test', function() {
             test({b: 1, g: {}}, 'Invalid type of prop "g". Expected Function, got Object.');
             test({b: 1, h: 2}, 'Invalid prop "h": custom validator check failed.');
             test({b: 1, i: () => {}}, 'Invalid type of prop "i". Expected Child, got Function.');
+            test({b: 1, j: 'a'}, 'Invalid type of prop "j". Expected Array, Number, got String.');
 
             test({b: 1});
             test({b: 1, a: true});
@@ -1068,6 +1073,8 @@ describe('Simple Test', function() {
             test({b: 1, g: () => {}});
             test({b: 1, h: 1});
             test({b: 1, i: new A({b: 1})});
+            test({b: 1, j: 1});
+            test({b: 1, j: []});
         });
     });
 });
