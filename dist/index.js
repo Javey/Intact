@@ -4692,6 +4692,8 @@ Intact$2._constructors.push(function (props) {
     this.attributes = this.props;
 });
 
+Intact$2.prototype.defaults = noop;
+
 // function name conflict with utils.get
 Intact$2.prototype.get = function _get(key, defaultValue) {
     if (key === undefined) return this.props;

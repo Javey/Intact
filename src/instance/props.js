@@ -1,7 +1,7 @@
 import Intact from './constructor';
 import {
     result, extend, get, set, castPath, hasOwn,
-    keys, isEqual, NextTick, isNullOrUndefined
+    keys, isEqual, NextTick, isNullOrUndefined, noop
 } from '../utils';
 import validateProps from './validate-props';
 
@@ -15,6 +15,8 @@ Intact._constructors.push(function(props) {
     // for compatibility v1.0
     this.attributes = this.props;
 });
+
+Intact.prototype.defaults = noop;
 
 // function name conflict with utils.get
 Intact.prototype.get = function _get(key, defaultValue) {
