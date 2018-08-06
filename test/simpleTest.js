@@ -957,7 +957,8 @@ describe('Simple Test', function() {
         if (browser.isIE8) return;
 
         const A = Intact.extend({
-            template: `<div></div>`
+            template: `<div></div>`,
+            displayName: 'A',
         });
         A.propTypes = {
             a: Boolean,
@@ -1001,17 +1002,17 @@ describe('Simple Test', function() {
                 }
             }
 
-            test({a: 1}, 'Invalid type of prop "a". Expected Boolean, got Number.');
-            test({a: true}, 'Missing required prop: "b".');
-            test({b: true}, 'Invalid type of prop "b". Expected Number, got Boolean.');
-            test({b: 1, c: 1}, 'Invalid type of prop "c". Expected String, got Number.');
-            test({b: 1, d: 1}, 'Invalid type of prop "d". Expected Array, got Number.');
-            test({b: 1, e: []}, 'Invalid type of prop "e". Expected Object, got Array.');
-            test({b: 1, f: 2}, 'Invalid type of prop "f". Expected Date, got Number');
-            test({b: 1, g: {}}, 'Invalid type of prop "g". Expected Function, got Object.');
-            test({b: 1, h: 2}, 'Invalid prop "h": custom validator check failed.');
-            test({b: 1, i: () => {}}, 'Invalid type of prop "i". Expected Child, got Function.');
-            test({b: 1, j: 'a'}, 'Invalid type of prop "j". Expected Array, Number, got String.');
+            test({a: 1}, 'Invalid type of prop "a" on component "A". Expected Boolean, but got Number.');
+            test({a: true}, 'Missing required prop on component "A": "b".');
+            test({b: true}, 'Invalid type of prop "b" on component "A". Expected Number, but got Boolean.');
+            test({b: 1, c: 1}, 'Invalid type of prop "c" on component "A". Expected String, but got Number.');
+            test({b: 1, d: 1}, 'Invalid type of prop "d" on component "A". Expected Array, but got Number.');
+            test({b: 1, e: []}, 'Invalid type of prop "e" on component "A". Expected Object, but got Array.');
+            test({b: 1, f: 2}, 'Invalid type of prop "f" on component "A". Expected Date, but got Number');
+            test({b: 1, g: {}}, 'Invalid type of prop "g" on component "A". Expected Function, but got Object.');
+            test({b: 1, h: 2}, 'Invalid prop "h" on component "A": custom validator check failed.');
+            test({b: 1, i: () => {}}, 'Invalid type of prop "i" on component "A". Expected Child, but got Function.');
+            test({b: 1, j: 'a'}, 'Invalid type of prop "j" on component "A". Expected Array, Number, but got String.');
 
             test({b: 1});
             test({b: 1, a: true});
@@ -1029,6 +1030,7 @@ describe('Simple Test', function() {
         it('should warn when pass invalid prop on update', () => {
             const B = Intact.extend({
                 template: `h(A, extend({}, self.get()))`,
+                displayName: 'B',
                 _init() {
                     this.A = A;
                 }
@@ -1052,17 +1054,17 @@ describe('Simple Test', function() {
                 }
             }
 
-            test({a: 1}, 'Invalid type of prop "a". Expected Boolean, got Number.');
-            test({a: true, b: null}, 'Missing required prop: "b".');
-            test({b: true}, 'Invalid type of prop "b". Expected Number, got Boolean.');
-            test({b: 1, c: 1}, 'Invalid type of prop "c". Expected String, got Number.');
-            test({b: 1, d: 1}, 'Invalid type of prop "d". Expected Array, got Number.');
-            test({b: 1, e: []}, 'Invalid type of prop "e". Expected Object, got Array.');
-            test({b: 1, f: 2}, 'Invalid type of prop "f". Expected Date, got Number');
-            test({b: 1, g: {}}, 'Invalid type of prop "g". Expected Function, got Object.');
-            test({b: 1, h: 2}, 'Invalid prop "h": custom validator check failed.');
-            test({b: 1, i: () => {}}, 'Invalid type of prop "i". Expected Child, got Function.');
-            test({b: 1, j: 'a'}, 'Invalid type of prop "j". Expected Array, Number, got String.');
+            test({a: 1}, 'Invalid type of prop "a" on component "A". Expected Boolean, but got Number.');
+            test({a: true, b: null}, 'Missing required prop on component "A": "b".');
+            test({b: true}, 'Invalid type of prop "b" on component "A". Expected Number, but got Boolean.');
+            test({b: 1, c: 1}, 'Invalid type of prop "c" on component "A". Expected String, but got Number.');
+            test({b: 1, d: 1}, 'Invalid type of prop "d" on component "A". Expected Array, but got Number.');
+            test({b: 1, e: []}, 'Invalid type of prop "e" on component "A". Expected Object, but got Array.');
+            test({b: 1, f: 2}, 'Invalid type of prop "f" on component "A". Expected Date, but got Number');
+            test({b: 1, g: {}}, 'Invalid type of prop "g" on component "A". Expected Function, but got Object.');
+            test({b: 1, h: 2}, 'Invalid prop "h" on component "A": custom validator check failed.');
+            test({b: 1, i: () => {}}, 'Invalid type of prop "i" on component "A". Expected Child, but got Function.');
+            test({b: 1, j: 'a'}, 'Invalid type of prop "j" on component "A". Expected Array, Number, but got String.');
 
             test({b: 1});
             test({b: 1, a: true});

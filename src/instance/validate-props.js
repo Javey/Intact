@@ -7,7 +7,7 @@ import {
     error, isArray, isNullOrUndefined
 } from '../utils';
 
-export default function validateProps(props, propTypes) {
+export default function validateProps(props, propTypes, componentName = '<anonymous>') {
     if (!props || !propTypes) return;
 
     for (let prop in propTypes) {
@@ -19,7 +19,7 @@ export default function validateProps(props, propTypes) {
 
         if (isNullOrUndefined(value)) {
             if (expectedType.required) {
-                error(`Missing required prop: "${prop}".`);
+                error(`Missing required prop on component "${componentName}": "${prop}".`);
                 return;
             } else {
                 continue;
@@ -44,7 +44,10 @@ export default function validateProps(props, propTypes) {
             }
 
             if (!_valid) {
-                error(`Invalid type of prop "${prop}". Expected ${expectedTypes.join(', ')}, got ${toRawType(value)}.`);
+                error(
+                    `Invalid type of prop "${prop}" on component "${componentName}". ` +
+                    `Expected ${expectedTypes.join(', ')}, but got ${toRawType(value)}.`
+                );
                 return;
             }
         }
@@ -53,10 +56,10 @@ export default function validateProps(props, propTypes) {
         if (validator) {
             const result = validator(value);
             if (result === false) {
-                error(`Invalid prop "${prop}": custom validator check failed.`);
+                error(`Invalid prop "${prop}" on component "${componentName}": custom validator check failed.`);
                 return;
             } else if (result !== true) {
-                error(`Invalid prop "${prop}": ${result}`);
+                error(`Invalid prop "${prop}" on component "${componentName}": ${result}`);
                 return;
             }
         }

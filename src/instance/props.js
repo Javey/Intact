@@ -9,7 +9,7 @@ Intact._constructors.push(function(props) {
     this.props = extend({}, result(this, 'defaults'), props);
 
     if (process.env.NODE_ENV !== 'production') {
-        validateProps(props, this.constructor.propTypes);
+        validateProps(props, this.constructor.propTypes, this.displayName || this.constructor.name);
     }
 
     // for compatibility v1.0

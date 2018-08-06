@@ -307,7 +307,7 @@ export function patchProps(o, lastProps, nextProps, options = {update: false, _f
 
         if (nextProps !== EMPTY_OBJ) {
             if (process.env.NODE_ENV !== 'production') {
-                validateProps(nextProps, o.constructor.propTypes);
+                validateProps(nextProps, o.constructor.propTypes, o.displayName || o.constructor.name);
             }
 
             for (let prop in nextProps) {

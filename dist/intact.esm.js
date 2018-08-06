@@ -4518,6 +4518,8 @@ if (Object.defineProperty) {
  * 但是也无法验证复杂的数据结构（需要自己实现验证函数）
  */
 function validateProps(props, propTypes) {
+    var componentName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '<anonymous>';
+
     if (!props || !propTypes) return;
 
     for (var prop in propTypes) {
@@ -4529,7 +4531,7 @@ function validateProps(props, propTypes) {
 
         if (isNullOrUndefined$1(value)) {
             if (expectedType.required) {
-                error$1('Missing required prop: "' + prop + '".');
+                error$1('Missing required prop on component "' + componentName + '": "' + prop + '".');
                 return;
             } else {
                 continue;
@@ -4557,7 +4559,7 @@ function validateProps(props, propTypes) {
             }
 
             if (!_valid) {
-                error$1('Invalid type of prop "' + prop + '". Expected ' + expectedTypes.join(', ') + ', got ' + toRawType(value) + '.');
+                error$1('Invalid type of prop "' + prop + '" on component "' + componentName + '". ' + ('Expected ' + expectedTypes.join(', ') + ', but got ' + toRawType(value) + '.'));
                 return;
             }
         }
@@ -4566,10 +4568,10 @@ function validateProps(props, propTypes) {
         if (validator) {
             var result$$1 = validator(value);
             if (result$$1 === false) {
-                error$1('Invalid prop "' + prop + '": custom validator check failed.');
+                error$1('Invalid prop "' + prop + '" on component "' + componentName + '": custom validator check failed.');
                 return;
             } else if (result$$1 !== true) {
-                error$1('Invalid prop "' + prop + '": ' + result$$1);
+                error$1('Invalid prop "' + prop + '" on component "' + componentName + '": ' + result$$1);
                 return;
             }
         }
@@ -4618,7 +4620,7 @@ Intact$2._constructors.push(function (props) {
     this.props = extend({}, result(this, 'defaults'), props);
 
     if (process.env.NODE_ENV !== 'production') {
-        validateProps(props, this.constructor.propTypes);
+        validateProps(props, this.constructor.propTypes, this.displayName || this.constructor.name);
     }
 
     // for compatibility v1.0
@@ -7169,7 +7171,7 @@ function patchProps$1(o, lastProps, nextProps) {
 
         if (nextProps !== EMPTY_OBJ$1) {
             if (process.env.NODE_ENV !== 'production') {
-                validateProps(nextProps, o.constructor.propTypes);
+                validateProps(nextProps, o.constructor.propTypes, o.displayName || o.constructor.name);
             }
 
             for (var prop in nextProps) {
