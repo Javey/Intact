@@ -2,6 +2,7 @@ import Intact from './constructor';
 import {inherit, extend} from '../utils';
 import {h, render, hydrateRoot} from 'misstime';
 import {MountedQueue} from 'misstime/src/utils';
+import {VNode} from 'misstime/src/vnode';
 
 /**
  * @brief 继承某个组件
@@ -40,3 +41,6 @@ Intact.hydrate = function(Component, node) {
     hydrateRoot(vNode, node);
     return vNode.children;
 };
+
+// for type check
+Intact.VNode = VNode;

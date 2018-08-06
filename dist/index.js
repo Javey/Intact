@@ -4617,15 +4617,23 @@ function validateProps(props, propTypes) {
                 type = [type];
             }
 
+            var _valid = false;
+            var expectedTypes = [];
             for (var i = 0; i < type.length; i++) {
                 var _assertType = assertType(value, type[i]),
                     _expectedType = _assertType.expectedType,
                     valid = _assertType.valid;
 
-                if (!valid) {
-                    error$1('Invalid type of prop "' + prop + '". Expected ' + _expectedType + ', got ' + toRawType(value) + '.');
-                    return;
+                expectedTypes.push(_expectedType || '');
+                if (valid) {
+                    _valid = valid;
+                    break;
                 }
+            }
+
+            if (!_valid) {
+                error$1('Invalid type of prop "' + prop + '". Expected ' + expectedTypes.join(', ') + ', got ' + toRawType(value) + '.');
+                return;
             }
         }
 
@@ -7464,6 +7472,9 @@ Intact$2.hydrate = function (Component, node) {
     hydrateRoot$1(vNode, node);
     return vNode.children;
 };
+
+// for type check
+Intact$2.VNode = VNode$1;
 
 function addClass(element, className) {
     if (className) {
