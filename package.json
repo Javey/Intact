@@ -3,7 +3,7 @@
   "description": "A very lightweight data-binding library to create rich web application",
   "version": "2.2.5",
   "main": "dist/index",
-  "browser": "dist/intact.js",
+  "browser": "dist/intact.esm.js",
   "module": "src/index",
   "scripts": {
     "test": "karma start karma.conf.saucelabs.js",
@@ -13,7 +13,7 @@
     "release-patch": "git checkout master && npm version patch && git push --tags && git push && npm publish",
     "release-minor": "git checkout master && npm version minor && git push --tags && git push && npm publish",
     "release-major": "git checkout master && npm version major && git push --tags && git push && npm publish",
-    "build": "rollup -c rollup.config.js && rollup -c rollup.config.node.js && uglifyjs dist/intact.js -o dist/intact.min.js -m",
+    "build": "rollup -c rollup.config.js && rollup -c rollup.config.node.js && rollup -c rollup.config.browser.js && uglifyjs dist/intact.js -o dist/intact.min.js -m",
     "doc": "webpack-dev-server --config site/webpack.config.js",
     "build:doc": "webpack --config site/webpack.config.js && cp docs site/dist -r",
     "deploy:doc": "node site/build.js"

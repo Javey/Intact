@@ -1,14 +1,16 @@
 import Intact from './constructor';
 import {
     result, extend, get, set, castPath, hasOwn,
-    keys, isEqual, NextTick, isNullOrUndefined,
-    each,
+    keys, isEqual, NextTick, isNullOrUndefined
 } from '../utils';
+import validateProps from './validate-props';
 
 Intact._constructors.push(function(props) {
     this.props = extend({}, result(this, 'defaults'), props);
 
-    validateProps(props, this.constructor.propTypes);
+    if (process.env.NODE_ENV !== 'production') {
+        validateProps(props, this.constructor.propTypes);
+    }
 
     // for compatibility v1.0
     this.attributes = this.props;
@@ -191,11 +193,4 @@ function getChanges(tree, data, path, changes = []) {
     }
 
     return changes;
-}
-
-export function validateProps(props, propTypes) {
-    console.log(props, propTypes);
-    each(props, (value, prop) => {
-
-    });
 }

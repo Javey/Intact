@@ -4,6 +4,7 @@ import {removeComponentClassOrInstance} from 'misstime/src/vdom';
 import {Types, EMPTY_OBJ} from 'misstime/src/vnode';
 import {warn, error, isFunction, hasOwn, result, noop, isArray, each} from '../utils';
 import {MountedQueue, isEventProp} from 'misstime/src/utils';
+import validateProps from './validate-props';
 
 Intact._constructors.push(function(props) {
     // lifecycle states
@@ -305,6 +306,10 @@ export function patchProps(o, lastProps, nextProps, options = {update: false, _f
         };
 
         if (nextProps !== EMPTY_OBJ) {
+            if (process.env.NODE_ENV !== 'production') {
+                validateProps(nextProps, o.constructor.propTypes);
+            }
+
             for (let prop in nextProps) {
                 nextValue = nextProps[prop];
 

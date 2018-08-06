@@ -5,7 +5,7 @@ var commonjs = require('rollup-plugin-commonjs'),
 
 module.exports = {
     entry: 'src/index.js',
-    dest: 'dist/intact.js',
+    dest: 'dist/intact.esm.js',
     format: 'umd',
     moduleName: 'Intact',
     legacy: true,
@@ -21,8 +21,5 @@ module.exports = {
         }),
         nodeResolve({module: true}),
         commonjs(),
-        replace({
-            'process.env.NODE_ENV': "'production'"
-        })
     ]
 };

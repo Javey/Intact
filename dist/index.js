@@ -4587,8 +4587,106 @@ if (Object.defineProperty) {
     });
 }
 
+/**
+ * 验证属性合法性，参考vue实现
+ * 这种实现方式，使用起来很简单，无需引入额外的模块
+ * 但是也无法验证复杂的数据结构（需要自己实现验证函数）
+ */
+function validateProps(props, propTypes) {
+    if (!props || !propTypes) return;
+
+    for (var prop in propTypes) {
+        var value = props[prop];
+        var expectedType = propTypes[prop];
+        if (!isPlainObject(expectedType)) {
+            expectedType = { type: expectedType };
+        }
+
+        if (isNullOrUndefined$1(value)) {
+            if (expectedType.required) {
+                error$1('Missing required prop: "' + prop + '".');
+                return;
+            } else {
+                continue;
+            }
+        }
+
+        var type = expectedType.type;
+        if (type) {
+            if (!isArray(type)) {
+                type = [type];
+            }
+
+            for (var i = 0; i < type.length; i++) {
+                var _assertType = assertType(value, type[i]),
+                    _expectedType = _assertType.expectedType,
+                    valid = _assertType.valid;
+
+                if (!valid) {
+                    error$1('Invalid type of prop "' + prop + '". Expected ' + _expectedType + ', got ' + toRawType(value) + '.');
+                    return;
+                }
+            }
+        }
+
+        var validator = expectedType.validator;
+        if (validator) {
+            var result$$1 = validator(value);
+            if (result$$1 === false) {
+                error$1('Invalid prop "' + prop + '": custom validator check failed.');
+                return;
+            } else if (result$$1 !== true) {
+                error$1('Invalid prop "' + prop + '": ' + result$$1);
+                return;
+            }
+        }
+    }
+}
+
+var simpleCheckRE = /^(String|Number|Boolean|Function|Symbol)$/;
+function assertType(value, type) {
+    var valid = void 0;
+    var expectedType = getType(type);
+
+    if (simpleCheckRE.test(expectedType)) {
+        var t = typeof value === 'undefined' ? 'undefined' : _typeof(value);
+        valid = t === expectedType.toLowerCase();
+
+        // for primitive wrapper objects
+        if (!valid && t === 'object') {
+            valid = value instanceof type;
+        }
+    } else if (expectedType === 'Object') {
+        valid = isPlainObject(value);
+    } else if (expectedType === 'Array') {
+        valid = isArray(value);
+    } else {
+        valid = value instanceof type;
+    }
+
+    return { valid: valid, expectedType: expectedType };
+}
+
+function getType(fn) {
+    var match = fn && fn.toString().match(/^\s*function (\w+)/);
+    return match ? match[1] : '';
+}
+
+var toString$4 = Object.prototype.toString;
+function toRawType(value) {
+    return toString$4.call(value).slice(8, -1);
+}
+
+function isPlainObject(value) {
+    return toString$4.call(value) === '[object Object]';
+}
+
 Intact$2._constructors.push(function (props) {
     this.props = extend({}, result(this, 'defaults'), props);
+
+    if (process.env.NODE_ENV !== 'production') {
+        validateProps(props, this.constructor.propTypes);
+    }
 
     // for compatibility v1.0
     this.attributes = this.props;
@@ -4783,16 +4881,14 @@ function getChanges(tree, data, path) {
     return changes;
 }
 
-setProps({ 'a': 1, 'b.a': 2, 'b.b': 3 }, {});
-
-Intact$2._constructors.push(function () {
+Intact$2._constructors.push(function (props) {
     var _this = this;
 
     this._events = {};
     this._keptEvents = {}; // save the events that do not off when destroyed
 
     // bind events
-    each(this.props, function (value, key) {
+    each(props, function (value, key) {
         if (isEventProp$1(key)) {
             if (isArray(value)) {
                 for (var i = 0; i < value.length; i++) {
@@ -5246,26 +5342,10 @@ function handleEvent$1(name, lastEvent, nextEvent, dom) {
         }
     } else {
         if (lastEvent) {
-            if (isArray$1(lastEvent)) {
-                for (var i = 0; i < lastEvent.length; i++) {
-                    if (lastEvent[i]) {
-                        removeEventListener$1(dom, name, lastEvent[i]);
-                    }
-                }
-            } else {
-                removeEventListener$1(dom, name, lastEvent);
-            }
+            removeEventListener$1(dom, name, lastEvent);
         }
         if (nextEvent) {
-            if (isArray$1(nextEvent)) {
-                for (var _i = 0; _i < nextEvent.length; _i++) {
-                    if (nextEvent[_i]) {
-                        addEventListener$1(dom, name, nextEvent[_i]);
-                    }
-                }
-            } else {
-                addEventListener$1(dom, name, nextEvent);
-            }
+            addEventListener$1(dom, name, nextEvent);
         }
     }
 }
@@ -5275,16 +5355,7 @@ function dispatchEvent$1(event, target, items, count, isClick) {
     if (eventToTrigger) {
         count--;
         event.currentTarget = target;
-        if (isArray$1(eventToTrigger)) {
-            for (var i = 0; i < eventToTrigger.length; i++) {
-                var _eventToTrigger = eventToTrigger[i];
-                if (_eventToTrigger) {
-                    _eventToTrigger(event);
-                }
-            }
-        } else {
-            eventToTrigger(event);
-        }
+        eventToTrigger(event);
         if (event._rawEvent.cancelBubble) {
             return;
         }
@@ -5470,7 +5541,7 @@ function createElement$1(vNode, parentDom, mountedQueue, isRender, parentVNode, 
     } else if (type & Types$2.HtmlComment) {
         return createCommentElement$1(vNode, parentDom);
     } else {
-        throw new Error('expect a vNode but got ' + vNode);
+        throw new Error('unknown vnode type ' + type);
     }
 }
 
@@ -6444,7 +6515,7 @@ function patchStyle$1(lastValue, nextValue, dom) {
     }
 }
 
-function toString$4(vNode, parent, disableSplitText, firstChild) {
+function toString$5(vNode, parent, disableSplitText, firstChild) {
     var type = vNode.type;
     var tag = vNode.tag;
     var props = vNode.props;
@@ -6522,11 +6593,11 @@ function toString$4(vNode, parent, disableSplitText, firstChild) {
                             } else {
                                 index++;
                             }
-                            html += toString$4(child, vNode, disableSplitText, index === 0);
+                            html += toString$5(child, vNode, disableSplitText, index === 0);
                         }
                     }
                 } else {
-                    html += toString$4(children, vNode, disableSplitText, true);
+                    html += toString$5(children, vNode, disableSplitText, true);
                 }
             }
 
@@ -6880,7 +6951,7 @@ var warning$1 = (typeof console === 'undefined' ? 'undefined' : _typeof(console)
     console.warn(message);
 } : function () {};
 
-Intact$2._constructors.push(function () {
+Intact$2._constructors.push(function (props) {
     var _this = this;
 
     // lifecycle states
@@ -6899,9 +6970,15 @@ Intact$2._constructors.push(function () {
 
     var inited = function inited() {
         _this.inited = true;
+
+        // trigger $receive event when initialize component
+        each(props, function (value, key) {
+            _this.trigger('$receive:' + key, _this, value);
+        });
         _this.trigger('$inited', _this);
     };
     var ret = this._init();
+
     if (ret && ret.then) {
         ret.then(inited, function (err) {
             error$1('Unhandled promise rejection in _init: ', err);
@@ -7156,6 +7233,10 @@ function patchProps$1(o, lastProps, nextProps) {
         };
 
         if (nextProps !== EMPTY_OBJ$1) {
+            if (process.env.NODE_ENV !== 'production') {
+                validateProps(nextProps, o.constructor.propTypes);
+            }
+
             for (var prop in nextProps) {
                 nextValue = nextProps[prop];
 

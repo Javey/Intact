@@ -1851,7 +1851,7 @@ Types$1.ComponentClassOrInstance = Types$1.ComponentClass | Types$1.ComponentIns
 Types$1.TextElement = Types$1.Text | Types$1.HtmlComment;
 
 var EMPTY_OBJ = {};
-if ('development' !== 'production' && !browser.isIE) {
+if (process.env.NODE_ENV !== 'production' && !browser.isIE) {
     Object.freeze(EMPTY_OBJ);
 }
 
@@ -4609,7 +4609,7 @@ function isPlainObject(value) {
 Intact$2._constructors.push(function (props) {
     this.props = extend({}, result(this, 'defaults'), props);
 
-    {
+    if (process.env.NODE_ENV !== 'production') {
         validateProps(props, this.constructor.propTypes);
     }
 
@@ -4922,7 +4922,7 @@ Types$2.ComponentClassOrInstance = Types$2.ComponentClass | Types$2.ComponentIns
 Types$2.TextElement = Types$2.Text | Types$2.HtmlComment;
 
 var EMPTY_OBJ$1 = {};
-if ('development' !== 'production' && !browser$1.isIE) {
+if (process.env.NODE_ENV !== 'production' && !browser$1.isIE) {
     Object.freeze(EMPTY_OBJ$1);
 }
 
@@ -7158,7 +7158,7 @@ function patchProps$1(o, lastProps, nextProps) {
         };
 
         if (nextProps !== EMPTY_OBJ$1) {
-            {
+            if (process.env.NODE_ENV !== 'production') {
                 validateProps(nextProps, o.constructor.propTypes);
             }
 
