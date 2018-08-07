@@ -948,7 +948,7 @@ describe('Component Test', function() {
 
     it('should render when promise.reject in _init', (done) => {
         // for unknown reason
-        if (browser.isSafari) return;
+        if (browser.isSafari) return done();
 
         const C = Intact.extend({
             template: `<div>{self.get('a')}</div>`,

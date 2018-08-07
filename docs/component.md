@@ -284,6 +284,31 @@ Component.propTypes = {
 }
 ```
 
+### ES6定义方式
+
+使用`ES6/7` `Class`的`static`语法，可以如下定义
+
+```js
+class Component extends Intact {
+    @Intact.template()
+    static template = `<div>test</div>`;
+
+    static propTypes = {
+        number: Number,
+        stringOrNumber: [String, Number]
+
+        ...
+    }
+
+    defaults() {
+        return {
+            number: 1,
+            stringOrNumber: undefined
+        };
+    }
+}
+```
+
 ## 模板 `template`
 
 另一个组件的重要属性便是`template`，它用来定义组件的模板。它既可以传入模板字符串，
