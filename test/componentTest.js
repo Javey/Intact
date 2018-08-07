@@ -421,18 +421,18 @@ describe('Component Test', function() {
                 });
             }
             const Async1 = createAsyncComponent(1, 100);
-            const Async2 = createAsyncComponent(2, 200);
+            const Async2 = createAsyncComponent(2, 300);
 
             app.load(Async1);
             app.load(Async2);
 
             setTimeout(() => {
                 eqlHtml(app.element, '<!--!-->');
-            }, 150);
+            }, 200);
             setTimeout(() => {
                 eqlHtml(app.element, '<a>2</a>');
                 done();
-            }, 300);
+            }, 400);
         });
 
         it('should destroy async component correctly', function(done) {
@@ -961,7 +961,7 @@ describe('Component Test', function() {
             eqlOuterHtml(c.element, '<div></div>');
             document.body.removeChild(c.element);
             done();
-        }, 500);
+        }, 200);
     });
 
     it('should autobind method', done => {
