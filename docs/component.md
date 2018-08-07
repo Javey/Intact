@@ -166,8 +166,123 @@ Intact.extend({
 此时，每个组件的数据是独立的了。
 
 > 采用`Function`类型定义`defaults`，在组件继承时，并不会自动合并数据，
-> 如果有需要你可以显示地调用父类的`defaults()`方法，获取到父类定义的数据，
+> 如果有需要你可以显式地调用父类的`defaults()`方法，获取到父类定义的数据，
 > 然后再手动合并返回。关于如何在子类调父类方面，下面会说明。
+
+## 数据验证
+
+`@since v2.3.0`
+
+组件会在初始化和更新时验证属性合法性，我们只需要通过组件的静态属性`propTypes`定义数据验证方式即可。
+当组件验证失败时，会在打印错误信息，但不会终端程序运行。数据的验证只会在开发环境进行。
+
+```js
+var Component = Intact.extend({
+    template: `<div>test</div>`,
+});
+
+// 定义组件的数据格式
+Component.propTypes = {
+    boolean: Boolean,
+    regexp: RegExp,
+    string: String,
+    number: Number,
+    array: Array,
+    function: Function,
+    object: Object,
+    symbol: Symbol,
+    date: Date,
+    vnode: Intact.VNode,
+
+    stringOrNumber: [String, Number],
+
+    requiredAny: {
+        required: true
+    },
+    requiredNumber: {
+        type: Number,
+        required: true,
+    },
+    requiredNumberOrString: {
+        type: [Number, String],
+        required: true,
+    },
+
+    enum: ['left', 'bottom', 'right', 'top'],
+    enumWithObject: ['left', 'bottom', 'right', 'top', Object],
+
+    customValidator: {
+        validator: function(value) {
+            return ['default', 'primary', 'danger'].indexOf(value) > -1;
+        }
+    },
+};
+```
+
+### 类型验证
+
+支持任意原生构造函数作为类型检测
+
+1. String
+2. Number
+3. Boolean
+4. Array
+5. Object
+6. Function
+7. Date
+8. RegExp
+
+对于自定义构造函数，使用`instanceof`进行检测，例如`Intact.VNode`用于检测是否时虚拟dom对象`vnode`
+
+```js
+Component.propTypes = {
+    vnode: Intact.VNode
+};
+```
+
+### 枚举类型
+
+通过数组可以指定枚举类型的数据，甚至可以和构造函数搭配使用，它们之间时”或“的关系
+
+```js
+Component.propTypes = {
+    enum: ['left', 'bottom', 'right', 'top'],
+    enumWithObject: ['left', 'bottom', 'right', 'top', Object],
+}
+```
+
+### 自定义验证函数
+
+对于复杂的验证方法我们可以指定`validator`函数进行验证，该函数返回布尔值`true`则验证通过，`false`
+则验证失败，或者返回字符串来作为错误提示信息。
+
+```js
+Component.propTypes = {
+    value: {
+        validator: function(value) {
+            if (value > 100 || value < 0) {
+                return "the value must be between 0 and 100";
+            }
+            return true;
+        }
+    }
+}
+```
+
+> 自定义验证函数`validator`的`this`为`undefined`
+
+### 必填属性
+
+添加`required: true`即可指定该属性为必填项
+
+```js
+Component.propTypes = {
+    value: {
+        type: Number,
+        required: true
+    }
+}
+```
 
 ## 模板 `template`
 
