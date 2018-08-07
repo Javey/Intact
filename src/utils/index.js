@@ -1,6 +1,6 @@
-import {extend, isArray, each, isObject, hasOwn, noop} from 'vdt/src/lib/utils';
+import {extend, isArray, each, isObject, hasOwn, noop, hasConsole} from 'vdt/src/lib/utils';
 import {isNullOrUndefined, indexOf} from 'misstime/src/utils';
-import Vdt from 'vdt';
+import Vdt from 'vdt/src/client';
 
 export {extend, isArray, each, isObject, hasOwn, isNullOrUndefined, noop};
 
@@ -399,8 +399,6 @@ export function set(object, path, value) {
     return object;
 }
 
-// in ie8 console.log is an object
-const hasConsole = typeof console !== 'undefined' && typeof console.log === 'function';
 export const warn = hasConsole ? 
     function() { 
         console.warn.apply(console, arguments);

@@ -1,5 +1,5 @@
 import Intact from './instance';
-import Vdt from 'vdt';
+import Vdt from 'vdt/src/client';
 import Animate from './animate';
 import * as utils from './utils';
 

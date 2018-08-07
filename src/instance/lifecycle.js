@@ -1,5 +1,5 @@
 import Intact from './constructor';
-import {hc, render, h} from 'misstime';
+import {hc, render, h} from 'misstime/src';
 import {removeComponentClassOrInstance} from 'misstime/src/vdom';
 import {Types, EMPTY_OBJ} from 'misstime/src/vnode';
 import {warn, error, isFunction, hasOwn, result, noop, isArray, each} from '../utils';

@@ -1,5 +1,5 @@
 import {autobind, templateDecorator, uniqueId} from '../utils';
-import Vdt from 'vdt';
+import Vdt from 'vdt/src/client';
 
 export default function Intact(props) {
     let template = this.constructor.template;

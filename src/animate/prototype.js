@@ -1,5 +1,5 @@
 import {endEvents} from './utils';
-import Vdt from 'vdt';
+import Vdt from 'vdt/src/client';
 
 const prototype = {
     defaults() {

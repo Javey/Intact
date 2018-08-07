@@ -3,8 +3,6 @@
   "description": "A very lightweight data-binding library to create rich web application",
   "version": "2.2.5",
   "main": "dist/index",
-  "browser": "dist/intact.esm.js",
-  "module": "src/index",
   "scripts": {
     "test": "karma start karma.conf.saucelabs.js",
     "test:local": "karma start karma.conf.js",
@@ -13,7 +11,7 @@
     "release-patch": "git checkout master && npm version patch && git push --tags && git push && npm publish",
     "release-minor": "git checkout master && npm version minor && git push --tags && git push && npm publish",
     "release-major": "git checkout master && npm version major && git push --tags && git push && npm publish",
-    "build": "rollup -c rollup.config.js && rollup -c rollup.config.node.js && rollup -c rollup.config.browser.js && uglifyjs dist/intact.js -o dist/intact.min.js -m",
+    "build": "rollup -c rollup.config.node.js && rollup -c rollup.config.browser.js && uglifyjs dist/intact.js -o dist/intact.min.js -m",
     "doc": "webpack-dev-server --config site/webpack.config.js",
     "build:doc": "webpack --config site/webpack.config.js && cp docs site/dist -r",
     "deploy:doc": "node site/build.js"
@@ -52,6 +50,7 @@
     "lodash": "^4.17.4",
     "markdown-it": "^8.4.2",
     "markdown-it-decorate": "^1.2.2",
+    "misstime": "git+https://github.com/Javey/misstime.git",
     "mocha": "^5.2.0",
     "rollup": "^0.41.6",
     "rollup-plugin-babel": "^2.7.1",
@@ -63,13 +62,10 @@
     "style-loader": "^0.18.2",
     "stylus": "^0.54.5",
     "stylus-loader": "^3.0.2",
+    "vdt": "git+https://github.com/Javey/vdt.js.git",
     "vdt-loader": "^1.4.4",
     "webpack": "^2.4.1",
     "webpack-cli": "^3.1.0",
     "webpack-dev-server": "^2.9.1"
-  },
-  "dependencies": {
-    "misstime": "^0.3.1",
-    "vdt": "^1.2.6"
   }
 }

@@ -1,6 +1,6 @@
 import Intact from './constructor';
 import {inherit, extend} from '../utils';
-import {h, render, hydrateRoot} from 'misstime';
+import {h, render, hydrateRoot} from 'misstime/src';
 import {MountedQueue} from 'misstime/src/utils';
 import {VNode} from 'misstime/src/vnode';
 

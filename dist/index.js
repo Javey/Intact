@@ -6,84 +6,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
   return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var slicedToArray = function () {
-  function sliceIterator(arr, i) {
-    var _arr = [];
-    var _n = true;
-    var _d = false;
-    var _e = undefined;
-
-    try {
-      for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
-        _arr.push(_s.value);
-
-        if (i && _arr.length === i) break;
-      }
-    } catch (err) {
-      _d = true;
-      _e = err;
-    } finally {
-      try {
-        if (!_n && _i["return"]) _i["return"]();
-      } finally {
-        if (_d) throw _e;
-      }
-    }
-
-    return _arr;
-  }
-
-  return function (arr, i) {
-    if (Array.isArray(arr)) {
-      return arr;
-    } else if (Symbol.iterator in Object(arr)) {
-      return sliceIterator(arr, i);
-    } else {
-      throw new TypeError("Invalid attempt to destructure non-iterable instance");
-    }
-  };
-}();
-
 var toString$1 = Object.prototype.toString;
 
 var doc = typeof document === 'undefined' ? {} : document;
@@ -564,16 +486,15 @@ function setSelectModel(data, key, e, self) {
     Options.setModel(data, key, value, self);
 }
 
-var error$2 = function () {
-    var hasConsole = typeof console !== 'undefined';
-    return hasConsole ? function (e) {
-        console.error(e.stack);
-    } : noop;
-}();
+// in ie8 console.log is an object
+var hasConsole = typeof console !== 'undefined' && typeof console.log === 'function';
+var error$2 = hasConsole ? function (e) {
+    console.error(e.stack);
+} : noop;
 
 
 
-var utils$1 = Object.freeze({
+var utils$1 = (Object.freeze || Object)({
 	isNullOrUndefined: isNullOrUndefined,
 	isArray: isArray,
 	indexOf: indexOf,
@@ -604,232 +525,9 @@ var utils$1 = Object.freeze({
 	setCheckboxModel: setCheckboxModel,
 	detectCheckboxChecked: detectCheckboxChecked,
 	setSelectModel: setSelectModel,
+	hasConsole: hasConsole,
 	error: error$2
 });
-
-var toString$2 = Object.prototype.toString;
-
-var doc$1 = typeof document === 'undefined' ? {} : document;
-
-var isArray$1 = Array.isArray || function (arr) {
-    return toString$2.call(arr) === '[object Array]';
-};
-
-function isObject$2(o) {
-    return (typeof o === 'undefined' ? 'undefined' : _typeof(o)) === 'object' && o !== null;
-}
-
-function isStringOrNumber$1(o) {
-    var type = typeof o === 'undefined' ? 'undefined' : _typeof(o);
-    return type === 'string' || type === 'number';
-}
-
-function isNullOrUndefined$1(o) {
-    return o === null || o === undefined;
-}
-
-function isComponentInstance$1(o) {
-    return o && typeof o.init === 'function';
-}
-
-function isEventProp$1(propName) {
-    return propName.substr(0, 3) === 'ev-';
-}
-
-function isInvalid$1(o) {
-    return isNullOrUndefined$1(o) || o === false || o === true;
-}
-
-var indexOf$1 = function () {
-    if (Array.prototype.indexOf) {
-        return function (arr, value) {
-            return arr.indexOf(value);
-        };
-    } else {
-        return function (arr, value) {
-            for (var i = 0; i < arr.length; i++) {
-                if (arr[i] === value) {
-                    return i;
-                }
-            }
-            return -1;
-        };
-    }
-}();
-
-var nativeObject$1 = Object.create;
-var createObject$1 = function () {
-    if (nativeObject$1) {
-        return function (obj) {
-            return nativeObject$1(obj);
-        };
-    } else {
-        return function (obj) {
-            function Fn() {}
-            Fn.prototype = obj;
-            return new Fn();
-        };
-    }
-}();
-
-var SimpleMap$1 = typeof Map === 'function' ? Map : function () {
-    function SimpleMap() {
-        this._keys = [];
-        this._values = [];
-        this.size = 0;
-    }
-
-    SimpleMap.prototype.set = function (key, value) {
-        var index = indexOf$1(this._keys, key);
-        if (!~index) {
-            index = this._keys.push(key) - 1;
-            this.size++;
-        }
-        this._values[index] = value;
-        return this;
-    };
-    SimpleMap.prototype.get = function (key) {
-        var index = indexOf$1(this._keys, key);
-        if (!~index) return;
-        return this._values[index];
-    };
-    SimpleMap.prototype.delete = function (key) {
-        var index = indexOf$1(this._keys, key);
-        if (!~index) return false;
-        this._keys.splice(index, 1);
-        this._values.splice(index, 1);
-        this.size--;
-        return true;
-    };
-
-    return SimpleMap;
-}();
-
-var skipProps$1 = {
-    key: true,
-    ref: true,
-    children: true,
-    className: true,
-    checked: true,
-    multiple: true,
-    defaultValue: true,
-    'v-model': true
-};
-
-function isSkipProp$1(prop) {
-    // treat prop which start with '_' as private prop, so skip it
-    return skipProps$1[prop] || prop[0] === '_';
-}
-
-var booleanProps$1 = {
-    muted: true,
-    scoped: true,
-    loop: true,
-    open: true,
-    checked: true,
-    default: true,
-    capture: true,
-    disabled: true,
-    readOnly: true,
-    required: true,
-    autoplay: true,
-    controls: true,
-    seamless: true,
-    reversed: true,
-    allowfullscreen: true,
-    noValidate: true,
-    hidden: true,
-    autofocus: true,
-    selected: true,
-    indeterminate: true
-};
-
-var strictProps$1 = {
-    volume: true,
-    defaultChecked: true,
-    value: true,
-    htmlFor: true
-};
-
-var selfClosingTags$1 = {
-    'area': true,
-    'base': true,
-    'br': true,
-    'col': true,
-    'command': true,
-    'embed': true,
-    'hr': true,
-    'img': true,
-    'input': true,
-    'keygen': true,
-    'link': true,
-    'menuitem': true,
-    'meta': true,
-    'param': true,
-    'source': true,
-    'track': true,
-    'wbr': true
-};
-
-function MountedQueue$1() {
-    this.queue = [];
-}
-MountedQueue$1.prototype.push = function (fn) {
-    this.queue.push(fn);
-};
-MountedQueue$1.prototype.unshift = function (fn) {
-    this.queue.unshift(fn);
-};
-MountedQueue$1.prototype.trigger = function () {
-    var queue = this.queue;
-    var callback = void 0;
-    while (callback = queue.shift()) {
-        callback();
-    }
-};
-
-var browser$1 = {};
-if (typeof navigator !== 'undefined') {
-    var ua$1 = navigator.userAgent.toLowerCase();
-    var index$1 = ua$1.indexOf('msie ');
-    if (~index$1) {
-        browser$1.isIE = true;
-        var version$1 = parseInt(ua$1.substring(index$1 + 5, ua$1.indexOf('.', index$1)), 10);
-        browser$1.version = version$1;
-        browser$1.isIE8 = version$1 === 8;
-    } else if (~ua$1.indexOf('edge')) {
-        browser$1.isEdge = true;
-    } else if (~ua$1.indexOf('safari')) {
-        if (~ua$1.indexOf('chrome')) {
-            browser$1.isChrome = true;
-        } else {
-            browser$1.isSafari = true;
-        }
-    }
-}
-
-var setTextContent$1 = browser$1.isIE8 ? function (dom, text) {
-    dom.innerText = text;
-} : function (dom, text) {
-    dom.textContent = text;
-};
-
-var svgNS$1 = "http://www.w3.org/2000/svg";
-var xlinkNS$1 = "http://www.w3.org/1999/xlink";
-var xmlNS$1 = "http://www.w3.org/XML/1998/namespace";
-
-var namespaces$1 = {
-    'xlink:href': xlinkNS$1,
-    'xlink:arcrole': xlinkNS$1,
-    'xlink:actuate': xlinkNS$1,
-    'xlink:show': xlinkNS$1,
-    'xlink:role': xlinkNS$1,
-    'xlink:title': xlinkNS$1,
-    'xlink:type': xlinkNS$1,
-    'xml:base': xmlNS$1,
-    'xml:lang': xmlNS$1,
-    'xml:space': xmlNS$1
-};
 
 /**
  * @fileoverview parse jsx to ast
@@ -1737,8 +1435,7 @@ Stringifier.prototype = {
                 return;
             } else if (isVModel(name)) {
                 var _name$split = name.split(':'),
-                    _name$split2 = slicedToArray(_name$split, 2),
-                    model = _name$split2[1];
+                    model = _name$split[1];
 
                 if (model === 'value') name = 'v-model';
                 if (!model) model = 'value';
@@ -2273,10 +1970,26 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
         }
     } else {
         if (lastEvent) {
-            removeEventListener(dom, name, lastEvent);
+            if (isArray(lastEvent)) {
+                for (var i = 0; i < lastEvent.length; i++) {
+                    if (lastEvent[i]) {
+                        removeEventListener(dom, name, lastEvent[i]);
+                    }
+                }
+            } else {
+                removeEventListener(dom, name, lastEvent);
+            }
         }
         if (nextEvent) {
-            addEventListener(dom, name, nextEvent);
+            if (isArray(nextEvent)) {
+                for (var _i = 0; _i < nextEvent.length; _i++) {
+                    if (nextEvent[_i]) {
+                        addEventListener(dom, name, nextEvent[_i]);
+                    }
+                }
+            } else {
+                addEventListener(dom, name, nextEvent);
+            }
         }
     }
 }
@@ -2286,7 +1999,16 @@ function dispatchEvent(event, target, items, count, isClick) {
     if (eventToTrigger) {
         count--;
         event.currentTarget = target;
-        eventToTrigger(event);
+        if (isArray(eventToTrigger)) {
+            for (var i = 0; i < eventToTrigger.length; i++) {
+                var _eventToTrigger = eventToTrigger[i];
+                if (_eventToTrigger) {
+                    _eventToTrigger(event);
+                }
+            }
+        } else {
+            eventToTrigger(event);
+        }
         if (event._rawEvent.cancelBubble) {
             return;
         }
@@ -2472,7 +2194,7 @@ function createElement(vNode, parentDom, mountedQueue, isRender, parentVNode, is
     } else if (type & Types$1.HtmlComment) {
         return createCommentElement(vNode, parentDom);
     } else {
-        throw new Error('unknown vnode type ' + type);
+        throw new Error('expect a vNode but got ' + vNode);
     }
 }
 
@@ -2694,7 +2416,11 @@ function replaceChild(parentDom, lastVNode, nextVNode) {
     if (lastDom._unmount) {
         lastDom._unmount(lastVNode, parentDom);
         if (!nextDom.parentNode) {
-            parentDom.appendChild(nextDom);
+            if (parentDom.lastChild === lastDom) {
+                parentDom.appendChild(nextDom);
+            } else {
+                parentDom.insertBefore(nextDom, lastDom.nextSibling);
+            }
         }
     } else {
         parentDom.replaceChild(nextDom, lastDom);
@@ -3456,7 +3182,7 @@ function patchStyle(lastValue, nextValue, dom) {
     }
 }
 
-function toString$3(vNode, parent, disableSplitText, firstChild) {
+function toString$2(vNode, parent, disableSplitText, firstChild) {
     var type = vNode.type;
     var tag = vNode.tag;
     var props = vNode.props;
@@ -3534,11 +3260,11 @@ function toString$3(vNode, parent, disableSplitText, firstChild) {
                             } else {
                                 index++;
                             }
-                            html += toString$3(child, vNode, disableSplitText, index === 0);
+                            html += toString$2(child, vNode, disableSplitText, index === 0);
                         }
                     }
                 } else {
-                    html += toString$3(children, vNode, disableSplitText, true);
+                    html += toString$2(children, vNode, disableSplitText, true);
                 }
             }
 
@@ -3894,7 +3620,7 @@ var warning = (typeof console === 'undefined' ? 'undefined' : _typeof(console)) 
 
 
 
-var miss = Object.freeze({
+var miss = (Object.freeze || Object)({
 	h: createVNode,
 	patch: patch,
 	render: render,
@@ -3902,10 +3628,11 @@ var miss = Object.freeze({
 	hu: createUnescapeTextVNode,
 	remove: removeElement,
 	MountedQueue: MountedQueue,
-	renderString: toString$3,
+	renderString: toString$2,
 	hydrateRoot: hydrateRoot,
 	hydrate: hydrate,
-	Types: Types$1
+	Types: Types$1,
+	VNode: VNode
 });
 
 var parser = new Parser();
@@ -3945,7 +3672,7 @@ Vdt$1.prototype = {
         this.data = data;
         var vNode = this.template(data, Vdt$1, blocks, this.template) || createCommentVNode('empty');
 
-        return toString$3(vNode, null, Vdt$1.configure().disableSplitText);
+        return toString$2(vNode, null, Vdt$1.configure().disableSplitText);
     },
     update: function update(data, parentDom, queue, parentVNode, isSVG, blocks) {
         var oldVNode = this.vNode;
@@ -4202,7 +3929,7 @@ function isString(s) {
 }
 
 function result(obj, property, fallback) {
-    var value = isNullOrUndefined$1(obj) ? undefined : obj[property];
+    var value = isNullOrUndefined(obj) ? undefined : obj[property];
     if (value === undefined) {
         value = fallback;
     }
@@ -4243,7 +3970,7 @@ var eq = function eq(a, b, aStack, bStack) {
     // See the [Harmony `egal` proposal](http://wiki.ecmascript.org/doku.php?id=harmony:egal).
     if (a === b) return a !== 0 || 1 / a === 1 / b;
     // A strict comparison is necessary because `null == undefined`.
-    if (isNullOrUndefined$1(a) || isNullOrUndefined$1(b)) return a === b;
+    if (isNullOrUndefined(a) || isNullOrUndefined(b)) return a === b;
     // Compare `[[Class]]` names.
     var className$$1 = toString.call(a);
     if (className$$1 !== toString.call(b)) return false;
@@ -4383,7 +4110,7 @@ function get$$1(object, path, defaultValue) {
     var index = 0,
         length = path.length;
 
-    while (!isNullOrUndefined$1(object) && index < length) {
+    while (!isNullOrUndefined(object) && index < length) {
         object = object[path[index++]];
     }
 
@@ -4401,7 +4128,7 @@ function set$$1(object, path, value) {
         length = path.length,
         lastIndex = length - 1,
         nested = object;
-    while (!isNullOrUndefined$1(nested) && ++index < length) {
+    while (!isNullOrUndefined(nested) && ++index < length) {
         var key = path[index],
             newValue = value;
         if (index !== lastIndex) {
@@ -4415,8 +4142,6 @@ function set$$1(object, path, value) {
     return object;
 }
 
-// in ie8 console.log is an object
-var hasConsole = typeof console !== 'undefined' && typeof console.log === 'function';
 var warn = hasConsole ? function () {
     console.warn.apply(console, arguments);
 } : noop;
@@ -4496,7 +4221,7 @@ function autobind(prototype, context, Intact, bound) {
             return;
         }
 
-        if (~indexOf$1(wontBind, method) || bound[method] || typeof fn !== 'function') {
+        if (~indexOf(wontBind, method) || bound[method] || typeof fn !== 'function') {
             return;
         }
 
@@ -4510,13 +4235,13 @@ function autobind(prototype, context, Intact, bound) {
 
 
 
-var utils = Object.freeze({
+var utils = (Object.freeze || Object)({
 	extend: extend,
 	isArray: isArray,
 	each: each,
 	isObject: isObject$$1,
 	hasOwn: hasOwn,
-	isNullOrUndefined: isNullOrUndefined$1,
+	isNullOrUndefined: isNullOrUndefined,
 	noop: noop,
 	inBrowser: inBrowser,
 	UA: UA,
@@ -4604,7 +4329,7 @@ function validateProps(props, propTypes) {
             expectedType = { type: expectedType };
         }
 
-        if (isNullOrUndefined$1(value)) {
+        if (isNullOrUndefined(value)) {
             if (expectedType.required) {
                 error$1('Missing required prop on component "' + componentName + '": "' + prop + '".');
                 return;
@@ -4682,13 +4407,13 @@ function getType(fn) {
     return match ? match[1] : '';
 }
 
-var toString$4 = Object.prototype.toString;
+var toString$3 = Object.prototype.toString;
 function toRawType(value) {
-    return toString$4.call(value).slice(8, -1);
+    return toString$3.call(value).slice(8, -1);
 }
 
 function isPlainObject(value) {
-    return toString$4.call(value) === '[object Object]';
+    return toString$3.call(value) === '[object Object]';
 }
 
 Intact$2._constructors.push(function (props) {
@@ -4714,7 +4439,7 @@ Intact$2.prototype.get = function _get(key, defaultValue) {
 Intact$2.prototype.set = function _set(key, val, options) {
     var _this = this;
 
-    if (isNullOrUndefined$1(key)) return this;
+    if (isNullOrUndefined(key)) return this;
 
     if ((typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object') {
         options = val;
@@ -4750,7 +4475,7 @@ Intact$2.prototype.set = function _set(key, val, options) {
     if (changes.length) {
         var changeKeys = [];
         for (var i = 0; i < changes.length; i++) {
-            var _changes$i = slicedToArray(changes[i], 2),
+            var _changes$i = changes[i],
                 _prop = _changes$i[0],
                 values$$1 = _changes$i[1];
 
@@ -4818,7 +4543,7 @@ function triggerChange(o, changes) {
 function triggerChangedEvent(o, changes) {
     var changeKeys = [];
     for (var i = 0; i < changes.length; i++) {
-        var _changes$i2 = slicedToArray(changes[i], 2),
+        var _changes$i2 = changes[i],
             prop = _changes$i2[0],
             values$$1 = _changes$i2[1];
 
@@ -4901,7 +4626,7 @@ Intact$2._constructors.push(function (props) {
 
     // bind events
     each(props, function (value, key) {
-        if (isEventProp$1(key)) {
+        if (isEventProp(key)) {
             if (isArray(value)) {
                 for (var i = 0; i < value.length; i++) {
                     if (value[i]) {
@@ -4985,1983 +4710,6 @@ Intact$2.prototype.trigger = function (name) {
 
     return this;
 };
-
-var Types$2 = {
-    Text: 1,
-    HtmlElement: 1 << 1,
-
-    ComponentClass: 1 << 2,
-    ComponentFunction: 1 << 3,
-    ComponentInstance: 1 << 4,
-
-    HtmlComment: 1 << 5,
-
-    InputElement: 1 << 6,
-    SelectElement: 1 << 7,
-    TextareaElement: 1 << 8,
-    SvgElement: 1 << 9,
-
-    UnescapeText: 1 << 10 // for server side render unescape text
-};
-Types$2.FormElement = Types$2.InputElement | Types$2.SelectElement | Types$2.TextareaElement;
-Types$2.Element = Types$2.HtmlElement | Types$2.FormElement | Types$2.SvgElement;
-Types$2.ComponentClassOrInstance = Types$2.ComponentClass | Types$2.ComponentInstance;
-Types$2.TextElement = Types$2.Text | Types$2.HtmlComment;
-
-var EMPTY_OBJ$1 = {};
-if (process.env.NODE_ENV !== 'production' && !browser$1.isIE) {
-    Object.freeze(EMPTY_OBJ$1);
-}
-
-function VNode$1(type, tag, props, children, className, key, ref) {
-    this.type = type;
-    this.tag = tag;
-    this.props = props;
-    this.children = children;
-    this.key = key;
-    this.ref = ref;
-    this.className = className;
-}
-
-function createVNode$1(tag, props, children, className, key, ref) {
-    var type = void 0;
-    props || (props = EMPTY_OBJ$1);
-    switch (typeof tag === 'undefined' ? 'undefined' : _typeof(tag)) {
-        case 'string':
-            if (tag === 'input') {
-                type = Types$2.InputElement;
-            } else if (tag === 'select') {
-                type = Types$2.SelectElement;
-            } else if (tag === 'textarea') {
-                type = Types$2.TextareaElement;
-            } else if (tag === 'svg') {
-                type = Types$2.SvgElement;
-            } else {
-                type = Types$2.HtmlElement;
-            }
-            break;
-        case 'function':
-            if (tag.prototype.init) {
-                type = Types$2.ComponentClass;
-            } else {
-                // return tag(props);
-                type = Types$2.ComponentFunction;
-            }
-            break;
-        case 'object':
-            if (tag.init) {
-                return createComponentInstanceVNode$1(tag);
-            }
-        default:
-            throw new Error('unknown vNode type: ' + tag);
-    }
-
-    if (type & (Types$2.ComponentClass | Types$2.ComponentFunction)) {
-        if (!isNullOrUndefined$1(children)) {
-            if (props === EMPTY_OBJ$1) props = {};
-            props.children = normalizeChildren$2(children, false);
-            // props.children = children;
-        } else if (!isNullOrUndefined$1(props.children)) {
-            props.children = normalizeChildren$2(props.children, false);
-        }
-        if (type & Types$2.ComponentFunction) {
-            if (key || ref) {
-                if (props === EMPTY_OBJ$1) props = {};
-                if (key) props.key = key;
-                if (ref) props.ref = ref;
-            }
-            return tag(props);
-        }
-    } else if (!isNullOrUndefined$1(children)) {
-        children = normalizeChildren$2(children, true);
-    }
-
-    return new VNode$1(type, tag, props, children, className || props.className, key || props.key, ref || props.ref);
-}
-
-function createCommentVNode$1(children) {
-    return new VNode$1(Types$2.HtmlComment, null, EMPTY_OBJ$1, children);
-}
-
-
-
-function createTextVNode$1(text) {
-    return new VNode$1(Types$2.Text, null, EMPTY_OBJ$1, text);
-}
-
-
-
-function createComponentInstanceVNode$1(instance) {
-    var props = instance.props || EMPTY_OBJ$1;
-    return new VNode$1(Types$2.ComponentInstance, instance.constructor, props, instance, null, props.key, props.ref);
-}
-
-function normalizeChildren$2(vNodes, isAddKey) {
-    if (isArray$1(vNodes)) {
-        var childNodes = addChild$1(vNodes, { index: 0 }, isAddKey);
-        return childNodes.length ? childNodes : null;
-    } else if (isComponentInstance$1(vNodes)) {
-        return createComponentInstanceVNode$1(vNodes);
-    } else if (vNodes.type && !isNullOrUndefined$1(vNodes.dom)) {
-        return directClone$1(vNodes);
-    }
-    return vNodes;
-}
-
-function applyKey$1(vNode, reference, isAddKey) {
-    if (!isAddKey) return vNode;
-    // start with '.' means the vNode has been set key by index
-    // we will reset the key when it comes back again
-    if (isNullOrUndefined$1(vNode.key) || vNode.key[0] === '.') {
-        vNode.key = '.$' + reference.index++;
-    }
-    // add a flag to indicate that we have handle the vNode
-    // when it came back we should clone it
-    vNode.$ = true;
-    return vNode;
-}
-
-function addChild$1(vNodes, reference, isAddKey) {
-    var newVNodes = void 0;
-    for (var i = 0; i < vNodes.length; i++) {
-        var n = vNodes[i];
-        if (isNullOrUndefined$1(n)) {
-            if (!newVNodes) {
-                newVNodes = vNodes.slice(0, i);
-            }
-        } else if (isArray$1(n)) {
-            if (!newVNodes) {
-                newVNodes = vNodes.slice(0, i);
-            }
-            newVNodes = newVNodes.concat(addChild$1(n, reference, isAddKey));
-        } else if (isStringOrNumber$1(n)) {
-            if (!newVNodes) {
-                newVNodes = vNodes.slice(0, i);
-            }
-            newVNodes.push(applyKey$1(createTextVNode$1(n), reference, isAddKey));
-        } else if (isComponentInstance$1(n)) {
-            if (!newVNodes) {
-                newVNodes = vNodes.slice(0, i);
-            }
-            newVNodes.push(applyKey$1(createComponentInstanceVNode$1(n), reference, isAddKey));
-        } else if (n.type) {
-            if (!newVNodes) {
-                newVNodes = vNodes.slice(0, i);
-            }
-            if (n.dom || n.$) {
-                newVNodes.push(applyKey$1(directClone$1(n), reference, isAddKey));
-            } else {
-                newVNodes.push(applyKey$1(n, reference, isAddKey));
-            }
-        }
-    }
-    return newVNodes || vNodes;
-}
-
-function directClone$1(vNode) {
-    var newVNode = void 0;
-    var type = vNode.type;
-
-    if (type & Types$2.ComponentClassOrInstance) {
-        var props = void 0;
-        var propsToClone = vNode.props;
-
-        if (propsToClone === EMPTY_OBJ$1 || isNullOrUndefined$1(propsToClone)) {
-            props = EMPTY_OBJ$1;
-        } else {
-            props = {};
-            for (var key in propsToClone) {
-                props[key] = propsToClone[key];
-            }
-        }
-
-        newVNode = new VNode$1(type, vNode.tag, props, vNode.children, null, vNode.key, vNode.ref);
-
-        var newProps = newVNode.props;
-        var newChildren = newProps.children;
-
-        if (newChildren) {
-            if (isArray$1(newChildren)) {
-                var len = newChildren.length;
-                if (len > 0) {
-                    var tmpArray = [];
-
-                    for (var i = 0; i < len; i++) {
-                        var child = newChildren[i];
-                        if (isStringOrNumber$1(child)) {
-                            tmpArray.push(child);
-                        } else if (!isInvalid$1(child) && child.type) {
-                            tmpArray.push(directClone$1(child));
-                        }
-                    }
-                    newProps.children = tmpArray;
-                }
-            } else if (newChildren.type) {
-                newProps.children = directClone$1(newChildren);
-            }
-        }
-    } else if (type & Types$2.Element) {
-        var children = vNode.children;
-        var _props = void 0;
-        var _propsToClone = vNode.props;
-
-        if (_propsToClone === EMPTY_OBJ$1 || isNullOrUndefined$1(_propsToClone)) {
-            _props = EMPTY_OBJ$1;
-        } else {
-            _props = {};
-            for (var _key in _propsToClone) {
-                _props[_key] = _propsToClone[_key];
-            }
-        }
-
-        newVNode = new VNode$1(type, vNode.tag, vNode.props, children, vNode.className, vNode.key, vNode.ref);
-    } else if (type & Types$2.Text) {
-        newVNode = createTextVNode$1(vNode.children);
-    } else if (type & Types$2.HtmlComment) {
-        newVNode = createCommentVNode$1(vNode.children);
-    }
-
-    return newVNode;
-}
-
-var ALL_PROPS$1 = ["altKey", "bubbles", "cancelable", "ctrlKey", "eventPhase", "metaKey", "relatedTarget", "shiftKey", "target", "timeStamp", "type", "view", "which"];
-var KEY_PROPS$1 = ["char", "charCode", "key", "keyCode"];
-var MOUSE_PROPS$1 = ["button", "buttons", "clientX", "clientY", "layerX", "layerY", "offsetX", "offsetY", "pageX", "pageY", "screenX", "screenY", "toElement"];
-
-var rkeyEvent$1 = /^key|input/;
-var rmouseEvent$1 = /^(?:mouse|pointer|contextmenu)|click/;
-
-function Event$1(e) {
-    for (var i = 0; i < ALL_PROPS$1.length; i++) {
-        var propKey = ALL_PROPS$1[i];
-        this[propKey] = e[propKey];
-    }
-
-    if (!e.target) {
-        this.target = e.srcElement;
-    }
-
-    this._rawEvent = e;
-}
-Event$1.prototype.preventDefault = function () {
-    var e = this._rawEvent;
-    if (e.preventDefault) {
-        e.preventDefault();
-    } else {
-        e.returnValue = false;
-    }
-};
-Event$1.prototype.stopPropagation = function () {
-    var e = this._rawEvent;
-    e.cancelBubble = true;
-    e.stopImmediatePropagation && e.stopImmediatePropagation();
-};
-
-function MouseEvent$1(e) {
-    Event$1.call(this, e);
-    for (var j = 0; j < MOUSE_PROPS$1.length; j++) {
-        var mousePropKey = MOUSE_PROPS$1[j];
-        this[mousePropKey] = e[mousePropKey];
-    }
-}
-MouseEvent$1.prototype = createObject$1(Event$1.prototype);
-MouseEvent$1.prototype.constructor = MouseEvent$1;
-
-function KeyEvent$1(e) {
-    Event$1.call(this, e);
-    for (var j = 0; j < KEY_PROPS$1.length; j++) {
-        var keyPropKey = KEY_PROPS$1[j];
-        this[keyPropKey] = e[keyPropKey];
-    }
-}
-KeyEvent$1.prototype = createObject$1(Event$1.prototype);
-KeyEvent$1.prototype.constructor = KeyEvent$1;
-
-function proxyEvent$1(e) {
-    if (rkeyEvent$1.test(e.type)) {
-        return new KeyEvent$1(e);
-    } else if (rmouseEvent$1.test(e.type)) {
-        return new MouseEvent$1(e);
-    } else {
-        return new Event$1(e);
-    }
-}
-
-var addEventListener$1 = void 0;
-var removeEventListener$1 = void 0;
-if ('addEventListener' in doc$1) {
-    addEventListener$1 = function addEventListener(dom, name, fn) {
-        dom.addEventListener(name, fn, false);
-    };
-
-    removeEventListener$1 = function removeEventListener(dom, name, fn) {
-        dom.removeEventListener(name, fn);
-    };
-} else {
-    addEventListener$1 = function addEventListener(dom, name, fn) {
-        fn.cb = function (e) {
-            e = proxyEvent$1(e);
-            fn(e);
-        };
-        dom.attachEvent("on" + name, fn.cb);
-    };
-
-    removeEventListener$1 = function removeEventListener(dom, name, fn) {
-        dom.detachEvent("on" + name, fn.cb || fn);
-    };
-}
-
-var delegatedEvents$1 = {};
-var unDelegatesEvents$1 = {
-    'mouseenter': true,
-    'mouseleave': true,
-    'propertychange': true,
-    'scroll': true
-};
-
-// change event can not be deletegated in IE8 
-if (browser$1.isIE8) {
-    unDelegatesEvents$1.change = true;
-}
-
-function handleEvent$1(name, lastEvent, nextEvent, dom) {
-    if (name === 'blur') {
-        name = 'focusout';
-    } else if (name === 'focus') {
-        name = 'focusin';
-    } else if (browser$1.isIE8 && name === 'input') {
-        name = 'propertychange';
-    }
-
-    if (!unDelegatesEvents$1[name]) {
-        var delegatedRoots = delegatedEvents$1[name];
-
-        if (nextEvent) {
-            if (!delegatedRoots) {
-                delegatedRoots = { items: new SimpleMap$1(), docEvent: null };
-                delegatedRoots.docEvent = attachEventToDocument$1(name, delegatedRoots);
-                delegatedEvents$1[name] = delegatedRoots;
-            }
-            delegatedRoots.items.set(dom, nextEvent);
-        } else if (delegatedRoots) {
-            var items = delegatedRoots.items;
-            if (items.delete(dom)) {
-                if (items.size === 0) {
-                    removeEventListener$1(doc$1, name, delegatedRoots.docEvent);
-                    delete delegatedEvents$1[name];
-                }
-            }
-        }
-    } else {
-        if (lastEvent) {
-            removeEventListener$1(dom, name, lastEvent);
-        }
-        if (nextEvent) {
-            addEventListener$1(dom, name, nextEvent);
-        }
-    }
-}
-
-function dispatchEvent$1(event, target, items, count, isClick) {
-    var eventToTrigger = items.get(target);
-    if (eventToTrigger) {
-        count--;
-        event.currentTarget = target;
-        eventToTrigger(event);
-        if (event._rawEvent.cancelBubble) {
-            return;
-        }
-    }
-    if (count > 0) {
-        var parentDom = target.parentNode;
-        if (isNullOrUndefined$1(parentDom) || isClick && parentDom.nodeType === 1 && parentDom.disabled) {
-            return;
-        }
-        dispatchEvent$1(event, parentDom, items, count, isClick);
-    }
-}
-
-function attachEventToDocument$1(name, delegatedRoots) {
-    var docEvent = function docEvent(event) {
-        var count = delegatedRoots.items.size;
-        event || (event = window.event);
-        if (count > 0) {
-            event = proxyEvent$1(event);
-            dispatchEvent$1(event, event.target, delegatedRoots.items, count, event.type === 'click');
-        }
-    };
-    addEventListener$1(doc$1, name, docEvent);
-    return docEvent;
-}
-
-function processSelect$1(vNode, dom, nextProps, isRender) {
-    var multiple = nextProps.multiple;
-    if (multiple !== dom.multiple) {
-        dom.multiple = multiple;
-    }
-    var children = vNode.children;
-
-    if (!isNullOrUndefined$1(children)) {
-        var value = nextProps.value;
-        if (isRender && isNullOrUndefined$1(value)) {
-            value = nextProps.defaultValue;
-        }
-
-        var flag = { hasSelected: false };
-        if (isArray$1(children)) {
-            for (var i = 0; i < children.length; i++) {
-                updateChildOptionGroup$1(children[i], value, flag);
-            }
-        } else {
-            updateChildOptionGroup$1(children, value, flag);
-        }
-        if (!flag.hasSelected) {
-            dom.value = '';
-        }
-    }
-}
-
-function updateChildOptionGroup$1(vNode, value, flag) {
-    var tag = vNode.tag;
-
-    if (tag === 'optgroup') {
-        var children = vNode.children;
-
-        if (isArray$1(children)) {
-            for (var i = 0; i < children.length; i++) {
-                updateChildOption$1(children[i], value, flag);
-            }
-        } else {
-            updateChildOption$1(children, value, flag);
-        }
-    } else {
-        updateChildOption$1(vNode, value, flag);
-    }
-}
-
-function updateChildOption$1(vNode, value, flag) {
-    // skip text and comment node
-    if (vNode.type & Types$2.HtmlElement) {
-        var props = vNode.props;
-        var dom = vNode.dom;
-
-        if (isArray$1(value) && indexOf$1(value, props.value) !== -1 || props.value === value) {
-            dom.selected = true;
-            if (!flag.hasSelected) flag.hasSelected = true;
-        } else if (!isNullOrUndefined$1(value) || !isNullOrUndefined$1(props.selected)) {
-            var selected = !!props.selected;
-            if (!flag.hasSelected && selected) flag.hasSelected = true;
-            dom.selected = selected;
-        }
-    }
-}
-
-function processInput$1(vNode, dom, nextProps) {
-    var type = nextProps.type;
-    var value = nextProps.value;
-    var checked = nextProps.checked;
-    var defaultValue = nextProps.defaultValue;
-    var multiple = nextProps.multiple;
-    var hasValue = !isNullOrUndefined$1(value);
-
-    if (multiple && multiple !== dom.multiple) {
-        dom.multiple = multiple;
-    }
-    if (!isNullOrUndefined$1(defaultValue) && !hasValue) {
-        dom.defaultValue = defaultValue + '';
-    }
-    if (isCheckedType$1(type)) {
-        if (hasValue) {
-            dom.value = value;
-        }
-        if (!isNullOrUndefined$1(checked)) {
-            dom.checked = checked;
-        }
-    } else {
-        if (hasValue && dom.value !== value) {
-            dom.value = value;
-        } else if (!isNullOrUndefined$1(checked)) {
-            dom.checked = checked;
-        }
-    }
-}
-
-function isCheckedType$1(type) {
-    return type === 'checkbox' || type === 'radio';
-}
-
-function processTextarea$1(vNode, dom, nextProps, isRender) {
-    var value = nextProps.value;
-    var domValue = dom.value;
-
-    if (isNullOrUndefined$1(value)) {
-        if (isRender) {
-            var defaultValue = nextProps.defaultValue;
-            if (!isNullOrUndefined$1(defaultValue)) {
-                if (defaultValue !== domValue) {
-                    dom.value = defaultValue;
-                }
-            } else if (domValue !== '') {
-                dom.value = '';
-            }
-        }
-    } else {
-        if (domValue !== value) {
-            dom.value = value;
-        }
-    }
-}
-
-function processForm$1(vNode, dom, nextProps, isRender) {
-    var type = vNode.type;
-    if (type & Types$2.InputElement) {
-        processInput$1(vNode, dom, nextProps, isRender);
-    } else if (type & Types$2.TextareaElement) {
-        processTextarea$1(vNode, dom, nextProps, isRender);
-    } else if (type & Types$2.SelectElement) {
-        processSelect$1(vNode, dom, nextProps, isRender);
-    }
-}
-
-function render$1(vNode, parentDom, mountedQueue, parentVNode, isSVG) {
-    if (isNullOrUndefined$1(vNode)) return;
-    var isTrigger = true;
-    if (mountedQueue) {
-        isTrigger = false;
-    } else {
-        mountedQueue = new MountedQueue$1();
-    }
-    var dom = createElement$1(vNode, parentDom, mountedQueue, true /* isRender */, parentVNode, isSVG);
-    if (isTrigger) {
-        mountedQueue.trigger();
-    }
-    return dom;
-}
-
-function createElement$1(vNode, parentDom, mountedQueue, isRender, parentVNode, isSVG) {
-    var type = vNode.type;
-    if (type & Types$2.Element) {
-        return createHtmlElement$1(vNode, parentDom, mountedQueue, isRender, parentVNode, isSVG);
-    } else if (type & Types$2.Text) {
-        return createTextElement$1(vNode, parentDom);
-    } else if (type & Types$2.ComponentClassOrInstance) {
-        return createComponentClassOrInstance$1(vNode, parentDom, mountedQueue, null, isRender, parentVNode, isSVG);
-        // } else if (type & Types.ComponentFunction) {
-        // return createComponentFunction(vNode, parentDom, mountedQueue, isNotAppendChild, isRender);
-        // } else if (type & Types.ComponentInstance) {
-        // return createComponentInstance(vNode, parentDom, mountedQueue);
-    } else if (type & Types$2.HtmlComment) {
-        return createCommentElement$1(vNode, parentDom);
-    } else {
-        throw new Error('unknown vnode type ' + type);
-    }
-}
-
-function createHtmlElement$1(vNode, parentDom, mountedQueue, isRender, parentVNode, isSVG) {
-    var type = vNode.type;
-
-    isSVG = isSVG || (type & Types$2.SvgElement) > 0;
-
-    var dom = documentCreateElement$1(vNode.tag, isSVG);
-    var children = vNode.children;
-    var props = vNode.props;
-    var className = vNode.className;
-
-    vNode.dom = dom;
-    vNode.parentVNode = parentVNode;
-
-    if (!isNullOrUndefined$1(children)) {
-        createElements$1(children, dom, mountedQueue, isRender, vNode, isSVG === true && vNode.tag !== 'foreignObject');
-    }
-
-    if (!isNullOrUndefined$1(className)) {
-        if (isSVG) {
-            dom.setAttribute('class', className);
-        } else {
-            dom.className = className;
-        }
-    }
-
-    // in IE8, the select value will be set to the first option's value forcely
-    // when it is appended to parent dom. We change its value in processForm does not
-    // work. So processForm after it has be appended to parent dom.
-    var isFormElement = void 0;
-    if (props !== EMPTY_OBJ$1) {
-        isFormElement = (vNode.type & Types$2.FormElement) > 0;
-        for (var prop in props) {
-            patchProp$1(prop, null, props[prop], dom, isFormElement, isSVG);
-        }
-    }
-
-    var ref = vNode.ref;
-    if (!isNullOrUndefined$1(ref)) {
-        createRef$1(dom, ref, mountedQueue);
-    }
-
-    if (parentDom) {
-        appendChild$1(parentDom, dom);
-    }
-
-    if (isFormElement) {
-        processForm$1(vNode, dom, props, true);
-    }
-
-    return dom;
-}
-
-function createTextElement$1(vNode, parentDom) {
-    var dom = doc$1.createTextNode(vNode.children);
-    vNode.dom = dom;
-
-    if (parentDom) {
-        parentDom.appendChild(dom);
-    }
-
-    return dom;
-}
-
-function createComponentClassOrInstance$1(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
-    var props = vNode.props;
-    var instance = vNode.type & Types$2.ComponentClass ? new vNode.tag(props) : vNode.children;
-    instance.parentDom = parentDom;
-    instance.mountedQueue = mountedQueue;
-    instance.isRender = isRender;
-    instance.parentVNode = parentVNode;
-    instance.isSVG = isSVG;
-    instance.vNode = vNode;
-    var dom = instance.init(lastVNode, vNode);
-    var ref = vNode.ref;
-
-    vNode.dom = dom;
-    vNode.children = instance;
-    vNode.parentVNode = parentVNode;
-
-    if (parentDom) {
-        appendChild$1(parentDom, dom);
-        // parentDom.appendChild(dom);
-    }
-
-    if (typeof instance.mount === 'function') {
-        mountedQueue.push(function () {
-            return instance.mount(lastVNode, vNode);
-        });
-    }
-
-    if (typeof ref === 'function') {
-        ref(instance);
-    }
-
-    return dom;
-}
-
-
-
-function createCommentElement$1(vNode, parentDom) {
-    var dom = doc$1.createComment(vNode.children);
-    vNode.dom = dom;
-
-    if (parentDom) {
-        parentDom.appendChild(dom);
-    }
-
-    return dom;
-}
-
-
-
-function createElements$1(vNodes, parentDom, mountedQueue, isRender, parentVNode, isSVG) {
-    if (isStringOrNumber$1(vNodes)) {
-        setTextContent$1(parentDom, vNodes);
-    } else if (isArray$1(vNodes)) {
-        for (var i = 0; i < vNodes.length; i++) {
-            createElement$1(vNodes[i], parentDom, mountedQueue, isRender, parentVNode, isSVG);
-        }
-    } else {
-        createElement$1(vNodes, parentDom, mountedQueue, isRender, parentVNode, isSVG);
-    }
-}
-
-function removeElements$1(vNodes, parentDom) {
-    if (isNullOrUndefined$1(vNodes)) {
-        return;
-    } else if (isArray$1(vNodes)) {
-        for (var i = 0; i < vNodes.length; i++) {
-            removeElement$1(vNodes[i], parentDom);
-        }
-    } else {
-        removeElement$1(vNodes, parentDom);
-    }
-}
-
-function removeElement$1(vNode, parentDom, nextVNode) {
-    var type = vNode.type;
-    if (type & Types$2.Element) {
-        return removeHtmlElement$1(vNode, parentDom);
-    } else if (type & Types$2.TextElement) {
-        return removeText$1(vNode, parentDom);
-    } else if (type & Types$2.ComponentClassOrInstance) {
-        return removeComponentClassOrInstance$1(vNode, parentDom, nextVNode);
-    } else if (type & Types$2.ComponentFunction) {
-        return removeComponentFunction$1(vNode, parentDom);
-    }
-}
-
-function removeHtmlElement$1(vNode, parentDom) {
-    var ref = vNode.ref;
-    var props = vNode.props;
-    var dom = vNode.dom;
-
-    if (ref) {
-        ref(null);
-    }
-
-    removeElements$1(vNode.children, null);
-
-    // remove event
-    for (var name in props) {
-        var prop = props[name];
-        if (!isNullOrUndefined$1(prop) && isEventProp$1(name)) {
-            handleEvent$1(name.substr(3), prop, null, dom);
-        }
-    }
-
-    if (parentDom) {
-        parentDom.removeChild(dom);
-    }
-}
-
-function removeText$1(vNode, parentDom) {
-    if (parentDom) {
-        parentDom.removeChild(vNode.dom);
-    }
-}
-
-function removeComponentFunction$1(vNode, parentDom) {
-    var ref = vNode.ref;
-    if (ref) {
-        ref(null);
-    }
-    removeElement$1(vNode.children, parentDom);
-}
-
-function removeComponentClassOrInstance$1(vNode, parentDom, nextVNode) {
-    var instance = vNode.children;
-    var ref = vNode.ref;
-
-    if (typeof instance.destroy === 'function') {
-        instance.destroy(vNode, nextVNode, parentDom);
-    }
-
-    if (ref) {
-        ref(null);
-    }
-
-    // instance destroy method will remove everything
-    // removeElements(vNode.props.children, null);
-
-    if (parentDom) {
-        removeChild$1(parentDom, vNode);
-    }
-}
-
-
-
-function replaceChild$1(parentDom, lastVNode, nextVNode) {
-    var lastDom = lastVNode.dom;
-    var nextDom = nextVNode.dom;
-    var parentNode = lastDom.parentNode;
-    // maybe the lastDom has be moved
-    if (!parentDom || parentNode !== parentDom) parentDom = parentNode;
-    if (lastDom._unmount) {
-        lastDom._unmount(lastVNode, parentDom);
-        if (!nextDom.parentNode) {
-            if (parentDom.lastChild === lastDom) {
-                parentDom.appendChild(nextDom);
-            } else {
-                parentDom.insertBefore(nextDom, lastDom.nextSibling);
-            }
-        }
-    } else {
-        parentDom.replaceChild(nextDom, lastDom);
-    }
-}
-
-function removeChild$1(parentDom, vNode) {
-    var dom = vNode.dom;
-    if (dom._unmount) {
-        dom._unmount(vNode, parentDom);
-    } else {
-        parentDom.removeChild(dom);
-    }
-}
-
-function appendChild$1(parentDom, dom) {
-    // in IE8, when a element has appendChild,
-    // then its parentNode will be HTMLDocument object,
-    // so check the tagName for this case
-    if (!dom.parentNode || !dom.parentNode.tagName) {
-        parentDom.appendChild(dom);
-    }
-}
-
-function createRef$1(dom, ref, mountedQueue) {
-    if (typeof ref === 'function') {
-        // mountedQueue.push(() => ref(dom));
-        // set ref immediately, because we have unset it before
-        ref(dom);
-    } else {
-        throw new Error('ref must be a function, but got "' + JSON.stringify(ref) + '"');
-    }
-}
-
-function documentCreateElement$1(tag, isSVG) {
-    if (isSVG === true) {
-        return doc$1.createElementNS(svgNS$1, tag);
-    } else {
-        return doc$1.createElement(tag);
-    }
-}
-
-function patchVNode$1(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
-    if (lastVNode !== nextVNode) {
-        var nextType = nextVNode.type;
-        var lastType = lastVNode.type;
-
-        if (nextType & Types$2.Element) {
-            if (lastType & Types$2.Element) {
-                patchElement$1(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            } else {
-                replaceElement$1(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            }
-        } else if (nextType & Types$2.TextElement) {
-            if (lastType === nextType) {
-                patchText$1(lastVNode, nextVNode);
-            } else {
-                replaceElement$1(lastVNode, nextVNode, parentDom, mountedQueue, isSVG);
-            }
-        } else if (nextType & Types$2.ComponentClass) {
-            if (lastType & Types$2.ComponentClass) {
-                patchComponentClass$1(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            } else {
-                replaceElement$1(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            }
-            // } else if (nextType & Types.ComponentFunction) {
-            // if (lastType & Types.ComponentFunction) {
-            // patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue);
-            // } else {
-            // replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
-            // }
-        } else if (nextType & Types$2.ComponentInstance) {
-            if (lastType & Types$2.ComponentInstance) {
-                patchComponentIntance$1(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            } else {
-                replaceElement$1(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            }
-        }
-    }
-    return nextVNode.dom;
-}
-
-function patchElement$1(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
-    var dom = lastVNode.dom;
-    var lastProps = lastVNode.props;
-    var nextProps = nextVNode.props;
-    var lastChildren = lastVNode.children;
-    var nextChildren = nextVNode.children;
-    var lastClassName = lastVNode.className;
-    var nextClassName = nextVNode.className;
-    var nextType = nextVNode.type;
-
-    nextVNode.dom = dom;
-    nextVNode.parentVNode = parentVNode;
-
-    isSVG = isSVG || (nextType & Types$2.SvgElement) > 0;
-
-    if (lastVNode.tag !== nextVNode.tag || lastVNode.key !== nextVNode.key) {
-        replaceElement$1(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-    } else {
-        if (lastChildren !== nextChildren) {
-            patchChildren$1(lastChildren, nextChildren, dom, mountedQueue, nextVNode, isSVG === true && nextVNode.tag !== 'foreignObject');
-        }
-
-        if (lastProps !== nextProps) {
-            patchProps$2(lastVNode, nextVNode, isSVG);
-        }
-
-        if (lastClassName !== nextClassName) {
-            if (isNullOrUndefined$1(nextClassName)) {
-                dom.removeAttribute('class');
-            } else {
-                if (isSVG) {
-                    dom.setAttribute('class', nextClassName);
-                } else {
-                    dom.className = nextClassName;
-                }
-            }
-        }
-
-        var lastRef = lastVNode.ref;
-        var nextRef = nextVNode.ref;
-        if (lastRef !== nextRef) {
-            if (!isNullOrUndefined$1(lastRef)) {
-                lastRef(null);
-            }
-            if (!isNullOrUndefined$1(nextRef)) {
-                createRef$1(dom, nextRef, mountedQueue);
-            }
-        }
-    }
-}
-
-function patchComponentClass$1(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
-    var lastTag = lastVNode.tag;
-    var nextTag = nextVNode.tag;
-    var dom = lastVNode.dom;
-
-    var instance = void 0;
-    var newDom = void 0;
-
-    if (lastTag !== nextTag || lastVNode.key !== nextVNode.key) {
-        // we should call this remove function in component's init method
-        // because it should be destroyed until async component has rendered
-        // removeComponentClassOrInstance(lastVNode, null, nextVNode);
-        newDom = createComponentClassOrInstance$1(nextVNode, parentDom, mountedQueue, lastVNode, false, parentVNode, isSVG);
-    } else {
-        instance = lastVNode.children;
-        instance.mountedQueue = mountedQueue;
-        instance.isRender = false;
-        instance.parentVNode = parentVNode;
-        instance.vNode = nextVNode;
-        instance.isSVG = isSVG;
-        newDom = instance.update(lastVNode, nextVNode);
-        nextVNode.dom = newDom;
-        nextVNode.children = instance;
-        nextVNode.parentVNode = parentVNode;
-
-        // for intact.js, the dom will not be removed and
-        // the component will not be destoryed, so the ref
-        // function need be called in update method.
-        var lastRef = lastVNode.ref;
-        var nextRef = nextVNode.ref;
-        if (lastRef !== nextRef) {
-            if (!isNullOrUndefined$1(lastRef)) {
-                lastRef(null);
-            }
-            if (!isNullOrUndefined$1(nextRef)) {
-                nextRef(instance);
-            }
-        }
-    }
-
-    // perhaps the dom has be replaced
-    if (dom !== newDom && dom.parentNode &&
-    // when dom has be replaced, its parentNode maybe be fragment in IE8
-    dom.parentNode.nodeName !== '#document-fragment') {
-        replaceChild$1(parentDom, lastVNode, nextVNode);
-    }
-}
-
-function patchComponentIntance$1(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
-    var lastInstance = lastVNode.children;
-    var nextInstance = nextVNode.children;
-    var dom = lastVNode.dom;
-
-    var newDom = void 0;
-
-    if (lastInstance !== nextInstance) {
-        // removeComponentClassOrInstance(lastVNode, null, nextVNode);
-        newDom = createComponentClassOrInstance$1(nextVNode, parentDom, mountedQueue, lastVNode, false, parentVNode, isSVG);
-    } else {
-        lastInstance.mountedQueue = mountedQueue;
-        lastInstance.isRender = false;
-        lastInstance.parentVNode = parentVNode;
-        newDom = lastInstance.update(lastVNode, nextVNode);
-        nextVNode.dom = newDom;
-        nextVNode.parentVNode = parentVNode;
-
-        var ref = nextVNode.ref;
-        if (typeof ref === 'function') {
-            ref(instance);
-        }
-    }
-
-    if (dom !== newDom && dom.parentNode &&
-    // when dom has be replaced, its parentNode maybe be fragment in IE8
-    dom.parentNode.nodeName !== '#document-fragment') {
-        replaceChild$1(parentDom, lastVNode, nextVNode);
-    }
-}
-
-// function patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue) {
-// const lastTag = lastVNode.tag;
-// const nextTag = nextVNode.tag;
-
-// if (lastVNode.key !== nextVNode.key) {
-// removeElements(lastVNode.children, parentDom);
-// createComponentFunction(nextVNode, parentDom, mountedQueue);
-// } else {
-// nextVNode.dom = lastVNode.dom;
-// createComponentFunctionVNode(nextVNode);
-// patchChildren(lastVNode.children, nextVNode.children, parentDom, mountedQueue);
-// }
-// }
-
-function patchChildren$1(lastChildren, nextChildren, parentDom, mountedQueue, parentVNode, isSVG) {
-    if (isNullOrUndefined$1(lastChildren)) {
-        if (!isNullOrUndefined$1(nextChildren)) {
-            createElements$1(nextChildren, parentDom, mountedQueue, false, parentVNode, isSVG);
-        }
-    } else if (isNullOrUndefined$1(nextChildren)) {
-        if (isStringOrNumber$1(lastChildren)) {
-            setTextContent$1(parentDom, '');
-        } else {
-            removeElements$1(lastChildren, parentDom);
-        }
-    } else if (isStringOrNumber$1(nextChildren)) {
-        if (isStringOrNumber$1(lastChildren)) {
-            setTextContent$1(parentDom, nextChildren);
-        } else {
-            removeElements$1(lastChildren, parentDom);
-            setTextContent$1(parentDom, nextChildren);
-        }
-    } else if (isArray$1(lastChildren)) {
-        if (isArray$1(nextChildren)) {
-            patchChildrenByKey$1(lastChildren, nextChildren, parentDom, mountedQueue, parentVNode, isSVG);
-        } else {
-            removeElements$1(lastChildren, parentDom);
-            createElement$1(nextChildren, parentDom, mountedQueue, false, parentVNode, isSVG);
-        }
-    } else if (isArray$1(nextChildren)) {
-        if (isStringOrNumber$1(lastChildren)) {
-            setTextContent$1(parentDom, '');
-        } else {
-            removeElement$1(lastChildren, parentDom);
-        }
-        createElements$1(nextChildren, parentDom, mountedQueue, false, parentVNode, isSVG);
-    } else if (isStringOrNumber$1(lastChildren)) {
-        setTextContent$1(parentDom, '');
-        createElement$1(nextChildren, parentDom, mountedQueue, false, parentVNode, isSVG);
-    } else {
-        patchVNode$1(lastChildren, nextChildren, parentDom, mountedQueue, parentVNode, isSVG);
-    }
-}
-
-function patchChildrenByKey$1(a, b, dom, mountedQueue, parentVNode, isSVG) {
-    var aLength = a.length;
-    var bLength = b.length;
-    var aEnd = aLength - 1;
-    var bEnd = bLength - 1;
-    var aStart = 0;
-    var bStart = 0;
-    var i = void 0;
-    var j = void 0;
-    var aNode = void 0;
-    var bNode = void 0;
-    var nextNode = void 0;
-    var nextPos = void 0;
-    var node = void 0;
-    var aStartNode = a[aStart];
-    var bStartNode = b[bStart];
-    var aEndNode = a[aEnd];
-    var bEndNode = b[bEnd];
-
-    outer: while (true) {
-        while (aStartNode.key === bStartNode.key) {
-            patchVNode$1(aStartNode, bStartNode, dom, mountedQueue, parentVNode, isSVG);
-            ++aStart;
-            ++bStart;
-            if (aStart > aEnd || bStart > bEnd) {
-                break outer;
-            }
-            aStartNode = a[aStart];
-            bStartNode = b[bStart];
-        }
-        while (aEndNode.key === bEndNode.key) {
-            patchVNode$1(aEndNode, bEndNode, dom, mountedQueue, parentVNode, isSVG);
-            --aEnd;
-            --bEnd;
-            if (aEnd < aStart || bEnd < bStart) {
-                break outer;
-            }
-            aEndNode = a[aEnd];
-            bEndNode = b[bEnd];
-        }
-
-        if (aEndNode.key === bStartNode.key) {
-            patchVNode$1(aEndNode, bStartNode, dom, mountedQueue, parentVNode, isSVG);
-            dom.insertBefore(bStartNode.dom, aStartNode.dom);
-            --aEnd;
-            ++bStart;
-            aEndNode = a[aEnd];
-            bStartNode = b[bStart];
-            continue;
-        }
-
-        if (aStartNode.key === bEndNode.key) {
-            patchVNode$1(aStartNode, bEndNode, dom, mountedQueue, parentVNode, isSVG);
-            insertOrAppend$1(bEnd, bLength, bEndNode.dom, b, dom);
-            ++aStart;
-            --bEnd;
-            aStartNode = a[aStart];
-            bEndNode = b[bEnd];
-            continue;
-        }
-        break;
-    }
-
-    if (aStart > aEnd) {
-        while (bStart <= bEnd) {
-            insertOrAppend$1(bEnd, bLength, createElement$1(b[bStart], null, mountedQueue, false, parentVNode, isSVG), b, dom, true /* detectParent: for animate, if the parentNode exists, then do nothing*/
-            );
-            ++bStart;
-        }
-    } else if (bStart > bEnd) {
-        while (aStart <= aEnd) {
-            removeElement$1(a[aStart], dom);
-            ++aStart;
-        }
-    } else {
-        aLength = aEnd - aStart + 1;
-        bLength = bEnd - bStart + 1;
-        var sources = new Array(bLength);
-        for (i = 0; i < bLength; i++) {
-            sources[i] = -1;
-        }
-        var moved = false;
-        var pos = 0;
-        var patched = 0;
-
-        if (bLength <= 4 || aLength * bLength <= 16) {
-            for (i = aStart; i <= aEnd; i++) {
-                aNode = a[i];
-                if (patched < bLength) {
-                    for (j = bStart; j <= bEnd; j++) {
-                        bNode = b[j];
-                        if (aNode.key === bNode.key) {
-                            sources[j - bStart] = i;
-                            if (pos > j) {
-                                moved = true;
-                            } else {
-                                pos = j;
-                            }
-                            patchVNode$1(aNode, bNode, dom, mountedQueue, parentVNode, isSVG);
-                            ++patched;
-                            a[i] = null;
-                            break;
-                        }
-                    }
-                }
-            }
-        } else {
-            var keyIndex = {};
-            for (i = bStart; i <= bEnd; i++) {
-                keyIndex[b[i].key] = i;
-            }
-            for (i = aStart; i <= aEnd; i++) {
-                aNode = a[i];
-                if (patched < bLength) {
-                    j = keyIndex[aNode.key];
-                    if (j !== undefined) {
-                        bNode = b[j];
-                        sources[j - bStart] = i;
-                        if (pos > j) {
-                            moved = true;
-                        } else {
-                            pos = j;
-                        }
-                        patchVNode$1(aNode, bNode, dom, mountedQueue, parentVNode, isSVG);
-                        ++patched;
-                        a[i] = null;
-                    }
-                }
-            }
-        }
-        if (aLength === a.length && patched === 0) {
-            // removeAllChildren(dom, a);
-            // children maybe have animation
-            removeElements$1(a, dom);
-            while (bStart < bLength) {
-                createElement$1(b[bStart], dom, mountedQueue, false, parentVNode, isSVG);
-                ++bStart;
-            }
-        } else {
-            // some browsers, e.g. ie, must insert before remove for some element,
-            // e.g. select/option, otherwise the selected property will be weird
-            if (moved) {
-                var seq = lisAlgorithm$1(sources);
-                j = seq.length - 1;
-                for (i = bLength - 1; i >= 0; i--) {
-                    if (sources[i] === -1) {
-                        pos = i + bStart;
-                        insertOrAppend$1(pos, b.length, createElement$1(b[pos], null, mountedQueue, false, parentVNode, isSVG), b, dom);
-                    } else {
-                        if (j < 0 || i !== seq[j]) {
-                            pos = i + bStart;
-                            insertOrAppend$1(pos, b.length, b[pos].dom, b, dom);
-                        } else {
-                            --j;
-                        }
-                    }
-                }
-            } else if (patched !== bLength) {
-                for (i = bLength - 1; i >= 0; i--) {
-                    if (sources[i] === -1) {
-                        pos = i + bStart;
-                        insertOrAppend$1(pos, b.length, createElement$1(b[pos], null, mountedQueue, false, parentVNode, isSVG), b, dom, true);
-                    }
-                }
-            }
-            i = aLength - patched;
-            while (i > 0) {
-                aNode = a[aStart++];
-                if (aNode !== null) {
-                    removeElement$1(aNode, dom);
-                    --i;
-                }
-            }
-        }
-    }
-}
-
-function lisAlgorithm$1(arr) {
-    var p = arr.slice(0);
-    var result = [0];
-    var i = void 0;
-    var j = void 0;
-    var u = void 0;
-    var v = void 0;
-    var c = void 0;
-    var len = arr.length;
-    for (i = 0; i < len; i++) {
-        var arrI = arr[i];
-        if (arrI === -1) {
-            continue;
-        }
-        j = result[result.length - 1];
-        if (arr[j] < arrI) {
-            p[i] = j;
-            result.push(i);
-            continue;
-        }
-        u = 0;
-        v = result.length - 1;
-        while (u < v) {
-            c = (u + v) / 2 | 0;
-            if (arr[result[c]] < arrI) {
-                u = c + 1;
-            } else {
-                v = c;
-            }
-        }
-        if (arrI < arr[result[u]]) {
-            if (u > 0) {
-                p[i] = result[u - 1];
-            }
-            result[u] = i;
-        }
-    }
-    u = result.length;
-    v = result[u - 1];
-    while (u-- > 0) {
-        result[u] = v;
-        v = p[v];
-    }
-    return result;
-}
-
-function insertOrAppend$1(pos, length, newDom, nodes, dom, detectParent) {
-    var nextPos = pos + 1;
-    // if (detectParent && newDom.parentNode) {
-    // return;
-    // } else
-    if (nextPos < length) {
-        dom.insertBefore(newDom, nodes[nextPos].dom);
-    } else {
-        dom.appendChild(newDom);
-        // appendChild(dom, newDom);
-    }
-}
-
-function replaceElement$1(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
-    removeElement$1(lastVNode, null, nextVNode);
-    createElement$1(nextVNode, null, mountedQueue, false, parentVNode, isSVG);
-    replaceChild$1(parentDom, lastVNode, nextVNode);
-}
-
-function patchText$1(lastVNode, nextVNode, parentDom) {
-    var nextText = nextVNode.children;
-    var dom = lastVNode.dom;
-    nextVNode.dom = dom;
-    if (lastVNode.children !== nextText) {
-        dom.nodeValue = nextText;
-    }
-}
-
-function patchProps$2(lastVNode, nextVNode, isSVG) {
-    var lastProps = lastVNode.props;
-    var nextProps = nextVNode.props;
-    var dom = nextVNode.dom;
-    var prop = void 0;
-    if (nextProps !== EMPTY_OBJ$1) {
-        var isFormElement = (nextVNode.type & Types$2.FormElement) > 0;
-        for (prop in nextProps) {
-            patchProp$1(prop, lastProps[prop], nextProps[prop], dom, isFormElement, isSVG);
-        }
-        if (isFormElement) {
-            processForm$1(nextVNode, dom, nextProps, false);
-        }
-    }
-    if (lastProps !== EMPTY_OBJ$1) {
-        for (prop in lastProps) {
-            if (!isSkipProp$1(prop) && isNullOrUndefined$1(nextProps[prop]) && !isNullOrUndefined$1(lastProps[prop])) {
-                removeProp$1(prop, lastProps[prop], dom);
-            }
-        }
-    }
-}
-
-function patchProp$1(prop, lastValue, nextValue, dom, isFormElement, isSVG) {
-    if (lastValue !== nextValue) {
-        if (isSkipProp$1(prop) || isFormElement && prop === 'value') {
-            return;
-        } else if (booleanProps$1[prop]) {
-            dom[prop] = !!nextValue;
-        } else if (strictProps$1[prop]) {
-            var value = isNullOrUndefined$1(nextValue) ? '' : nextValue;
-            // IE8 the value of option is equal to its text as default
-            // so set it forcely
-            if (dom[prop] !== value || browser$1.isIE8) {
-                dom[prop] = value;
-            }
-            // add a private property _value for selecting an non-string value 
-            if (prop === 'value') {
-                dom._value = value;
-            }
-        } else if (isNullOrUndefined$1(nextValue)) {
-            removeProp$1(prop, lastValue, dom);
-        } else if (isEventProp$1(prop)) {
-            handleEvent$1(prop.substr(3), lastValue, nextValue, dom);
-        } else if (isObject$2(nextValue)) {
-            patchPropByObject$1(prop, lastValue, nextValue, dom);
-        } else if (prop === 'innerHTML') {
-            dom.innerHTML = nextValue;
-        } else {
-            if (isSVG && namespaces$1[prop]) {
-                dom.setAttributeNS(namespaces$1[prop], prop, nextValue);
-            } else {
-                dom.setAttribute(prop, nextValue);
-            }
-        }
-    }
-}
-
-function removeProp$1(prop, lastValue, dom) {
-    if (!isNullOrUndefined$1(lastValue)) {
-        switch (prop) {
-            case 'value':
-                dom.value = '';
-                return;
-            case 'style':
-                dom.removeAttribute('style');
-                return;
-            case 'attributes':
-                for (var key in lastValue) {
-                    dom.removeAttribute(key);
-                }
-                return;
-            case 'dataset':
-                removeDataset$1(lastValue, dom);
-                return;
-            case 'innerHTML':
-                dom.innerHTML = '';
-                return;
-            default:
-                break;
-        }
-
-        if (booleanProps$1[prop]) {
-            dom[prop] = false;
-        } else if (isEventProp$1(prop)) {
-            handleEvent$1(prop.substr(3), lastValue, null, dom);
-        } else if (isObject$2(lastValue)) {
-            var domProp = dom[prop];
-            try {
-                dom[prop] = undefined;
-                delete dom[prop];
-            } catch (e) {
-                for (var _key in lastValue) {
-                    delete domProp[_key];
-                }
-            }
-        } else {
-            dom.removeAttribute(prop);
-        }
-    }
-}
-
-var removeDataset$1 = browser$1.isIE || browser$1.isSafari ? function (lastValue, dom) {
-    for (var key in lastValue) {
-        dom.removeAttribute('data-' + kebabCase$1(key));
-    }
-} : function (lastValue, dom) {
-    var domProp = dom.dataset;
-    for (var key in lastValue) {
-        delete domProp[key];
-    }
-};
-
-function patchPropByObject$1(prop, lastValue, nextValue, dom) {
-    if (lastValue && !isObject$2(lastValue) && !isNullOrUndefined$1(lastValue)) {
-        removeProp$1(prop, lastValue, dom);
-        lastValue = null;
-    }
-    switch (prop) {
-        case 'attributes':
-            return patchAttributes$1(lastValue, nextValue, dom);
-        case 'style':
-            return patchStyle$1(lastValue, nextValue, dom);
-        case 'dataset':
-            return patchDataset$1(prop, lastValue, nextValue, dom);
-        default:
-            return patchObject$1(prop, lastValue, nextValue, dom);
-    }
-}
-
-var patchDataset$1 = browser$1.isIE ? function patchDataset(prop, lastValue, nextValue, dom) {
-    var hasRemoved = {};
-    var key = void 0;
-    var value = void 0;
-
-    for (key in nextValue) {
-        var dataKey = 'data-' + kebabCase$1(key);
-        value = nextValue[key];
-        if (isNullOrUndefined$1(value)) {
-            dom.removeAttribute(dataKey);
-            hasRemoved[key] = true;
-        } else {
-            dom.setAttribute(dataKey, value);
-        }
-    }
-
-    if (!isNullOrUndefined$1(lastValue)) {
-        for (key in lastValue) {
-            if (isNullOrUndefined$1(nextValue[key]) && !hasRemoved[key]) {
-                dom.removeAttribute('data-' + kebabCase$1(key));
-            }
-        }
-    }
-} : patchObject$1;
-
-var _cache$1 = {};
-var uppercasePattern$1 = /[A-Z]/g;
-function kebabCase$1(word) {
-    if (!_cache$1[word]) {
-        _cache$1[word] = word.replace(uppercasePattern$1, function (item) {
-            return '-' + item.toLowerCase();
-        });
-    }
-    return _cache$1[word];
-}
-
-function patchObject$1(prop, lastValue, nextValue, dom) {
-    var domProps = dom[prop];
-    if (isNullOrUndefined$1(domProps)) {
-        domProps = dom[prop] = {};
-    }
-    var key = void 0;
-    var value = void 0;
-    for (key in nextValue) {
-        domProps[key] = nextValue[key];
-    }
-    if (!isNullOrUndefined$1(lastValue)) {
-        for (key in lastValue) {
-            if (isNullOrUndefined$1(nextValue[key])) {
-                delete domProps[key];
-            }
-        }
-    }
-}
-
-function patchAttributes$1(lastValue, nextValue, dom) {
-    var hasRemoved = {};
-    var key = void 0;
-    var value = void 0;
-    for (key in nextValue) {
-        value = nextValue[key];
-        if (isNullOrUndefined$1(value)) {
-            dom.removeAttribute(key);
-            hasRemoved[key] = true;
-        } else {
-            dom.setAttribute(key, value);
-        }
-    }
-    if (!isNullOrUndefined$1(lastValue)) {
-        for (key in lastValue) {
-            if (isNullOrUndefined$1(nextValue[key]) && !hasRemoved[key]) {
-                dom.removeAttribute(key);
-            }
-        }
-    }
-}
-
-function patchStyle$1(lastValue, nextValue, dom) {
-    var domStyle = dom.style;
-    var hasRemoved = {};
-    var key = void 0;
-    var value = void 0;
-    for (key in nextValue) {
-        value = nextValue[key];
-        if (isNullOrUndefined$1(value)) {
-            domStyle[key] = '';
-            hasRemoved[key] = true;
-        } else {
-            domStyle[key] = value;
-        }
-    }
-    if (!isNullOrUndefined$1(lastValue)) {
-        for (key in lastValue) {
-            if (isNullOrUndefined$1(nextValue[key]) && !hasRemoved[key]) {
-                domStyle[key] = '';
-            }
-        }
-    }
-}
-
-function toString$5(vNode, parent, disableSplitText, firstChild) {
-    var type = vNode.type;
-    var tag = vNode.tag;
-    var props = vNode.props;
-    var children = vNode.children;
-
-    var html = void 0;
-    if (type & Types$2.ComponentClass) {
-        var instance = new tag(props);
-        html = instance.toString();
-    } else if (type & Types$2.ComponentInstance) {
-        html = vNode.children.toString();
-    } else if (type & Types$2.Element) {
-        var innerHTML = void 0;
-        html = '<' + tag;
-
-        if (!isNullOrUndefined$1(vNode.className)) {
-            html += ' class="' + escapeText$1(vNode.className) + '"';
-        }
-
-        if (props !== EMPTY_OBJ$1) {
-            for (var prop in props) {
-                var value = props[prop];
-
-                if (prop === 'innerHTML') {
-                    innerHTML = value;
-                } else if (prop === 'style') {
-                    html += ' style="' + renderStylesToString$1(value) + '"';
-                } else if (prop === 'children' || prop === 'className' || prop === 'key' || prop === 'ref') {
-                    // ignore
-                } else if (prop === 'defaultValue') {
-                    if (isNullOrUndefined$1(props.value) && !isNullOrUndefined$1(value)) {
-                        html += ' value="' + (isString$2(value) ? escapeText$1(value) : value) + '"';
-                    }
-                } else if (prop === 'defaultChecked') {
-                    if (isNullOrUndefined$1(props.checked) && value === true) {
-                        html += ' checked';
-                    }
-                } else if (prop === 'attributes') {
-                    html += renderAttributesToString$1(value);
-                } else if (prop === 'dataset') {
-                    html += renderDatasetToString$1(value);
-                } else if (tag === 'option' && prop === 'value') {
-                    html += renderAttributeToString$1(prop, value);
-                    if (parent && value === parent.props.value) {
-                        html += ' selected';
-                    }
-                } else {
-                    html += renderAttributeToString$1(prop, value);
-                }
-            }
-        }
-
-        if (selfClosingTags$1[tag]) {
-            html += ' />';
-        } else {
-            html += '>';
-            if (innerHTML) {
-                html += innerHTML;
-            } else if (!isNullOrUndefined$1(children)) {
-                if (isString$2(children)) {
-                    html += children === '' ? ' ' : escapeText$1(children);
-                } else if (isNumber$1(children)) {
-                    html += children;
-                } else if (isArray$1(children)) {
-                    var index = -1;
-                    for (var i = 0; i < children.length; i++) {
-                        var child = children[i];
-                        if (isString$2(child)) {
-                            html += child === '' ? ' ' : escapeText$1(child);
-                        } else if (isNumber$1(child)) {
-                            html += child;
-                        } else if (!isNullOrUndefined$1(child)) {
-                            if (!(child.type & Types$2.Text)) {
-                                index = -1;
-                            } else {
-                                index++;
-                            }
-                            html += toString$5(child, vNode, disableSplitText, index === 0);
-                        }
-                    }
-                } else {
-                    html += toString$5(children, vNode, disableSplitText, true);
-                }
-            }
-
-            html += '</' + tag + '>';
-        }
-    } else if (type & Types$2.Text) {
-        html = (firstChild || disableSplitText ? '' : '<!---->') + (children === '' ? ' ' : escapeText$1(children));
-    } else if (type & Types$2.HtmlComment) {
-        html = '<!--' + children + '-->';
-    } else if (type & Types$2.UnescapeText) {
-        html = isNullOrUndefined$1(children) ? '' : children;
-    } else {
-        throw new Error('Unknown vNode: ' + vNode);
-    }
-
-    return html;
-}
-
-function escapeText$1(text) {
-    var result = text;
-    var escapeString = "";
-    var start = 0;
-    var i = void 0;
-    for (i = 0; i < text.length; i++) {
-        switch (text.charCodeAt(i)) {
-            case 34:
-                // "
-                escapeString = "&quot;";
-                break;
-            case 39:
-                // \
-                escapeString = "&#039;";
-                break;
-            case 38:
-                // &
-                escapeString = "&amp;";
-                break;
-            case 60:
-                // <
-                escapeString = "&lt;";
-                break;
-            case 62:
-                // >
-                escapeString = "&gt;";
-                break;
-            default:
-                continue;
-        }
-        if (start) {
-            result += text.slice(start, i);
-        } else {
-            result = text.slice(start, i);
-        }
-        result += escapeString;
-        start = i + 1;
-    }
-    if (start && i !== start) {
-        return result + text.slice(start, i);
-    }
-    return result;
-}
-
-function isString$2(o) {
-    return typeof o === 'string';
-}
-
-function isNumber$1(o) {
-    return typeof o === 'number';
-}
-
-function renderStylesToString$1(styles) {
-    if (isStringOrNumber$1(styles)) {
-        return styles;
-    } else {
-        var renderedString = "";
-        for (var styleName in styles) {
-            var value = styles[styleName];
-
-            if (isStringOrNumber$1(value)) {
-                renderedString += kebabCase$1(styleName) + ':' + value + ';';
-            }
-        }
-        return renderedString;
-    }
-}
-
-function renderDatasetToString$1(dataset) {
-    var renderedString = '';
-    for (var key in dataset) {
-        var dataKey = 'data-' + kebabCase$1(key);
-        var value = dataset[key];
-        if (isString$2(value)) {
-            renderedString += ' ' + dataKey + '="' + escapeText$1(value) + '"';
-        } else if (isNumber$1(value)) {
-            renderedString += ' ' + dataKey + '="' + value + '"';
-        } else if (value === true) {
-            renderedString += ' ' + dataKey + '="true"';
-        }
-    }
-    return renderedString;
-}
-
-function renderAttributesToString$1(attributes) {
-    var renderedString = '';
-    for (var key in attributes) {
-        renderedString += renderAttributeToString$1(key, attributes[key]);
-    }
-    return renderedString;
-}
-
-function renderAttributeToString$1(key, value) {
-    if (isString$2(value)) {
-        return ' ' + key + '="' + escapeText$1(value) + '"';
-    } else if (isNumber$1(value)) {
-        return ' ' + key + '="' + value + '"';
-    } else if (value === true) {
-        return ' ' + key;
-    } else {
-        return '';
-    }
-}
-
-function hydrateRoot$1(vNode, parentDom, mountedQueue) {
-    if (!isNullOrUndefined$1(parentDom)) {
-        var dom = parentDom.firstChild;
-        if (isNullOrUndefined$1(dom)) {
-            return render$1(vNode, parentDom, mountedQueue, null, false);
-        }
-        var newDom = hydrate$1(vNode, dom, mountedQueue, parentDom, null, false);
-        dom = dom.nextSibling;
-        // should only one entry
-        while (dom) {
-            var next = dom.nextSibling;
-            parentDom.removeChild(dom);
-            dom = next;
-        }
-        return newDom;
-    }
-    return null;
-}
-
-function hydrate$1(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
-    if (dom !== null) {
-        var isTrigger = true;
-        if (mountedQueue) {
-            isTrigger = false;
-        } else {
-            mountedQueue = new MountedQueue$1();
-        }
-        dom = hydrateElement$1(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG);
-        if (isTrigger) {
-            mountedQueue.trigger();
-        }
-    }
-    return dom;
-}
-
-function hydrateElement$1(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
-    var type = vNode.type;
-
-    if (type & Types$2.Element) {
-        return hydrateHtmlElement$1(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG);
-    } else if (type & Types$2.Text) {
-        return hydrateText$1(vNode, dom);
-    } else if (type & Types$2.HtmlComment) {
-        return hydrateComment$1(vNode, dom);
-    } else if (type & Types$2.ComponentClassOrInstance) {
-        return hydrateComponentClassOrInstance$1(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG);
-    }
-}
-
-function hydrateComponentClassOrInstance$1(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
-    var props = vNode.props;
-    var instance = vNode.type & Types$2.ComponentClass ? new vNode.tag(props) : vNode.children;
-    instance.parentDom = parentDom;
-    instance.mountedQueue = mountedQueue;
-    instance.isRender = true;
-    instance.parentVNode = parentVNode;
-    instance.isSVG = isSVG;
-    instance.vNode = vNode;
-    var newDom = instance.hydrate(vNode, dom);
-
-    vNode.dom = newDom;
-    vNode.children = instance;
-    vNode.parentVNode = parentVNode;
-
-    if (typeof instance.mount === 'function') {
-        mountedQueue.push(function () {
-            return instance.mount(null, vNode);
-        });
-    }
-
-    var ref = vNode.ref;
-    if (typeof ref === 'function') {
-        ref(instance);
-    }
-
-    if (dom !== newDom && dom.parentNode) {
-        dom.parentNode.replaceChild(newDom, dom);
-    }
-
-    return dom;
-}
-
-function hydrateComment$1(vNode, dom) {
-    if (dom.nodeType !== 8) {
-        var newDom = createCommentElement$1(vNode, null);
-        dom.parentNode.replaceChild(newDom, dom);
-        return newDom;
-    }
-    var comment = vNode.children;
-    if (dom.data !== comment) {
-        dom.data = comment;
-    }
-    vNode.dom = dom;
-    return dom;
-}
-
-function hydrateText$1(vNode, dom) {
-    if (dom.nodeType !== 3) {
-        var newDom = createTextElement$1(vNode, null);
-        dom.parentNode.replaceChild(newDom, dom);
-
-        return newDom;
-    }
-
-    var text = vNode.children;
-    if (dom.nodeValue !== text) {
-        dom.nodeValue = text;
-    }
-    vNode.dom = dom;
-
-    return dom;
-}
-
-function hydrateHtmlElement$1(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
-    var children = vNode.children;
-    var props = vNode.props;
-    var className = vNode.className;
-    var type = vNode.type;
-    var ref = vNode.ref;
-
-    vNode.parentVNode = parentVNode;
-    isSVG = isSVG || (type & Types$2.SvgElement) > 0;
-
-    if (dom.nodeType !== 1 || dom.tagName.toLowerCase() !== vNode.tag) {
-        warning$1('Server-side markup doesn\'t match client-side markup');
-        var newDom = createElement$1(vNode, null, mountedQueue, parentDom, parentVNode, isSVG);
-        dom.parentNode.replaceChild(newDom, dom);
-
-        return newDom;
-    }
-
-    vNode.dom = dom;
-    if (!isNullOrUndefined$1(children)) {
-        hydrateChildren$1(children, dom, mountedQueue, vNode, isSVG);
-    } else if (dom.firstChild !== null) {
-        setTextContent$1(dom, '');
-    }
-
-    if (props !== EMPTY_OBJ$1) {
-        var isFormElement = (type & Types$2.FormElement) > 0;
-        for (var prop in props) {
-            patchProp$1(prop, null, props[prop], dom, isFormElement, isSVG);
-        }
-        if (isFormElement) {
-            processForm$1(vNode, dom, props, true);
-        }
-    }
-
-    if (!isNullOrUndefined$1(className)) {
-        if (isSVG) {
-            dom.setAttribute('class', className);
-        } else {
-            dom.className = className;
-        }
-    } else if (dom.className !== '') {
-        dom.removeAttribute('class');
-    }
-
-    if (ref) {
-        createRef$1(dom, ref, mountedQueue);
-    }
-
-    return dom;
-}
-
-function hydrateChildren$1(children, parentDom, mountedQueue, parentVNode, isSVG) {
-    normalizeChildren$3(parentDom);
-    var dom = parentDom.firstChild;
-
-    if (isStringOrNumber$1(children)) {
-        if (dom !== null && dom.nodeType === 3) {
-            if (dom.nodeValue !== children) {
-                dom.nodeValue = children;
-            }
-        } else if (children === '') {
-            parentDom.appendChild(document.createTextNode(''));
-        } else {
-            setTextContent$1(parentDom, children);
-        }
-        if (dom !== null) {
-            dom = dom.nextSibling;
-        }
-    } else if (isArray$1(children)) {
-        for (var i = 0; i < children.length; i++) {
-            var child = children[i];
-
-            if (!isNullOrUndefined$1(child)) {
-                if (dom !== null) {
-                    var nextSibling = dom.nextSibling;
-                    hydrateElement$1(child, dom, mountedQueue, parentDom, parentVNode, isSVG);
-                    dom = nextSibling;
-                } else {
-                    createElement$1(child, parentDom, mountedQueue, true, parentVNode, isSVG);
-                }
-            }
-        }
-    } else {
-        if (dom !== null) {
-            hydrateElement$1(children, dom, mountedQueue, parentDom, parentVNode, isSVG);
-            dom = dom.nextSibling;
-        } else {
-            createElement$1(children, parentDom, mountedQueue, true, parentVNode, isSVG);
-        }
-    }
-
-    // clear any other DOM nodes, there should be on a single entry for the root
-    while (dom) {
-        var _nextSibling = dom.nextSibling;
-        parentDom.removeChild(dom);
-        dom = _nextSibling;
-    }
-}
-
-function normalizeChildren$3(parentDom) {
-    var dom = parentDom.firstChild;
-
-    while (dom) {
-        if (dom.nodeType === 8 && dom.data === '') {
-            var lastDom = dom.previousSibling;
-            parentDom.removeChild(dom);
-            dom = lastDom || parentDom.firstChild;
-        } else {
-            dom = dom.nextSibling;
-        }
-    }
-}
-
-var warning$1 = (typeof console === 'undefined' ? 'undefined' : _typeof(console)) === 'object' ? function (message) {
-    console.warn(message);
-} : function () {};
 
 Intact$2._constructors.push(function (props) {
     var _this = this;
@@ -7079,9 +4827,9 @@ Intact$2.prototype.destroy = function (lastVNode, nextVNode, parentDom) {
         // 在这里销毁上一个组件
         var _lastVNode = this._lastVNode;
         if (_lastVNode && !_lastVNode.children.destroyed) {
-            removeComponentClassOrInstance$1(_lastVNode, null, lastVNode);
+            removeComponentClassOrInstance(_lastVNode, null, lastVNode);
         }
-    } else if (!nextVNode || !(nextVNode.type & Types$2.ComponentClassOrInstance) || nextVNode.key !== lastVNode.key) {
+    } else if (!nextVNode || !(nextVNode.type & Types$1.ComponentClassOrInstance) || nextVNode.key !== lastVNode.key) {
         vdt.destroy();
     }
 
@@ -7095,7 +4843,7 @@ Intact$2.prototype.destroy = function (lastVNode, nextVNode, parentDom) {
 };
 
 Intact$2.prototype._initMountedQueue = function () {
-    this.mountedQueue = new MountedQueue$1();
+    this.mountedQueue = new MountedQueue();
 };
 
 Intact$2.prototype._triggerMountedQueue = function () {
@@ -7110,7 +4858,7 @@ function initSyncComponent(o, lastVNode, nextVNode) {
     if (lastVNode && lastVNode.key === nextVNode.key) {
         // destroy the last component
         if (!lastVNode.children.destroyed) {
-            removeComponentClassOrInstance$1(lastVNode, null, nextVNode);
+            removeComponentClassOrInstance(lastVNode, null, nextVNode);
         }
 
         // make the dom not be replaced, but update the last one
@@ -7118,7 +4866,7 @@ function initSyncComponent(o, lastVNode, nextVNode) {
         o.element = vdt.update(o, o.parentDom, o.mountedQueue, nextVNode, o.isSVG, o.get('_blocks'));
     } else {
         if (lastVNode) {
-            removeComponentClassOrInstance$1(lastVNode, null, nextVNode);
+            removeComponentClassOrInstance(lastVNode, null, nextVNode);
         }
         o.element = vdt.render(o, o.parentDom, o.mountedQueue, nextVNode, o.isSVG, o.get('_blocks'));
     }
@@ -7144,11 +4892,11 @@ function initAsyncComponnet(o, lastVNode, nextVNode) {
         // 如果上一个组件是异步组件，并且也还没渲染完成，则直接destroy掉
         // 让它不再渲染了
         if (!lastInstance.inited) {
-            removeComponentClassOrInstance$1(lastVNode, null, nextVNode);
+            removeComponentClassOrInstance(lastVNode, null, nextVNode);
         }
     } else {
-        var vNode = createCommentVNode$1('!');
-        placeholder = render$1(vNode);
+        var vNode = createCommentVNode('!');
+        placeholder = render(vNode);
         vdt.vNode = vNode;
     }
 
@@ -7205,7 +4953,7 @@ function updateComponent(o, lastVNode, nextVNode) {
             vNode.dom = nextDom;
             var parentVNode = vNode.parentVNode;
             // 需要递归判断父组件是不是也指向同一个元素
-            while (parentVNode && parentVNode.type & Types$2.ComponentClassOrInstance && parentVNode.dom === lastDom) {
+            while (parentVNode && parentVNode.type & Types$1.ComponentClassOrInstance && parentVNode.dom === lastDom) {
                 parentVNode.dom = nextDom;
                 parentVNode = parentVNode.parentVNode;
             }
@@ -7218,8 +4966,8 @@ function updateComponent(o, lastVNode, nextVNode) {
 function patchProps$1(o, lastProps, nextProps) {
     var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : { update: false, _fromPatchProps: true };
 
-    lastProps = lastProps || EMPTY_OBJ$1;
-    nextProps = nextProps || EMPTY_OBJ$1;
+    lastProps = lastProps || EMPTY_OBJ;
+    nextProps = nextProps || EMPTY_OBJ;
     var lastValue = void 0;
     var nextValue = void 0;
 
@@ -7233,7 +4981,7 @@ function patchProps$1(o, lastProps, nextProps) {
         var handlePropOnlyInLastProps = function handlePropOnlyInLastProps(prop) {
             var lastValue = lastProps[prop];
 
-            if (isEventProp$1(prop)) {
+            if (isEventProp(prop)) {
                 // 解绑上一个属性中的事件
                 removeEvents(o, prop, lastValue);
             } else {
@@ -7244,7 +4992,7 @@ function patchProps$1(o, lastProps, nextProps) {
             }
         };
 
-        if (nextProps !== EMPTY_OBJ$1) {
+        if (nextProps !== EMPTY_OBJ) {
             if (process.env.NODE_ENV !== 'production') {
                 validateProps(nextProps, o.constructor.propTypes, o.displayName || o.constructor.name);
             }
@@ -7252,7 +5000,7 @@ function patchProps$1(o, lastProps, nextProps) {
             for (var prop in nextProps) {
                 nextValue = nextProps[prop];
 
-                if (isEventProp$1(prop)) {
+                if (isEventProp(prop)) {
                     lastValue = lastProps[prop];
                     if (lastValue === nextValue) continue;
 
@@ -7265,7 +5013,7 @@ function patchProps$1(o, lastProps, nextProps) {
                 }
             }
 
-            if (lastProps !== EMPTY_OBJ$1) {
+            if (lastProps !== EMPTY_OBJ) {
                 for (var _prop in lastProps) {
                     if (!hasOwn.call(nextProps, _prop)) {
                         handlePropOnlyInLastProps(_prop);
@@ -7283,7 +5031,7 @@ function patchProps$1(o, lastProps, nextProps) {
         }
 
         // 将不存在nextProps中，但存在lastProps中的属性，统统置为默认值
-        var defaults = result(o, 'defaults') || EMPTY_OBJ$1;
+        var defaults = result(o, 'defaults') || EMPTY_OBJ;
         if (lastPropsWithoutEvents) {
             for (var _prop3 in lastPropsWithoutEvents) {
                 o.set(_prop3, defaults[_prop3], options);
@@ -7456,9 +5204,9 @@ Intact$2.extend = function () {
  */
 Intact$2.mount = function (Component, node) {
     if (!node) throw new Error('expect a parent dom to mount Component, but got ' + node);
-    var vNode = createVNode$1(Component);
-    var mountedQueue = new MountedQueue$1();
-    render$1(vNode, node, mountedQueue);
+    var vNode = createVNode(Component);
+    var mountedQueue = new MountedQueue();
+    render(vNode, node, mountedQueue);
     var instance = vNode.children;
     // 如果不是异步组件，则触发mount事件，否则
     // 交给组件的init方法，等异步处理完成后触发
@@ -7470,13 +5218,13 @@ Intact$2.mount = function (Component, node) {
 
 Intact$2.hydrate = function (Component, node) {
     if (!node) throw new Error('expect a parent dom to hydrate Component, but got ' + node);
-    var vNode = createVNode$1(Component);
-    hydrateRoot$1(vNode, node);
+    var vNode = createVNode(Component);
+    hydrateRoot(vNode, node);
     return vNode.children;
 };
 
 // for type check
-Intact$2.VNode = VNode$1;
+Intact$2.VNode = VNode;
 
 function addClass(element, className) {
     if (className) {
@@ -7579,11 +5327,11 @@ function getDuration(durations) {
     }));
 }
 
-function addEventListener$2(node, eventName, eventListener) {
+function addEventListener$1(node, eventName, eventListener) {
     node.addEventListener(eventName, eventListener, false);
 }
 
-function removeEventListener$2(node, eventName, eventListener) {
+function removeEventListener$1(node, eventName, eventListener) {
     node.removeEventListener(eventName, eventListener, false);
 }
 
@@ -7596,7 +5344,7 @@ var TransitionEvents = {
             return;
         }
         endEvents.forEach(function (endEvent) {
-            addEventListener$2(node, endEvent, eventListener);
+            addEventListener$1(node, endEvent, eventListener);
         });
     },
 
@@ -7605,7 +5353,7 @@ var TransitionEvents = {
             return;
         }
         endEvents.forEach(function (endEvent) {
-            removeEventListener$2(node, endEvent, eventListener);
+            removeEventListener$1(node, endEvent, eventListener);
         });
     },
 
