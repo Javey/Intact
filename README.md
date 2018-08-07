@@ -1,5 +1,5 @@
 <p align="center">
-    <a href="https://travis-ci.org/Javey/Intact.svg?branch=master">
+    <a href="https://travis-ci.org/Javey/Intact">
         <img src="https://travis-ci.org/Javey/Intact.svg?branch=master" alt="Build Status">
     </a>
     <br />
