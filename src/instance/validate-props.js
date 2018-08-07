@@ -33,10 +33,13 @@ export default function validateProps(props, propTypes, componentName = '<anonym
             }
 
             let _valid = false;
+            let _isStringOrNumber = false; 
             const expectedTypes = [];
+
             for (let i = 0; i < type.length; i++) {
-                const {expectedType, valid} = assertType(value, type[i]);
+                const {expectedType, valid, isStringOrNumber} = assertType(value, type[i]);
                 expectedTypes.push(expectedType || '');
+                _isStringOrNumber = isStringOrNumber;
                 if (valid) {
                     _valid = valid;
                     break;
@@ -46,7 +49,8 @@ export default function validateProps(props, propTypes, componentName = '<anonym
             if (!_valid) {
                 error(
                     `Invalid type of prop "${prop}" on component "${componentName}". ` +
-                    `Expected ${expectedTypes.join(', ')}, but got ${toRawType(value)}.`
+                    `Expected ${expectedTypes.join(', ')}, but got ` + 
+                    `${toRawType(value, _isStringOrNumber)}.`
                 );
                 return;
             }
@@ -69,6 +73,14 @@ export default function validateProps(props, propTypes, componentName = '<anonym
 const simpleCheckRE = /^(String|Number|Boolean|Function|Symbol)$/;
 function assertType(value, type) {
     let valid;
+
+    const _type = typeof type;
+    if (_type === 'number') {
+        return {valid: type === value, expectedType: type, isStringOrNumber: true};
+    } else if (_type === 'string') {
+        return {valid: type === value, expectedType: `"${type}"`, isStringOrNumber: true};
+    }
+
     const expectedType = getType(type);
 
     if (simpleCheckRE.test(expectedType)) {
@@ -96,7 +108,14 @@ function getType(fn) {
 }
 
 const toString = Object.prototype.toString;
-function toRawType(value) {
+function toRawType(value, isStringOrNumber) {
+    if (isStringOrNumber) {
+        const _type = typeof value;
+        if (_type === 'string') {
+            return `"${value}"`;
+        }
+        return value;
+    }
     return toString.call(value).slice(8, -1);
 }
 

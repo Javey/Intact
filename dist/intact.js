@@ -4247,6 +4247,7 @@ var utils = (Object.freeze || Object)({
 	hasOwn: hasOwn,
 	isNullOrUndefined: isNullOrUndefined,
 	noop: noop,
+	isStringOrNumber: isStringOrNumber,
 	inBrowser: inBrowser,
 	UA: UA,
 	isIOS: isIOS,
@@ -4349,13 +4350,17 @@ function validateProps(props, propTypes) {
             }
 
             var _valid = false;
+            var _isStringOrNumber = false;
             var expectedTypes = [];
+
             for (var i = 0; i < type.length; i++) {
                 var _assertType = assertType(value, type[i]),
                     _expectedType = _assertType.expectedType,
-                    valid = _assertType.valid;
+                    valid = _assertType.valid,
+                    isStringOrNumber$$1 = _assertType.isStringOrNumber;
 
                 expectedTypes.push(_expectedType || '');
+                _isStringOrNumber = isStringOrNumber$$1;
                 if (valid) {
                     _valid = valid;
                     break;
@@ -4363,7 +4368,7 @@ function validateProps(props, propTypes) {
             }
 
             if (!_valid) {
-                error$1('Invalid type of prop "' + prop + '" on component "' + componentName + '". ' + ('Expected ' + expectedTypes.join(', ') + ', but got ' + toRawType(value) + '.'));
+                error$1('Invalid type of prop "' + prop + '" on component "' + componentName + '". ' + ('Expected ' + expectedTypes.join(', ') + ', but got ') + (toRawType(value, _isStringOrNumber) + '.'));
                 return;
             }
         }
@@ -4385,6 +4390,14 @@ function validateProps(props, propTypes) {
 var simpleCheckRE = /^(String|Number|Boolean|Function|Symbol)$/;
 function assertType(value, type) {
     var valid = void 0;
+
+    var _type = typeof type === 'undefined' ? 'undefined' : _typeof(type);
+    if (_type === 'number') {
+        return { valid: type === value, expectedType: type, isStringOrNumber: true };
+    } else if (_type === 'string') {
+        return { valid: type === value, expectedType: '"' + type + '"', isStringOrNumber: true };
+    }
+
     var expectedType = getType(type);
 
     if (simpleCheckRE.test(expectedType)) {
@@ -4412,7 +4425,14 @@ function getType(fn) {
 }
 
 var toString$3 = Object.prototype.toString;
-function toRawType(value) {
+function toRawType(value, isStringOrNumber$$1) {
+    if (isStringOrNumber$$1) {
+        var _type = typeof value === 'undefined' ? 'undefined' : _typeof(value);
+        if (_type === 'string') {
+            return '"' + value + '"';
+        }
+        return value;
+    }
     return toString$3.call(value).slice(8, -1);
 }
 

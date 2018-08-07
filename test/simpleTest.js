@@ -976,6 +976,8 @@ describe('Simple Test', function() {
             },
             i: A,
             j: [Array, Number],
+            k: Symbol,
+            l: ['default', 'primary', 'danger', 1],
         };
 
         const error = console.error;
@@ -1013,6 +1015,9 @@ describe('Simple Test', function() {
             test({b: 1, h: 2}, 'Invalid prop "h" on component "A": custom validator check failed.');
             test({b: 1, i: () => {}}, 'Invalid type of prop "i" on component "A". Expected Child, but got Function.');
             test({b: 1, j: 'a'}, 'Invalid type of prop "j" on component "A". Expected Array, Number, but got String.');
+            test({b: 1, k: 'a'}, 'Invalid type of prop "k" on component "A". Expected Symbol, but got String.');
+            test({b: 1, l: 'test'}, 'Invalid type of prop "l" on component "A". Expected "default", "primary", "danger", 1, but got "test".');
+            test({b: 1, l: 2}, 'Invalid type of prop "l" on component "A". Expected "default", "primary", "danger", 1, but got 2.');
 
             test({b: 1});
             test({b: 1, a: true});
@@ -1025,6 +1030,9 @@ describe('Simple Test', function() {
             test({b: 1, i: new A({b: 1})});
             test({b: 1, j: 1});
             test({b: 1, j: []});
+            test({b: 1, k: Symbol()});
+            test({b: 1, l: 'primary'});
+            test({b: 1, l: 1});
         });
 
         it('should warn when pass invalid prop on update', () => {
@@ -1065,6 +1073,9 @@ describe('Simple Test', function() {
             test({b: 1, h: 2}, 'Invalid prop "h" on component "A": custom validator check failed.');
             test({b: 1, i: () => {}}, 'Invalid type of prop "i" on component "A". Expected Child, but got Function.');
             test({b: 1, j: 'a'}, 'Invalid type of prop "j" on component "A". Expected Array, Number, but got String.');
+            test({b: 1, k: 'a'}, 'Invalid type of prop "k" on component "A". Expected Symbol, but got String.');
+            test({b: 1, l: 'test'}, 'Invalid type of prop "l" on component "A". Expected "default", "primary", "danger", 1, but got "test".');
+            test({b: 1, l: 2}, 'Invalid type of prop "l" on component "A". Expected "default", "primary", "danger", 1, but got 2.');
 
             test({b: 1});
             test({b: 1, a: true});
@@ -1077,6 +1088,9 @@ describe('Simple Test', function() {
             test({b: 1, i: new A({b: 1})});
             test({b: 1, j: 1});
             test({b: 1, j: []});
+            test({b: 1, k: Symbol()});
+            test({b: 1, l: 'primary'});
+            test({b: 1, l: 1});
         });
     });
 });

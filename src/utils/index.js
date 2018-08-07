@@ -1,8 +1,8 @@
 import {extend, isArray, each, isObject, hasOwn, noop, hasConsole} from 'vdt/src/lib/utils';
-import {isNullOrUndefined, indexOf} from 'misstime/src/utils';
+import {isNullOrUndefined, indexOf, isStringOrNumber} from 'misstime/src/utils';
 import Vdt from 'vdt/src/client';
 
-export {extend, isArray, each, isObject, hasOwn, isNullOrUndefined, noop};
+export {extend, isArray, each, isObject, hasOwn, isNullOrUndefined, noop, isStringOrNumber};
 
 export const inBrowser = typeof window !== 'undefined';
 export const UA = inBrowser && window.navigator.userAgent.toLowerCase();
