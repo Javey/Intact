@@ -253,7 +253,8 @@ var Type = {
     JSXBlock: i++,
     JSXComment: i++,
 
-    JSXDirective: i++
+    JSXDirective: i++,
+    JSXTemplate: i++
 };
 var TypeName = [];
 for (var type in Type) {
@@ -1270,6 +1271,8 @@ Stringifier.prototype = {
                 return this._visitJSXVdt(element, isRoot);
             case Type$2.JSXComment:
                 return this._visitJSXComment(element);
+            case Type$2.JSXTemplate:
+                return this._visitJSXTemplate(element);
             default:
                 return 'null';
         }
@@ -1294,6 +1297,9 @@ Stringifier.prototype = {
                 });
                 element.children = [];
             }
+        } else if (element.value === 'template') {
+            // <template> is a fake tag, we only need handle its children and itself directives
+            return this._visitJSXDirective(element, this._visitJSXChildren(element.children));
         }
 
         var attributes = this._visitJSXAttribute(element, true, true);
