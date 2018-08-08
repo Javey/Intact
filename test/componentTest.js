@@ -944,6 +944,39 @@ describe('Component Test', function() {
             d.set('show', true);
             eqlHtml(d.element, '<span>show</span>');
         });
+
+        it('block in component should not be extendable', () => {
+            const A = Intact.extend({
+                template: `<div><span><b:body /></span>{self.get('children')}</div>`,
+            });
+            const B = Intact.extend({
+                template: `<div><A><b:body>test</b:body></A><b:body /></div>`,
+                _init() { this.A = A; }
+            });
+            const C = Intact.extend({
+                template: `<div><B><b:body>component</b:body></B></div>`,
+                _init() { this.B = B; }
+            });
+            d = Intact.mount(C, document.body);
+            eqlHtml(d.element.innerHTML, '<div><div><span>test</span></div>component</div>');
+        });
+
+        it('block in component which wrapped by template should be extendable', () => {
+            const A = Intact.extend({
+                template: `<div><span><b:body /></span>{self.get('children')}</div>`,
+            });
+            const B = Intact.extend({
+                template: `<div><A><b:body>test</b:body><template><b:body>b</b:body></template></A></div>`,
+                _init() { this.A = A; }
+            });
+            const C = Intact.extend({
+                template: `<div><B><b:body>{parent()}component</b:body></B></div>`,
+                _init() { this.B = B; }
+            });
+
+            d = Intact.mount(C, document.body);
+            eqlHtml(d.element.innerHTML, '<div><div><span>test</span>bcomponent</div></div>');
+        });
     });
 
     it('should render when promise.reject in _init', (done) => {
