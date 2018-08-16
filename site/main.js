@@ -46,7 +46,7 @@ const router = new Router({
             },
         },
         on: function() {
-            router.replaceRoute('/blog/intact-v2-2-0');
+            router.replaceRoute('/blog/vdt-v1.3');
         }
     },
 }).configure({
