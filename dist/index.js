@@ -4808,14 +4808,11 @@ function Intact$2(props) {
     autobind(this.constructor.prototype, this, Intact$2, {});
 
     this.vdt = Vdt$1(template);
+
     // for string ref
     this.refs = this.vdt.widgets || {};
-
-    this.uniqueId = props.widget || uniqueId('widget');
-
     // for compatibility v1.0
     this.widgets = this.refs;
-    this._widget = this.uniqueId;
 
     for (var i = 0; i < Intact$2._constructors.length; i++) {
         Intact$2._constructors[i].call(this, props);
@@ -4960,12 +4957,15 @@ function isPlainObject(value) {
 Intact$2._constructors.push(function (props) {
     this.props = extend({}, result(this, 'defaults'), props);
 
+    this.uniqueId = this.props.widget || uniqueId('widget');
+
     if (process.env.NODE_ENV !== 'production') {
         validateProps(props, this.constructor.propTypes, this.displayName || this.constructor.name);
     }
 
     // for compatibility v1.0
     this.attributes = this.props;
+    this._widget = this.uniqueId;
 });
 
 Intact$2.prototype.defaults = noop;

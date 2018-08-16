@@ -1,4 +1,4 @@
-import {autobind, templateDecorator, uniqueId} from '../utils';
+import {autobind, templateDecorator} from '../utils';
 import Vdt from 'vdt/src/client';
 
 export default function Intact(props) {
@@ -19,14 +19,11 @@ export default function Intact(props) {
     autobind(this.constructor.prototype, this, Intact, {});
     
     this.vdt = Vdt(template);
+
     // for string ref
     this.refs = this.vdt.widgets || {};
-
-    this.uniqueId = props.widget || uniqueId('widget');
-
     // for compatibility v1.0
     this.widgets = this.refs;
-    this._widget =  this.uniqueId;
 
     for (let i = 0; i < Intact._constructors.length; i++) {
         Intact._constructors[i].call(this, props);
