@@ -12,6 +12,22 @@ npm install webpack babel-core babel-loader \
     vdt vdt-loader --save-dev
 ```
 
+如果你要使用修饰器`decorator`已经类的静态属性`static`等新语法，还需要使用以下包
+
+```bash
+npm install babel-preset-stage-0 babel-plugin-transform-decorators-legacy --save-dev
+```
+
+`.babelrc`配置如下：
+
+```js
+{
+  "presets": ["env", "stage-0"],
+  "plugins": [
+    "transform-decorators-legacy"
+  ]
+}
+```
 
 # `vdt-loader`
 
@@ -27,15 +43,16 @@ module.exports = {
                 use: [
                     {
                         loader: 'babel-loader',
-                        options: {
-                            presets: ['env'],
-                        }
                     },
                     {
                         loader: 'vdt-loader',
                         options: {
                             // 去掉with语法
                             noWith: true,
+                            // 去掉标签间的空白字符
+                            skipWhitespace: true,
+                            // 定义模板分隔符
+                            // delimiters: ['{{', '}}']
                         }
                     }
                 ]
@@ -46,7 +63,7 @@ module.exports = {
 };
 ```
 
-如果你在模板中使用es6/7语法，还可以结合使用`babel-loader`进行编译。
+将模板经过`babel-loader`处理，我们可以在`vdt`模板中使用es6语法
 
 # 模板文件
 
@@ -72,7 +89,10 @@ import Menu from './components/menu';
 import template from './user.vdt';
 
 export defaults extends Intact {
-    get template() { return template; }
+    @Intact.template()
+    static template = template;
+    // 或者，不使用static属性
+    // get template() { return template; }
 }
 ```
 

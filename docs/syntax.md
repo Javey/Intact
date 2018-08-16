@@ -137,9 +137,14 @@ var App = Intact.extend({
         this.components = {};
     },
     delete: function(index) {
-        this.get('list').splice(index, 1);
-        // 直接操作原数组，需要强制更新
-        this.update();
+        // 不要直接操作元数据
+        var list = this.get('list').slice(0);
+        list.splice(index, 1);
+        this.set('list', list);
+
+        // 如果直接操作原数据，组件不会自动更新，需要手动更新
+        // this.get('list').splice(index, 1);
+        // this.update();
     }
 });
 

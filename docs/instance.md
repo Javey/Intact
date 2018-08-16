@@ -163,8 +163,11 @@ instance.set('count', 3, {async: true});
 instance.set('a', {b: {c: 1}});
 // 改变a.b.c
 instance.set('a.b.c', 2);
-// 如果批量设置，将会新增一个属性并赋值 
+
+// < v2.2.6  如果批量设置，将会新增一个属性并赋值 
 instance.set({'a.b.c': 3}); // {a: {b: {c: 2}}, 'a.b.c': 3}
+// >= v2.2.6 会通过路径修改属性
+instance.set({'a.b.c': 3}); // {a: {b: {c: 3}}}
 ```
 
 > Intact比较数据的变更，并非单纯地`===`，对于对象，会递归地比较每一项的值。
