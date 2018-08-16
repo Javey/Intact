@@ -18,20 +18,19 @@ export default function Intact(props) {
     // in ie 8 we must get prototype through constructor first time
     autobind(this.constructor.prototype, this, Intact, {});
     
-    for (let i = 0; i < Intact._constructors.length; i++) {
-        Intact._constructors[i].call(this, props);
-    }
-
     this.vdt = Vdt(template);
-
     // for string ref
     this.refs = this.vdt.widgets || {};
 
+    this.uniqueId = props.widget || uniqueId('widget');
+
     // for compatibility v1.0
     this.widgets = this.refs;
-    this._widget = this.props.widget || uniqueId('widget');
+    this._widget =  this.uniqueId;
 
-    this.uniqueId = this._widget;
+    for (let i = 0; i < Intact._constructors.length; i++) {
+        Intact._constructors[i].call(this, props);
+    }
 }
 
 Intact._constructors = [];

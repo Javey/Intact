@@ -4811,20 +4811,19 @@ function Intact$2(props) {
     // in ie 8 we must get prototype through constructor first time
     autobind(this.constructor.prototype, this, Intact$2, {});
 
-    for (var i = 0; i < Intact$2._constructors.length; i++) {
-        Intact$2._constructors[i].call(this, props);
-    }
-
     this.vdt = Vdt$1(template);
-
     // for string ref
     this.refs = this.vdt.widgets || {};
 
+    this.uniqueId = props.widget || uniqueId('widget');
+
     // for compatibility v1.0
     this.widgets = this.refs;
-    this._widget = this.props.widget || uniqueId('widget');
+    this._widget = this.uniqueId;
 
-    this.uniqueId = this._widget;
+    for (var i = 0; i < Intact$2._constructors.length; i++) {
+        Intact$2._constructors[i].call(this, props);
+    }
 }
 
 Intact$2._constructors = [];
