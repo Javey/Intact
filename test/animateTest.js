@@ -48,6 +48,9 @@ describe('Animate Test', function() {
                 this.Animate = Animate;
                 this.D = D;
             },
+            _create() {
+                this.update();
+            },
             destroy: destroyC
         });
         const destroyD = sinon.spy(function() {

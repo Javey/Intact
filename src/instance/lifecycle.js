@@ -89,6 +89,11 @@ Intact.prototype.update = function(lastVNode, nextVNode, fromPending) {
         this.mountedQueue = null;
     }
 
+    // 如果组件还没挂载就又触发了更新，依然将这次isRender标记设为true
+    if (!this.mounted) {
+        this.isRender = true;
+    }
+
     // 如果不存在nextVNode，则为直接调用update方法更新自己
     // 否则则是父组件触发的子组件更新，此时需要更新一些状态
     // 有一种情况，在父组件初次渲染时，子组件渲染过程中，
