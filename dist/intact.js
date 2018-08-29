@@ -5185,11 +5185,14 @@ Intact$2._constructors.push(function (props) {
     });
 });
 
-Intact$2.prototype.on = function (name, callback, options) {
-    (this._events[name] || (this._events[name] = [])).push(callback);
+Intact$2.prototype.on = function (name, callback) {
+    var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+    // the event which write in template must insert before which add in self component
+    (this._events[name] || (this._events[name] = []))[options.unshift ? 'unshift' : 'push'](callback);
 
     // save the kept event
-    if (options && options.keep) {
+    if (options.keep) {
         (this._keptEvents[name] || (this._keptEvents[name] = [])).push(callback);
     }
 
@@ -5590,6 +5593,17 @@ function patchProps$1(o, lastProps, nextProps) {
     }
 }
 
+/**
+ * @brief diff事件属性，属性值可以是空、函数、数组，为了保证事件属性执行顺序优先于
+ * 组件内部绑定的同名事件，这里采用unshift倒着处理
+ *
+ * @param o
+ * @param prop
+ * @param lastValue
+ * @param nextValue
+ *
+ * @return 
+ */
 function patchEventProps(o, prop, lastValue, nextValue) {
     o.set(prop, nextValue, { silent: true });
     var eventName = prop.substr(3);
@@ -5601,85 +5615,78 @@ function patchEventProps(o, prop, lastValue, nextValue) {
             // 的一项或几项，所以可以一一对比处理
             var nextLength = nextValue.length;
             var lastLength = lastValue.length;
-            var i = 0;
+            var i = void 0;
             var l = Math.min(nextLength, lastLength);
-            for (; i < l; i++) {
-                var _lastValue = lastValue[i];
-                var _nextValue = nextValue[i];
-                if (_lastValue !== _nextValue) {
+            if (l < nextLength) {
+                // 如果nextValue > lastValue
+                // 则绑定剩下的事件函数
+                for (i = nextLength - 1; i >= l; i--) {
+                    var _nextValue = nextValue[i];
                     if (_nextValue) {
-                        o.on(eventName, _nextValue);
+                        o.on(eventName, _nextValue, { unshift: true });
                     }
+                }
+            } else if (l < lastLength) {
+                // 如果nextValue < lastValue
+                // 则解绑剩下的事件函数
+                for (i = lastLength - 1; i >= l; i--) {
+                    var _lastValue = lastValue[i];
                     if (_lastValue) {
                         o.off(eventName, _lastValue);
                     }
                 }
             }
-            if (i < nextLength) {
-                // 如果nextValue > lastValue
-                // 则绑定剩下的事件函数
-                for (; i < nextLength; i++) {
-                    var _nextValue2 = nextValue[i];
-                    if (_nextValue2) {
-                        o.on(eventName, _nextValue2);
-                    }
+            for (i = l - 1; i >= 0; i--) {
+                var _lastValue2 = lastValue[i];
+                var _nextValue2 = nextValue[i];
+                // 因为要保证顺序不变，所以即使相同，也要重新unshift到前面
+                // if (_lastValue !== _nextValue) {
+                if (_lastValue2) {
+                    o.off(eventName, _lastValue2);
                 }
-            } else if (i < lastLength) {
-                // 如果nextValue < lastValue
-                // 则解绑剩下的事件函数
-                for (; i < lastLength; i++) {
-                    var _lastValue2 = lastValue[i];
-                    if (_lastValue2) {
-                        o.off(eventName, _lastValue2);
-                    }
+                if (_nextValue2) {
+                    o.on(eventName, _nextValue2, { unshift: true });
                 }
+                // }
             }
         } else if (lastValue) {
-            var found = false;
-            for (var _i = 0; _i < nextValue.length; _i++) {
+            o.off(eventName, lastValue);
+            for (var _i = nextValue.length - 1; _i >= 0; _i--) {
                 var _nextValue3 = nextValue[_i];
                 if (_nextValue3) {
-                    if (_nextValue3 !== lastValue) {
-                        o.on(eventName, _nextValue3);
-                    } else {
-                        found = true;
-                    }
+                    o.on(eventName, _nextValue3, { unshift: true });
                 }
             }
-            // 如果上一个事件函数不在下一个数组中，则解绑
-            if (!found) {
-                o.off(eventName, lastValue);
-            }
         } else {
-            for (var _i2 = 0; _i2 < nextValue.length; _i2++) {
+            for (var _i2 = nextValue.length - 1; _i2 >= 0; _i2--) {
                 var _nextValue4 = nextValue[_i2];
                 if (_nextValue4) {
-                    o.on(eventName, _nextValue4);
+                    o.on(eventName, _nextValue4, { unshift: true });
                 }
             }
         }
     } else if (nextValue) {
         if (isArray(lastValue)) {
-            var _found = false;
+            var found = false;
             for (var _i3 = 0; _i3 < lastValue.length; _i3++) {
                 var _lastValue3 = lastValue[_i3];
                 if (_lastValue3) {
                     if (_lastValue3 !== nextValue) {
                         o.off(eventName, _lastValue3);
                     } else {
-                        _found = true;
+                        found = true;
                     }
                 }
             }
             // 如果下一个事件函数不在上一个数组中，则绑定
-            if (!_found) {
-                o.on(eventName, nextValue);
+            if (!found) {
+                o.on(eventName, nextValue, { unshift: true });
             }
         } else if (lastValue) {
             o.off(eventName, lastValue);
-            o.on(eventName, nextValue);
+            o.on(eventName, nextValue, { unshift: true });
         } else {
-            o.on(eventName, nextValue);
+            o.on(eventName, nextValue, { unshift: true });
         }
     } else {
         removeEvents(o, prop, lastValue);

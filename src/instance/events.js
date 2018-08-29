@@ -22,11 +22,14 @@ Intact._constructors.push(function(props) {
     });
 });
 
-Intact.prototype.on = function(name, callback, options) {
-    (this._events[name] || (this._events[name] = [])).push(callback);
+Intact.prototype.on = function(name, callback, options = {}) {
+    // the event which write in template must insert before which add in self component
+    (this._events[name] || (this._events[name] = []))[
+        options.unshift ? 'unshift' : 'push'
+    ](callback);
 
     // save the kept event
-    if (options && options.keep) {
+    if (options.keep) {
         (this._keptEvents[name] || (this._keptEvents[name] = [])).push(callback);
     }
 

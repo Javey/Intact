@@ -358,6 +358,17 @@ export function patchProps(o, lastProps, nextProps, options = {update: false, _f
     }
 }
 
+/**
+ * @brief diff事件属性，属性值可以是空、函数、数组，为了保证事件属性执行顺序优先于
+ * 组件内部绑定的同名事件，这里采用unshift倒着处理
+ *
+ * @param o
+ * @param prop
+ * @param lastValue
+ * @param nextValue
+ *
+ * @return 
+ */
 function patchEventProps(o, prop, lastValue, nextValue) {
     o.set(prop, nextValue, {silent: true});
     const eventName = prop.substr(3);
@@ -369,60 +380,53 @@ function patchEventProps(o, prop, lastValue, nextValue) {
             // 的一项或几项，所以可以一一对比处理
             const nextLength = nextValue.length;
             const lastLength = lastValue.length; 
-            let i = 0;
+            let i;
             const l = Math.min(nextLength, lastLength);
-            for (; i < l; i++) {
-                const _lastValue = lastValue[i];
-                const _nextValue = nextValue[i];
-                if (_lastValue !== _nextValue) {
-                    if (_nextValue) {
-                        o.on(eventName, _nextValue);
-                    }
-                    if (_lastValue) {
-                        o.off(eventName, _lastValue);
-                    }
-                }
-            } 
-            if (i < nextLength) {
+            if (l < nextLength) {
                 // 如果nextValue > lastValue
                 // 则绑定剩下的事件函数
-                for (; i < nextLength; i++) {
+                for (i = nextLength - 1; i >= l; i--) {
                     const _nextValue = nextValue[i];
                     if (_nextValue) {
-                        o.on(eventName, _nextValue);
+                        o.on(eventName, _nextValue, {unshift: true});
                     }
                 }
-            } else if (i < lastLength) {
+            } else if (l < lastLength) {
                 // 如果nextValue < lastValue
                 // 则解绑剩下的事件函数
-                for (; i < lastLength; i++) {
+                for (i = lastLength - 1; i >= l; i--) {
                     const _lastValue = lastValue[i];
                     if (_lastValue) {
                         o.off(eventName, _lastValue);
                     }
                 }
             }
+            for (i = l - 1; i >= 0; i--) {
+                const _lastValue = lastValue[i];
+                const _nextValue = nextValue[i];
+                // 因为要保证顺序不变，所以即使相同，也要重新unshift到前面
+                // if (_lastValue !== _nextValue) {
+                    if (_lastValue) {
+                        o.off(eventName, _lastValue);
+                    }
+                    if (_nextValue) {
+                        o.on(eventName, _nextValue, {unshift: true});
+                    }
+                // }
+            } 
         } else if (lastValue) {
-            let found = false;
-            for (let i = 0; i < nextValue.length; i++) {
+            o.off(eventName, lastValue);
+            for (let i = nextValue.length - 1; i >= 0; i--) {
                 const _nextValue = nextValue[i];
                 if (_nextValue) {
-                    if (_nextValue !== lastValue) {
-                        o.on(eventName, _nextValue)
-                    } else {
-                        found = true;
-                    }
+                    o.on(eventName, _nextValue, {unshift: true})
                 }
             }
-            // 如果上一个事件函数不在下一个数组中，则解绑
-            if (!found) {
-                o.off(eventName, lastValue);
-            }
         } else {
-            for (let i = 0; i < nextValue.length; i++) {
+            for (let i = nextValue.length - 1; i >= 0 ; i--) {
                 const _nextValue = nextValue[i];
                 if (_nextValue) {
-                    o.on(eventName, _nextValue);
+                    o.on(eventName, _nextValue, {unshift: true});
                 }
             }
         }
@@ -441,13 +445,13 @@ function patchEventProps(o, prop, lastValue, nextValue) {
             }
             // 如果下一个事件函数不在上一个数组中，则绑定
             if (!found) {
-                o.on(eventName, nextValue);
+                o.on(eventName, nextValue, {unshift: true});
             }
         } else if (lastValue) {
             o.off(eventName, lastValue);
-            o.on(eventName, nextValue);
+            o.on(eventName, nextValue, {unshift: true});
         } else {
-            o.on(eventName, nextValue);
+            o.on(eventName, nextValue, {unshift: true});
         }
     } else {
         removeEvents(o, prop, lastValue);
