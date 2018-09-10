@@ -2315,30 +2315,11 @@ function directClone(vNode) {
         newVNode = new VNode(type, vNode.tag, props, vNode.children, null, vNode.key, vNode.ref);
 
         var newProps = newVNode.props;
-        var newChildren = newProps.children;
-
+        var newChildren = directCloneChildren(newProps.children);
         if (newChildren) {
-            if (isArray(newChildren)) {
-                var len = newChildren.length;
-                if (len > 0) {
-                    var tmpArray = [];
-
-                    for (var i = 0; i < len; i++) {
-                        var child = newChildren[i];
-                        if (isStringOrNumber(child)) {
-                            tmpArray.push(child);
-                        } else if (!isInvalid(child) && child.type) {
-                            tmpArray.push(directClone(child));
-                        }
-                    }
-                    newProps.children = tmpArray;
-                }
-            } else if (newChildren.type) {
-                newProps.children = directClone(newChildren);
-            }
+            newProps.children = newChildren;
         }
     } else if (type & Types$1.Element) {
-        var children = vNode.children;
         var _props = void 0;
         var _propsToClone = vNode.props;
 
@@ -2351,7 +2332,7 @@ function directClone(vNode) {
             }
         }
 
-        newVNode = new VNode(type, vNode.tag, vNode.props, children, vNode.className, vNode.key, vNode.ref);
+        newVNode = new VNode(type, vNode.tag, vNode.props, directCloneChildren(vNode.children), vNode.className, vNode.key, vNode.ref);
     } else if (type & Types$1.Text) {
         newVNode = createTextVNode(vNode.children);
     } else if (type & Types$1.HtmlComment) {
@@ -2359,6 +2340,31 @@ function directClone(vNode) {
     }
 
     return newVNode;
+}
+
+function directCloneChildren(children) {
+    if (children) {
+        if (isArray(children)) {
+            var len = children.length;
+            if (len > 0) {
+                var tmpArray = [];
+
+                for (var i = 0; i < len; i++) {
+                    var child = children[i];
+                    if (isStringOrNumber(child)) {
+                        tmpArray.push(child);
+                    } else if (!isInvalid(child) && child.type) {
+                        tmpArray.push(directClone(child));
+                    }
+                }
+                return tmpArray;
+            }
+        } else if (children.type) {
+            return directClone(children);
+        }
+    }
+
+    return children;
 }
 
 var ALL_PROPS = ["altKey", "bubbles", "cancelable", "ctrlKey", "eventPhase", "metaKey", "relatedTarget", "shiftKey", "target", "timeStamp", "type", "view", "which"];
