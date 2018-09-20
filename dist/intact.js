@@ -151,7 +151,9 @@ var strictProps = {
     volume: true,
     defaultChecked: true,
     value: true,
-    htmlFor: true
+    htmlFor: true,
+    scrollLeft: true,
+    scrollTop: true
 };
 
 var selfClosingTags = {
