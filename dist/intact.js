@@ -648,18 +648,19 @@ Parser.prototype = {
         this._updateIndex(7); // 'import '.length
         while (this.index < this.length) {
             var ch = this._char();
-            this._updateIndex();
-            if ((ch === '\'' || ch === '"') && ((ch = this._char()) === ';' || ch === '\n')) {
-                if (ch === '\n') {
-                    this._updateLine();
-                } else {
-                    this._updateIndex();
-                    if (this._char() === '\n') {
-                        this._updateLine();
+            if (ch === '\'' || ch === '"') {
+                this._scanStringLiteral();
+                var _start = void 0;
+                do {
+                    _start = this.index;
+                    this._skipWhitespaceAndJSComment();
+                    if (this._char() === ';') {
+                        this._updateIndex();
                     }
-                }
-                this._updateIndex();
+                } while (_start !== this.index);
                 break;
+            } else {
+                this._updateIndex();
             }
         }
 
