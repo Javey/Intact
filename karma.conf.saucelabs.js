@@ -72,11 +72,12 @@ const customLaunchers ={
         browserName: 'firefox',
         platform: 'macOS 10.12'
     },
-    sl_safari: {
-        base: 'SauceLabs',
-        browserName: 'safari',
-        platform: 'macOS 10.12'
-    },
+    // for https://stackoverflow.com/questions/46913856/value-is-not-a-sequence-safari-exception
+    // sl_safari: {
+        // base: 'SauceLabs',
+        // browserName: 'safari',
+        // platform: 'macOS 10.12'
+    // },
     sl_edge: {
         base: 'SauceLabs',
         browserName: 'MicrosoftEdge',
