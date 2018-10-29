@@ -2124,7 +2124,7 @@ Stringifier.prototype = {
     }
 };
 
-var Types$1 = {
+var Types = {
     Text: 1,
     HtmlElement: 1 << 1,
 
@@ -2141,10 +2141,10 @@ var Types$1 = {
 
     UnescapeText: 1 << 10 // for server side render unescape text
 };
-Types$1.FormElement = Types$1.InputElement | Types$1.SelectElement | Types$1.TextareaElement;
-Types$1.Element = Types$1.HtmlElement | Types$1.FormElement | Types$1.SvgElement;
-Types$1.ComponentClassOrInstance = Types$1.ComponentClass | Types$1.ComponentInstance;
-Types$1.TextElement = Types$1.Text | Types$1.HtmlComment;
+Types.FormElement = Types.InputElement | Types.SelectElement | Types.TextareaElement;
+Types.Element = Types.HtmlElement | Types.FormElement | Types.SvgElement;
+Types.ComponentClassOrInstance = Types.ComponentClass | Types.ComponentInstance;
+Types.TextElement = Types.Text | Types.HtmlComment;
 
 var EMPTY_OBJ = {};
 if ('development' !== 'production' && !browser.isIE) {
@@ -2167,23 +2167,23 @@ function createVNode(tag, props, children, className, key, ref) {
     switch (typeof tag === 'undefined' ? 'undefined' : _typeof(tag)) {
         case 'string':
             if (tag === 'input') {
-                type = Types$1.InputElement;
+                type = Types.InputElement;
             } else if (tag === 'select') {
-                type = Types$1.SelectElement;
+                type = Types.SelectElement;
             } else if (tag === 'textarea') {
-                type = Types$1.TextareaElement;
+                type = Types.TextareaElement;
             } else if (tag === 'svg') {
-                type = Types$1.SvgElement;
+                type = Types.SvgElement;
             } else {
-                type = Types$1.HtmlElement;
+                type = Types.HtmlElement;
             }
             break;
         case 'function':
             if (tag.prototype.init) {
-                type = Types$1.ComponentClass;
+                type = Types.ComponentClass;
             } else {
                 // return tag(props);
-                type = Types$1.ComponentFunction;
+                type = Types.ComponentFunction;
             }
             break;
         case 'object':
@@ -2194,7 +2194,7 @@ function createVNode(tag, props, children, className, key, ref) {
             throw new Error('unknown vNode type: ' + tag);
     }
 
-    if (type & (Types$1.ComponentClass | Types$1.ComponentFunction)) {
+    if (type & (Types.ComponentClass | Types.ComponentFunction)) {
         if (!isNullOrUndefined(children)) {
             if (props === EMPTY_OBJ) props = {};
             props.children = normalizeChildren(children, false);
@@ -2202,7 +2202,7 @@ function createVNode(tag, props, children, className, key, ref) {
         } else if (!isNullOrUndefined(props.children)) {
             props.children = normalizeChildren(props.children, false);
         }
-        if (type & Types$1.ComponentFunction) {
+        if (type & Types.ComponentFunction) {
             if (key || ref) {
                 if (props === EMPTY_OBJ) props = {};
                 if (key) props.key = key;
@@ -2218,22 +2218,22 @@ function createVNode(tag, props, children, className, key, ref) {
 }
 
 function createCommentVNode(children) {
-    return new VNode(Types$1.HtmlComment, null, EMPTY_OBJ, children);
+    return new VNode(Types.HtmlComment, null, EMPTY_OBJ, children);
 }
 
 function createUnescapeTextVNode(children) {
-    return new VNode(Types$1.UnescapeText, null, EMPTY_OBJ, children);
+    return new VNode(Types.UnescapeText, null, EMPTY_OBJ, children);
 }
 
 function createTextVNode(text) {
-    return new VNode(Types$1.Text, null, EMPTY_OBJ, text);
+    return new VNode(Types.Text, null, EMPTY_OBJ, text);
 }
 
 
 
 function createComponentInstanceVNode(instance) {
     var props = instance.props || EMPTY_OBJ;
-    return new VNode(Types$1.ComponentInstance, instance.constructor, props, instance, null, props.key, props.ref);
+    return new VNode(Types.ComponentInstance, instance.constructor, props, instance, null, props.key, props.ref);
 }
 
 function normalizeChildren(vNodes, isAddKey) {
@@ -2302,7 +2302,7 @@ function directClone(vNode) {
     var newVNode = void 0;
     var type = vNode.type;
 
-    if (type & Types$1.ComponentClassOrInstance) {
+    if (type & Types.ComponentClassOrInstance) {
         var props = void 0;
         var propsToClone = vNode.props;
 
@@ -2322,7 +2322,7 @@ function directClone(vNode) {
         if (newChildren) {
             newProps.children = newChildren;
         }
-    } else if (type & Types$1.Element) {
+    } else if (type & Types.Element) {
         var _props = void 0;
         var _propsToClone = vNode.props;
 
@@ -2336,9 +2336,9 @@ function directClone(vNode) {
         }
 
         newVNode = new VNode(type, vNode.tag, vNode.props, directCloneChildren(vNode.children), vNode.className, vNode.key, vNode.ref);
-    } else if (type & Types$1.Text) {
+    } else if (type & Types.Text) {
         newVNode = createTextVNode(vNode.children);
-    } else if (type & Types$1.HtmlComment) {
+    } else if (type & Types.HtmlComment) {
         newVNode = createCommentVNode(vNode.children);
     }
 
@@ -2612,7 +2612,7 @@ function updateChildOptionGroup(vNode, value, flag) {
 
 function updateChildOption(vNode, value, flag) {
     // skip text and comment node
-    if (vNode.type & Types$1.HtmlElement) {
+    if (vNode.type & Types.HtmlElement) {
         var props = vNode.props;
         var dom = vNode.dom;
 
@@ -2685,11 +2685,11 @@ function processTextarea(vNode, dom, nextProps, isRender) {
 
 function processForm(vNode, dom, nextProps, isRender) {
     var type = vNode.type;
-    if (type & Types$1.InputElement) {
+    if (type & Types.InputElement) {
         processInput(vNode, dom, nextProps, isRender);
-    } else if (type & Types$1.TextareaElement) {
+    } else if (type & Types.TextareaElement) {
         processTextarea(vNode, dom, nextProps, isRender);
-    } else if (type & Types$1.SelectElement) {
+    } else if (type & Types.SelectElement) {
         processSelect(vNode, dom, nextProps, isRender);
     }
 }
@@ -2711,17 +2711,17 @@ function render(vNode, parentDom, mountedQueue, parentVNode, isSVG) {
 
 function createElement(vNode, parentDom, mountedQueue, isRender, parentVNode, isSVG) {
     var type = vNode.type;
-    if (type & Types$1.Element) {
+    if (type & Types.Element) {
         return createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode, isSVG);
-    } else if (type & Types$1.Text) {
+    } else if (type & Types.Text) {
         return createTextElement(vNode, parentDom);
-    } else if (type & Types$1.ComponentClassOrInstance) {
+    } else if (type & Types.ComponentClassOrInstance) {
         return createComponentClassOrInstance(vNode, parentDom, mountedQueue, null, isRender, parentVNode, isSVG);
         // } else if (type & Types.ComponentFunction) {
         // return createComponentFunction(vNode, parentDom, mountedQueue, isNotAppendChild, isRender);
         // } else if (type & Types.ComponentInstance) {
         // return createComponentInstance(vNode, parentDom, mountedQueue);
-    } else if (type & Types$1.HtmlComment) {
+    } else if (type & Types.HtmlComment) {
         return createCommentElement(vNode, parentDom);
     } else {
         throw new Error('expect a vNode but got ' + vNode);
@@ -2731,7 +2731,7 @@ function createElement(vNode, parentDom, mountedQueue, isRender, parentVNode, is
 function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode, isSVG) {
     var type = vNode.type;
 
-    isSVG = isSVG || (type & Types$1.SvgElement) > 0;
+    isSVG = isSVG || (type & Types.SvgElement) > 0;
 
     var dom = documentCreateElement(vNode.tag, isSVG);
     var children = vNode.children;
@@ -2758,7 +2758,7 @@ function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode
     // work. So processForm after it has be appended to parent dom.
     var isFormElement = void 0;
     if (props !== EMPTY_OBJ) {
-        isFormElement = (vNode.type & Types$1.FormElement) > 0;
+        isFormElement = (vNode.type & Types.FormElement) > 0;
         for (var prop in props) {
             patchProp(prop, null, props[prop], dom, isFormElement, isSVG);
         }
@@ -2793,7 +2793,7 @@ function createTextElement(vNode, parentDom) {
 
 function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
     var props = vNode.props;
-    var instance = vNode.type & Types$1.ComponentClass ? new vNode.tag(props) : vNode.children;
+    var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
     instance.parentDom = parentDom;
     instance.mountedQueue = mountedQueue;
     instance.isRender = isRender;
@@ -2866,13 +2866,13 @@ function removeElements(vNodes, parentDom) {
 
 function removeElement(vNode, parentDom, nextVNode) {
     var type = vNode.type;
-    if (type & Types$1.Element) {
+    if (type & Types.Element) {
         return removeHtmlElement(vNode, parentDom);
-    } else if (type & Types$1.TextElement) {
+    } else if (type & Types.TextElement) {
         return removeText(vNode, parentDom);
-    } else if (type & Types$1.ComponentClassOrInstance) {
+    } else if (type & Types.ComponentClassOrInstance) {
         return removeComponentClassOrInstance(vNode, parentDom, nextVNode);
-    } else if (type & Types$1.ComponentFunction) {
+    } else if (type & Types.ComponentFunction) {
         return removeComponentFunction(vNode, parentDom);
     }
 }
@@ -3012,20 +3012,20 @@ function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, 
         var nextType = nextVNode.type;
         var lastType = lastVNode.type;
 
-        if (nextType & Types$1.Element) {
-            if (lastType & Types$1.Element) {
+        if (nextType & Types.Element) {
+            if (lastType & Types.Element) {
                 patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
             } else {
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
             }
-        } else if (nextType & Types$1.TextElement) {
+        } else if (nextType & Types.TextElement) {
             if (lastType === nextType) {
                 patchText(lastVNode, nextVNode);
             } else {
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, isSVG);
             }
-        } else if (nextType & Types$1.ComponentClass) {
-            if (lastType & Types$1.ComponentClass) {
+        } else if (nextType & Types.ComponentClass) {
+            if (lastType & Types.ComponentClass) {
                 patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
             } else {
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
@@ -3036,8 +3036,8 @@ function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, 
             // } else {
             // replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
             // }
-        } else if (nextType & Types$1.ComponentInstance) {
-            if (lastType & Types$1.ComponentInstance) {
+        } else if (nextType & Types.ComponentInstance) {
+            if (lastType & Types.ComponentInstance) {
                 patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
             } else {
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
@@ -3060,7 +3060,7 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode
     nextVNode.dom = dom;
     nextVNode.parentVNode = parentVNode;
 
-    isSVG = isSVG || (nextType & Types$1.SvgElement) > 0;
+    isSVG = isSVG || (nextType & Types.SvgElement) > 0;
 
     if (lastVNode.tag !== nextVNode.tag || lastVNode.key !== nextVNode.key) {
         replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
@@ -3488,7 +3488,7 @@ function patchProps(lastVNode, nextVNode, isSVG) {
     var dom = nextVNode.dom;
     var prop = void 0;
     if (nextProps !== EMPTY_OBJ) {
-        var isFormElement = (nextVNode.type & Types$1.FormElement) > 0;
+        var isFormElement = (nextVNode.type & Types.FormElement) > 0;
         for (prop in nextProps) {
             patchProp(prop, lastProps[prop], nextProps[prop], dom, isFormElement, isSVG);
         }
@@ -3719,12 +3719,12 @@ function toString$2(vNode, parent, disableSplitText, firstChild) {
     var children = vNode.children;
 
     var html = void 0;
-    if (type & Types$1.ComponentClass) {
+    if (type & Types.ComponentClass) {
         var instance = new tag(props);
         html = instance.toString();
-    } else if (type & Types$1.ComponentInstance) {
+    } else if (type & Types.ComponentInstance) {
         html = vNode.children.toString();
-    } else if (type & Types$1.Element) {
+    } else if (type & Types.Element) {
         var innerHTML = void 0;
         html = '<' + tag;
 
@@ -3785,7 +3785,7 @@ function toString$2(vNode, parent, disableSplitText, firstChild) {
                         } else if (isNumber(child)) {
                             html += child;
                         } else if (!isNullOrUndefined(child)) {
-                            if (!(child.type & Types$1.Text)) {
+                            if (!(child.type & Types.Text)) {
                                 index = -1;
                             } else {
                                 index++;
@@ -3800,11 +3800,11 @@ function toString$2(vNode, parent, disableSplitText, firstChild) {
 
             html += '</' + tag + '>';
         }
-    } else if (type & Types$1.Text) {
+    } else if (type & Types.Text) {
         html = (firstChild || disableSplitText ? '' : '<!---->') + (children === '' ? ' ' : escapeText(children));
-    } else if (type & Types$1.HtmlComment) {
+    } else if (type & Types.HtmlComment) {
         html = '<!--' + children + '-->';
-    } else if (type & Types$1.UnescapeText) {
+    } else if (type & Types.UnescapeText) {
         html = isNullOrUndefined(children) ? '' : children;
     } else {
         throw new Error('Unknown vNode: ' + vNode);
@@ -3955,20 +3955,20 @@ function hydrate(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
 function hydrateElement(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
     var type = vNode.type;
 
-    if (type & Types$1.Element) {
+    if (type & Types.Element) {
         return hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG);
-    } else if (type & Types$1.Text) {
+    } else if (type & Types.Text) {
         return hydrateText(vNode, dom);
-    } else if (type & Types$1.HtmlComment) {
+    } else if (type & Types.HtmlComment) {
         return hydrateComment(vNode, dom);
-    } else if (type & Types$1.ComponentClassOrInstance) {
+    } else if (type & Types.ComponentClassOrInstance) {
         return hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG);
     }
 }
 
 function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
     var props = vNode.props;
-    var instance = vNode.type & Types$1.ComponentClass ? new vNode.tag(props) : vNode.children;
+    var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
     instance.parentDom = parentDom;
     instance.mountedQueue = mountedQueue;
     instance.isRender = true;
@@ -4038,7 +4038,7 @@ function hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode, is
     var ref = vNode.ref;
 
     vNode.parentVNode = parentVNode;
-    isSVG = isSVG || (type & Types$1.SvgElement) > 0;
+    isSVG = isSVG || (type & Types.SvgElement) > 0;
 
     if (dom.nodeType !== 1 || dom.tagName.toLowerCase() !== vNode.tag) {
         warning('Server-side markup doesn\'t match client-side markup');
@@ -4056,7 +4056,7 @@ function hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode, is
     }
 
     if (props !== EMPTY_OBJ) {
-        var isFormElement = (type & Types$1.FormElement) > 0;
+        var isFormElement = (type & Types.FormElement) > 0;
         for (var prop in props) {
             patchProp(prop, null, props[prop], dom, isFormElement, isSVG);
         }
@@ -4161,7 +4161,7 @@ var miss = (Object.freeze || Object)({
 	renderString: toString$2,
 	hydrateRoot: hydrateRoot,
 	hydrate: hydrate,
-	Types: Types$1,
+	Types: Types,
 	VNode: VNode
 });
 
@@ -5391,7 +5391,7 @@ Intact$2.prototype.destroy = function (lastVNode, nextVNode, parentDom) {
         if (_lastVNode && !_lastVNode.children.destroyed) {
             removeComponentClassOrInstance(_lastVNode, null, lastVNode);
         }
-    } else if (!nextVNode || !(nextVNode.type & Types$1.ComponentClassOrInstance) || nextVNode.key !== lastVNode.key) {
+    } else if (!nextVNode || !(nextVNode.type & Types.ComponentClassOrInstance) || nextVNode.key !== lastVNode.key) {
         vdt.destroy();
     }
 
@@ -5515,7 +5515,7 @@ function updateComponent(o, lastVNode, nextVNode) {
             vNode.dom = nextDom;
             var parentVNode = vNode.parentVNode;
             // 需要递归判断父组件是不是也指向同一个元素
-            while (parentVNode && parentVNode.type & Types$1.ComponentClassOrInstance && parentVNode.dom === lastDom) {
+            while (parentVNode && parentVNode.type & Types.ComponentClassOrInstance && parentVNode.dom === lastDom) {
                 parentVNode.dom = nextDom;
                 parentVNode = parentVNode.parentVNode;
             }

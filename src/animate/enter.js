@@ -5,6 +5,7 @@ import {
 } from './utils';
 import checkMode from './check-mode';
 import leave from './leave';
+import {Types} from 'misstime/src/vnode';
 
 prototype._mount = function(lastVNode, vNode) {
     this.isAppear = detectIsAppear(this);
