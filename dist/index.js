@@ -609,7 +609,14 @@ Parser.prototype = {
         while (this.index < this.length) {
             this._skipJSComment();
             var ch = this._char();
-            if (ch === '\'' || ch === '"' || ch === '`') {
+            var tmp;
+            if (ch === '\'' || ch === '"' || ch === '`' ||
+            // is a RegExp, treat it as literal sting
+            ch === '/' && (
+            // is not /* and //, this is comment
+            tmp = this._char(this.index + 1)) && tmp !== '*' && tmp !== '/' && (
+            // is not </, this is a end tag
+            tmp = this._char(this.index - 1)) && tmp !== '<') {
                 // skip element(<div>) in quotes
                 this._scanStringLiteral();
             } else if (this._isElementStart()) {
