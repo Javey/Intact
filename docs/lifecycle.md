@@ -4,7 +4,7 @@
 
 ```
                         销毁后
-_init -> _create -> _mount -> _destory
+_init -> _create -> _mount -> _destroy
                   | 触发更新时 
                   v
          _beforeUpdate -> _update
@@ -36,7 +36,7 @@ _init -> _create -> _mount -> _destory
 
 _beforeUpdate调用后，就会执行_update，此时组件更新完成。
 
-## _destory
+## _destroy
 
 组件被销毁后，会执行_destroy，在这里可以做一些组件清理工作。组件销毁时，
 会递归清理所有的子组件，解绑所有事件。
