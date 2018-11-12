@@ -3121,7 +3121,9 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
     } else {
         instance = lastVNode.children;
         instance.mountedQueue = mountedQueue;
-        instance.isRender = false;
+        if (instance.mounted) {
+            instance.isRender = false;
+        }
         instance.parentVNode = parentVNode;
         instance.vNode = nextVNode;
         instance.isSVG = isSVG;
@@ -3165,7 +3167,9 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, pa
         newDom = createComponentClassOrInstance(nextVNode, parentDom, mountedQueue, lastVNode, false, parentVNode, isSVG);
     } else {
         lastInstance.mountedQueue = mountedQueue;
-        lastInstance.isRender = false;
+        if (lastInstance.mounted) {
+            lastInstance.isRender = false;
+        }
         lastInstance.parentVNode = parentVNode;
         newDom = lastInstance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
@@ -5398,11 +5402,6 @@ Intact$2.prototype.update = function (lastVNode, nextVNode, fromPending) {
         // 如果在render的过程中，又触发了update，则此时
         // 不能清空
         this.mountedQueue = null;
-    }
-
-    // 如果组件还没挂载就又触发了更新，依然将这次isRender标记设为true
-    if (!this.mounted) {
-        this.isRender = true;
     }
 
     // 如果不存在nextVNode，则为直接调用update方法更新自己

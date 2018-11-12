@@ -453,4 +453,42 @@ describe('Animate Test', function() {
             done();
         }, 1200);
     });
+
+    it('should execute enter animation when a rendering component has update', function(done) {
+        this.enableTimeouts(false);
+        const C = Intact.extend({
+            template: `<div>
+                <Animate v-if={self.get('show')}>test</Animate>
+            </div>`,
+            _init() {
+                this.on('$changed:show', (c, show) => {
+                    if (show) {
+                        this.update();
+                    }
+                });
+            }
+        });
+        const D = Intact.extend({
+            template: `<C show={self.get('show')} />`,
+            _init() {
+                this.C = C;
+            }
+        });
+        const c = Intact.mount(C, document.body);
+        const d = Intact.mount(D, document.body);
+
+        c.set('show', true);
+        d.set('show', true);
+        setTimeout(() => {
+            const el = c.element.firstChild;
+            sEql(el.className, 'animate-enter-active');
+            const _el = d.element.firstChild;
+            sEql(el.className, 'animate-enter-active');
+
+            document.body.removeChild(c.element);
+            document.body.removeChild(d.element);
+
+            done();
+        }, 100);
+    });
 });
