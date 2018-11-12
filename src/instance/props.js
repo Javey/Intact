@@ -138,6 +138,8 @@ function triggerChangedEvent(o, changes) {
     o.trigger('$changed', o, changeKeys);
 }
 
+const reSingleQuote = /'/g;
+const reWithDot = /\./;
 function setProps(newProps, props) {
     const propsPathTree = {};
     const changes = {};
@@ -148,21 +150,27 @@ function setProps(newProps, props) {
 
         if (!isEqual(lastValue, nextValue)) {
             let tree = propsPathTree;
-            changes[prop] = [lastValue, nextValue];
 
             if (!hasOwn.call(props, prop)) {
                 // a.b.c => ['a', 'b', 'c']
                 const paths = castPath(prop);
                 const length = paths.length;
+                let path = '';
                 for (let i = 0; i < length; i++) {
-                    const name = paths[i]; 
+                    let name = paths[i]; 
+                    if (reWithDot.test(name)) {
+                        name = `["${name}"]`;
+                    } else {
+                        name = path ? '.' + name : name;
+                    }
+                    path = `${path}${name}`;
                     if (!tree[name]) {
                         if (i < length - 1) {
                             tree[name] = {};
-                            const path = paths.slice(0, i + 1).join('.');
                             changes[path] = [get(props, path)];
                             changesWithoutNextValue.push(path);
                         } else {
+                            changes[path] = [lastValue, nextValue];
                             tree[name] = null;
                         }
                     }
@@ -171,6 +179,10 @@ function setProps(newProps, props) {
                 // tree = {a: {b: {c: {}}}}
                 // changes = {'a.b.c': [v1, v2], 'a': [v1], 'a.b': [v1]}
             } else {
+                if (reWithDot.test(prop)) {
+                    prop = `["${prop}"]`;
+                }
+                changes[prop] = [lastValue, nextValue];
                 tree[prop] = null;
             }
         }
@@ -188,9 +200,14 @@ function setProps(newProps, props) {
 }
 
 // 深度优先遍历，得到正确的事件触发顺序
-function getChanges(tree, data, path, changes = []) {
+function getChanges(tree, data, path = '', changes = []) {
     for (let key in tree) {
-        let _path = path === undefined ? key : `${path}.${key}`;
+        // let _path = reWithDot.test(key) ?
+            // `${path}["${key}"]` :
+            // path ?
+                // `${path}.${key}` :
+                // key;
+        const _path = path + key;
         if (tree[key]) {
             getChanges(tree[key], data, _path, changes);
         }

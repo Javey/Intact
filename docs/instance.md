@@ -168,6 +168,8 @@ instance.set('a.b.c', 2);
 instance.set({'a.b.c': 3}); // {a: {b: {c: 2}}, 'a.b.c': 3}
 // >= v2.2.6 会通过路径修改属性
 instance.set({'a.b.c': 3}); // {a: {b: {c: 3}}}
+// >= v2.4.0 支持属性名包含点号'.'，使用["a.a"]的路径进行赋值
+instance.set('["a.a"]', 1); // {'a.a': 1}
 ```
 
 > Intact比较数据的变更，并非单纯地`===`，对于对象，会递归地比较每一项的值。
@@ -201,6 +203,8 @@ instance.set('num', 102, {silent: true});
 // `$changed:a.b`, `$changed:a`, `$changed`事件
 instance.set('a.b', 1);
 ```
+
+> 对于路径包含点号'.'的属性名，触发的事件名称形如`$change:["a.a"]`
 
 ### 事件回调函数
 

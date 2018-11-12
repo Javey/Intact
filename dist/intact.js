@@ -4622,25 +4622,49 @@ function values(obj) {
     return ret;
 }
 
-var pathMap = {};
-var reLeadingDot = /^\./;
-var rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g;
+// @reference https://github.com/lodash/lodash/blob/master/.internal/stringToPath.js
+var charCodeOfDot = '.'.charCodeAt(0);
 var reEscapeChar = /\\(\\)?/g;
+var rePropName = RegExp(
+// Match anything that isn't a dot or bracket.
+'[^.[\\]]+' + '|' +
+// Or match property names within brackets.
+'\\[(?:' +
+// Match a non-string expression.
+'([^"\'].*)' + '|' +
+// Or match strings (supports escaping characters).
+'(["\'])((?:(?!\\2)[^\\\\]|\\\\.)*?)\\2' + ')\\]' + '|' +
+// Or match "" as the space between consecutive dots or empty brackets.
+'(?=(?:\\.|\\[\\])(?:\\.|\\[\\]|$))', 'g');
+var pathMap = {};
 var reIsUint = /^(?:0|[1-9]\d*)$/;
+
+/**
+ * Converts `string` to a property path array.
+ *
+ * @private
+ * @param {string} string The string to convert.
+ * @returns {Array} Returns the property path array.
+ */
 function castPath(path) {
     if (typeof path !== 'string') return path;
     if (pathMap[path]) return pathMap[path];
 
-    var ret = [];
-    if (reLeadingDot.test(path)) {
+    var result = [];
+    if (path.charCodeAt(0) === charCodeOfDot) {
         result.push('');
     }
-    path.replace(rePropName, function (match, number, quote, string) {
-        ret.push(quote ? path.replace(reEscapeChar, '$1') : number || match);
+    path.replace(rePropName, function (match, expression, quote, subString) {
+        var key = match;
+        if (quote) {
+            key = subString.replace(reEscapeChar, '$1');
+        } else if (expression) {
+            key = expression;
+        }
+        result.push(key);
     });
-    pathMap[path] = ret;
-
-    return ret;
+    pathMap[path] = result;
+    return result;
 }
 function isIndex(value) {
     return (typeof value === 'number' || reIsUint.test(value)) && value > -1 && value % 1 === 0;
@@ -5115,6 +5139,7 @@ function triggerChangedEvent(o, changes) {
     o.trigger('$changed', o, changeKeys);
 }
 
+var reWithDot = /\./;
 function setProps(newProps, props) {
     var propsPathTree = {};
     var changes = {};
@@ -5125,21 +5150,27 @@ function setProps(newProps, props) {
 
         if (!isEqual(lastValue, nextValue)) {
             var tree = propsPathTree;
-            changes[prop] = [lastValue, nextValue];
 
             if (!hasOwn.call(props, prop)) {
                 // a.b.c => ['a', 'b', 'c']
                 var paths = castPath(prop);
                 var length = paths.length;
+                var path = '';
                 for (var i = 0; i < length; i++) {
                     var name = paths[i];
+                    if (reWithDot.test(name)) {
+                        name = '["' + name + '"]';
+                    } else {
+                        name = path ? '.' + name : name;
+                    }
+                    path = '' + path + name;
                     if (!tree[name]) {
                         if (i < length - 1) {
                             tree[name] = {};
-                            var path = paths.slice(0, i + 1).join('.');
                             changes[path] = [get$$1(props, path)];
                             changesWithoutNextValue.push(path);
                         } else {
+                            changes[path] = [lastValue, nextValue];
                             tree[name] = null;
                         }
                     }
@@ -5148,6 +5179,10 @@ function setProps(newProps, props) {
                 // tree = {a: {b: {c: {}}}}
                 // changes = {'a.b.c': [v1, v2], 'a': [v1], 'a.b': [v1]}
             } else {
+                if (reWithDot.test(prop)) {
+                    prop = '["' + prop + '"]';
+                }
+                changes[prop] = [lastValue, nextValue];
                 tree[prop] = null;
             }
         }
@@ -5165,11 +5200,17 @@ function setProps(newProps, props) {
 }
 
 // 深度优先遍历，得到正确的事件触发顺序
-function getChanges(tree, data, path) {
+function getChanges(tree, data) {
+    var path = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
     var changes = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
 
     for (var key in tree) {
-        var _path = path === undefined ? key : path + '.' + key;
+        // let _path = reWithDot.test(key) ?
+        // `${path}["${key}"]` :
+        // path ?
+        // `${path}.${key}` :
+        // key;
+        var _path = path + key;
         if (tree[key]) {
             getChanges(tree[key], data, _path, changes);
         }

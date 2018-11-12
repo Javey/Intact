@@ -336,25 +336,52 @@ export function values(obj) {
     return ret;
 }
 
-let pathMap = {},
-    reLeadingDot = /^\./,
-    rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g,
-    reEscapeChar = /\\(\\)?/g,
-    reIsUint = /^(?:0|[1-9]\d*)$/;
+// @reference https://github.com/lodash/lodash/blob/master/.internal/stringToPath.js
+const charCodeOfDot = '.'.charCodeAt(0);
+const reEscapeChar = /\\(\\)?/g;
+const rePropName = RegExp(
+    // Match anything that isn't a dot or bracket.
+    '[^.[\\]]+' + '|' +
+    // Or match property names within brackets.
+    '\\[(?:' +
+        // Match a non-string expression.
+        '([^"\'].*)' + '|' +
+        // Or match strings (supports escaping characters).
+        '(["\'])((?:(?!\\2)[^\\\\]|\\\\.)*?)\\2' +
+    ')\\]'+ '|' +
+    // Or match "" as the space between consecutive dots or empty brackets.
+    '(?=(?:\\.|\\[\\])(?:\\.|\\[\\]|$))'
+    , 'g'
+);
+const pathMap = {};
+const reIsUint = /^(?:0|[1-9]\d*)$/;
+
+/**
+ * Converts `string` to a property path array.
+ *
+ * @private
+ * @param {string} string The string to convert.
+ * @returns {Array} Returns the property path array.
+ */
 export function castPath(path) {
     if (typeof path !== 'string') return path;
     if (pathMap[path]) return pathMap[path];
 
-    let ret = [];
-    if (reLeadingDot.test(path)) {
+    const result = [];
+    if (path.charCodeAt(0) === charCodeOfDot) {
         result.push('');
     }
-    path.replace(rePropName, function(match, number, quote, string) {
-       ret.push(quote ? path.replace(reEscapeChar, '$1') : (number || match));
+    path.replace(rePropName, (match, expression, quote, subString) => {
+        let key = match;
+        if (quote) {
+            key = subString.replace(reEscapeChar, '$1');
+        } else if (expression) {
+            key = expression;
+        }
+        result.push(key);
     });
-    pathMap[path] = ret;
-
-    return ret;
+    pathMap[path] = result;
+    return result;
 }
 function isIndex(value) {
     return (typeof value === 'number' || reIsUint.test(value)) &&

@@ -414,7 +414,15 @@ describe('Simple Test', function() {
                         cc: [
                             {cc: 2}
                         ],
-                        'a.a': 1
+                        'a.a': 1,
+                        b: {
+                            'b.b': 1
+                        },
+                        d: {
+                            'd.d': {
+                                d: 1
+                            }
+                        }
                     }
                 },
 
@@ -453,6 +461,8 @@ describe('Simple Test', function() {
             sEql(instance.get('aa.aa.aa'), undefined);
             sEql(instance.get('aa.aa.aa', 'a'), 'a');
             sEql(instance.get('a.a'), 1);
+            sEql(instance.get('b["b.b"]'), 1);
+            sEql(instance.get(`d['d.d'].d`), 1);
         });
 
         it('set sync', function() {
@@ -494,9 +504,19 @@ describe('Simple Test', function() {
             instance.set('aaa.a', 1);
             dEql(instance.get('aaa'), {a: 1});
 
+            const $change_a$a = sinon.spy();
+            instance.on('$change:["a.a"]', $change_a$a);
             instance.set('a.a', 2);
             sEql(instance.get('a'), 11);
             sEql(instance.get('a.a'), 2);
+            sEql($change_a$a.callCount, 1);
+
+            instance.set('b["b.b"]', 2);
+            dEql(instance.get('b'), {'b.b': 2});
+            instance.set(`b['b.b']`, 3);
+            dEql(instance.get('b'), {'b.b': 3});
+            instance.set(`d['d.d'].d`, 2);
+            dEql(instance.get('d'), {'d.d': {d: 2}});
         });
 
         it('set async', function(done) {
@@ -539,7 +559,7 @@ describe('Simple Test', function() {
             instance.on('$change:a.b', $change_a_b);
             instance.on('$change:a.c', $change_a_c);
             instance.on('$change:a', $change_a);
-            instance.on('$change:a.a', $change_a_a);
+            instance.on('$change:["a.a"]', $change_a_a);
             instance.on('$change', $change);
             instance.set({
                 'a.b': 1,
