@@ -827,6 +827,29 @@ describe('Simple Test', function() {
             sEql(testFn.calledWith(instance), true);
             sEql(testFn.calledOn(instance), true);
         });
+
+        it('should trigger $changed event even if we update in updating', () => {
+            const fn = sinon.spy();
+            const Component = Intact.extend({
+                template: `<div>{self.get('a')}</div>`,
+                _init() {
+                    this.on('$changed:a', fn)
+                    this.on('$change:a', () => {
+                        this.update();
+                    });
+                }
+            });
+            const C = Intact.extend({
+                template: `<Component a={self.get('a')} />`,
+                _init() {
+                    this.Component = Component;
+                }
+            });
+            const instance = Intact.mount(C, document.body);
+            instance.set('a', 2);
+            sEql(fn.callCount, 1);
+            document.body.removeChild(instance.element);
+        });
     });
 
     describe('v-model', function() {

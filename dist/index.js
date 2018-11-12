@@ -174,6 +174,7 @@ var selfClosingTags = {
 
 function MountedQueue() {
     this.queue = [];
+    this.done = false;
 }
 MountedQueue.prototype.push = function (fn) {
     this.queue.push(fn);
@@ -187,6 +188,7 @@ MountedQueue.prototype.trigger = function () {
     while (callback = queue.shift()) {
         callback();
     }
+    this.done = true;
 };
 
 var browser = {};
@@ -5393,10 +5395,9 @@ Intact$2.prototype.update = function (lastVNode, nextVNode, fromPending) {
         return lastVNode ? lastVNode.dom : undefined;
     }
 
-    if (!nextVNode && !fromPending && this._updateCount === 0) {
-        // 如果直接调用update方法，则要清除mountedQueue
-        // 如果在render的过程中，又触发了update，则此时
-        // 不能清空
+    // mountedQueue在一次更新周期里，只能使用使用，根据done字段判断
+    // 在同一更新周期里，共用该对象，否则置为null，让misstime自己去重新初始化
+    if (this.mountedQueue && this.mountedQueue.done) {
         this.mountedQueue = null;
     }
 
@@ -5507,6 +5508,8 @@ function initAsyncComponnet(o, lastVNode, nextVNode) {
 
     // 组件销毁事件也会解绑，所以这里无需判断组件是否销毁了
     o.one('$inited', function () {
+        // 异步组件进入了新的更新周期，需要初始化mountedQueue
+        o._initMountedQueue();
         var element = o.init(lastVNode, nextVNode);
         var dom = nextVNode.dom;
         // 存在一种情况，组件的返回的元素是一个组件，他们指向同一个dom
