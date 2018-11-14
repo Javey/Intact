@@ -30,5 +30,6 @@ Intact.prototype.hydrate = function(vNode, dom) {
 };
 
 Intact.prototype.toString = function() {
-    return this.vdt.renderString(this, this.get('_blocks')); 
+    this._beforeCreate(null, this.vNode);
+    return this.vdt.renderString(this, this.get('_blocks'), this.vNode); 
 };

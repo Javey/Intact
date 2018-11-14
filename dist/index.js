@@ -359,6 +359,12 @@ function isWhiteSpace(charCode) {
     return charCode <= 160 && charCode >= 9 && charCode <= 13 || charCode == 32 || charCode == 160 || charCode == 5760 || charCode == 6158 || charCode >= 8192 && (charCode <= 8202 || charCode == 8232 || charCode == 8233 || charCode == 8239 || charCode == 8287 || charCode == 12288 || charCode == 65279);
 }
 
+function isWhiteSpaceExpectLinebreak(charCode) {
+    return charCode !== 10 && // \n
+    charCode !== 13 && // \r
+    isWhiteSpace(charCode);
+}
+
 function trimRight(str) {
     var index = str.length;
 
@@ -524,6 +530,7 @@ var utils$1 = (Object.freeze || Object)({
 	map: map,
 	className: className,
 	isWhiteSpace: isWhiteSpace,
+	isWhiteSpaceExpectLinebreak: isWhiteSpaceExpectLinebreak,
 	trimRight: trimRight,
 	trimLeft: trimLeft,
 	setDelimiters: setDelimiters,
@@ -554,11 +561,15 @@ var TypeName$1 = TypeName;
 var elementNameRegexp = /^<\w+:?\s*[\{\w\/>]/;
 // const importRegexp = /^\s*\bimport\b/;
 
-function isJSXIdentifierPart(ch) {
-    return ch === 58 || ch === 95 || ch === 45 || ch === 36 || ch === 46 || // : _ (underscore) - $ .
+function isJSIdentifierPart(ch) {
+    return ch === 95 || ch === 36 || // _ (underscore) $
     ch >= 65 && ch <= 90 || // A..Z
     ch >= 97 && ch <= 122 || // a..z
     ch >= 48 && ch <= 57; // 0..9
+}
+
+function isJSXIdentifierPart(ch) {
+    return ch === 58 || ch === 45 || ch === 46 || isJSIdentifierPart(ch); // : - .
 }
 
 function Parser() {
@@ -618,8 +629,14 @@ Parser.prototype = {
             ch === '/' && (
             // is not /* and //, this is comment
             tmp = this._char(this.index + 1)) && tmp !== '*' && tmp !== '/' && (
+            // is the first char
+            this.index === 0 ||
             // is not </, this is a end tag
-            tmp = this._char(this.index - 1)) && tmp !== '<') {
+            (tmp = this._char(this.index - 1)) && tmp !== '<' && (
+            // is not a sign of division
+            // FIXME: expect `if (a > 1) /test/`
+            tmp = this._getLastCharCode()) && !isJSIdentifierPart(tmp) && tmp !== 41 // )
+            )) {
                 // skip element(<div>) in quotes
                 this._scanStringLiteral();
             } else if (this._isElementStart()) {
@@ -656,14 +673,14 @@ Parser.prototype = {
             var ch = this._char();
             if (ch === '\'' || ch === '"') {
                 this._scanStringLiteral();
-                var _start = void 0;
+                var _start2 = void 0;
                 do {
-                    _start = this.index;
+                    _start2 = this.index;
                     this._skipWhitespaceAndJSComment();
                     if (this._char() === ';') {
                         this._updateIndex();
                     }
-                } while (_start !== this.index);
+                } while (_start2 !== this.index);
                 break;
             } else {
                 this._updateIndex();
@@ -1254,6 +1271,38 @@ Parser.prototype = {
         error$$1.source = this.source;
 
         throw error$$1;
+    },
+
+    _getLastCharCode: function _getLastCharCode() {
+        var start = this.index - 1;
+        var _start = void 0;
+        do {
+            _start = start;
+            while (start >= 0) {
+                var code = this._charCode(start);
+                if (!isWhiteSpaceExpectLinebreak(code)) {
+                    break;
+                }
+                start--;
+            }
+
+            // only check multi-line comments '/* comment */'
+            while (start >= 0) {
+                if (this._char(start) === '/' && this._char(start - 1) === '*') {
+                    start -= 2;
+                    while (start >= 0) {
+                        if (this._char(start) === '*' && this._char(start - 1) === '/') {
+                            start -= 2;
+                            break;
+                        }
+                        start--;
+                    }
+                }
+                break;
+            }
+        } while (start !== _start);
+
+        return this._charCode(start);
     }
 };
 
@@ -2797,7 +2846,7 @@ function createTextElement(vNode, parentDom) {
     return dom;
 }
 
-function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
+function createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG, createDom) {
     var props = vNode.props;
     var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
     instance.parentDom = parentDom;
@@ -2808,15 +2857,11 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
     instance.vNode = vNode;
     vNode.children = instance;
     vNode.parentVNode = parentVNode;
-    var dom = instance.init(lastVNode, vNode);
+
+    var dom = createDom(instance);
     var ref = vNode.ref;
 
     vNode.dom = dom;
-
-    if (parentDom) {
-        appendChild(parentDom, dom);
-        // parentDom.appendChild(dom);
-    }
 
     if (typeof instance.mount === 'function') {
         mountedQueue.push(function () {
@@ -2831,7 +2876,46 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
     return dom;
 }
 
+function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
+    return createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG, function (instance) {
+        var dom = instance.init(lastVNode, vNode);
+        if (parentDom) {
+            appendChild(parentDom, dom);
+        }
 
+        return dom;
+    });
+}
+
+// export function createComponentFunction(vNode, parentDom, mountedQueue) {
+// const props = vNode.props;
+// const ref = vNode.ref;
+
+// createComponentFunctionVNode(vNode);
+
+// let children = vNode.children;
+// let dom;
+// // support ComponentFunction return an array for macro usage
+// if (isArray(children)) {
+// dom = [];
+// for (let i = 0; i < children.length; i++) {
+// dom.push(createElement(children[i], parentDom, mountedQueue));
+// }
+// } else {
+// dom = createElement(vNode.children, parentDom, mountedQueue);
+// }
+// vNode.dom = dom;
+
+// // if (parentDom) {
+// // parentDom.appendChild(dom);
+// // }
+
+// if (ref) {
+// createRef(dom, ref, mountedQueue);
+// }
+
+// return dom;
+// }
 
 function createCommentElement(vNode, parentDom) {
     var dom = doc.createComment(vNode.children);
@@ -2844,7 +2928,20 @@ function createCommentElement(vNode, parentDom) {
     return dom;
 }
 
+// export function createComponentFunctionVNode(vNode) {
+// let result = vNode.tag(vNode.props);
+// if (isStringOrNumber(result)) {
+// result = createTextVNode(result);
+// } else if (process.env.NODE_ENV !== 'production') {
+// if (isArray(result)) {
+// throw new Error(`ComponentFunction ${vNode.tag.name} returned a invalid vNode`);
+// }
+// }
 
+// vNode.children = result;
+
+// return vNode;
+// }
 
 function createElements(vNodes, parentDom, mountedQueue, isRender, parentVNode, isSVG) {
     if (isStringOrNumber(vNodes)) {
@@ -3727,13 +3824,19 @@ function toString$2(vNode, parent, disableSplitText, firstChild) {
     var tag = vNode.tag;
     var props = vNode.props;
     var children = vNode.children;
+    vNode.parentVNode = parent;
 
     var html = void 0;
     if (type & Types.ComponentClass) {
         var instance = new tag(props);
+        instance.parentVNode = parent;
+        instance.vNode = vNode;
+        vNode.children = instance;
         html = instance.toString();
     } else if (type & Types.ComponentInstance) {
-        html = vNode.children.toString();
+        children.parentVNode = parent;
+        children.vNode = vNode;
+        html = children.toString();
     } else if (type & Types.Element) {
         var innerHTML = void 0;
         html = '<' + tag;
@@ -3977,36 +4080,14 @@ function hydrateElement(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG)
 }
 
 function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
-    var props = vNode.props;
-    var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
-    instance.parentDom = parentDom;
-    instance.mountedQueue = mountedQueue;
-    instance.isRender = true;
-    instance.parentVNode = parentVNode;
-    instance.isSVG = isSVG;
-    instance.vNode = vNode;
-    var newDom = instance.hydrate(vNode, dom);
+    return createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, null, true, parentVNode, isSVG, function (instance) {
+        var newDom = instance.hydrate(vNode, dom);
+        if (dom !== newDom && dom.parentNode) {
+            dom.parentNode.replaceChild(newDom, dom);
+        }
 
-    vNode.dom = newDom;
-    vNode.children = instance;
-    vNode.parentVNode = parentVNode;
-
-    if (typeof instance.mount === 'function') {
-        mountedQueue.push(function () {
-            return instance.mount(null, vNode);
-        });
-    }
-
-    var ref = vNode.ref;
-    if (typeof ref === 'function') {
-        ref(instance);
-    }
-
-    if (dom !== newDom && dom.parentNode) {
-        dom.parentNode.replaceChild(newDom, dom);
-    }
-
-    return dom;
+        return newDom;
+    });
 }
 
 function hydrateComment(vNode, dom) {
@@ -4208,11 +4289,11 @@ Vdt$1.prototype = {
 
         return this.vNode;
     },
-    renderString: function renderString$$1(data, blocks) {
+    renderString: function renderString$$1(data, blocks, parent) {
         this.data = data;
         var vNode = this.template(data, Vdt$1, blocks, this.template) || createCommentVNode('empty');
 
-        return toString$2(vNode, null, Vdt$1.configure().disableSplitText);
+        return toString$2(vNode, parent, Vdt$1.configure().disableSplitText);
     },
     update: function update(data, parentDom, queue, parentVNode, isSVG, blocks) {
         var oldVNode = this.vNode;
@@ -5796,7 +5877,8 @@ Intact$2.prototype.hydrate = function (vNode, dom) {
 };
 
 Intact$2.prototype.toString = function () {
-    return this.vdt.renderString(this, this.get('_blocks'));
+    this._beforeCreate(null, this.vNode);
+    return this.vdt.renderString(this, this.get('_blocks'), this.vNode);
 };
 
 /**
