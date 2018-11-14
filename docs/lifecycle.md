@@ -4,10 +4,16 @@
 
 ```
                         销毁后
-_init -> _create -> _mount -> _destroy
-                  | 触发更新时 
-                  v
-         _beforeUpdate -> _update
+_init -> _beforeCreate[@since v2.4.1] -> _create -> _mount -> _destroy
+                                          | 触发更新时 
+                                          v
+                                 _beforeUpdate -> _update
+```
+
+当组件后端渲染时，只会执行以下两个周期函数
+
+```
+_init -> _beforeCreate
 ```
 
 # 组件周期函数
@@ -17,6 +23,13 @@ _init -> _create -> _mount -> _destroy
 组件初始化的时候调用，此时组件还没开始渲染。我们我可以在该周期中
 做组件数据初始化的工作，绑定事件，注入变量用于模板渲染等等。
 该生命周期可以返回`Promise`来支持异步组件。
+
+## _beforeCreate `@since v2.4.1`
+
+组件初始化完成后，准备渲染DOM之前，会执行该生命周期函数。此时，组件
+实例具有`vNode` `parentVNode`属性，可以通过它来操作`VNode`对象，但是
+没有`DOM`对象，所以不要在该周期函数中操作`DOM`。该周期函数后端渲染情况下
+也会执行
 
 ## _create
 
