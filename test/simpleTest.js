@@ -583,11 +583,12 @@ describe('Simple Test', function() {
         });
     });
 
-    describe('Life cycle', function() {
-        var _init, _create, _mount, _update, _beforeUpdate, _destroy,
+    describe('Lifecycle', function() {
+        var _init, _beforeCreate, _create, _mount, _update, _beforeUpdate, _destroy,
             Component, instance;
         beforeEach(function() {
             _init = sinon.spy();
+            _beforeCreate = sinon.spy();
             _create = sinon.spy();
             _mount = sinon.spy();
             _update = sinon.spy();
@@ -596,6 +597,7 @@ describe('Simple Test', function() {
             Component = Intact.extend({
                 template: '<i></i>',
                 _init: _init,
+                _beforeCreate: _beforeCreate,
                 _create: _create,
                 _mount: _mount,
                 _update: _update,
@@ -603,49 +605,50 @@ describe('Simple Test', function() {
                 _destroy: _destroy
             });
         });
-        var assert = function(a, b, c, d, e, f) {
+        var assert = function(a, b, c, d, e, f, g) {
             sEql(_init.callCount, a);
-            sEql(_create.callCount, b);
-            sEql(_beforeUpdate.callCount, c);
-            sEql(_update.callCount, d);
-            sEql(_destroy.callCount, e);
-            sEql(_mount.callCount, f);
+            sEql(_beforeCreate.callCount, b);
+            sEql(_create.callCount, c);
+            sEql(_beforeUpdate.callCount, d);
+            sEql(_update.callCount, e);
+            sEql(_destroy.callCount, f);
+            sEql(_mount.callCount, g);
         };
 
         it('_init', function() {
             var instance = new Component();
-            assert(1, 0, 0, 0, 0, 0);
+            assert(1, 0, 0, 0, 0, 0, 0);
         });
 
         it('_create', function() {
             var instance = new Component();
             instance.init();
-            assert(1, 1, 0, 0, 0, 0);
+            assert(1, 1, 1, 0, 0, 0, 0);
         });
 
         it('_mount', function() {
             var instance = new Component();
             instance.init();
             instance.mount();
-            assert(1, 1, 0, 0, 0, 1);
+            assert(1, 1, 1, 0, 0, 0, 1);
         });
 
         it('_udpate', function() {
             var instance = new Component();
             instance.init();
             instance.set({a: 1});
-            assert(1, 1, 1, 1, 0, 0);
+            assert(1, 1, 1, 1, 1, 0, 0);
             instance.set({a: 2});
-            assert(1, 1, 2, 2, 0, 0);
+            assert(1, 1, 1, 2, 2, 0, 0);
             instance.set({a: 3}, {silent: true});
-            assert(1, 1, 2, 2, 0, 0);
+            assert(1, 1, 1, 2, 2, 0, 0);
         });
 
         it('_destroy', function() {
             var instance = new Component();
             instance.init();
             instance.destroy();
-            assert(1, 1, 0, 0, 1, 0);
+            assert(1, 1, 1, 0, 0, 1, 0);
         });
     });
 

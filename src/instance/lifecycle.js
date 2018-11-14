@@ -43,6 +43,7 @@ Intact._constructors.push(function(props) {
 });
 
 Intact.prototype._init = noop;
+Intact.prototype._beforeCreate = noop;
 Intact.prototype._create = noop;
 Intact.prototype._mount = noop;
 Intact.prototype._beforeUpdate = noop;
@@ -149,8 +150,9 @@ Intact.prototype._triggerMountedQueue = function() {
 
 
 function initSyncComponent(o, lastVNode, nextVNode) {
-    const vdt = o.vdt;
+    o._beforeCreate(lastVNode, nextVNode);
 
+    const vdt = o.vdt;
     o._startRender = true;
     // 如果key不相同，则不复用dom，直接返回新dom来替换
     if (lastVNode && lastVNode.key === nextVNode.key) {

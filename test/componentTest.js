@@ -640,63 +640,91 @@ describe('Component Test', function() {
         sEql(new C().toString(), '<div>1<!---->2</div>');
     });
 
-    it('hydrate', () => {
-        const div = document.createElement('div');
-        document.body.appendChild(div);
-        const C = Intact.extend({
-            template: `<div ev-click={self.add.bind(self)}>{self.get('count')}</div>`,
-            defaults() {
-                return {count: 1};
-            },
-            add() {
-                this.set('count', this.get('count') + 1);
-            }
-        });
+    describe('Hydrate', () => {
+        it('hydrate', () => {
+            const div = document.createElement('div');
+            document.body.appendChild(div);
+            const C = Intact.extend({
+                template: `<div ev-click={self.add.bind(self)}>{self.get('count')}</div>`,
+                defaults() {
+                    return {count: 1};
+                },
+                add() {
+                    this.set('count', this.get('count') + 1);
+                }
+            });
 
-        const c = new C();
-        div.innerHTML = c.toString();
-        eqlHtml(div, `<div>1</div>`);
-        Intact.hydrate(C, div);
-        eqlHtml(div, `<div>1</div>`);
-        dispatchEvent(div.firstChild, 'click');
-        eqlHtml(div, `<div>2</div>`);
-        document.body.removeChild(div);
-    });
-
-    it('hydrate async component', (done) => {
-        const div = document.createElement('div');
-        document.body.appendChild(div);
-        const C = Intact.extend({
-            template: `<D />`,
-            _init() {
-                this.D = D;
-            }
-        });
-        const D = Intact.extend({
-            template: `<div ev-click={self.add.bind(self)}>{self.get('count')}</div>`,
-            defaults() {
-                return {count: 1};
-            },
-            _init() {
-                return new Promise(resolve => {
-                    setTimeout(resolve, 50);
-                });
-            },
-            add() {
-                this.set('count', this.get('count') + 1);
-            }
-        });
-
-        div.innerHTML = '<div>0</div>';
-        Intact.hydrate(C, div);
-        eqlHtml(div, '<div>0</div>');
-        setTimeout(() => {
-            eqlHtml(div, '<div>1</div>');
+            const c = new C();
+            div.innerHTML = c.toString();
+            eqlHtml(div, `<div>1</div>`);
+            Intact.hydrate(C, div);
+            eqlHtml(div, `<div>1</div>`);
             dispatchEvent(div.firstChild, 'click');
-            eqlHtml(div, '<div>2</div>');
+            eqlHtml(div, `<div>2</div>`);
             document.body.removeChild(div);
-            done();
-        }, 200);
+        });
+
+        it('lifecycle', () => {
+            const div = document.createElement('div');
+            document.body.appendChild(div);
+            const C = Intact.extend({
+                template: `<div>{self.get('count')}</div>`,
+                defaults() {
+                    return {count: 1};
+                }
+            });
+
+            const methods = [
+                '_init', '_beforeCreate', '_create',
+                '_mount', '_beforeUpdate', '_update', '_destroy'
+            ];
+            for (let i in methods) {
+                C.prototype[methods[i]] = sinon.spy();
+            }
+
+            Intact.hydrate(C, div);
+            const counts = [1, 1, 1, 1, 0, 0, 0];
+            for (let i in counts) {
+                sEql(C.prototype[methods[i]].callCount, counts[i]);
+            }
+            document.body.removeChild(div);
+        });
+
+        it('hydrate async component', (done) => {
+            const div = document.createElement('div');
+            document.body.appendChild(div);
+            const C = Intact.extend({
+                template: `<D />`,
+                _init() {
+                    this.D = D;
+                }
+            });
+            const D = Intact.extend({
+                template: `<div ev-click={self.add.bind(self)}>{self.get('count')}</div>`,
+                defaults() {
+                    return {count: 1};
+                },
+                _init() {
+                    return new Promise(resolve => {
+                        setTimeout(resolve, 50);
+                    });
+                },
+                add() {
+                    this.set('count', this.get('count') + 1);
+                }
+            });
+
+            div.innerHTML = '<div>0</div>';
+            Intact.hydrate(C, div);
+            eqlHtml(div, '<div>0</div>');
+            setTimeout(() => {
+                eqlHtml(div, '<div>1</div>');
+                dispatchEvent(div.firstChild, 'click');
+                eqlHtml(div, '<div>2</div>');
+                document.body.removeChild(div);
+                done();
+            }, 200);
+        });
     });
 
     describe('SVG', () => {

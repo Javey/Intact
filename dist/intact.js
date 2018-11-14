@@ -2810,12 +2810,12 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
     instance.parentVNode = parentVNode;
     instance.isSVG = isSVG;
     instance.vNode = vNode;
+    vNode.children = instance;
+    vNode.parentVNode = parentVNode;
     var dom = instance.init(lastVNode, vNode);
     var ref = vNode.ref;
 
     vNode.dom = dom;
-    vNode.children = instance;
-    vNode.parentVNode = parentVNode;
 
     if (parentDom) {
         appendChild(parentDom, dom);
@@ -3130,10 +3130,10 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
         instance.parentVNode = parentVNode;
         instance.vNode = nextVNode;
         instance.isSVG = isSVG;
-        newDom = instance.update(lastVNode, nextVNode);
-        nextVNode.dom = newDom;
         nextVNode.children = instance;
         nextVNode.parentVNode = parentVNode;
+        newDom = instance.update(lastVNode, nextVNode);
+        nextVNode.dom = newDom;
 
         // for intact.js, the dom will not be removed and
         // the component will not be destoryed, so the ref
@@ -5362,6 +5362,7 @@ Intact$2._constructors.push(function (props) {
 });
 
 Intact$2.prototype._init = noop;
+Intact$2.prototype._beforeCreate = noop;
 Intact$2.prototype._create = noop;
 Intact$2.prototype._mount = noop;
 Intact$2.prototype._beforeUpdate = noop;
@@ -5462,8 +5463,9 @@ Intact$2.prototype._triggerMountedQueue = function () {
 };
 
 function initSyncComponent(o, lastVNode, nextVNode) {
-    var vdt = o.vdt;
+    o._beforeCreate(lastVNode, nextVNode);
 
+    var vdt = o.vdt;
     o._startRender = true;
     // 如果key不相同，则不复用dom，直接返回新dom来替换
     if (lastVNode && lastVNode.key === nextVNode.key) {
@@ -5787,6 +5789,7 @@ Intact$2.prototype.hydrate = function (vNode, dom) {
         return dom;
     }
 
+    this._beforeCreate(null, vNode);
     this._startRender = true;
     this.element = vdt.hydrate(this, dom, this.mountedQueue, this.parentDom, vNode, this.isSVG, this.get('_blocks'));
     this.rendered = true;

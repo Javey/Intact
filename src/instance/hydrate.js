@@ -15,6 +15,7 @@ Intact.prototype.hydrate = function(vNode, dom) {
         return dom;
     }
 
+    this._beforeCreate(null, vNode);
     this._startRender = true;
     this.element = vdt.hydrate(
         this, dom, this.mountedQueue, 
