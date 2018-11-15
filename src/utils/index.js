@@ -218,6 +218,7 @@ export function bind(func, context, ...args) {
 }
 
 let toString = Object.prototype.toString;
+const reEvent = /Event/;
 // Internal recursive comparison function for `isEqual`.
 var eq = function(a, b, aStack, bStack) {
     // Identical objects are equal. `0 === -0`, but they aren't identical.
@@ -250,9 +251,13 @@ var eq = function(a, b, aStack, bStack) {
             return +a === +b;
     }
 
+
     var areArrays = className === '[object Array]';
     if (!areArrays) {
         if (typeof a != 'object' || typeof b != 'object') return false;
+
+        // Event
+        if (reEvent.test(className)) return a === b;
 
         // Objects with different constructors are not equivalent, but `Object`s or `Array`s
         // from different frames are.
