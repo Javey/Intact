@@ -2520,6 +2520,12 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
 }
 
 function dispatchEvent(event, target, items, count, isClick, eventData) {
+    // if event has cancelled bubble, return directly  
+    // otherwise it is also triggered sometimes, e.g in React
+    if (event.cancelBubble) {
+        return;
+    }
+
     var eventToTrigger = items.get(target);
     if (eventToTrigger) {
         count--;
@@ -2535,9 +2541,6 @@ function dispatchEvent(event, target, items, count, isClick, eventData) {
             }
         } else {
             eventToTrigger(event);
-        }
-        if (event.cancelBubble) {
-            return;
         }
     }
     if (count > 0) {
