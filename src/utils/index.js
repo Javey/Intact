@@ -8,17 +8,18 @@ export const inBrowser = typeof window !== 'undefined';
 export const UA = inBrowser && window.navigator.userAgent.toLowerCase();
 export const isIOS = UA && /iphone|ipad|ipod|ios/.test(UA);
 
+let getPrototypeOf = Object.getPrototypeOf;
 if (!(Object.setPrototypeOf || {}.__proto__)) {
     // ie <= 10 exists getPrototypeOf but not setPrototypeOf
     let nativeGetPrototypeOf = Object.getPrototypeOf;
 
     if (typeof nativeGetPrototypeOf !== 'function') {
-        Object.getPrototypeOf = function(object) {
+       getPrototypeOf = function(object) {
             // May break if the constructor has been tampered with
             return object.__proto__ || object.constructor.prototype;;
         }
     } else {
-        Object.getPrototypeOf = function(object) {
+        getPrototypeOf = function(object) {
             // in ie <= 10 __proto__ is not supported
             // getPrototypeOf will return a native function
             // but babel will set __proto__ prototyp to target
@@ -28,12 +29,12 @@ if (!(Object.setPrototypeOf || {}.__proto__)) {
     }
     
     // fix that if ie <= 10 babel can't inherit class static methods
-    Object.setPrototypeOf = function(O, proto) {
-        extend(O, proto);
-        O.__proto__ = proto;
-    }
+    // Object.setPrototypeOf = function(O, proto) {
+    //     extend(O, proto);
+    //     O.__proto__ = proto;
+    // }
 }
-let getPrototypeOf = Object.getPrototypeOf;
+
 export {getPrototypeOf};
 
 /**

@@ -32,12 +32,5 @@ export default function Intact(props) {
 
 Intact._constructors = [];
 
-// ES7 Decorator for template
-if (Object.defineProperty) {
-    Object.defineProperty(Intact, 'template', {
-        configurable: false,
-        enumerable: false,
-        value: templateDecorator,
-        writable: true,
-    });
-}
+// for intact compatibility layer to inherit it
+Intact.template = templateDecorator;
