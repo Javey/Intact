@@ -4327,17 +4327,18 @@ var inBrowser = typeof window !== 'undefined';
 var UA = inBrowser && window.navigator.userAgent.toLowerCase();
 var isIOS = UA && /iphone|ipad|ipod|ios/.test(UA);
 
+var getPrototypeOf = Object.getPrototypeOf;
 if (!(Object.setPrototypeOf || {}.__proto__)) {
     // ie <= 10 exists getPrototypeOf but not setPrototypeOf
     var nativeGetPrototypeOf = Object.getPrototypeOf;
 
     if (typeof nativeGetPrototypeOf !== 'function') {
-        Object.getPrototypeOf = function (object) {
+        getPrototypeOf = function getPrototypeOf(object) {
             // May break if the constructor has been tampered with
             return object.__proto__ || object.constructor.prototype;
         };
     } else {
-        Object.getPrototypeOf = function (object) {
+        getPrototypeOf = function getPrototypeOf(object) {
             // in ie <= 10 __proto__ is not supported
             // getPrototypeOf will return a native function
             // but babel will set __proto__ prototyp to target
@@ -4347,12 +4348,12 @@ if (!(Object.setPrototypeOf || {}.__proto__)) {
     }
 
     // fix that if ie <= 10 babel can't inherit class static methods
-    Object.setPrototypeOf = function (O, proto) {
-        extend(O, proto);
-        O.__proto__ = proto;
-    };
+    // Object.setPrototypeOf = function(O, proto) {
+    //     extend(O, proto);
+    //     O.__proto__ = proto;
+    // }
 }
-var getPrototypeOf = Object.getPrototypeOf;
+
 /**
  * inherit
  * @param Parent
@@ -4915,15 +4916,8 @@ function Intact$2(props) {
 
 Intact$2._constructors = [];
 
-// ES7 Decorator for template
-if (Object.defineProperty) {
-    Object.defineProperty(Intact$2, 'template', {
-        configurable: false,
-        enumerable: false,
-        value: templateDecorator,
-        writable: true
-    });
-}
+// for intact compatibility layer to inherit it
+Intact$2.template = templateDecorator;
 
 /**
  * 验证属性合法性，参考vue实现
