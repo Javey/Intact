@@ -1,4 +1,4 @@
-import '../src/utils';
+import {extend} from '../src/utils';
 import 'core-js/es5';
 
 if (!(Object.setPrototypeOf || {}.__proto__)) {
@@ -22,7 +22,7 @@ if (!(Object.setPrototypeOf || {}.__proto__)) {
     
     // fix that if ie <= 10 babel can't inherit class static methods
     Object.setPrototypeOf = function(O, proto) {
-        Object.assign(O, proto);
+        extend(O, proto);
         O.__proto__ = proto;
     }
 }
