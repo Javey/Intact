@@ -192,6 +192,15 @@ if (typeof navigator !== 'undefined') {
         var version = parseInt(ua.substring(index + 5, ua.indexOf('.', index)), 10);
         browser.version = version;
         browser.isIE8 = version === 8;
+    } else if (navigator.appName === 'Netscape') {
+        browser.isIE = true;
+        // in IE 11 the navigator.appVersion says 'trident'
+        // in Edge the navigator.appVersion does not say trident
+        if (navigator.appVersion.indexOf('Trident') === -1) {
+            browser.version = 12;
+        } else {
+            browser.version = 11;
+        }
     } else if (~ua.indexOf('edge')) {
         browser.isEdge = true;
     } else if (~ua.indexOf('safari')) {
@@ -2470,6 +2479,7 @@ if (browser.isIE8) {
 }
 
 function handleEvent(name, lastEvent, nextEvent, dom) {
+    // debugger;
     if (name === 'blur') {
         name = 'focusout';
     } else if (name === 'focus') {
@@ -2773,25 +2783,16 @@ function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode
     // in IE8, the select value will be set to the first option's value forcely
     // when it is appended to parent dom. We change its value in processForm does not
     // work. So processForm after it has be appended to parent dom.
-    var isFormElement = void 0;
+    if (parentDom) {
+        appendChild(parentDom, dom);
+    }
     if (props !== EMPTY_OBJ) {
-        isFormElement = (vNode.type & Types.FormElement) > 0;
-        for (var prop in props) {
-            patchProp(prop, null, props[prop], dom, isFormElement, isSVG);
-        }
+        patchProps(null, vNode, isSVG, true);
     }
 
     var ref = vNode.ref;
     if (!isNullOrUndefined(ref)) {
         createRef(dom, ref, mountedQueue);
-    }
-
-    if (parentDom) {
-        appendChild(parentDom, dom);
-    }
-
-    if (isFormElement) {
-        processForm(vNode, dom, props, true);
     }
 
     return dom;
@@ -3135,7 +3136,7 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode
         }
 
         if (lastProps !== nextProps) {
-            patchProps(lastVNode, nextVNode, isSVG);
+            patchProps(lastVNode, nextVNode, isSVG, false);
         }
 
         if (lastClassName !== nextClassName) {
@@ -3551,30 +3552,32 @@ function patchText(lastVNode, nextVNode, parentDom) {
     }
 }
 
-function patchProps(lastVNode, nextVNode, isSVG) {
-    var lastProps = lastVNode.props;
+function patchProps(lastVNode, nextVNode, isSVG, isRender) {
+    var lastProps = lastVNode && lastVNode.props || EMPTY_OBJ;
     var nextProps = nextVNode.props;
     var dom = nextVNode.dom;
     var prop = void 0;
+
+    var isInputOrTextArea = (nextVNode.type & (Types.InputElement | Types.TextareaElement)) > 0;
     if (nextProps !== EMPTY_OBJ) {
         var isFormElement = (nextVNode.type & Types.FormElement) > 0;
         for (prop in nextProps) {
-            patchProp(prop, lastProps[prop], nextProps[prop], dom, isFormElement, isSVG);
+            patchProp(prop, lastProps[prop], nextProps[prop], dom, isFormElement, isSVG, isInputOrTextArea);
         }
         if (isFormElement) {
-            processForm(nextVNode, dom, nextProps, false);
+            processForm(nextVNode, dom, nextProps, isRender);
         }
     }
     if (lastProps !== EMPTY_OBJ) {
         for (prop in lastProps) {
             if (!isSkipProp(prop) && isNullOrUndefined(nextProps[prop]) && !isNullOrUndefined(lastProps[prop])) {
-                removeProp(prop, lastProps[prop], dom);
+                removeProp(prop, lastProps[prop], dom, isInputOrTextArea);
             }
         }
     }
 }
 
-function patchProp(prop, lastValue, nextValue, dom, isFormElement, isSVG) {
+function patchProp(prop, lastValue, nextValue, dom, isFormElement, isSVG, isInputOrTextArea) {
     if (lastValue !== nextValue) {
         if (isSkipProp(prop) || isFormElement && prop === 'value') {
             return;
@@ -3592,24 +3595,80 @@ function patchProp(prop, lastValue, nextValue, dom, isFormElement, isSVG) {
                 dom._value = value;
             }
         } else if (isNullOrUndefined(nextValue)) {
-            removeProp(prop, lastValue, dom);
+            removeProp(prop, lastValue, dom, isInputOrTextArea);
         } else if (isEventProp(prop)) {
             handleEvent(prop.substr(3), lastValue, nextValue, dom);
         } else if (isObject$1(nextValue)) {
-            patchPropByObject(prop, lastValue, nextValue, dom);
+            patchPropByObject(prop, lastValue, nextValue, dom, isInputOrTextArea);
         } else if (prop === 'innerHTML') {
             dom.innerHTML = nextValue;
         } else {
             if (isSVG && namespaces[prop]) {
                 dom.setAttributeNS(namespaces[prop], prop, nextValue);
             } else {
+                // https://github.com/Javey/Intact/issues/19
+                // IE 10/11 set placeholder will trigger input event
+                if (isInputOrTextArea && browser.isIE && (browser.version === 10 || browser.version === 11) && prop === 'placeholder') {
+                    ignoreInputEvent(dom);
+                    if (nextValue !== '') {
+                        addFocusEvent(dom);
+                    } else {
+                        removeFocusEvent(dom);
+                    }
+                }
                 dom.setAttribute(prop, nextValue);
             }
         }
     }
 }
 
-function removeProp(prop, lastValue, dom) {
+function ignoreInputEvent(dom) {
+    if (!dom.__ignoreInputEvent) {
+        var cb = function cb(e) {
+            e.stopImmediatePropagation();
+            delete dom.__ignoreInputEvent;
+            dom.removeEventListener('input', cb);
+        };
+        dom.addEventListener('input', cb);
+        dom.__ignoreInputEvent = true;
+    }
+}
+
+function addFocusEvent(dom) {
+    if (!dom.__addFocusEvent) {
+        var ignore = false;
+        var inputCb = function inputCb(e) {
+            if (ignore) e.stopImmediatePropagation();
+            ignore = false;
+        };
+        var focusCb = function focusCb() {
+            ignore = true;
+            // if we call input.focus(), the input event will not
+            // be called, so we reset it next tick
+            setTimeout(function () {
+                ignore = false;
+            });
+        };
+        dom.addEventListener('input', inputCb);
+        dom.addEventListener('focusin', focusCb);
+        dom.addEventListener('focusout', focusCb);
+        dom.__addFocusEvent = {
+            focusCb: focusCb, inputCb: inputCb
+        };
+    }
+}
+
+function removeFocusEvent(dom) {
+    var cbs = dom.__addFocusEvent;
+    if (cbs) {
+        dom.addEventListener('input', cbs.inputCb);
+        dom.addEventListener('focusin', cbs.focusCb);
+        dom.addEventListener('focusout', cbs.focusCb);
+        delete dom.__addFocusEvent;
+    }
+}
+
+function removeProp(prop, lastValue, dom, isInputOrTextArea) {
     if (!isNullOrUndefined(lastValue)) {
         switch (prop) {
             case 'value':
@@ -3648,6 +3707,9 @@ function removeProp(prop, lastValue, dom) {
                 }
             }
         } else {
+            if (isInputOrTextArea && browser.isIE && (browser.version === 10 || browser.version === 11) && prop === 'placeholder') {
+                removeFocusEvent(dom);
+            }
             dom.removeAttribute(prop);
         }
     }
@@ -3664,9 +3726,9 @@ var removeDataset = browser.isIE || browser.isSafari ? function (lastValue, dom)
     }
 };
 
-function patchPropByObject(prop, lastValue, nextValue, dom) {
+function patchPropByObject(prop, lastValue, nextValue, dom, isInputOrTextArea) {
     if (lastValue && !isObject$1(lastValue) && !isNullOrUndefined(lastValue)) {
-        removeProp(prop, lastValue, dom);
+        removeProp(prop, lastValue, dom, isInputOrTextArea);
         lastValue = null;
     }
     switch (prop) {
