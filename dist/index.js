@@ -226,6 +226,10 @@ var namespaces = {
     'xml:space': xmlNS
 };
 
+var hooks = {
+    beforeInsert: null
+};
+
 /** 
  * @fileoverview utility methods
  * @author javey
@@ -2771,6 +2775,10 @@ function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode
         }
     }
 
+    if (hooks.beforeInsert) {
+        hooks.beforeInsert(vNode);
+    }
+
     // in IE8, the select value will be set to the first option's value forcely
     // when it is appended to parent dom. We change its value in processForm does not
     // work. So processForm after it has be appended to parent dom.
@@ -4268,7 +4276,8 @@ var miss = (Object.freeze || Object)({
 	hydrateRoot: hydrateRoot,
 	hydrate: hydrate,
 	Types: Types,
-	VNode: VNode
+	VNode: VNode,
+	hooks: hooks
 });
 
 var parser = new Parser();
