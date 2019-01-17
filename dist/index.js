@@ -4375,7 +4375,7 @@ function compile(source, options) {
 
 Vdt$1.parser = parser;
 Vdt$1.stringifier = stringifier;
-Vdt$1.miss = miss;
+Vdt$1.miss = extend({}, miss);
 Vdt$1.compile = compile;
 Vdt$1.utils = utils$1;
 Vdt$1.setDelimiters = setDelimiters;
