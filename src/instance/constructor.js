@@ -1,4 +1,4 @@
-import {autobind, templateDecorator} from '../utils';
+import {autobind, templateDecorator, extend, result} from '../utils';
 import Vdt from 'vdt/src/client';
 
 export default function Intact(props) {
@@ -25,8 +25,20 @@ export default function Intact(props) {
     // for compatibility v1.0
     this.widgets = this.refs;
 
+    // ignore undefined value
+    const _props = {};
+    this.props = extend({}, result(this, 'defaults'));
+    if (props) {
+        for (let key in props) {
+            const value = props[key];
+            if (value !== undefined) {
+                _props[key] = value;
+                this.props[key] = value;
+            }
+        }
+    }
     for (let i = 0; i < Intact._constructors.length; i++) {
-        Intact._constructors[i].call(this, props);
+        Intact._constructors[i].call(this, _props);
     }
 }
 

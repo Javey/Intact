@@ -6,7 +6,7 @@ import {
 import validateProps from './validate-props';
 
 Intact._constructors.push(function(props) {
-    this.props = extend({}, result(this, 'defaults'), props);
+    // this.props = extend({}, result(this, 'defaults'), props);
 
     this.uniqueId = this.props.widget || uniqueId('widget');
 
@@ -202,11 +202,6 @@ function setProps(newProps, props) {
 // 深度优先遍历，得到正确的事件触发顺序
 function getChanges(tree, data, path = '', changes = []) {
     for (let key in tree) {
-        // let _path = reWithDot.test(key) ?
-            // `${path}["${key}"]` :
-            // path ?
-                // `${path}.${key}` :
-                // key;
         const _path = path + key;
         if (tree[key]) {
             getChanges(tree[key], data, _path, changes);

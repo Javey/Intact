@@ -4971,8 +4971,20 @@ function Intact$2(props) {
     // for compatibility v1.0
     this.widgets = this.refs;
 
+    // ignore undefined value
+    var _props = {};
+    this.props = extend({}, result(this, 'defaults'));
+    if (props) {
+        for (var key in props) {
+            var value = props[key];
+            if (value !== undefined) {
+                _props[key] = value;
+                this.props[key] = value;
+            }
+        }
+    }
     for (var i = 0; i < Intact$2._constructors.length; i++) {
-        Intact$2._constructors[i].call(this, props);
+        Intact$2._constructors[i].call(this, _props);
     }
 }
 
@@ -5105,7 +5117,7 @@ function isPlainObject(value) {
 }
 
 Intact$2._constructors.push(function (props) {
-    this.props = extend({}, result(this, 'defaults'), props);
+    // this.props = extend({}, result(this, 'defaults'), props);
 
     this.uniqueId = this.props.widget || uniqueId('widget');
 
@@ -5311,11 +5323,6 @@ function getChanges(tree, data) {
     var changes = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
 
     for (var key in tree) {
-        // let _path = reWithDot.test(key) ?
-        // `${path}["${key}"]` :
-        // path ?
-        // `${path}.${key}` :
-        // key;
         var _path = path + key;
         if (tree[key]) {
             getChanges(tree[key], data, _path, changes);
@@ -5690,6 +5697,8 @@ function patchProps$1(o, lastProps, nextProps) {
         var lastPropsWithoutEvents = void 0;
         var nextPropsWithoutEvents = void 0;
 
+        var defaults = result(o, 'defaults') || EMPTY_OBJ;
+
         // 如果该属性只存在lastProps中，则是事件就解绑；
         // 是属性就加入lastPropsWithoutEvents对象，待会儿再处理
         var handlePropOnlyInLastProps = function handlePropOnlyInLastProps(prop) {
@@ -5723,7 +5732,8 @@ function patchProps$1(o, lastProps, nextProps) {
                     if (!nextPropsWithoutEvents) {
                         nextPropsWithoutEvents = {};
                     }
-                    nextPropsWithoutEvents[prop] = nextValue;
+                    // if the next value is undefined, set it to default value
+                    nextPropsWithoutEvents[prop] = nextValue === undefined ? defaults[prop] : nextValue;
                 }
             }
 
@@ -5745,7 +5755,6 @@ function patchProps$1(o, lastProps, nextProps) {
         }
 
         // 将不存在nextProps中，但存在lastProps中的属性，统统置为默认值
-        var defaults = result(o, 'defaults') || EMPTY_OBJ;
         if (lastPropsWithoutEvents) {
             for (var _prop3 in lastPropsWithoutEvents) {
                 o.set(_prop3, defaults[_prop3], options);

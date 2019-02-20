@@ -79,6 +79,27 @@ describe('Simple Test', function() {
             sEql(instance._updateCount, 0);
         });
 
+        it('prop that value is undefined should be set to default value', () => {
+            const receiveA = sinon.spy();
+            const receiveB = sinon.spy();
+            const Component = Intact.extend({
+                template: '<div></div>',
+
+                defaults() {
+                    return {a: 1, b: 2};
+                },
+
+                _init() {
+                    this.on('$receive:a', receiveA);
+                    this.on('$receive:b', receiveB);
+                }
+            });
+            const instance = new Component({a: undefined, b: 1});
+            dEql(instance.get(), {a: 1, b: 1});
+            sEql(receiveA.callCount, 0);
+            sEql(receiveB.callCount, 1);
+        });
+
         it('widgets reference', function() {
             var TestComponent = Intact.extend({
                 template: '<Component widget="test" />',
@@ -714,13 +735,13 @@ describe('Simple Test', function() {
 
             var instance = new Component();
             instance.init();
-            sEql(testFn.callCount, 1);
+            sEql(testFn.callCount, 0);
             instance.set('a', 1);
-            sEql(testFn.callCount, 2);
+            sEql(testFn.callCount, 1);
             instance.set('a', 2);
-            sEql(testFn.callCount, 3);
+            sEql(testFn.callCount, 2);
             instance.update();
-            sEql(testFn.callCount, 3);
+            sEql(testFn.callCount, 2);
         });
 
         it('change attributes to trigger change event', function() {
