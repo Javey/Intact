@@ -292,8 +292,6 @@ export function patchProps(o, lastProps, nextProps, options = {update: false, _f
         let lastPropsWithoutEvents;
         let nextPropsWithoutEvents;
 
-        const defaults = result(o, 'defaults') || EMPTY_OBJ; 
-
         // 如果该属性只存在lastProps中，则是事件就解绑；
         // 是属性就加入lastPropsWithoutEvents对象，待会儿再处理
         const handlePropOnlyInLastProps = (prop) => {
@@ -327,8 +325,7 @@ export function patchProps(o, lastProps, nextProps, options = {update: false, _f
                     if (!nextPropsWithoutEvents) {
                         nextPropsWithoutEvents = {};
                     }
-                    // if the next value is undefined, set it to default value
-                    nextPropsWithoutEvents[prop] = nextValue === undefined ? defaults[prop] : nextValue;
+                    nextPropsWithoutEvents[prop] = nextValue;
                 }
             }
 
@@ -350,6 +347,7 @@ export function patchProps(o, lastProps, nextProps, options = {update: false, _f
         }
 
         // 将不存在nextProps中，但存在lastProps中的属性，统统置为默认值
+        const defaults = result(o, 'defaults') || EMPTY_OBJ; 
         if (lastPropsWithoutEvents) {
             for (let prop in lastPropsWithoutEvents) {
                 o.set(prop, defaults[prop], options);
