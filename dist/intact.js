@@ -2296,8 +2296,14 @@ function normalizeChildren(vNodes, isAddKey) {
         return childNodes.length ? childNodes : null;
     } else if (isComponentInstance(vNodes)) {
         return createComponentInstanceVNode(vNodes);
-    } else if (vNodes.type && !isNullOrUndefined(vNodes.dom)) {
-        return directClone(vNodes);
+    } else if (vNodes.type) {
+        if (!isNullOrUndefined(vNodes.dom) || vNodes.$) {
+            return directClone(vNodes);
+        }
+
+        // add a flag to indicate that we have handle the vNode
+        // when it came back we should clone it
+        vNodes.$ = true;
     }
     return vNodes;
 }
