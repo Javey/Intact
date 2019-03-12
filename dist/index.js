@@ -2371,7 +2371,7 @@ function directClone(vNode) {
             }
         }
 
-        newVNode = new VNode(type, vNode.tag, props, vNode.children, null, vNode.key, vNode.ref);
+        newVNode = new VNode(type, vNode.tag, props, vNode.children, vNode.className, vNode.key, vNode.ref);
 
         var newProps = newVNode.props;
         var newChildren = directCloneChildren(newProps.children);
@@ -4283,7 +4283,8 @@ var miss = (Object.freeze || Object)({
 	hydrate: hydrate,
 	Types: Types,
 	VNode: VNode,
-	hooks: hooks
+	hooks: hooks,
+	clone: directClone
 });
 
 var parser = new Parser();
