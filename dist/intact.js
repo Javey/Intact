@@ -131,7 +131,8 @@ var booleanProps = {
     hidden: true,
     autofocus: true,
     selected: true,
-    indeterminate: true
+    indeterminate: true,
+    multiple: true
 };
 
 var strictProps = {
