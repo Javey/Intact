@@ -1,5 +1,8 @@
-import {endEvents} from './utils';
+import {endEvents, addClass, removeClass} from './utils';
 import Vdt from 'vdt/src/client';
+
+const h = Vdt.miss.h;
+const {className: c, extend: e} = Vdt.utils;
 
 const prototype = {
     defaults() {
@@ -16,11 +19,11 @@ const prototype = {
     },
 
     template() {
-        const h = Vdt.miss.h;
         const self = this.data;
         const tagName = self.get('a:tag');
         const props = {};
         const _props = self.get();
+        const _staticClass = self._staticClass;
 
         for (let key in _props) {
             if (
@@ -32,6 +35,8 @@ const prototype = {
                 props[key] = _props[key];
             }
         }
+        const oClassName = props.className;
+        props.className = c(e({[oClassName]: oClassName}, _staticClass)) || undefined;
 
         return h(tagName, props, self.get('children'));
     },
@@ -51,7 +56,19 @@ const prototype = {
         this.children = [];
         this._enteringAmount = 0;
         this._leavingAmount = 0;
+
+        this._staticClass = {};
     },
+
+    _addClass(className) {
+        this._staticClass[className] = true;
+        addClass(this.element, className);
+    },
+
+    _removeClass(className) {
+        delete this._staticClass[className];
+        removeClass(this.element, className);
+    }
 };
 
 export default prototype;

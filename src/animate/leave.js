@@ -1,5 +1,5 @@
 import prototype from './prototype';
-import {addClass, removeClass, TransitionEvents, nextFrame} from './utils';
+import {TransitionEvents, nextFrame} from './utils';
 import {noop, inBrowser} from '../utils';
 import checkMode from './check-mode';
 
@@ -61,7 +61,7 @@ export default function leave(o) {
     // 则leaveActiveClass和leaveClass都放到下一帧添加
     // 否则leaveClass和enterClass一样就不会有动画效果
     if (o._triggeredEnter && o.get('a:css')) {
-        addClass(element, o.leaveActiveClass);
+        o._addClass(o.leaveActiveClass);
     }
 
     // TransitionEvents.on(element, o._leaveEnd);
@@ -91,8 +91,8 @@ function triggerLeave(o) {
 
     const element = o.element;
     if (o.get('a:css')) {
-        addClass(element, o.leaveActiveClass);
-        addClass(element, o.leaveClass);
+        o._addClass(o.leaveActiveClass);
+        o._addClass(o.leaveClass);
     }
 
     o.trigger('a:leave', element, o._leaveEnd);
@@ -106,8 +106,8 @@ function addLeaveEndCallback(o) {
 
         if (o.get('a:css') && !o.get('a:disabled')) {
             e && e.stopPropagation && e.stopPropagation();
-            removeClass(element, o.leaveClass);
-            removeClass(element, o.leaveActiveClass);
+            o._removeClass(o.leaveClass);
+            o._removeClass(o.leaveActiveClass);
         }
         if (o._triggeredLeave) {
             const s = element.style;

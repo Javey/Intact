@@ -491,4 +491,19 @@ describe('Animate Test', function() {
             done();
         }, 100);
     });
+
+    it('should handle element which has className correctly ', (done) => {
+        const C = Intact.extend({
+            template: `<div><Animate v-if={self.get('show')} class={{"test": true, "a": self.get('a')}}>test</Animate></div>`
+        });
+        const c = Intact.mount(C, document.body);
+        c.set('show', true);
+        c.set('a', true);
+
+        setTimeout(() => {
+            sEql(c.element.firstChild.className, 'test a');
+            document.body.removeChild(c.element);
+            done();
+        }, 1500);
+    })
 });

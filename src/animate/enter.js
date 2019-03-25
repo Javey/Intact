@@ -1,6 +1,6 @@
 import prototype from './prototype';
 import {
-    addClass, removeClass, getAnimateType,
+    getAnimateType,
     nextFrame, TransitionEvents
 } from './utils';
 import checkMode from './check-mode';
@@ -64,14 +64,14 @@ export default function enter(o) {
             if (o.lastInstance._triggeredLeave) {
                 // addClass(element, enterActiveClass);
                 // 保持连贯，添加leaveActiveClass
-                addClass(element, o.leaveActiveClass);
+                o._addClass(o.leaveActiveClass);
             } else {
                 // 如果上一个元素还没来得及做动画，则当做新元素处理
-                addClass(element, enterClass);
+                o._addClass(enterClass);
             }
         }
     } else if (isCss) {
-        addClass(element, enterClass);
+        o._addClass(enterClass);
     }
     TransitionEvents.on(element, o._enterEnd);
 
@@ -92,11 +92,11 @@ function triggerEnter(o) {
 
     if (o.get('a:css')) {
         if (o._entering === false) {
-            return removeClass(element, o.enterActiveClass);
+            return o._removeClass(o.enterActiveClass);
         }
-        addClass(element, o.enterActiveClass);
-        removeClass(element, o.enterClass);
-        removeClass(element, o.leaveActiveClass);
+        o._addClass(o.enterActiveClass);
+        o._removeClass(o.enterClass);
+        o._removeClass(o.leaveActiveClass);
     }
 
     o.trigger(o.enterEventName, element, o._enterEnd);
@@ -161,8 +161,8 @@ function addEnterEndCallback(o) {
 
         if (o.get('a:css') && !o.get('a:disabled')) {
             e && e.stopPropagation && e.stopPropagation();
-            removeClass(element, o.enterClass);
-            removeClass(element, o.enterActiveClass);
+            o._removeClass(o.enterClass);
+            o._removeClass(o.enterActiveClass);
         }
 
         TransitionEvents.off(element, o._enterEnd);

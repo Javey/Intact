@@ -2,10 +2,7 @@ import prototype from './prototype';
 import {CSSMatrix} from './utils';
 import enter from './enter';
 import leave from './leave';
-import {
-    getAnimateType, addClass, 
-    removeClass, TransitionEvents
-} from './utils';
+import {getAnimateType, TransitionEvents} from './utils';
 
 prototype._beforeUpdate = function(lastVNode, vNode) {
     // 更新之前，这里的children不包含本次更新mount进来的元素
@@ -187,13 +184,13 @@ function move(o) {
     const element = o.element;
     const s = element.style;
 
-    addClass(element, o.moveClass);
+    o._addClass(o.moveClass);
 
     o._moveEnd = (e) => {
         e && e.stopPropagation();
         if (!e || /transform$/.test(e.propertyName)) {
             TransitionEvents.off(element, o._moveEnd);
-            removeClass(element, o.moveClass);
+            o._removeClass(o.moveClass);
             s.position = s.left = s.top = s.transform = s.WebkitTransform = '';
             o.dx = o.dy = 0;
             o._moving = false;

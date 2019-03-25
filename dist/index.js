@@ -6123,6 +6123,12 @@ var CSSMatrix = typeof WebKitCSSMatrix !== 'undefined' ? WebKitCSSMatrix : funct
     }
 };
 
+var h = Vdt$1.miss.h;
+var _Vdt$utils = Vdt$1.utils;
+var c = _Vdt$utils.className;
+var e$1 = _Vdt$utils.extend;
+
+
 var prototype = {
     defaults: function defaults() {
         return {
@@ -6137,17 +6143,21 @@ var prototype = {
         };
     },
     template: function template() {
-        var h = Vdt$1.miss.h;
+        var _e;
+
         var self = this.data;
         var tagName = self.get('a:tag');
         var props = {};
         var _props = self.get();
+        var _staticClass = self._staticClass;
 
         for (var key in _props) {
             if (key !== 'ref' && key !== 'key' && (key[0] !== 'a' || key[1] !== ':') && key.substr(0, 5) !== 'ev-a:') {
                 props[key] = _props[key];
             }
         }
+        var oClassName = props.className;
+        props.className = c(e$1((_e = {}, _e[oClassName] = oClassName, _e), _staticClass)) || undefined;
 
         return h(tagName, props, self.get('children'));
     },
@@ -6166,6 +6176,16 @@ var prototype = {
         this.children = [];
         this._enteringAmount = 0;
         this._leavingAmount = 0;
+
+        this._staticClass = {};
+    },
+    _addClass: function _addClass(className) {
+        this._staticClass[className] = true;
+        addClass(this.element, className);
+    },
+    _removeClass: function _removeClass(className) {
+        delete this._staticClass[className];
+        removeClass(this.element, className);
     }
 };
 
@@ -6263,7 +6283,7 @@ function leave(o) {
     // 则leaveActiveClass和leaveClass都放到下一帧添加
     // 否则leaveClass和enterClass一样就不会有动画效果
     if (o._triggeredEnter && o.get('a:css')) {
-        addClass(element, o.leaveActiveClass);
+        o._addClass(o.leaveActiveClass);
     }
 
     // TransitionEvents.on(element, o._leaveEnd);
@@ -6293,8 +6313,8 @@ function triggerLeave(o) {
 
     var element = o.element;
     if (o.get('a:css')) {
-        addClass(element, o.leaveActiveClass);
-        addClass(element, o.leaveClass);
+        o._addClass(o.leaveActiveClass);
+        o._addClass(o.leaveClass);
     }
 
     o.trigger('a:leave', element, o._leaveEnd);
@@ -6311,8 +6331,8 @@ function addLeaveEndCallback(o) {
 
         if (o.get('a:css') && !o.get('a:disabled')) {
             e && e.stopPropagation && e.stopPropagation();
-            removeClass(element, o.leaveClass);
-            removeClass(element, o.leaveActiveClass);
+            o._removeClass(o.leaveClass);
+            o._removeClass(o.leaveActiveClass);
         }
         if (o._triggeredLeave) {
             var s = element.style;
@@ -6397,14 +6417,14 @@ function enter(o) {
             if (o.lastInstance._triggeredLeave) {
                 // addClass(element, enterActiveClass);
                 // 保持连贯，添加leaveActiveClass
-                addClass(element, o.leaveActiveClass);
+                o._addClass(o.leaveActiveClass);
             } else {
                 // 如果上一个元素还没来得及做动画，则当做新元素处理
-                addClass(element, enterClass);
+                o._addClass(enterClass);
             }
         }
     } else if (isCss) {
-        addClass(element, enterClass);
+        o._addClass(enterClass);
     }
     TransitionEvents.on(element, o._enterEnd);
 
@@ -6427,11 +6447,11 @@ function triggerEnter(o) {
 
     if (o.get('a:css')) {
         if (o._entering === false) {
-            return removeClass(element, o.enterActiveClass);
+            return o._removeClass(o.enterActiveClass);
         }
-        addClass(element, o.enterActiveClass);
-        removeClass(element, o.enterClass);
-        removeClass(element, o.leaveActiveClass);
+        o._addClass(o.enterActiveClass);
+        o._removeClass(o.enterClass);
+        o._removeClass(o.leaveActiveClass);
     }
 
     o.trigger(o.enterEventName, element, o._enterEnd);
@@ -6489,8 +6509,8 @@ function addEnterEndCallback(o) {
 
         if (o.get('a:css') && !o.get('a:disabled')) {
             e && e.stopPropagation && e.stopPropagation();
-            removeClass(element, o.enterClass);
-            removeClass(element, o.enterActiveClass);
+            o._removeClass(o.enterClass);
+            o._removeClass(o.enterActiveClass);
         }
 
         TransitionEvents.off(element, o._enterEnd);
@@ -6789,13 +6809,13 @@ function move(o) {
     var element = o.element;
     var s = element.style;
 
-    addClass(element, o.moveClass);
+    o._addClass(o.moveClass);
 
     o._moveEnd = function (e) {
         e && e.stopPropagation();
         if (!e || /transform$/.test(e.propertyName)) {
             TransitionEvents.off(element, o._moveEnd);
-            removeClass(element, o.moveClass);
+            o._removeClass(o.moveClass);
             s.position = s.left = s.top = s.transform = s.WebkitTransform = '';
             o.dx = o.dy = 0;
             o._moving = false;
