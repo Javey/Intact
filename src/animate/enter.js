@@ -207,6 +207,10 @@ function addUnmountCallback(o, vNode) {
                 parentInstance.updateChildren.push(o);
                 o._delayLeave = true;
             } else {
+                // add a flag to indicate that this child will leave but we maybe call
+                // _beforeUpdate twice before _update, so let _beforeUpdate reserve it
+                // ksc-fe/kpc#238 
+                o._needLeave = true;
                 parentInstance.unmountChildren.push(o);
             }
             parentInstance.children.push(o);

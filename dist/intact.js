@@ -6558,6 +6558,10 @@ function addUnmountCallback(o, vNode) {
                 parentInstance.updateChildren.push(o);
                 o._delayLeave = true;
             } else {
+                // add a flag to indicate that this child will leave but we maybe call
+                // _beforeUpdate twice before _update, so let _beforeUpdate reserve it
+                // ksc-fe/kpc#238 
+                o._needLeave = true;
                 parentInstance.unmountChildren.push(o);
             }
             parentInstance.children.push(o);
@@ -6636,6 +6640,12 @@ prototype._beforeUpdate = function (lastVNode, vNode) {
         if (instance._delayLeave) {
             reservedChildren.push(instance);
             this.updateChildren.push(instance);
+        } else if (instance._needLeave) {
+            // when we call _beforeUpdate twice before _update
+            // the unmount children will miss
+            // so we add a flag for the children and reserve it
+            // ksc-fe/kpc#238
+            reservedChildren.push(instance);
         }
     }
 
@@ -6648,7 +6658,17 @@ prototype._update = function (lastVNode, vNode, isFromCheckMode) {
         parentInstance = this.parentInstance;
         if (parentInstance) {
             parentInstance.updateChildren.push(this);
-            parentInstance.children.push(this);
+            // when we call _beforeUpdate twice then call _update twice
+            // this instance may exist in childaren
+            // so we don't push it, but we need update position of it
+            // ksc-fe/kpc#238
+            var _children = parentInstance.children;
+            var index = _children.indexOf(this);
+            if (!~index) {
+                _children.push(this);
+            } else {
+                this._needUpdatePosition = true;
+            }
         }
     }
 
@@ -6679,6 +6699,14 @@ prototype._update = function (lastVNode, vNode, isFromCheckMode) {
     // 因为存在moving元素被unmount又被mount的情况
     // 所以最先处理
     if (isMove) {
+        // if the _needUpdatePosition is true, see bellow for detail, update the position
+        updateChildren.forEach(function (instance) {
+            if (!instance._leaving && instance._needUpdatePosition) {
+                instance.position = getPosition(instance);
+            }
+            instance._needUpdatePosition = false;
+        });
+
         mountChildren.forEach(function (instance) {
             // 如果当前元素是从上一个unmount的元素来的，
             // 则要初始化最新位置，因为beforeUpdate中
@@ -6721,6 +6749,7 @@ prototype._update = function (lastVNode, vNode, isFromCheckMode) {
 
         // 获取所有元素的新位置
         children.forEach(function (instance) {
+            instance._needLeave = false;
             instance.newPosition = getPosition(instance);
         });
 
@@ -6755,7 +6784,9 @@ prototype._update = function (lastVNode, vNode, isFromCheckMode) {
 
     // unmount元素做leave动画
     unmountChildren.forEach(function (instance) {
-        return leave(instance);
+        // for call _beforeUpdate twice before _update, ksc-fe/kpc#238
+        children.splice(children.indexOf(instance), 1);
+        leave(instance);
     });
 
     this.mountChildren = [];
