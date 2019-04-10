@@ -6657,7 +6657,9 @@ prototype._update = function (lastVNode, vNode, isFromCheckMode) {
     if (!this.get('a:disabled')) {
         parentInstance = this.parentInstance;
         if (parentInstance) {
-            parentInstance.updateChildren.push(this);
+            if (!this._needLeave) {
+                parentInstance.updateChildren.push(this);
+            }
             // when we call _beforeUpdate twice then call _update twice
             // this instance may exist in childaren
             // so we don't push it, but we need update position of it
