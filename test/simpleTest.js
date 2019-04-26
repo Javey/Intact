@@ -686,23 +686,30 @@ describe('Simple Test', function() {
 
         it('should trigger $receive event when init', function() {
             const fn = sinon.spy();
+            const fnReceive = sinon.spy((...args) => console.log(args));
             const A = Intact.extend({
                 template: `<div></div>`,
                 _init() {
                     this.on('$receive:a', fn);
+                    this.on('$receive', fnReceive);
                 }
             });
 
             const a = new A({a: 1});
             sEql(fn.callCount, 1);
+            sEql(fnReceive.callCount, 1);
+            sEql(fnReceive.calledAfter(fn), true);
+            sEql(fnReceive.calledWith(a, ['a']), true);
         });
 
         it('should trigger $receive event when received a different prop', function() {
             var testFn = sinon.spy();
+            const receiveFn= sinon.spy();
             var C = Intact.extend({
                 template: `<div></div>`,
                 _init: function() {
                     this.on('$receive:a', testFn);
+                    this.on('$receive', receiveFn);
                 }
             });
             var Component = Intact.extend({
@@ -715,12 +722,16 @@ describe('Simple Test', function() {
             var instance = new Component();
             instance.init();
             sEql(testFn.callCount, 1);
+            sEql(receiveFn.callCount, 1);
             instance.set('a', 1);
             sEql(testFn.callCount, 2);
+            sEql(receiveFn.callCount, 2);
             instance.set('a', 2);
             sEql(testFn.callCount, 3);
+            sEql(receiveFn.callCount, 3);
             instance.update();
             sEql(testFn.callCount, 3);
+            sEql(receiveFn.callCount, 3);
         });
 
         it('change attributes to trigger change event', function() {

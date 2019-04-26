@@ -25,9 +25,14 @@ Intact._constructors.push(function(props) {
         this.inited = true;
 
         // trigger $receive event when initialize component
+        let keys = [];
         each(props, (value, key) => {
             this.trigger(`$receive:${key}`, this, value);
+            keys.push(key);
         });
+        if (keys.length) {
+            this.trigger(`$receive`, this, keys);
+        }
         this.trigger('$inited', this);
     };
     const ret = this._init();

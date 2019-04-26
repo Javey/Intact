@@ -5196,6 +5196,9 @@ Intact$2.prototype.set = function _set(key, val, options) {
             this.trigger('$change:' + _prop, this, values$$1[1], values$$1[0]);
         }
 
+        if (options._fromPatchProps) {
+            this.trigger('$receive', this, changeKeys);
+        }
         this.trigger('$change', this, changeKeys);
 
         if (options.update && this._startRender) {
@@ -5451,9 +5454,14 @@ Intact$2._constructors.push(function (props) {
         _this.inited = true;
 
         // trigger $receive event when initialize component
+        var keys$$1 = [];
         each(props, function (value, key) {
             _this.trigger('$receive:' + key, _this, value);
+            keys$$1.push(key);
         });
+        if (keys$$1.length) {
+            _this.trigger('$receive', _this, keys$$1);
+        }
         _this.trigger('$inited', _this);
     };
     var ret = this._init();

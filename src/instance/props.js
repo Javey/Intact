@@ -84,6 +84,9 @@ Intact.prototype.set = function _set(key, val, options) {
             this.trigger(`$change:${prop}`, this, values[1], values[0]);
         }
 
+        if (options._fromPatchProps) {
+            this.trigger(`$receive`, this, changeKeys);
+        }
         this.trigger('$change', this, changeKeys);
 
         if (options.update && this._startRender) {
