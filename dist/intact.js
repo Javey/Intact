@@ -6508,6 +6508,12 @@ function initClassName(o, newValue, oldValue) {
 
     if (oldValue) {
         element.className = element.className.replace(new RegExp('\\b(' + oldValue + '(?=\\-(appear|enter|leave|move)))', 'g'), newValue);
+        var staticClass = {};
+        var index = oldValue.length;
+        for (var key in this._staticClass) {
+            staticClass[newValue + key.substring(index)] = true;
+        }
+        this._staticClass = staticClass;
     }
 }
 

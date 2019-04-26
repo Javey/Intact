@@ -150,6 +150,12 @@ function initClassName(o, newValue, oldValue) {
             new RegExp(`\\b(${oldValue}(?=\\-(appear|enter|leave|move)))`, 'g'),
             newValue
         );
+        const staticClass = {};
+        const index = oldValue.length;
+        for (let key in this._staticClass) {
+            staticClass[newValue + key.substring(index)] = true;
+        }
+        this._staticClass = staticClass;
     }
 }
 
