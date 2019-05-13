@@ -2,6 +2,7 @@ import prototype from './prototype';
 import {TransitionEvents, nextFrame} from './utils';
 import {noop, inBrowser} from '../utils';
 import checkMode from './check-mode';
+import {Types} from 'misstime/src/vnode';
 
 prototype.init = inBrowser ? 
     function(lastVNode, nextVNode) {
@@ -16,7 +17,7 @@ prototype.init = inBrowser ?
         return this._superApply(arguments); 
     };
 
-prototype.destroy = function(lastVNode, nextVNode, parentDom) {
+prototype.destroy = function(lastVNode, nextVNode, parentDom, _directly) {
     // 1: 不存在parentDom，有两种情况：
     //      1): 父元素也要被销毁，此时: !parentDom && lastVNode && !nextVNode
     //      2): 该元素将被替换，此时：!parentDom && lastVNode && nextVNode
@@ -25,14 +26,27 @@ prototype.destroy = function(lastVNode, nextVNode, parentDom) {
     // 2: 如果该元素已经动画完成，直接销毁
     // 3: 如果直接调用destroy方法，则直接销毁，此时：!lastVNode && !nextVNode && !parentDom
     // 4: 如果不是延迟destroy子元素，则立即销毁
+    // 5: 如果是禁止动画的元素，且该元素是组件直接返回的动画元素，则直接销毁
     if (!this.get('a:delayDestroy') ||
-        !parentDom && !nextVNode && this.parentVNode.dom !== this.element ||
-        // this.get('a:disabled') || 
-        this._leaving === false
+        !parentDom && !nextVNode && !isRemoveDirectly(this) ||
+        this._leaving === false ||
+        _directly
     ) {
         this._super(lastVNode, nextVNode, parentDom);
     }
 };
+
+function isRemoveDirectly(instance) {
+    let parentVNode = instance.parentVNode;
+    while (parentVNode && (parentVNode.type & Types.ComponentClassOrInstance)) {
+        const i = parentVNode.children;
+        if (i._isRemoveDirectly) {
+            return instance.element === i.element;
+        }
+        parentVNode = parentVNode.parentVNode;
+    }
+    return false;
+}
 
 export default function leave(o) {
     if (o.get('a:disabled')) return;

@@ -280,25 +280,62 @@ describe('Animate Test', function() {
         }, 1200);
     });
 
-    it('should not animate when a:disabled is equal to false', function(done) {
+    it('should not animate when a:disabled is equal to true', function(done) {
+        const fn = sinon.spy();
+        const D = Intact.extend({
+            template: `<div>test</div>`,
+            _destroy: fn
+        });
         const C = Intact.extend({
             template: `
                 <div>
                     <Animate v-if={self.get('show')}
                         a:disabled={true}
-                    >test</Animate>
+                    ><D /></Animate>
                 </div>
-            `
+            `,
+            _init() { this.D = D; }
         });
 
         const c = app.load(C);
         c.set('show', true);
         setTimeout(() => {
-            sEql(app.element.innerHTML, '<div><div>test</div></div>');
+            sEql(app.element.innerHTML, '<div><div><div>test</div></div></div>');
             c.set('show', false);
             sEql(app.element.innerHTML, '<div></div>');
+            sEql(fn.callCount, 1);
             done();
         });
+    });
+
+    it('should destroy animate which is disabled and returned by component directly', (done) => {
+        const fn = sinon.spy();
+        const D = Intact.extend({
+            template: `<div>test</div>`,
+            _destroy: fn
+        });
+        const E = Intact.extend({
+            template: `<Animate a:disabled={true}><D /></Animate>`,
+            _init() { this.D = D; }
+        });
+        const C = Intact.extend({
+            template: `<div><E v-if={self.get('show')} /></div>`,
+            _init() { this.E = E; }
+        });
+        const F = Intact.extend({
+            template: `<div><div v-if={!self.get('hide')}><E /></div></div>`,
+            _init() { this.E = E; }
+        });
+
+        const c = app.load(C);
+        c.set('show', true);
+        c.set('show', false);
+        sEql(fn.callCount, 1);
+
+        const f = app.load(F);
+        f.set('hide', true);
+        sEql(fn.callCount, 2);
+        done();
     });
 
     it('should not use css transition when a:css is equal to false', function(done) {

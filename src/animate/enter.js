@@ -222,7 +222,7 @@ function addUnmountCallback(o, vNode) {
             parentInstance.children.push(o);
         } else if (isNotAnimate) {
             parentDom.removeChild(element);
-            o.destroy(vNode);
+            o.destroy(vNode, null, null, true);
         } else {
             leave(o); 
         }
