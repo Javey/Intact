@@ -87,8 +87,12 @@ function assertType(value, type) {
         const t = typeof value;
         valid = t === expectedType.toLowerCase();
 
-        // for primitive wrapper objects
+        if (valid && t === 'number' && value !== value) {
+            // for NaN
+            return {valid: false, expectedType, isStringOrNumber: true};
+        }
         if (!valid && t === 'object') {
+            // for primitive wrapper objects
             valid = value instanceof type;
         }
     } else if (expectedType === 'Object') {

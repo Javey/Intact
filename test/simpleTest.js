@@ -1064,6 +1064,7 @@ describe('Simple Test', function() {
             test({a: 1}, 'Invalid type of prop "a" on component "A". Expected Boolean, but got Number.');
             test({a: true}, 'Missing required prop on component "A": "b".');
             test({b: true}, 'Invalid type of prop "b" on component "A". Expected Number, but got Boolean.');
+            test({b: NaN}, 'Invalid type of prop "b" on component "A". Expected Number, but got NaN.');
             test({b: 1, c: 1}, 'Invalid type of prop "c" on component "A". Expected String, but got Number.');
             test({b: 1, d: 1}, 'Invalid type of prop "d" on component "A". Expected Array, but got Number.');
             test({b: 1, e: []}, 'Invalid type of prop "e" on component "A". Expected Object, but got Array.');
