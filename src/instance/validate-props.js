@@ -89,9 +89,8 @@ function assertType(value, type) {
 
         if (valid && t === 'number' && value !== value) {
             // for NaN
-            return {valid: false, expectedType, isStringOrNumber: true};
-        }
-        if (!valid && t === 'object') {
+            valid = false;
+        } else if (!valid && t === 'object') {
             // for primitive wrapper objects
             valid = value instanceof type;
         }
@@ -120,6 +119,7 @@ function toRawType(value, isStringOrNumber) {
         }
         return value;
     }
+    if (value !== value) return 'NaN';
     return toString.call(value).slice(8, -1);
 }
 
