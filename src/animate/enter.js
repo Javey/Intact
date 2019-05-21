@@ -81,20 +81,22 @@ export default function enter(o) {
 
     // 如果这个元素是上一个删除的元素，则从当前状态回到原始状态
     if (o.lastInstance) {
+        let endDirectly = !o.lastInstance._triggeredLeave;
+
         o.lastInstance._unmountCancelled = true;
         o.lastInstance._leaveEnd();
 
         if (isCss) {
-            if (o.lastInstance._triggeredLeave) {
-                // addClass(element, enterActiveClass);
-                // 保持连贯，添加leaveActiveClass
-                o._addClass(o.leaveActiveClass);
-            } else {
+            if (endDirectly) {
                 // 如果上一个元素还没来得及做动画，则当做新元素处理
                 // o._addClass(enterClass);
 
                 // change: 这种情况不处理
                 return;
+            } else {
+                // addClass(element, enterActiveClass);
+                // 保持连贯，添加leaveActiveClass
+                o._addClass(o.leaveActiveClass);
             }
         }
     } else if (isCss) {
@@ -116,8 +118,6 @@ export default function enter(o) {
 }
 
 function triggerEnter(o) {
-    if (o._entering === false) return;
-
     const element = o.element;
 
     o._triggeredEnter = true;

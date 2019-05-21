@@ -6,6 +6,7 @@ import Detail from './components/detail';
 import App from './components/app';
 import Animate from '../src/animate';
 import {browser} from 'misstime/src/utils';
+import "regenerator-runtime/runtime";
 
 const sEql = assert.strictEqual;
 const dEql = assert.deepStrictEqual;
@@ -544,7 +545,7 @@ describe('Animate Test', function() {
         }, 1500);
     });
 
-    it('show/hide animation', function() {
+    it('show/hide animation', async function() {
         this.enableTimeouts(false);
 
         const C = Intact.extend({
@@ -554,12 +555,17 @@ describe('Animate Test', function() {
         const element = c.element;
         window.c = c;
 
-        const test = (fn, result) => {
+        const testAttribute = (className, style) => {
+            sEql(element.getAttribute('style'), style);
+            sEql(element.getAttribute('class'), className);
+         
+        };
+        const test = (fn, className, style) => {
             return new Promise(resolve => {
                 const p = fn();
                 const doTest = () => {
                     setTimeout(() => {
-                        sEql(element.outerHTML, result);
+                        testAttribute(className, style);
                         resolve();
                     }, 1500);
                 };
@@ -571,45 +577,55 @@ describe('Animate Test', function() {
             });
         };
 
-        // show
-        return test(() => c.set('show', true), '<div class="" style="">test</div>')
-            .then(() => test(() => {
-                c.set('show', false)
-            }, '<div class="" style="display: none;">test</div>'))
-            .then(() => test(() => {
-                c.set('show', true);
-                c.set('show', false);
-            }, '<div class="" style="display: none;">test</div>'))
-            // .then(() => test(() => {
-                // c.set('show', true);
-                // return new Promise(resolve => {
-                    // setTimeout(() => {
-                        // c.set('show', false);
-                        // resolve();
-                    // }, 500);
-                // });
-            // }, '<div class="" style="display: none;">test</div>'))
-            // .then(() => test(() => {
-                // c.set('show', true);
-            // }, '<div class="" style="">test</div>'))
-            // .then(() => test(() => {
-                // c.set('show', false);
-                // c.set('show', true);
-            // }, '<div class="" style="">test</div>'))
-            // .then(() => test(() => {
-                // c.set('show', false)
-            // }, '<div class="" style="display: none;">test</div>'))
-            // .then(() => test(() => {
-                // c.set('show', true);
-            // }, '<div class="" style="">test</div>'))
-            // .then(() => test(() => {
-                // c.set('show', false);
-                // return new Promise(resolve => {
-                    // setTimeout(() => {
-                        // c.set('show', true);
-                        // resolve();
-                    // }, 500);
-                // });
-            // }));
+        await test(() => c.set('show', true),  '', '');
+        await test(() => {c.set('show', false)}, '', 'display: none;');
+        await test(() => {
+            c.set('show', true);
+            c.set('show', false);
+            // it should not animate
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    testAttribute('', 'display: none;');
+                    resolve();
+                }, 100);
+            });
+        }, '', 'display: none;');
+        await test(() => {
+            c.set('show', true);
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    c.set('show', false);
+                    setTimeout(() => {
+                        testAttribute('animate-leave-active animate-leave', '');
+                        resolve();
+                    }, 100);
+                }, 500);
+            });
+        }, '', 'display: none;');
+        await test(() => c.set('show', true), '', '');
+        await test(() => {
+            c.set('show', false);
+            c.set('show', true);
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    testAttribute('', '');
+                    resolve();
+                }, 100);
+            });
+        }, '', '');
+        await test(() => {c.set('show', false)}, '', 'display: none;');
+        await test(() => {c.set('show', true)}, '', '');
+        await test(() => {
+            c.set('show', false);
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    c.set('show', true);
+                    setTimeout(() => {
+                        testAttribute('animate-enter-active', '');
+                        resolve();
+                    }, 200)
+                }, 500);
+            });
+        }, '', '');
     });
 });
