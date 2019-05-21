@@ -1,6 +1,6 @@
 import prototype from './prototype';
 import {TransitionEvents, nextFrame} from './utils';
-import {noop, inBrowser} from '../utils';
+import {inBrowser} from '../utils';
 import checkMode from './check-mode';
 import {Types} from 'misstime/src/vnode';
 
