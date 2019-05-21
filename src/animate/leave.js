@@ -64,11 +64,10 @@ export default function leave(o) {
     o._leaving = true;
 
     if (o._entering) {
-        TransitionEvents.off(element, o._enterEnd);
         o._enterEnd();
     }
 
-    addLeaveEndCallback(o);
+    initLeaveEndCallback(o);
 
     // 为了保持动画连贯，我们立即添加leaveActiveClass
     // 但如果当前元素还没有来得及做enter动画，就被删除
@@ -78,30 +77,26 @@ export default function leave(o) {
         o._addClass(o.leaveActiveClass);
     }
 
-    // TransitionEvents.on(element, o._leaveEnd);
-    nextFrame(() => {
-        // 1. 如果leave动画还没得及执行，就enter了，此时啥也不做
-        if (o._unmountCancelled) return;
-        // 存在一种情况，当一个enter动画在完成的瞬间，
-        // 这个元素被删除了，由于前面保持动画的连贯性
-        // 添加了leaveActiveClass，则会导致绑定的leaveEnd
-        // 立即执行，所以这里放到下一帧来绑定
-        TransitionEvents.on(element, o._leaveEnd);
-        triggerLeave(o);
-    });
-
-    // 存在一种情况，相同的dom，同时被子组件和父组件管理的情况
-    // 所以unmount后，将其置为空函数，以免再次unmount
-    element._unmount = noop;
+    TransitionEvents.on(element, o._leaveEnd);
+    triggerLeave(o);
+    // nextFrame(() => {
+        // // 1. 如果leave动画还没得及执行，就enter了，此时啥也不做
+        // if (o._unmountCancelled) return;
+        // // 存在一种情况，当一个enter动画在完成的瞬间，
+        // // 这个元素被删除了，由于前面保持动画的连贯性
+        // // 添加了leaveActiveClass，则会导致绑定的leaveEnd
+        // // 立即执行，所以这里放到下一帧来绑定
+        // TransitionEvents.on(element, o._leaveEnd);
+        // triggerLeave(o);
+    // });
 
     o.trigger('a:leaveStart', element);
 }
 
 function triggerLeave(o) {
+    if (o._leaving === false) return;
+
     o._triggeredLeave = true;
-    if (o._leaving === false) {
-        return;
-    }
 
     const element = o.element;
     if (o.get('a:css')) {
@@ -112,7 +107,7 @@ function triggerLeave(o) {
     o.trigger('a:leave', element, o._leaveEnd);
 }
 
-function addLeaveEndCallback(o) {
+function initLeaveEndCallback(o) {
     const {element, parentDom, vNode} = o;
 
     o._leaveEnd = (e) => {
@@ -129,6 +124,7 @@ function addLeaveEndCallback(o) {
         }
 
         o._leaving = false;
+        o._triggeredLeave = false;
         delete parentDom._reserve[vNode.key];
         TransitionEvents.off(element, o._leaveEnd);
 
@@ -143,10 +139,7 @@ function addLeaveEndCallback(o) {
 
         o.trigger('a:leaveEnd', element);
         if (!o._unmountCancelled) {
-            parentDom.removeChild(element);
-            if (o.get('a:delayDestroy')) {
-                o.destroy(vNode, null, parentDom);
-            }
+            o.leaveEndCallback(true);
         }
     };
 }

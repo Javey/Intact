@@ -13,6 +13,28 @@ prototype._mount = function(lastVNode, vNode) {
     this.on('$change:a:transition', initClassName);
     initClassName(this);
 
+    // for show/hide animation
+    const element = this.element;
+    const display = element.style.display;
+    const originDisplay = display === 'none' ? '' : display; 
+    if (!this.get('a:show')) {
+        element.style.display = 'none';
+    }
+    this.on('$changed:a:show', (c, v) => {
+        if (v) {
+            element.style.display = originDisplay;
+            startEnterAnimate(this);
+        } else {
+            this.lastInstance = this;
+            this._unmountCancelled = false;
+            this.leaveEndCallback = () => {
+                element.style.display = 'none';
+                this.lastInstance = null;
+            };
+            unmountCallback(this);
+        }
+    });
+
     // 一个动画元素被删除后，会被保存
     // 如果在删除的过程中，又添加了，则要清除上一个动画状态
     // 将这种情况记录下来
@@ -25,23 +47,25 @@ prototype._mount = function(lastVNode, vNode) {
 
     this.parentInstance = getParentAnimate(this);
 
-    addEnterEndCallback(this);
-    addUnmountCallback(this, vNode);
+    initEnterEndCallback(this);
+    initUnmountCallback(this, vNode);
 
-    if (this.parentInstance) {
+    startEnterAnimate(this); 
+};
+
+function startEnterAnimate(o) {
+   if (o.parentInstance) {
         // 如果存在父动画组件，则使用父级进行管理
         // 统一做动画
-        animateList(this);
-    } else if (this.isAppear || !this.isRender) {
+        animateList(o);
+    } else if (o.isAppear || !o.isRender) {
         // 否则单个元素自己动画
-        enter(this);
+        enter(o);
     }
 };
 
 export default function enter(o) {
-    if (o.get('a:disabled')) return;
-
-    o._entering = true;
+    if (o.get('a:disabled') || !o.get('a:show')) return;
 
     const element = o.element;
     const enterClass = o.enterClass;
@@ -67,12 +91,18 @@ export default function enter(o) {
                 o._addClass(o.leaveActiveClass);
             } else {
                 // 如果上一个元素还没来得及做动画，则当做新元素处理
-                o._addClass(enterClass);
+                // o._addClass(enterClass);
+
+                // change: 这种情况不处理
+                return;
             }
         }
     } else if (isCss) {
         o._addClass(enterClass);
     }
+
+    o._entering = true;
+
     TransitionEvents.on(element, o._enterEnd);
 
     o.trigger(`${o.enterEventName}Start`, element);
@@ -86,6 +116,8 @@ export default function enter(o) {
 }
 
 function triggerEnter(o) {
+    if (o._entering === false) return;
+
     const element = o.element;
 
     o._triggeredEnter = true;
@@ -159,11 +191,13 @@ function initClassName(o, newValue, oldValue) {
     }
 }
 
-function addEnterEndCallback(o) {
+function initEnterEndCallback(o) {
     const {element, parentInstance} = o;
 
     o._enterEnd = (e) => {
         if (e && e.target !== element) return;
+
+        TransitionEvents.off(element, o._enterEnd);
 
         if (o.get('a:css') && !o.get('a:disabled')) {
             e && e.stopPropagation && e.stopPropagation();
@@ -171,8 +205,8 @@ function addEnterEndCallback(o) {
             o._removeClass(o.enterActiveClass);
         }
 
-        TransitionEvents.off(element, o._enterEnd);
         o._entering = false;
+        o._triggeredEnter = false;
 
         if (parentInstance) {
             if (--parentInstance._enteringAmount === 0 &&
@@ -188,45 +222,58 @@ function addEnterEndCallback(o) {
     };
 }
 
-function addUnmountCallback(o, vNode) {
-    const {element, parentInstance} = o;
+function initUnmountCallback(o, vNode) {
+    const {element} = o;
 
     element._unmount = (nouse, parentDom) => {
-        // 如果该元素是延迟mount的元素，则直接删除
-        if (o._delayEnter) {
-            parentDom.removeChild(element);
-            o.destroy(vNode);
-            parentInstance._enteringAmount--;
-
-            return;
-        }
-
-        const isNotAnimate = !o.get('a:css') && !hasJsTransition(o) || 
-            o.get('a:disabled');
-
         o.vNode = vNode;
         o.parentDom = parentDom;
-
-        if (parentInstance && !isNotAnimate) {
-            parentInstance._leavingAmount++;
-            if (parentInstance.get('a:mode') === 'in-out') {
-                parentInstance.updateChildren.push(o);
-                o._delayLeave = true;
-            } else {
-                // add a flag to indicate that this child will leave but we maybe call
-                // _beforeUpdate twice before _update, so let _beforeUpdate reserve it
-                // ksc-fe/kpc#238 
-                o._needLeave = true;
-                parentInstance.unmountChildren.push(o);
-            }
-            parentInstance.children.push(o);
-        } else if (isNotAnimate) {
+        o.leaveEndCallback = (isLeaveEnd) => {
             parentDom.removeChild(element);
-            o.destroy(vNode, null, null, true);
-        } else {
-            leave(o); 
-        }
+            if (!isLeaveEnd || o.get('a:delayDestroy')) {
+                o.destroy(vNode, null, parentDom, true);
+            }
+        };
+        unmountCallback(o);
+
+        // 存在一种情况，相同的dom，同时被子组件和父组件管理的情况
+        // 所以unmount后，将其置为空函数，以免再次unmount
+        element._unmount = noop;
     };
+}
+
+function unmountCallback(o) {
+    const {parentInstance} = o;
+
+    // 如果该元素是延迟mount的元素，则直接删除
+    if (o._delayEnter) {
+        o.callback();
+        parentInstance._enteringAmount--;
+
+        return;
+    }
+
+    const isNotAnimate = !o.get('a:css') && !hasJsTransition(o) || 
+        o.get('a:disabled');
+
+    if (parentInstance && !isNotAnimate) {
+        parentInstance._leavingAmount++;
+        if (parentInstance.get('a:mode') === 'in-out') {
+            parentInstance.updateChildren.push(o);
+            o._delayLeave = true;
+        } else {
+            // add a flag to indicate that this child will leave but we maybe call
+            // _beforeUpdate twice before _update, so let _beforeUpdate reserve it
+            // ksc-fe/kpc#238 
+            o._needLeave = true;
+            parentInstance.unmountChildren.push(o);
+        }
+        parentInstance.children.push(o);
+    } else if (isNotAnimate) {
+        o.callback();
+    } else {
+        leave(o); 
+    }
 }
 
 function animateList(o) {

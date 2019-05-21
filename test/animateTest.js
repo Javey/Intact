@@ -542,5 +542,74 @@ describe('Animate Test', function() {
             document.body.removeChild(c.element);
             done();
         }, 1500);
-    })
+    });
+
+    it('show/hide animation', function() {
+        this.enableTimeouts(false);
+
+        const C = Intact.extend({
+            template: `<Animate a:show={self.get('show')}>test</Animate>`
+        });
+        const c = Intact.mount(C, document.body);
+        const element = c.element;
+        window.c = c;
+
+        const test = (fn, result) => {
+            return new Promise(resolve => {
+                const p = fn();
+                const doTest = () => {
+                    setTimeout(() => {
+                        sEql(element.outerHTML, result);
+                        resolve();
+                    }, 1500);
+                };
+                if (p instanceof Promise) {
+                    p.then(doTest);
+                } else {
+                    doTest();
+                }
+            });
+        };
+
+        // show
+        return test(() => c.set('show', true), '<div class="" style="">test</div>')
+            .then(() => test(() => {
+                c.set('show', false)
+            }, '<div class="" style="display: none;">test</div>'))
+            .then(() => test(() => {
+                c.set('show', true);
+                c.set('show', false);
+            }, '<div class="" style="display: none;">test</div>'))
+            // .then(() => test(() => {
+                // c.set('show', true);
+                // return new Promise(resolve => {
+                    // setTimeout(() => {
+                        // c.set('show', false);
+                        // resolve();
+                    // }, 500);
+                // });
+            // }, '<div class="" style="display: none;">test</div>'))
+            // .then(() => test(() => {
+                // c.set('show', true);
+            // }, '<div class="" style="">test</div>'))
+            // .then(() => test(() => {
+                // c.set('show', false);
+                // c.set('show', true);
+            // }, '<div class="" style="">test</div>'))
+            // .then(() => test(() => {
+                // c.set('show', false)
+            // }, '<div class="" style="display: none;">test</div>'))
+            // .then(() => test(() => {
+                // c.set('show', true);
+            // }, '<div class="" style="">test</div>'))
+            // .then(() => test(() => {
+                // c.set('show', false);
+                // return new Promise(resolve => {
+                    // setTimeout(() => {
+                        // c.set('show', true);
+                        // resolve();
+                    // }, 500);
+                // });
+            // }));
+    });
 });

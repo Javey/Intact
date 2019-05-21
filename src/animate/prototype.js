@@ -15,6 +15,7 @@ const prototype = {
             'a:move': true, // 是否执行move动画
             'a:css': true, // 是否使用css动画，如果自定义动画函数，可以将它置为false
             'a:delayDestroy': true, // 是否动画完成才destroy子元素
+            'a:show': true, // 是否应用展示、隐藏动画
         }
     },
 
@@ -56,6 +57,11 @@ const prototype = {
         this.children = [];
         this._enteringAmount = 0;
         this._leavingAmount = 0;
+
+        // convert show to Boolean
+        this.on('$receive:a:show', (c, v) => {
+            this.set('a:show', !!v, {silent: true});
+        });
 
         this._staticClass = {};
     },
