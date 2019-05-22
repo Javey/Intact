@@ -10,31 +10,13 @@ import {noop} from '../utils';
 
 prototype._mount = function(lastVNode, vNode) {
     this.isAppear = detectIsAppear(this);
+    this._parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
 
     this.on('$change:a:transition', initClassName);
     initClassName(this);
 
     // for show/hide animation
-    const element = this.element;
-    const display = element.style.display;
-    const originDisplay = display === 'none' ? '' : display; 
-    if (!this.get('a:show')) {
-        element.style.display = 'none';
-    }
-    this.on('$changed:a:show', (c, v) => {
-        if (v) {
-            element.style.display = originDisplay;
-            startEnterAnimate(this);
-        } else {
-            this.lastInstance = this;
-            this._unmountCancelled = false;
-            this.leaveEndCallback = () => {
-                element.style.display = 'none';
-                this.lastInstance = null;
-            };
-            unmountCallback(this);
-        }
-    });
+    initAShow(this);
 
     // 一个动画元素被删除后，会被保存
     // 如果在删除的过程中，又添加了，则要清除上一个动画状态
@@ -43,6 +25,8 @@ prototype._mount = function(lastVNode, vNode) {
         const lastInstance = this._lastVNode.children;
         if (lastInstance._leaving) {
             this.lastInstance = lastInstance;
+        } else {
+            lastInstance._unmountCancelled = true;
         }
     }
 
@@ -53,6 +37,41 @@ prototype._mount = function(lastVNode, vNode) {
 
     startEnterAnimate(this); 
 };
+
+function initAShow(o) {
+    const element = o.element;
+    const display = element.style.display;
+    const originDisplay = display === 'none' ? '' : display; 
+    if (!o.get('a:show')) {
+        element.style.display = 'none';
+    }
+    // 让display设置提前，以便于父组件获取该元素的位置属性
+    o.on('$change:a:show', (c, v) => {
+        if (v) element.style.display = originDisplay;
+    });
+    o.on('$changed:a:show', (c, v) => {
+        if (v) {
+            // 如果在leaveEnd事件中，又触发了enter
+            // 此时_leaving为false，如果不清空lastInstance
+            // 将会再次触发leaveEnd，但是还是需要cancel掉
+            const lastInstance = o.lastInstance;
+            if (lastInstance && lastInstance._leaving === false) {
+                lastInstance._unmountCancelled = true;
+                o.lastInstance = null;
+            }
+            // element.style.display = originDisplay;
+            startEnterAnimate(o);
+        } else {
+            o.lastInstance = o;
+            o._unmountCancelled = false;
+            o.leaveEndCallback = () => {
+                element.style.display = 'none';
+                o.lastInstance = null;
+            };
+            unmountCallback(o);
+        }
+    });
+}
 
 function startEnterAnimate(o) {
    if (o.parentInstance) {
@@ -66,7 +85,7 @@ function startEnterAnimate(o) {
 };
 
 export default function enter(o) {
-    if (o.get('a:disabled') || !o.get('a:show')) return;
+    if (o.get('a:disabled') || !o.get('a:show') || o._entering) return;
 
     const element = o.element;
     const enterClass = o.enterClass;
@@ -228,7 +247,7 @@ function initUnmountCallback(o, vNode) {
 
     element._unmount = (nouse, parentDom) => {
         o.vNode = vNode;
-        o.parentDom = parentDom;
+        o._parentDom = parentDom;
         o.leaveEndCallback = (isLeaveEnd) => {
             parentDom.removeChild(element);
             if (!isLeaveEnd || o.get('a:delayDestroy')) {
@@ -248,7 +267,7 @@ function unmountCallback(o) {
 
     // 如果该元素是延迟mount的元素，则直接删除
     if (o._delayEnter) {
-        o.callback();
+        o.leaveEndCallback();
         parentInstance._enteringAmount--;
 
         return;
@@ -271,7 +290,7 @@ function unmountCallback(o) {
         }
         parentInstance.children.push(o);
     } else if (isNotAnimate) {
-        o.callback();
+        o.leaveEndCallback();
     } else {
         leave(o); 
     }

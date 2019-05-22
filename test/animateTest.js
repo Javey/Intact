@@ -545,19 +545,12 @@ describe('Animate Test', function() {
         }, 1500);
     });
 
-    it('show/hide animation', async function() {
-        this.enableTimeouts(false);
-
-        const C = Intact.extend({
-            template: `<Animate a:show={self.get('show')}>test</Animate>`
-        });
-        const c = Intact.mount(C, document.body);
-        const element = c.element;
-        window.c = c;
-
+    describe('a:show', () => {
+        let c;
+       
         const testAttribute = (className, style) => {
-            sEql(element.getAttribute('style'), style);
-            sEql(element.getAttribute('class'), className);
+            sEql(c.element.getAttribute('style'), style);
+            sEql(c.element.getAttribute('class'), className);
          
         };
         const test = (fn, className, style) => {
@@ -565,7 +558,11 @@ describe('Animate Test', function() {
                 const p = fn();
                 const doTest = () => {
                     setTimeout(() => {
-                        testAttribute(className, style);
+                        if (typeof className === 'function') {
+                            className();
+                        } else {
+                            testAttribute(className, style);
+                        }
                         resolve();
                     }, 1500);
                 };
@@ -577,55 +574,167 @@ describe('Animate Test', function() {
             });
         };
 
-        await test(() => c.set('show', true),  '', '');
-        await test(() => {c.set('show', false)}, '', 'display: none;');
-        await test(() => {
-            c.set('show', true);
-            c.set('show', false);
-            // it should not animate
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    testAttribute('', 'display: none;');
-                    resolve();
-                }, 100);
+        afterEach(() => {
+            c.destroy();
+            document.body.removeChild(c.element);
+        });
+
+        it('show/hide animation', async function() {
+            this.enableTimeouts(false);
+
+            const C = Intact.extend({
+                template: `<Animate a:show={self.get('show')}>test</Animate>`
             });
-        }, '', 'display: none;');
-        await test(() => {
-            c.set('show', true);
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    c.set('show', false);
+            c = Intact.mount(C, document.body);
+            const element = c.element;
+
+            await test(() => c.set('show', true),  '', '');
+            await test(() => {c.set('show', false)}, '', 'display: none;');
+            await test(() => {
+                c.set('show', true);
+                c.set('show', false);
+                // it should not animate
+                return new Promise(resolve => {
                     setTimeout(() => {
-                        testAttribute('animate-leave-active animate-leave', '');
+                        testAttribute('', 'display: none;');
                         resolve();
                     }, 100);
-                }, 500);
-            });
-        }, '', 'display: none;');
-        await test(() => c.set('show', true), '', '');
-        await test(() => {
-            c.set('show', false);
-            c.set('show', true);
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    testAttribute('', '');
-                    resolve();
-                }, 100);
-            });
-        }, '', '');
-        await test(() => {c.set('show', false)}, '', 'display: none;');
-        await test(() => {c.set('show', true)}, '', '');
-        await test(() => {
-            c.set('show', false);
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    c.set('show', true);
+                });
+            }, '', 'display: none;');
+            await test(() => {
+                c.set('show', true);
+                return new Promise(resolve => {
                     setTimeout(() => {
-                        testAttribute('animate-enter-active', '');
+                        c.set('show', false);
+                        setTimeout(() => {
+                            testAttribute('animate-leave-active animate-leave', '');
+                            resolve();
+                        }, 100);
+                    }, 500);
+                });
+            }, '', 'display: none;');
+            await test(() => c.set('show', true), '', '');
+            await test(() => {
+                c.set('show', false);
+                c.set('show', true);
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        testAttribute('', '');
                         resolve();
-                    }, 200)
-                }, 500);
+                    }, 100);
+                });
+            }, '', '');
+            await test(() => {c.set('show', false)}, '', 'display: none;');
+            await test(() => {c.set('show', true)}, '', '');
+            await test(() => {
+                c.set('show', false);
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        c.set('show', true);
+                        setTimeout(() => {
+                            testAttribute('animate-enter-active', '');
+                            resolve();
+                        }, 200)
+                    }, 500);
+                });
+            }, '', '');
+        });
+
+        it('enter element at leave end callback', function(done) {
+            this.enableTimeouts(false);
+
+            const C = Intact.extend({
+                defaults() {
+                    return {show: true};
+                },
+                template: `<Animate a:show={self.get('show')} ev-a:leaveEnd={self.leaveEnd}>test</Animate>`,
+                leaveEnd() {
+                    testAttribute('', null);
+                    test(() => {
+                        this.set('show', true);
+                        return new Promise(resolve => {
+                            setTimeout(() => {
+                                testAttribute('animate-enter-active', null);
+                                resolve();
+                            }, 200)
+                        });
+                    }, '', null).then(done);
+                }
             });
-        }, '', '');
+            c = Intact.mount(C, document.body);
+
+            c.set('show', false);
+        });
+
+        it('leave element at enter end callback', function(done) {
+            this.enableTimeouts(false);
+
+            const C = Intact.extend({
+                defaults() {
+                    return {show: false};
+                },
+                template: `<Animate a:show={self.get('show')} ev-a:enterEnd={self.enterEnd}>test</Animate>`,
+                enterEnd() {
+                    testAttribute('', '');
+                    test(() => {
+                        this.set('show', false);
+                        return new Promise(resolve => {
+                            setTimeout(() => {
+                                testAttribute('animate-leave-active animate-leave', '');
+                                resolve();
+                            }, 200)
+                        });
+                    }, '', 'display: none;').then(done);
+                }
+            });
+            c = Intact.mount(C, document.body);
+
+            c.set('show', true);
+        });
+
+        it('a:show and v-if at the same time', async function() {
+            this.enableTimeouts(false);
+
+            const C = Intact.extend({
+                defaults() {
+                    return {
+                        show: false,
+                        create: false,
+                    };
+                },
+                template: `<Animate ref="a" v-if={self.get('create')} a:show={self.get('show')}>test</Animate>`,
+            });
+            c = Intact.mount(C, document.body);
+
+            let element;
+            const isEmpty = () => {
+                // element has been removed
+                sEql(element.parentNode, null);
+                sEql(c.element.nodeValue, 'empty')
+            };
+
+            await test(() => c.set({show: true, create: true}), '', null);
+            element = c.element;
+            await test(() => c.set({show: false, create: false}), isEmpty);
+            await test(() => c.set({show: false, create: true}), null, 'display: none;');
+            element = c.element;
+            await test(() => c.set({show: false, create: false}), isEmpty);
+            await test(() => c.set({show: true, create: true}), '', null);
+            element = c.element;
+            const leaveStart = sinon.spy();
+            const leaveEnd = sinon.spy();
+            c.refs.a.on('a:leaveStart', leaveStart);
+            c.refs.a.on('a:leaveEnd', leaveEnd);
+            await test(() => {
+                c.set('show', false);
+                setTimeout(() => {
+                    c.set('create', false);
+                }, 200);
+            }, () => {
+                isEmpty();
+                sEql(leaveStart.callCount, 1);
+                sEql(leaveEnd.callCount, 1);
+            });
+        });
     });
 });

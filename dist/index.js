@@ -6290,10 +6290,15 @@ function isRemoveDirectly(instance) {
 
 function leave(o) {
     if (o.get('a:disabled')) return;
+    // maybe a a:show animation is leaving
+    if (o._leaving) return;
 
     var element = o.element;
+
+    if (element.style.display === 'none') return o.leaveEndCallback(true);
+
     var vNode = o.vNode;
-    var parentDom = o.parentDom;
+    var parentDom = o._parentDom;
     // vNode都会被添加key，当只有一个子元素时，vNode.key === undefined
     // 这种情况，我们也当成有key处理，此时key为undefined
     if (!parentDom._reserve) {
@@ -6357,7 +6362,7 @@ function triggerLeave(o) {
 
 function initLeaveEndCallback(o) {
     var element = o.element,
-        parentDom = o.parentDom,
+        _parentDom = o._parentDom,
         vNode = o.vNode;
 
 
@@ -6378,7 +6383,7 @@ function initLeaveEndCallback(o) {
 
         o._leaving = false;
         o._triggeredLeave = false;
-        delete parentDom._reserve[vNode.key];
+        delete _parentDom._reserve[vNode.key];
 
         var parentInstance = o.parentInstance;
         if (parentInstance) {
@@ -6395,34 +6400,14 @@ function initLeaveEndCallback(o) {
 }
 
 prototype._mount = function (lastVNode, vNode) {
-    var _this = this;
-
     this.isAppear = detectIsAppear(this);
+    this._parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
 
     this.on('$change:a:transition', initClassName);
     initClassName(this);
 
     // for show/hide animation
-    var element = this.element;
-    var display = element.style.display;
-    var originDisplay = display === 'none' ? '' : display;
-    if (!this.get('a:show')) {
-        element.style.display = 'none';
-    }
-    this.on('$changed:a:show', function (c, v) {
-        if (v) {
-            element.style.display = originDisplay;
-            startEnterAnimate(_this);
-        } else {
-            _this.lastInstance = _this;
-            _this._unmountCancelled = false;
-            _this.leaveEndCallback = function () {
-                element.style.display = 'none';
-                _this.lastInstance = null;
-            };
-            unmountCallback(_this);
-        }
-    });
+    initAShow(this);
 
     // 一个动画元素被删除后，会被保存
     // 如果在删除的过程中，又添加了，则要清除上一个动画状态
@@ -6431,6 +6416,8 @@ prototype._mount = function (lastVNode, vNode) {
         var lastInstance = this._lastVNode.children;
         if (lastInstance._leaving) {
             this.lastInstance = lastInstance;
+        } else {
+            lastInstance._unmountCancelled = true;
         }
     }
 
@@ -6441,6 +6428,40 @@ prototype._mount = function (lastVNode, vNode) {
 
     startEnterAnimate(this);
 };
+
+function initAShow(o) {
+    var element = o.element;
+    var display = element.style.display;
+    var originDisplay = display === 'none' ? '' : display;
+    if (!o.get('a:show')) {
+        element.style.display = 'none';
+    }
+    o.on('$change:a:show', function (c, v) {
+        if (v) element.style.display = originDisplay;
+    });
+    o.on('$changed:a:show', function (c, v) {
+        if (v) {
+            // 如果在leaveEnd事件中，又触发了enter
+            // 此时_leaving为false，如果不清空lastInstance
+            // 将会再次触发leaveEnd，但是还是需要cancel掉
+            var lastInstance = o.lastInstance;
+            if (lastInstance && lastInstance._leaving === false) {
+                lastInstance._unmountCancelled = true;
+                o.lastInstance = null;
+            }
+            // element.style.display = originDisplay;
+            startEnterAnimate(o);
+        } else {
+            o.lastInstance = o;
+            o._unmountCancelled = false;
+            o.leaveEndCallback = function () {
+                element.style.display = 'none';
+                o.lastInstance = null;
+            };
+            unmountCallback(o);
+        }
+    });
+}
 
 function startEnterAnimate(o) {
     if (o.parentInstance) {
@@ -6454,7 +6475,7 @@ function startEnterAnimate(o) {
 }
 
 function enter(o) {
-    if (o.get('a:disabled') || !o.get('a:show')) return;
+    if (o.get('a:disabled') || !o.get('a:show') || o._entering) return;
 
     var element = o.element;
     var enterClass = o.enterClass;
@@ -6610,7 +6631,7 @@ function initUnmountCallback(o, vNode) {
 
     element._unmount = function (nouse, parentDom) {
         o.vNode = vNode;
-        o.parentDom = parentDom;
+        o._parentDom = parentDom;
         o.leaveEndCallback = function (isLeaveEnd) {
             parentDom.removeChild(element);
             if (!isLeaveEnd || o.get('a:delayDestroy')) {
@@ -6631,7 +6652,7 @@ function unmountCallback(o) {
     // 如果该元素是延迟mount的元素，则直接删除
 
     if (o._delayEnter) {
-        o.callback();
+        o.leaveEndCallback();
         parentInstance._enteringAmount--;
 
         return;
@@ -6653,7 +6674,7 @@ function unmountCallback(o) {
         }
         parentInstance.children.push(o);
     } else if (isNotAnimate) {
-        o.callback();
+        o.leaveEndCallback();
     } else {
         leave(o);
     }

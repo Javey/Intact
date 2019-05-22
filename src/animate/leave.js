@@ -50,10 +50,15 @@ function isRemoveDirectly(instance) {
 
 export default function leave(o) {
     if (o.get('a:disabled')) return;
+    // maybe a a:show animation is leaving
+    if (o._leaving) return;
 
     const element = o.element;
+
+    if (element.style.display === 'none') return o.leaveEndCallback(true);
+
     const vNode = o.vNode;
-    const parentDom = o.parentDom;
+    const parentDom = o._parentDom;
     // vNode都会被添加key，当只有一个子元素时，vNode.key === undefined
     // 这种情况，我们也当成有key处理，此时key为undefined
     if (!parentDom._reserve) {
@@ -116,7 +121,7 @@ function triggerLeave(o) {
 }
 
 function initLeaveEndCallback(o) {
-    const {element, parentDom, vNode} = o;
+    const {element, _parentDom, vNode} = o;
 
     o._leaveEnd = (e) => {
         if (e && e.target !== element) return;
@@ -135,7 +140,7 @@ function initLeaveEndCallback(o) {
 
         o._leaving = false;
         o._triggeredLeave = false;
-        delete parentDom._reserve[vNode.key];
+        delete _parentDom._reserve[vNode.key];
 
         const parentInstance = o.parentInstance;
         if (parentInstance) {
