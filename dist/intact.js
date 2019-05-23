@@ -5458,6 +5458,7 @@ Intact$2._constructors.push(function (props) {
 
     this._updateCount = 0;
     this._pendingUpdate = null;
+    this._pendingChangedEvents = [];
 
     this.mountedQueue = null;
 
@@ -5539,10 +5540,6 @@ Intact$2.prototype.update = function (lastVNode, nextVNode, fromPending) {
     // 又触发了父组件的数据变更，此时父组件渲染完成执行_pendingUpdate
     // 是没有lastVNode的
     if (nextVNode && lastVNode) {
-        // 可能在更新的过程中，又触发了更新，所以这里判断是否存在
-        if (!this._pendingChangedEvents) {
-            this._pendingChangedEvents = [];
-        }
         patchProps$1(this, lastVNode.props, nextVNode.props);
     }
 
@@ -5673,12 +5670,10 @@ function updateComponent(o, lastVNode, nextVNode) {
     if (o.mountedQueue) {
         // 加入$changed事件队列
         var events = o._pendingChangedEvents;
-        if (events) {
-            for (var i = 0; i < events.length; i++) {
-                o.mountedQueue.push(events[i]);
-            }
-            o._pendingChangedEvents = null;
+        for (var i = 0; i < events.length; i++) {
+            o.mountedQueue.push(events[i]);
         }
+        o._pendingChangedEvents = [];
         o.mountedQueue.push(function () {
             o._update(lastVNode, nextVNode);
         });
