@@ -575,8 +575,8 @@ describe('Animate Test', function() {
         };
 
         afterEach(() => {
-            // c.destroy();
-            // document.body.removeChild(c.element);
+            c.destroy();
+            document.body.removeChild(c.element);
         });
 
         it('show/hide animation', async function() {
@@ -767,7 +767,6 @@ describe('Animate Test', function() {
             c = Intact.mount(C, document.body);
             const element = c.element;
 
-            window.c = c;
             await test(() => {
                 initCallbacks();
                 c.set('show', true);
