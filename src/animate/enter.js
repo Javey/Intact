@@ -46,10 +46,15 @@ function initAShow(o) {
         element.style.display = 'none';
     }
     // 让display设置提前，以便于父组件获取该元素的位置属性
-    o.on('$change:a:show', (c, v) => {
-        if (v) element.style.display = originDisplay;
-    });
+    // o.on('$change:a:show', (c, v) => {
+        // if (v) element.style.display = originDisplay;
+    // });
     o.on('$changed:a:show', (c, v) => {
+        // 如果是appear动画，则在show/hide改为enter动画
+        if (o.isAppear) {
+            o.isAppear = false;
+            initClassName(o);
+        }
         if (v) {
             // 如果在leaveEnd事件中，又触发了enter
             // 此时_leaving为false，如果不清空lastInstance
@@ -59,7 +64,7 @@ function initAShow(o) {
                 lastInstance._unmountCancelled = true;
                 o.lastInstance = null;
             }
-            // element.style.display = originDisplay;
+            element.style.display = originDisplay;
             startEnterAnimate(o);
         } else {
             o.lastInstance = o;
@@ -88,20 +93,14 @@ export default function enter(o) {
     if (o.get('a:disabled') || !o.get('a:show') || o._entering) return;
 
     const element = o.element;
-    const enterClass = o.enterClass;
-    const enterActiveClass = o.enterActiveClass;
     const isCss = o.get('a:css');
 
-    // getAnimateType将添加enter-active className，在firefox下将导致动画提前执行
-    // 我们应该先于添加`enter` className去调用该函数
-    let isTransition = false;
-    if (isCss && getAnimateType(element, enterActiveClass) !== 'animation') {
-        isTransition = true;
-    }
-
+    // let cancel = false;
+    let keepContinuity = false;
+    let endDirectly = false;
     // 如果这个元素是上一个删除的元素，则从当前状态回到原始状态
     if (o.lastInstance) {
-        let endDirectly = !o.lastInstance._triggeredLeave;
+        endDirectly = !o.lastInstance._triggeredLeave;
 
         o.lastInstance._unmountCancelled = true;
         o.lastInstance._leaveEnd();
@@ -112,35 +111,61 @@ export default function enter(o) {
                 // o._addClass(enterClass);
 
                 // change: 这种情况不处理
-                return;
+                // cancel = true;
             } else {
-                // addClass(element, enterActiveClass);
                 // 保持连贯，添加leaveActiveClass
-                o._addClass(o.leaveActiveClass);
+                // o._addClass(o.leaveActiveClass);
+                keepContinuity = true;
             }
         }
-    } else if (isCss) {
-        o._addClass(enterClass);
     }
 
-    o._entering = true;
+    function start() {
+        o._entering = true;
 
-    TransitionEvents.on(element, o._enterEnd);
+        o.trigger(`${o.enterEventName}Start`, element);
 
-    o.trigger(`${o.enterEventName}Start`, element);
+        if (!endDirectly) {
+            if (keepContinuity) {
+                o._addClass(o.leaveActiveClass);
+            } else if (isCss) {
+                o._addClass(o.enterClass);
+            }
 
-    if (isTransition) {
-        nextFrame(() => triggerEnter(o));
+            // getAnimateType将添加enter-active className，在firefox下将导致动画提前执行
+            // 我们应该先于添加`enter` className去调用该函数
+            let isTransition = false;
+            if (isCss && getAnimateType(element, o.enterActiveClass) !== 'animation') {
+                isTransition = true;
+            }
+
+            TransitionEvents.on(element, o._enterEnd);
+
+            if (isTransition) {
+                nextFrame(() => triggerEnter(o));
+            } else {
+                // 对于animation动画，同步添加enterActiveClass，避免闪动
+                triggerEnter(o);
+            }
+        } else {
+            o._enterEnd();
+        }
+    }
+
+    // support Promise
+    let enterStart = o.get('a:enterStart');
+    if (enterStart && (enterStart = enterStart(element)) && enterStart.then) {
+        enterStart.then(() => {
+            if (o.destroyed || !o.get('a:show')) return;
+            start();
+        });
     } else {
-        // 对于animation动画，同步添加enterActiveClass，避免闪动
-        triggerEnter(o);
+        start();
     }
 }
 
 function triggerEnter(o) {
     const element = o.element;
-
-    o._triggeredEnter = true;
 
     if (o.get('a:css')) {
         if (o._entering === false) {
@@ -150,6 +175,8 @@ function triggerEnter(o) {
         o._removeClass(o.enterClass);
         o._removeClass(o.leaveActiveClass);
     }
+
+    o._triggeredEnter = true;
 
     o.trigger(o.enterEventName, element, o._enterEnd);
 }
@@ -189,7 +216,7 @@ function initClassName(o, newValue, oldValue) {
         enterActiveClass = `${transition}-enter-active`;
     }
 
-    o.isAppear = isAppear;
+    // o.isAppear = isAppear;
     o.enterClass = enterClass;
     o.enterActiveClass = enterActiveClass;
     o.leaveClass = `${transition}-leave`;

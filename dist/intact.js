@@ -5236,8 +5236,10 @@ Intact$2.prototype.set = function _set(key, val, options) {
             }
         } else if (this.mountedQueue && this._startRender) {
             // 如果是父组件导致子组件更新，此时存在mountedQueue
-            // 则在组件数更新完毕，触发$changed事件
-            this.mountedQueue.push(function () {
+            // 则在组件树更新完毕，触发$changed事件
+            // 现将该事件暂存起来，待子组件更新完毕在加入mountedQueue
+            // 以保证子组件的事件优先于父组件执行
+            this._pendingChangedEvents.push(function () {
                 triggerChangedEvent(_this, changes);
             });
         }
@@ -5537,6 +5539,10 @@ Intact$2.prototype.update = function (lastVNode, nextVNode, fromPending) {
     // 又触发了父组件的数据变更，此时父组件渲染完成执行_pendingUpdate
     // 是没有lastVNode的
     if (nextVNode && lastVNode) {
+        // 可能在更新的过程中，又触发了更新，所以这里判断是否存在
+        if (!this._pendingChangedEvents) {
+            this._pendingChangedEvents = [];
+        }
         patchProps$1(this, lastVNode.props, nextVNode.props);
     }
 
@@ -5665,6 +5671,14 @@ function updateComponent(o, lastVNode, nextVNode) {
     o.element = o.vdt.update(o, o.parentDom, o.mountedQueue, nextVNode || o.vNode, o.isSVG, o.get('_blocks'));
     // 让整个更新完成，才去触发_update生命周期函数
     if (o.mountedQueue) {
+        // 加入$changed事件队列
+        var events = o._pendingChangedEvents;
+        if (events) {
+            for (var i = 0; i < events.length; i++) {
+                o.mountedQueue.push(events[i]);
+            }
+            o._pendingChangedEvents = null;
+        }
         o.mountedQueue.push(function () {
             o._update(lastVNode, nextVNode);
         });
@@ -6440,10 +6454,16 @@ function initAShow(o) {
     if (!o.get('a:show')) {
         element.style.display = 'none';
     }
-    o.on('$change:a:show', function (c, v) {
-        if (v) element.style.display = originDisplay;
-    });
+    // 让display设置提前，以便于父组件获取该元素的位置属性
+    // o.on('$change:a:show', (c, v) => {
+    // if (v) element.style.display = originDisplay;
+    // });
     o.on('$changed:a:show', function (c, v) {
+        // 如果是appear动画，则在show/hide改为enter动画
+        if (o.isAppear) {
+            o.isAppear = false;
+            initClassName(o);
+        }
         if (v) {
             // 如果在leaveEnd事件中，又触发了enter
             // 此时_leaving为false，如果不清空lastInstance
@@ -6453,7 +6473,7 @@ function initAShow(o) {
                 lastInstance._unmountCancelled = true;
                 o.lastInstance = null;
             }
-            // element.style.display = originDisplay;
+            element.style.display = originDisplay;
             startEnterAnimate(o);
         } else {
             o.lastInstance = o;
@@ -6482,20 +6502,14 @@ function enter(o) {
     if (o.get('a:disabled') || !o.get('a:show') || o._entering) return;
 
     var element = o.element;
-    var enterClass = o.enterClass;
-    var enterActiveClass = o.enterActiveClass;
     var isCss = o.get('a:css');
 
-    // getAnimateType将添加enter-active className，在firefox下将导致动画提前执行
-    // 我们应该先于添加`enter` className去调用该函数
-    var isTransition = false;
-    if (isCss && getAnimateType(element, enterActiveClass) !== 'animation') {
-        isTransition = true;
-    }
-
+    // let cancel = false;
+    var keepContinuity = false;
+    var endDirectly = false;
     // 如果这个元素是上一个删除的元素，则从当前状态回到原始状态
     if (o.lastInstance) {
-        var endDirectly = !o.lastInstance._triggeredLeave;
+        endDirectly = !o.lastInstance._triggeredLeave;
 
         o.lastInstance._unmountCancelled = true;
         o.lastInstance._leaveEnd();
@@ -6506,37 +6520,63 @@ function enter(o) {
                 // o._addClass(enterClass);
 
                 // change: 这种情况不处理
-                return;
+                // cancel = true;
             } else {
-                // addClass(element, enterActiveClass);
                 // 保持连贯，添加leaveActiveClass
-                o._addClass(o.leaveActiveClass);
+                // o._addClass(o.leaveActiveClass);
+                keepContinuity = true;
             }
         }
-    } else if (isCss) {
-        o._addClass(enterClass);
     }
 
-    o._entering = true;
+    function start() {
+        o._entering = true;
 
-    TransitionEvents.on(element, o._enterEnd);
+        o.trigger(o.enterEventName + 'Start', element);
 
-    o.trigger(o.enterEventName + 'Start', element);
+        if (!endDirectly) {
+            if (keepContinuity) {
+                o._addClass(o.leaveActiveClass);
+            } else if (isCss) {
+                o._addClass(o.enterClass);
+            }
 
-    if (isTransition) {
-        nextFrame(function () {
-            return triggerEnter(o);
+            // getAnimateType将添加enter-active className，在firefox下将导致动画提前执行
+            // 我们应该先于添加`enter` className去调用该函数
+            var isTransition = false;
+            if (isCss && getAnimateType(element, o.enterActiveClass) !== 'animation') {
+                isTransition = true;
+            }
+
+            TransitionEvents.on(element, o._enterEnd);
+
+            if (isTransition) {
+                nextFrame(function () {
+                    return triggerEnter(o);
+                });
+            } else {
+                // 对于animation动画，同步添加enterActiveClass，避免闪动
+                triggerEnter(o);
+            }
+        } else {
+            o._enterEnd();
+        }
+    }
+
+    // support Promise
+    var enterStart = o.get('a:enterStart');
+    if (enterStart && (enterStart = enterStart(element)) && enterStart.then) {
+        enterStart.then(function () {
+            if (o.destroyed || !o.get('a:show')) return;
+            start();
         });
     } else {
-        // 对于animation动画，同步添加enterActiveClass，避免闪动
-        triggerEnter(o);
+        start();
     }
 }
 
 function triggerEnter(o) {
     var element = o.element;
-
-    o._triggeredEnter = true;
 
     if (o.get('a:css')) {
         if (o._entering === false) {
@@ -6546,6 +6586,8 @@ function triggerEnter(o) {
         o._removeClass(o.enterClass);
         o._removeClass(o.leaveActiveClass);
     }
+
+    o._triggeredEnter = true;
 
     o.trigger(o.enterEventName, element, o._enterEnd);
 }
@@ -6579,7 +6621,7 @@ function initClassName(o, newValue, oldValue) {
         enterActiveClass = transition + '-enter-active';
     }
 
-    o.isAppear = isAppear;
+    // o.isAppear = isAppear;
     o.enterClass = enterClass;
     o.enterActiveClass = enterActiveClass;
     o.leaveClass = transition + '-leave';

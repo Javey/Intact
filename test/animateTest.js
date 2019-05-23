@@ -575,8 +575,8 @@ describe('Animate Test', function() {
         };
 
         afterEach(() => {
-            c.destroy();
-            document.body.removeChild(c.element);
+            // c.destroy();
+            // document.body.removeChild(c.element);
         });
 
         it('show/hide animation', async function() {
@@ -734,6 +734,65 @@ describe('Animate Test', function() {
                 isEmpty();
                 sEql(leaveStart.callCount, 1);
                 sEql(leaveEnd.callCount, 1);
+            });
+        });
+        it('handle events', async function() {
+            this.enableTimeouts(false);
+
+            const events = ['enterStart', 'enter', 'enterEnd', 'leaveStart', 'leave', 'leaveEnd'];
+            let callbacks;
+            let props;
+            function initCallbacks() {
+                callbacks = {};
+                props = {};
+                events.forEach(item => {
+                    callbacks[item] = sinon.spy(() => console.log(item));
+                    props[`ev-a:${item}`] = callbacks[item];
+                });
+            }
+            function result(callCounts) {
+                events.forEach((item, index) => {
+                    sEql(callbacks[item].callCount, callCounts[index]);
+                });
+            }
+            const C = Intact.extend({
+                template: function(data, Vdt) {
+                    const h = Vdt.miss.h;
+                    return h(data.Animate, Object.assign({
+                        'a:show': data.get('show'),
+                    }, props), 'test');
+                } 
+            });
+            initCallbacks();
+            c = Intact.mount(C, document.body);
+            const element = c.element;
+
+            window.c = c;
+            await test(() => {
+                initCallbacks();
+                c.set('show', true);
+                c.set('show', false);
+            }, () => {
+                result([1, 0, 1, 1, 0, 1]);
+            });
+            await test(() => {
+                initCallbacks();
+                c.set('show', true);
+            }, () => {
+                result([1, 1, 1, 0, 0, 0]);
+            });
+            await test(() => {
+                initCallbacks();
+                c.set('show', false);
+                c.set('show', true);
+            }, () => {
+                result([1, 0, 1, 1, 0, 1]);
+            });
+            await test(() => {
+                initCallbacks();
+                c.set('show', false);
+            }, () => {
+                result([0, 0, 0, 1, 1, 1]);
             });
         });
     });

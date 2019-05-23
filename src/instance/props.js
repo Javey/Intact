@@ -115,8 +115,10 @@ Intact.prototype.set = function _set(key, val, options) {
             }
         } else if (this.mountedQueue && this._startRender) {
             // 如果是父组件导致子组件更新，此时存在mountedQueue
-            // 则在组件数更新完毕，触发$changed事件
-            this.mountedQueue.push(() => {
+            // 则在组件树更新完毕，触发$changed事件
+            // 现将该事件暂存起来，待子组件更新完毕在加入mountedQueue
+            // 以保证子组件的事件优先于父组件执行
+            this._pendingChangedEvents.push(() => {
                 triggerChangedEvent(this, changes);
             });
         }
