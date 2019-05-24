@@ -11,6 +11,15 @@ import "regenerator-runtime/runtime";
 const sEql = assert.strictEqual;
 const dEql = assert.deepStrictEqual;
 
+const after = (fn, time) => {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            fn();
+            resolve();
+        }, time);
+    });
+};
+
 describe('Animate Test', function() {
     // don't test animation in IE
     if (browser.isIE) return;
@@ -545,6 +554,28 @@ describe('Animate Test', function() {
         }, 1500);
     });
 
+    it('enter when a element is leaving', async function() {
+        this.enableTimeouts(false);
+
+        const C = Intact.extend({
+            defaults() {
+                return {show: true};
+            },
+            template: `<div><Animate v-if={self.get('show')} key="a">test</Animate><div>click</div></div>`,
+        });
+        const c = Intact.mount(C, document.body);
+        const element = c.element;
+
+        c.set('show', false);
+        await after(() => {
+            c.set('show', true);
+        }, 500).then(() => {
+            return after(() => {
+                sEql(element.outerHTML, '<div><div class="">test</div><div>click</div></div>');
+            }, 1200);
+        });
+    });
+
     describe('a:show', () => {
         let c;
        
@@ -583,7 +614,7 @@ describe('Animate Test', function() {
             this.enableTimeouts(false);
 
             const C = Intact.extend({
-                template: `<Animate a:show={self.get('show')}>test</Animate>`
+                template: `<Animate a:show={self.get('show')}>test</Animate>`,
             });
             c = Intact.mount(C, document.body);
             const element = c.element;

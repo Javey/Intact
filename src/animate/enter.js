@@ -128,7 +128,8 @@ export default function enter(o) {
         if (!endDirectly) {
             if (keepContinuity) {
                 o._addClass(o.leaveActiveClass);
-            } else if (isCss) {
+            } 
+            if (isCss) {
                 o._addClass(o.enterClass);
             }
 
