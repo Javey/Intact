@@ -94,6 +94,14 @@ export default function enter(o) {
 
     const element = o.element;
     const isCss = o.get('a:css');
+    const enterStart = o.get('a:enterStart');
+
+    // getAnimateType将添加enter-active className，在firefox下将导致动画提前执行
+    // 我们应该先于添加`enter` className去调用该函数
+    let isTransition = false;
+    if (isCss && getAnimateType(element, o.enterActiveClass) !== 'animation') {
+        isTransition = true;
+    }
 
     // let cancel = false;
     let keepContinuity = false;
@@ -105,21 +113,10 @@ export default function enter(o) {
         o.lastInstance._unmountCancelled = true;
         o.lastInstance._leaveEnd();
 
-        if (isCss) {
-            if (endDirectly) {
-                // 如果上一个元素还没来得及做动画，则当做新元素处理
-                // o._addClass(enterClass);
-
-                // change: 这种情况不处理
-                // cancel = true;
-            } else {
-                // 保持连贯，添加leaveActiveClass
-                // o._addClass(o.leaveActiveClass);
-                keepContinuity = true;
-            }
-        }
+        // 保持连贯，添加leaveActiveClass
+        keepContinuity = !enterStart && !endDirectly && isCss;
     }
-
+   
     function start() {
         o._entering = true;
 
@@ -127,17 +124,10 @@ export default function enter(o) {
 
         if (!endDirectly) {
             if (keepContinuity) {
-                o._addClass(o.leaveActiveClass);
+                o._addClass(o.enterActiveClass);
             } 
             if (isCss) {
                 o._addClass(o.enterClass);
-            }
-
-            // getAnimateType将添加enter-active className，在firefox下将导致动画提前执行
-            // 我们应该先于添加`enter` className去调用该函数
-            let isTransition = false;
-            if (isCss && getAnimateType(element, o.enterActiveClass) !== 'animation') {
-                isTransition = true;
             }
 
             TransitionEvents.on(element, o._enterEnd);
@@ -153,10 +143,16 @@ export default function enter(o) {
         }
     }
 
-    // support Promise
-    let enterStart = o.get('a:enterStart');
-    if (enterStart && (enterStart = enterStart(element)) && enterStart.then) {
-        enterStart.then(() => {
+    // 要保持leave的过程中，enter动画的连贯，enterStart中必须不能操作dom导致重绘
+    // 但是往往enterStart中会重绘，一种解决思路是：
+    // 将leaveEnd放在enterStart之后执行，但如果enterStart依赖元素的初始状态，而非
+    // leave的中间状态，此时会导致enterStart中dom操作不符合预期
+    // 另种一种思路是：
+    // 不去保证拥有enterStart函数的动画的连贯性，此时我们会从enter动画初始状态进行动画
+    // 这里采取第二种思路
+    let i;
+    if (enterStart && (i = enterStart(element)) && i.then) {
+        i.then(() => {
             if (o.destroyed || !o.get('a:show')) return;
             start();
         });
@@ -174,7 +170,6 @@ function triggerEnter(o) {
         }
         o._addClass(o.enterActiveClass);
         o._removeClass(o.enterClass);
-        o._removeClass(o.leaveActiveClass);
     }
 
     o._triggeredEnter = true;

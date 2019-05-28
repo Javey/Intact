@@ -825,5 +825,28 @@ describe('Animate Test', function() {
                 result([0, 0, 0, 1, 1, 1]);
             });
         });
+
+        it('handle dom in a:enterStart', async function() {
+            this.enableTimeouts(false);
+
+            const C = Intact.extend({
+                template: `<Animate a:show={self.get('show')} a:enterStart={self._onShow}>test</Animate>`,
+                _onShow(el) {
+                    el.offsetWidth;
+                }
+            });
+            c = Intact.mount(C, document.body);
+            const element = c.element;
+
+            c.set('show', true);
+            await after(() => { c.set('show', false); }, 500);
+            await after(() => { testAttribute('animate-leave-active animate-leave', '') }, 200);
+            await after(() => { testAttribute('', 'display: none;') }, 700);
+            c.set('show', true);
+            await after(() => { c.set('show', false); }, 1200);
+            await after(() => { c.set('show', true); }, 500);
+            await after(() => { testAttribute('animate-enter-active', '') }, 200);
+            await after(() => { testAttribute('', '') }, 700);
+        });
     });
 });
