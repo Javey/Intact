@@ -103,8 +103,6 @@ export default function enter(o) {
         isTransition = true;
     }
 
-    // let cancel = false;
-    let keepContinuity = false;
     let endDirectly = false;
     // 如果这个元素是上一个删除的元素，则从当前状态回到原始状态
     if (o.lastInstance) {
@@ -114,7 +112,9 @@ export default function enter(o) {
         o.lastInstance._leaveEnd();
 
         // 保持连贯，添加leaveActiveClass
-        keepContinuity = !enterStart && !endDirectly && isCss;
+        if (!endDirectly && isCss) {
+            o._addClass(o.enterActiveClass);
+        }
     }
    
     function start() {
@@ -123,9 +123,6 @@ export default function enter(o) {
         o.trigger(`${o.enterEventName}Start`, element);
 
         if (!endDirectly) {
-            if (keepContinuity) {
-                o._addClass(o.enterActiveClass);
-            } 
             if (isCss) {
                 o._addClass(o.enterClass);
             }
