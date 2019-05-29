@@ -105,7 +105,7 @@ export default function enter(o) {
         endDirectly = !o.lastInstance._triggeredLeave;
 
         o.lastInstance._unmountCancelled = true;
-        o.lastInstance._leaveEnd(true);
+        o.lastInstance._leaveEnd(null, true);
 
         // 保持连贯，添加leaveActiveClass
         if (!endDirectly && isCss) {
@@ -230,7 +230,7 @@ function initClassName(o, newValue, oldValue) {
 function initEnterEndCallback(o) {
     const {element, parentInstance} = o;
 
-    o._enterEnd = (e) => {
+    o._enterEnd = (e, isCancel) => {
         if (e && e.target !== element) return;
 
         TransitionEvents.off(element, o._enterEnd);
@@ -254,7 +254,7 @@ function initEnterEndCallback(o) {
             }
         }
 
-        o.trigger(`${o.enterEventName}End`, element, e === true /* isCancel */);
+        o.trigger(`${o.enterEventName}End`, element, isCancel);
     };
 }
 

@@ -6337,7 +6337,7 @@ function leave(o) {
         if (!o._triggeredEnter) {
             endDirectly = true;
         }
-        o._enterEnd(true);
+        o._enterEnd(null, true);
     }
 
     initLeaveEndCallback(o);
@@ -6390,7 +6390,7 @@ function initLeaveEndCallback(o) {
         vNode = o.vNode;
 
 
-    o._leaveEnd = function (e) {
+    o._leaveEnd = function (e, isCancel) {
         if (e && e.target !== element) return;
 
         TransitionEvents.off(element, o._leaveEnd);
@@ -6416,7 +6416,7 @@ function initLeaveEndCallback(o) {
             }
         }
 
-        o.trigger('a:leaveEnd', element, e === true /* isCancel */);
+        o.trigger('a:leaveEnd', element, isCancel);
         if (!o._unmountCancelled) {
             o.leaveEndCallback(true);
         }
@@ -6520,7 +6520,7 @@ function enter(o) {
         endDirectly = !o.lastInstance._triggeredLeave;
 
         o.lastInstance._unmountCancelled = true;
-        o.lastInstance._leaveEnd(true);
+        o.lastInstance._leaveEnd(null, true);
 
         // 保持连贯，添加leaveActiveClass
         if (!endDirectly && isCss) {
@@ -6640,7 +6640,7 @@ function initEnterEndCallback(o) {
         parentInstance = o.parentInstance;
 
 
-    o._enterEnd = function (e) {
+    o._enterEnd = function (e, isCancel) {
         if (e && e.target !== element) return;
 
         TransitionEvents.off(element, o._enterEnd);
@@ -6662,7 +6662,7 @@ function initEnterEndCallback(o) {
             }
         }
 
-        o.trigger(o.enterEventName + 'End', element, e === true /* isCancel */);
+        o.trigger(o.enterEventName + 'End', element, isCancel);
     };
 }
 

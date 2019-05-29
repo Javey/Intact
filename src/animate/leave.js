@@ -73,7 +73,7 @@ export default function leave(o) {
         if (!o._triggeredEnter) {
             endDirectly = true;
         }
-        o._enterEnd(true);
+        o._enterEnd(null, true);
     }
 
     initLeaveEndCallback(o);
@@ -123,7 +123,7 @@ function triggerLeave(o) {
 function initLeaveEndCallback(o) {
     const {element, _parentDom, vNode} = o;
 
-    o._leaveEnd = (e) => {
+    o._leaveEnd = (e, isCancel) => {
         if (e && e.target !== element) return;
 
         TransitionEvents.off(element, o._leaveEnd);
@@ -151,7 +151,7 @@ function initLeaveEndCallback(o) {
             }
         }
 
-        o.trigger('a:leaveEnd', element, e === true /* isCancel */);
+        o.trigger('a:leaveEnd', element, isCancel);
         if (!o._unmountCancelled) {
             o.leaveEndCallback(true);
         }
