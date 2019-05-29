@@ -6337,7 +6337,7 @@ function leave(o) {
         if (!o._triggeredEnter) {
             endDirectly = true;
         }
-        o._enterEnd();
+        o._enterEnd(true);
     }
 
     initLeaveEndCallback(o);
@@ -6416,7 +6416,7 @@ function initLeaveEndCallback(o) {
             }
         }
 
-        o.trigger('a:leaveEnd', element, e);
+        o.trigger('a:leaveEnd', element, e === true /* isCancel */);
         if (!o._unmountCancelled) {
             o.leaveEndCallback(true);
         }
@@ -6460,10 +6460,6 @@ function initAShow(o) {
     if (!o.get('a:show')) {
         element.style.display = 'none';
     }
-    // 让display设置提前，以便于父组件获取该元素的位置属性
-    // o.on('$change:a:show', (c, v) => {
-    // if (v) element.style.display = originDisplay;
-    // });
     o.on('$changed:a:show', function (c, v) {
         // 如果是appear动画，则在show/hide改为enter动画
         if (o.isAppear) {
@@ -6524,7 +6520,7 @@ function enter(o) {
         endDirectly = !o.lastInstance._triggeredLeave;
 
         o.lastInstance._unmountCancelled = true;
-        o.lastInstance._leaveEnd();
+        o.lastInstance._leaveEnd(true);
 
         // 保持连贯，添加leaveActiveClass
         if (!endDirectly && isCss) {
@@ -6666,7 +6662,7 @@ function initEnterEndCallback(o) {
             }
         }
 
-        o.trigger(o.enterEventName + 'End', element, e);
+        o.trigger(o.enterEventName + 'End', element, e === true /* isCancel */);
     };
 }
 

@@ -73,7 +73,7 @@ export default function leave(o) {
         if (!o._triggeredEnter) {
             endDirectly = true;
         }
-        o._enterEnd();
+        o._enterEnd(true);
     }
 
     initLeaveEndCallback(o);
@@ -151,7 +151,7 @@ function initLeaveEndCallback(o) {
             }
         }
 
-        o.trigger('a:leaveEnd', element, e);
+        o.trigger('a:leaveEnd', element, e === true /* isCancel */);
         if (!o._unmountCancelled) {
             o.leaveEndCallback(true);
         }
