@@ -78,17 +78,17 @@ export default function leave(o) {
 
     initLeaveEndCallback(o);
 
+    // 为了保持动画连贯，我们立即添加leaveActiveClass
+    // 但如果当前元素还没有来得及做enter动画，就被删除
+    // 则leaveActiveClass和leaveClass都放到下一帧添加
+    // 否则leaveClass和enterClass一样就不会有动画效果
+    if (!endDirectly && o.get('a:css')) {
+        o._addClass(o.leaveActiveClass);
+    }
+
     o.trigger('a:leaveStart', element);
 
     if (!endDirectly) {
-        // 为了保持动画连贯，我们立即添加leaveActiveClass
-        // 但如果当前元素还没有来得及做enter动画，就被删除
-        // 则leaveActiveClass和leaveClass都放到下一帧添加
-        // 否则leaveClass和enterClass一样就不会有动画效果
-        if (o.get('a:css')) {
-            o._addClass(o.leaveActiveClass);
-        }
-
         // TransitionEvents.on(element, o._leaveEnd);
         // triggerLeave(o);
         nextFrame(() => {
@@ -151,7 +151,7 @@ function initLeaveEndCallback(o) {
             }
         }
 
-        o.trigger('a:leaveEnd', element);
+        o.trigger('a:leaveEnd', element, e);
         if (!o._unmountCancelled) {
             o.leaveEndCallback(true);
         }

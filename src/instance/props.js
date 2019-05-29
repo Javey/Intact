@@ -66,7 +66,6 @@ Intact.prototype.set = function _set(key, val, options) {
         const changeKeys = [];
         for (let i = 0; i < changes.length; i++) {
             const [prop, values] = changes[i];
-            changeKeys.push(prop);
 
             if (options._fromPatchProps) {
                 // trigger a $receive event to show that we received a different prop
@@ -78,11 +77,20 @@ Intact.prototype.set = function _set(key, val, options) {
                 // 这会导致死循坏
                 // 所以这里将values[1]设为修正后的值，避免死循坏发生
                 values[1] = this.get(prop);
+                // 如果修正后，前后值相等，则不去触发change事件
+                if (values[1] === values[0]) {
+                    changes.splice(i, 1);
+                    i--;
+                    continue;
+                }
             }
 
+            changeKeys.push(prop);
             // trigger `change*` events
             this.trigger(`$change:${prop}`, this, values[1], values[0]);
         }
+
+        if (!changeKeys.length) return;
 
         if (options._fromPatchProps) {
             this.trigger(`$receive`, this, changeKeys);

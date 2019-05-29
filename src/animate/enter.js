@@ -258,7 +258,7 @@ function initEnterEndCallback(o) {
             }
         }
 
-        o.trigger(`${o.enterEventName}End`, element);
+        o.trigger(`${o.enterEventName}End`, element, e);
     };
 }
 

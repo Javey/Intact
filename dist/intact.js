@@ -5190,7 +5190,6 @@ Intact$2.prototype.set = function _set(key, val, options) {
                 _prop = _changes$i[0],
                 values$$1 = _changes$i[1];
 
-            changeKeys.push(_prop);
 
             if (options._fromPatchProps) {
                 // trigger a $receive event to show that we received a different prop
@@ -5202,11 +5201,20 @@ Intact$2.prototype.set = function _set(key, val, options) {
                 // 这会导致死循坏
                 // 所以这里将values[1]设为修正后的值，避免死循坏发生
                 values$$1[1] = this.get(_prop);
+                // 如果修正后，前后值相等，则不去触发change事件
+                if (values$$1[1] === values$$1[0]) {
+                    changes.splice(i, 1);
+                    i--;
+                    continue;
+                }
             }
 
+            changeKeys.push(_prop);
             // trigger `change*` events
             this.trigger('$change:' + _prop, this, values$$1[1], values$$1[0]);
         }
+
+        if (!changeKeys.length) return;
 
         if (options._fromPatchProps) {
             this.trigger('$receive', this, changeKeys);
@@ -6334,17 +6342,17 @@ function leave(o) {
 
     initLeaveEndCallback(o);
 
+    // 为了保持动画连贯，我们立即添加leaveActiveClass
+    // 但如果当前元素还没有来得及做enter动画，就被删除
+    // 则leaveActiveClass和leaveClass都放到下一帧添加
+    // 否则leaveClass和enterClass一样就不会有动画效果
+    if (!endDirectly && o.get('a:css')) {
+        o._addClass(o.leaveActiveClass);
+    }
+
     o.trigger('a:leaveStart', element);
 
     if (!endDirectly) {
-        // 为了保持动画连贯，我们立即添加leaveActiveClass
-        // 但如果当前元素还没有来得及做enter动画，就被删除
-        // 则leaveActiveClass和leaveClass都放到下一帧添加
-        // 否则leaveClass和enterClass一样就不会有动画效果
-        if (o.get('a:css')) {
-            o._addClass(o.leaveActiveClass);
-        }
-
         // TransitionEvents.on(element, o._leaveEnd);
         // triggerLeave(o);
         nextFrame(function () {
@@ -6408,7 +6416,7 @@ function initLeaveEndCallback(o) {
             }
         }
 
-        o.trigger('a:leaveEnd', element);
+        o.trigger('a:leaveEnd', element, e);
         if (!o._unmountCancelled) {
             o.leaveEndCallback(true);
         }
@@ -6510,8 +6518,6 @@ function enter(o) {
         isTransition = true;
     }
 
-    // let cancel = false;
-    var keepContinuity = false;
     var endDirectly = false;
     // 如果这个元素是上一个删除的元素，则从当前状态回到原始状态
     if (o.lastInstance) {
@@ -6521,7 +6527,9 @@ function enter(o) {
         o.lastInstance._leaveEnd();
 
         // 保持连贯，添加leaveActiveClass
-        keepContinuity = !enterStart && !endDirectly && isCss;
+        if (!endDirectly && isCss) {
+            o._addClass(o.enterActiveClass);
+        }
     }
 
     function start() {
@@ -6530,9 +6538,6 @@ function enter(o) {
         o.trigger(o.enterEventName + 'Start', element);
 
         if (!endDirectly) {
-            if (keepContinuity) {
-                o._addClass(o.enterActiveClass);
-            }
             if (isCss) {
                 o._addClass(o.enterClass);
             }
@@ -6661,7 +6666,7 @@ function initEnterEndCallback(o) {
             }
         }
 
-        o.trigger(o.enterEventName + 'End', element);
+        o.trigger(o.enterEventName + 'End', element, e);
     };
 }
 

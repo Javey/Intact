@@ -734,6 +734,46 @@ describe('Simple Test', function() {
             sEql(receiveFn.callCount, 3);
         });
 
+        it('should not trigger change event when we fixed a value and it does not change', () => {
+            const changeShow = sinon.spy();
+            const change = sinon.spy((...args) => console.log(args));
+            const changedShow = sinon.spy();
+            const changed = sinon.spy((...args) => console.log(args));
+            let c;
+            const C = Intact.extend({
+                defaults() { return {show: false} },
+                template: `<div>test</div>`,
+                _init() {
+                    c = this;
+                    this.on('$receive:show', (c, v) => {
+                        this.set('show', !!v, {silent: true});
+                    });
+                    this.on('$change:show', changeShow);
+                    this.on('$change', change);
+                    this.on('$changed:show', changedShow);
+                    this.on('$changed', changed);
+                }
+            });
+            const D = Intact.extend({
+                template: `<C show={self.get('show')} a={self.get('a')} />`,
+                _init() { this.C = C; }
+            });
+            const instance = new D();
+            instance.init();
+
+            instance.set({show: 0, a: 1});
+            sEql(changeShow.callCount, 0);
+            sEql(change.calledWith(c, ['a']), true);
+            sEql(changedShow.callCount, 0);
+            sEql(changed.calledWith(c, ['a']), true);
+            
+            instance.set({show: 1, a: 2});
+            sEql(changeShow.callCount, 1);
+            sEql(change.calledWith(c, ['show', 'a']), true);
+            sEql(changedShow.callCount, 1);
+            sEql(changed.calledWith(c, ['show', 'a']), true);
+        });
+
         it('change attributes to trigger change event', function() {
             var changeFn = sinon.spy(),
                 changeAFn = sinon.spy(),
