@@ -91,6 +91,7 @@ export default function enter(o) {
     const element = o.element;
     const isCss = o.get('a:css');
     const enterStart = o.get('a:enterStart');
+    const continuity = o.get('a:continuity');
 
     // getAnimateType将添加enter-active className，在firefox下将导致动画提前执行
     // 我们应该先于添加`enter` className去调用该函数
@@ -102,13 +103,13 @@ export default function enter(o) {
     let endDirectly = false;
     // 如果这个元素是上一个删除的元素，则从当前状态回到原始状态
     if (o.lastInstance) {
-        endDirectly = !o.lastInstance._triggeredLeave;
+        endDirectly = continuity && !o.lastInstance._triggeredLeave;
 
         o.lastInstance._unmountCancelled = true;
         o.lastInstance._leaveEnd(null, true);
 
         // 保持连贯，添加leaveActiveClass
-        if (!endDirectly && isCss) {
+        if (continuity && !endDirectly && isCss) {
             o._addClass(o.enterActiveClass);
         }
     }

@@ -57,6 +57,8 @@ export default function leave(o) {
 
     if (element.style.display === 'none') return o.leaveEndCallback(true);
 
+    const isCss = o.get('a:css');
+    const continuity = o.get('a:continuity');
     const vNode = o.vNode;
     const parentDom = o._parentDom;
     // vNode都会被添加key，当只有一个子元素时，vNode.key === undefined
@@ -68,9 +70,9 @@ export default function leave(o) {
 
     o._leaving = true;
 
-    let endDirectly;
+    let endDirectly = false;
     if (o._entering) {
-        if (!o._triggeredEnter) {
+        if (continuity && !o._triggeredEnter) {
             endDirectly = true;
         }
         o._enterEnd(null, true);
@@ -82,7 +84,7 @@ export default function leave(o) {
     // 但如果当前元素还没有来得及做enter动画，就被删除
     // 则leaveActiveClass和leaveClass都放到下一帧添加
     // 否则leaveClass和enterClass一样就不会有动画效果
-    if (!endDirectly && o.get('a:css')) {
+    if (continuity && !endDirectly && isCss) {
         o._addClass(o.leaveActiveClass);
     }
 

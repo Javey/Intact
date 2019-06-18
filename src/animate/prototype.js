@@ -7,6 +7,7 @@ const {className: c, extend: e} = Vdt.utils;
 const prototype = {
     defaults() {
         return {
+            'a:continuity': true, // 是否保持连贯性
             'a:tag': 'div',
             'a:transition': 'animate',
             'a:appear': false,

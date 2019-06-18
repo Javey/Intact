@@ -6165,6 +6165,7 @@ var e$1 = _Vdt$utils.extend;
 var prototype = {
     defaults: function defaults() {
         return {
+            'a:continuity': true, // 是否保持连贯性
             'a:tag': 'div',
             'a:transition': 'animate',
             'a:appear': false,
@@ -6317,6 +6318,8 @@ function leave(o) {
 
     if (element.style.display === 'none') return o.leaveEndCallback(true);
 
+    var isCss = o.get('a:css');
+    var continuity = o.get('a:continuity');
     var vNode = o.vNode;
     var parentDom = o._parentDom;
     // vNode都会被添加key，当只有一个子元素时，vNode.key === undefined
@@ -6328,9 +6331,9 @@ function leave(o) {
 
     o._leaving = true;
 
-    var endDirectly = void 0;
+    var endDirectly = false;
     if (o._entering) {
-        if (!o._triggeredEnter) {
+        if (continuity && !o._triggeredEnter) {
             endDirectly = true;
         }
         o._enterEnd(null, true);
@@ -6342,7 +6345,7 @@ function leave(o) {
     // 但如果当前元素还没有来得及做enter动画，就被删除
     // 则leaveActiveClass和leaveClass都放到下一帧添加
     // 否则leaveClass和enterClass一样就不会有动画效果
-    if (!endDirectly && o.get('a:css')) {
+    if (continuity && !endDirectly && isCss) {
         o._addClass(o.leaveActiveClass);
     }
 
@@ -6502,6 +6505,7 @@ function enter(o) {
     var element = o.element;
     var isCss = o.get('a:css');
     var enterStart = o.get('a:enterStart');
+    var continuity = o.get('a:continuity');
 
     // getAnimateType将添加enter-active className，在firefox下将导致动画提前执行
     // 我们应该先于添加`enter` className去调用该函数
@@ -6513,13 +6517,13 @@ function enter(o) {
     var endDirectly = false;
     // 如果这个元素是上一个删除的元素，则从当前状态回到原始状态
     if (o.lastInstance) {
-        endDirectly = !o.lastInstance._triggeredLeave;
+        endDirectly = continuity && !o.lastInstance._triggeredLeave;
 
         o.lastInstance._unmountCancelled = true;
         o.lastInstance._leaveEnd(null, true);
 
         // 保持连贯，添加leaveActiveClass
-        if (!endDirectly && isCss) {
+        if (continuity && !endDirectly && isCss) {
             o._addClass(o.enterActiveClass);
         }
     }
