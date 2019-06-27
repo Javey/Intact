@@ -142,7 +142,14 @@ export const TransitionEvents = {
 
 let raf;
 export function nextFrame(fn) {
-    raf(() => raf(fn));
+    const _fn = () => {
+        if (_fn.cancelled) return;
+        fn();
+    };
+    raf(() => raf(_fn));
+    return () => {
+        _fn.cancelled = true;
+    };
 }
 
 if (inBrowser) {

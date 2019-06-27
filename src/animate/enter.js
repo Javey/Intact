@@ -26,13 +26,12 @@ prototype._mount = function(lastVNode, vNode) {
         if (lastInstance._leaving) {
             this.lastInstance = lastInstance;
         } else {
-            lastInstance._unmountCancelled = true;
+            lastInstance._cancelLeaveNextFrame();
         }
     }
 
     this.parentInstance = getParentAnimate(this);
 
-    initEnterEndCallback(this);
     initUnmountCallback(this, vNode);
 
     startEnterAnimate(this); 
@@ -45,6 +44,16 @@ function initAShow(o) {
     if (!o.get('a:show')) {
         element.style.display = 'none';
     }
+
+    // o.on('$change:a:disabled', (c, v) => {
+        // if (v) {
+            // const lastInstance = o.lastInstance;
+            // if (lastInstance && lastInstance._leaving === true) {
+                // lastInstance._leaveEnd();
+            // }
+        // }
+    // });
+
     o.on('$changed:a:show', (c, v) => {
         // 如果是appear动画，则在show/hide改为enter动画
         if (o.isAppear) {
@@ -54,17 +63,16 @@ function initAShow(o) {
         if (v) {
             // 如果在leaveEnd事件中，又触发了enter
             // 此时_leaving为false，如果不清空lastInstance
-            // 将会再次触发leaveEnd，但是还是需要cancel掉
+            // 将会在enter中再次触发leaveEnd
             const lastInstance = o.lastInstance;
             if (lastInstance && lastInstance._leaving === false) {
-                lastInstance._unmountCancelled = true;
+                o.leaveEndCallback = noop;
                 o.lastInstance = null;
             }
             element.style.display = originDisplay;
             startEnterAnimate(o);
         } else {
             o.lastInstance = o;
-            o._unmountCancelled = false;
             o.leaveEndCallback = () => {
                 element.style.display = 'none';
                 o.lastInstance = null;
@@ -75,7 +83,7 @@ function initAShow(o) {
 }
 
 function startEnterAnimate(o) {
-   if (o.parentInstance) {
+    if (o.parentInstance) {
         // 如果存在父动画组件，则使用父级进行管理
         // 统一做动画
         animateList(o);
@@ -86,12 +94,13 @@ function startEnterAnimate(o) {
 };
 
 export default function enter(o) {
-    if (o.get('a:disabled') || !o.get('a:show') || o._entering) return;
+    if (!o.get('a:show') || o._entering) return;
 
     const element = o.element;
     const isCss = o.get('a:css');
     const enterStart = o.get('a:enterStart');
     const continuity = o.get('a:continuity');
+    const disabled = o.get('a:disabled');
 
     // getAnimateType将添加enter-active className，在firefox下将导致动画提前执行
     // 我们应该先于添加`enter` className去调用该函数
@@ -105,14 +114,18 @@ export default function enter(o) {
     if (o.lastInstance) {
         endDirectly = continuity && !o.lastInstance._triggeredLeave;
 
-        o.lastInstance._unmountCancelled = true;
+        o.lastInstance._cancelLeaveNextFrame();
         o.lastInstance._leaveEnd(null, true);
 
         // 保持连贯，添加leaveActiveClass
-        if (continuity && !endDirectly && isCss) {
+        if (continuity && !endDirectly && isCss && !disabled) {
             o._addClass(o.enterActiveClass);
         }
     }
+
+    if (disabled) return;
+
+    initEnterEndCallback(o); 
    
     function start() {
         o._entering = true;
@@ -127,7 +140,7 @@ export default function enter(o) {
             TransitionEvents.on(element, o._enterEnd);
 
             if (isTransition) {
-                nextFrame(() => triggerEnter(o));
+                o._cancelEnterNextFrame = nextFrame(() => triggerEnter(o));
             } else {
                 // 对于animation动画，同步添加enterActiveClass，避免闪动
                 triggerEnter(o);
@@ -159,9 +172,9 @@ function triggerEnter(o) {
     const element = o.element;
 
     if (o.get('a:css')) {
-        if (o._entering === false) {
-            return o._removeClass(o.enterActiveClass);
-        }
+        // if (o._entering === false) {
+            // return o._removeClass(o.enterActiveClass);
+        // }
         o._addClass(o.enterActiveClass);
         o._removeClass(o.enterClass);
     }
@@ -230,13 +243,15 @@ function initClassName(o, newValue, oldValue) {
 
 function initEnterEndCallback(o) {
     const {element, parentInstance} = o;
+    const isCss = o.get('a:css');
+    const disabled = o.get('a:disabled');
 
     o._enterEnd = (e, isCancel) => {
         if (e && e.target !== element) return;
 
         TransitionEvents.off(element, o._enterEnd);
 
-        if (o.get('a:css') && !o.get('a:disabled')) {
+        if (isCss && !disabled) {
             e && e.stopPropagation && e.stopPropagation();
             o._removeClass(o.enterClass);
             o._removeClass(o.enterActiveClass);
@@ -290,8 +305,7 @@ function unmountCallback(o) {
         return;
     }
 
-    const isNotAnimate = !o.get('a:css') && !hasJsTransition(o) || 
-        o.get('a:disabled');
+    const isNotAnimate = !o.get('a:css') && !hasJsTransition(o);
 
     if (parentInstance && !isNotAnimate) {
         parentInstance._leavingAmount++;

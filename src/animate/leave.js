@@ -49,7 +49,6 @@ function isRemoveDirectly(instance) {
 }
 
 export default function leave(o) {
-    if (o.get('a:disabled')) return;
     // maybe a a:show animation is leaving
     if (o._leaving) return;
 
@@ -59,6 +58,19 @@ export default function leave(o) {
 
     const isCss = o.get('a:css');
     const continuity = o.get('a:continuity');
+    const disabled = o.get('a:disabled');
+
+    let endDirectly = false;
+    if (o._entering) {
+        if (continuity && !o._triggeredEnter) {
+            endDirectly = true;
+            o._cancelEnterNextFrame();
+        }
+        o._enterEnd(null, true);
+    }
+
+    if (disabled) return o.leaveEndCallback();
+
     const vNode = o.vNode;
     const parentDom = o._parentDom;
     // vNode都会被添加key，当只有一个子元素时，vNode.key === undefined
@@ -69,14 +81,6 @@ export default function leave(o) {
     parentDom._reserve[vNode.key] = vNode;
 
     o._leaving = true;
-
-    let endDirectly = false;
-    if (o._entering) {
-        if (continuity && !o._triggeredEnter) {
-            endDirectly = true;
-        }
-        o._enterEnd(null, true);
-    }
 
     initLeaveEndCallback(o);
 
@@ -93,9 +97,7 @@ export default function leave(o) {
     if (!endDirectly) {
         // TransitionEvents.on(element, o._leaveEnd);
         // triggerLeave(o);
-        nextFrame(() => {
-            // 1. 如果leave动画还没得及执行，就enter了，此时啥也不做
-            if (o._unmountCancelled) return;
+        o._cancelLeaveNextFrame = nextFrame(() => {
             // 存在一种情况，当一个enter动画在完成的瞬间，
             // 这个元素被删除了，由于前面保持动画的连贯性
             // 添加了leaveActiveClass，则会导致绑定的leaveEnd
@@ -124,13 +126,15 @@ function triggerLeave(o) {
 
 function initLeaveEndCallback(o) {
     const {element, _parentDom, vNode} = o;
+    const isCss = o.get('a:css');
+    const disabled = o.get('a:disabled');
 
     o._leaveEnd = (e, isCancel) => {
         if (e && e.target !== element) return;
 
         TransitionEvents.off(element, o._leaveEnd);
 
-        if (o.get('a:css') && !o.get('a:disabled')) {
+        if (isCss && !disabled) {
             e && e.stopPropagation && e.stopPropagation();
             o._removeClass(o.leaveClass);
             o._removeClass(o.leaveActiveClass);
@@ -154,7 +158,7 @@ function initLeaveEndCallback(o) {
         }
 
         o.trigger('a:leaveEnd', element, isCancel);
-        if (!o._unmountCancelled) {
+        if (!isCancel) {
             o.leaveEndCallback(true);
         }
     };

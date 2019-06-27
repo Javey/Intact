@@ -11,6 +11,11 @@ import "regenerator-runtime/runtime";
 const sEql = assert.strictEqual;
 const dEql = assert.deepStrictEqual;
 
+const wait = (time) => {
+    return new Promise(resolve => {
+        setTimeout(resolve, time);
+    });
+};
 const after = (fn, time) => {
     return new Promise(resolve => {
         setTimeout(() => {
@@ -310,7 +315,7 @@ describe('Animate Test', function() {
         const c = app.load(C);
         c.set('show', true);
         setTimeout(() => {
-            sEql(app.element.innerHTML, '<div><div><div>test</div></div></div>');
+            sEql(app.element.innerHTML, '<div><div class=""><div>test</div></div></div>');
             c.set('show', false);
             sEql(app.element.innerHTML, '<div></div>');
             sEql(fn.callCount, 1);
@@ -847,6 +852,42 @@ describe('Animate Test', function() {
             await after(() => { c.set('show', true); }, 500);
             await after(() => { testAttribute('animate-enter-active', '') }, 200);
             await after(() => { testAttribute('', '') }, 700);
+        });
+
+        it('disable and show a leaving animate', async function() {
+            this.enableTimeouts(false);
+
+            const C = Intact.extend({
+                template: `<Animate a:show={self.get('show')} a:disabled={self.get('disabled')}>test</Animate>`,
+                defaults() {
+                    return {show: true, disabled: false};
+                },
+            });
+
+            c = Intact.mount(C, document.body);
+            // show a disabled animation when leaving
+            c.set('show', false);
+            c.set({show: true, disabled: true});
+            testAttribute('', null);
+
+            // show a enabled animation when leaving
+            c.set('show', false);
+            c.set({show: true, disabled: false});
+            await wait(1500);
+            testAttribute('', '');
+
+            // hide a disabed animation when entering
+            c.set({show: false, disabled: true});
+            c.set({show: true, disabled: false});
+            c.set({show: false, disabled: true});
+            testAttribute('', 'display: none;');
+
+            // hide a enabled animation when entering
+            c.set({show: false, disabled: true});
+            c.set({show: true, disabled: true});
+            c.set({show: false, disabled: false});
+            await wait(1500);
+            testAttribute('', 'display: none;');
         });
     });
 });
