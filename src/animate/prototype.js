@@ -40,6 +40,23 @@ const prototype = {
         const oClassName = props.className;
         props.className = c(e({[oClassName]: oClassName}, _staticClass)) || undefined;
 
+        if (self._isRenderString) {
+            const show = self.get('a:show');
+            if (!show) {
+                const oStyle = props.style;
+                if (!oStyle) {
+                    props.style = {display: 'none'};
+                } else {
+                    const type = typeof oStyle;
+                    if (type === 'string') {
+                        props.style = oStyle + 'display: none;';
+                    } else if (type === 'object' && oStyle) {
+                        props.style.display = 'none';
+                    }
+                }
+            }
+        }
+
         return h(tagName, props, self.get('children'));
     },
 
@@ -75,6 +92,14 @@ const prototype = {
     _removeClass(className) {
         delete this._staticClass[className];
         removeClass(this.element, className);
+    },
+
+    toString() {
+        this._isRenderString = true;
+        const ret = this._super();
+        this._isRenderString = false;
+
+        return ret;
     }
 };
 

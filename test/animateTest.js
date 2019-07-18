@@ -611,8 +611,10 @@ describe('Animate Test', function() {
         };
 
         afterEach(() => {
-            c.destroy();
-            document.body.removeChild(c.element);
+            if (c) {
+                c.destroy();
+                document.body.removeChild(c.element);
+            }
         });
 
         it('show/hide animation', async function() {
@@ -888,6 +890,32 @@ describe('Animate Test', function() {
             c.set({show: false, disabled: false});
             await wait(1500);
             testAttribute('', 'display: none;');
+        });
+
+        it('hydrate a:show Animate', async function() {
+            this.enableTimeouts(false);
+            c = null;
+
+            const div = document.createElement('div');
+            document.body.appendChild(div);
+            const C = Intact.extend({
+                template: `<Animate a:show={self.get('show')}>test</Animate>`,
+                defaults() {
+                    return {show: false};
+                }
+            });
+            const i = new C();
+            const html = i.toString();
+            div.innerHTML = html;
+            sEql(html, '<div style="display:none;">test</div>');
+
+            const newC = Intact.hydrate(C, div);
+            newC.set('show', true);
+            await wait(100)
+            sEql(div.innerHTML, '<div style="" class="animate-enter-active">test</div>');
+            await wait(1500);
+            sEql(div.innerHTML, '<div style="" class="">test</div>');
+            document.body.removeChild(div);
         });
     });
 });

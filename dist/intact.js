@@ -4331,7 +4331,7 @@ Vdt$1.prototype = {
     },
     renderString: function renderString$$1(data, blocks, parent) {
         this.data = data;
-        var vNode = this.template(data, Vdt$1, blocks, this.template) || createCommentVNode('empty');
+        var vNode = this.template(data, Vdt$1, blocks, this.template, true) || createCommentVNode('empty');
 
         return toString$2(vNode, parent, Vdt$1.configure().disableSplitText);
     },
@@ -6174,7 +6174,7 @@ var e$1 = _Vdt$utils.extend;
 
 
 var prototype = {
-    defaults: function defaults() {
+    defaults: function defaults$$1() {
         return {
             'a:continuity': true, // 是否保持连贯性
             'a:tag': 'div',
@@ -6204,6 +6204,23 @@ var prototype = {
         }
         var oClassName = props.className;
         props.className = c(e$1((_e = {}, _e[oClassName] = oClassName, _e), _staticClass)) || undefined;
+
+        if (self._isRenderString) {
+            var show = self.get('a:show');
+            if (!show) {
+                var oStyle = props.style;
+                if (!oStyle) {
+                    props.style = { display: 'none' };
+                } else {
+                    var type = typeof oStyle === 'undefined' ? 'undefined' : _typeof(oStyle);
+                    if (type === 'string') {
+                        props.style = oStyle + 'display: none;';
+                    } else if (type === 'object' && oStyle) {
+                        props.style.display = 'none';
+                    }
+                }
+            }
+        }
 
         return h(tagName, props, self.get('children'));
     },
@@ -6239,6 +6256,13 @@ var prototype = {
     _removeClass: function _removeClass(className) {
         delete this._staticClass[className];
         removeClass(this.element, className);
+    },
+    toString: function toString() {
+        this._isRenderString = true;
+        var ret = this._super();
+        this._isRenderString = false;
+
+        return ret;
     }
 };
 
