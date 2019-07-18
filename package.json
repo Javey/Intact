@@ -1,7 +1,7 @@
 {
   "name": "intact",
   "description": "A very lightweight data-binding library to create rich web application",
-  "version": "2.5.2",
+  "version": "2.5.3",
   "main": "dist/index",
   "scripts": {
     "test": "karma start karma.conf.saucelabs.js",
