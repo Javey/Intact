@@ -282,7 +282,7 @@ function initUnmountCallback(o, vNode) {
         o._parentDom = parentDom;
         o.leaveEndCallback = (isLeaveEnd) => {
             parentDom.removeChild(element);
-            if (!isLeaveEnd || !o.destroyed ) {
+            if (!o.destroyed) {
                 o.destroy(vNode, null, parentDom, true);
             }
         };
