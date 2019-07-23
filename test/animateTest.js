@@ -917,5 +917,30 @@ describe('Animate Test', function() {
             sEql(div.innerHTML, '<div style="" class="">test</div>');
             document.body.removeChild(div);
         });
+
+        it('unmount a hide end Animate', async function() {
+            this.enableTimeouts(false);
+
+            const C = Intact.extend({
+                template: `<div>
+                    <Animate a:show={self.get('show')} v-if={!self.get('remove')}>test</Animate>
+                </div>`,
+                defaults() {
+                    return {show: true, remove: false};
+                },
+            });
+
+            c = Intact.mount(C, document.body);
+            c.set('show', false);
+            await wait(1500);
+
+            const warn = console.warn;
+            console.warn = sinon.spy(function(msg) {
+                warn.call(console, msg);
+            });
+            c.set('remove', true);
+            sEql(console.warn.callCount, 0);
+            console.warn = warn;
+        });
     });
 });

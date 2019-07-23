@@ -35,9 +35,7 @@ function isEventProp(propName) {
     return propName.substr(0, 3) === 'ev-';
 }
 
-function isInvalid(o) {
-    return isNullOrUndefined(o) || o === false || o === true;
-}
+
 
 var indexOf = function () {
     if (Array.prototype.indexOf) {
@@ -2249,7 +2247,6 @@ function createVNode(tag, props, children, className, key, ref) {
         if (!isNullOrUndefined(children)) {
             if (props === EMPTY_OBJ) props = {};
             props.children = normalizeChildren(children, false);
-            // props.children = children;
         } else if (!isNullOrUndefined(props.children)) {
             props.children = normalizeChildren(props.children, false);
         }
@@ -2293,7 +2290,7 @@ function normalizeChildren(vNodes, isAddKey) {
         return childNodes.length ? childNodes : null;
     } else if (isComponentInstance(vNodes)) {
         return createComponentInstanceVNode(vNodes);
-    } else if (vNodes.type) {
+    } else if (vNodes.type && isAddKey) {
         if (!isNullOrUndefined(vNodes.dom) || vNodes.$) {
             return directClone(vNodes);
         }
@@ -2345,7 +2342,7 @@ function addChild(vNodes, reference, isAddKey) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
             }
-            if (n.dom || n.$) {
+            if (isAddKey && (n.dom || n.$)) {
                 newVNodes.push(applyKey(directClone(n), reference, isAddKey));
             } else {
                 newVNodes.push(applyKey(n, reference, isAddKey));
@@ -2355,44 +2352,27 @@ function addChild(vNodes, reference, isAddKey) {
     return newVNodes || vNodes;
 }
 
-function directClone(vNode) {
+function directClone(vNode, extraProps) {
     var newVNode = void 0;
     var type = vNode.type;
 
-    if (type & Types.ComponentClassOrInstance) {
-        var props = void 0;
-        var propsToClone = vNode.props;
-
-        if (propsToClone === EMPTY_OBJ || isNullOrUndefined(propsToClone)) {
-            props = EMPTY_OBJ;
-        } else {
-            props = {};
-            for (var key in propsToClone) {
-                props[key] = propsToClone[key];
+    if (type & (Types.ComponentClassOrInstance | Types.Element)) {
+        // maybe we does not shadow copy props
+        var props = vNode.props || EMPTY_OBJ;
+        if (extraProps) {
+            // if exist extraProps, shadow copy
+            var _props = {};
+            for (var key in props) {
+                _props[key] = props[key];
             }
-        }
-
-        newVNode = new VNode(type, vNode.tag, props, vNode.children, vNode.className, vNode.key, vNode.ref);
-
-        var newProps = newVNode.props;
-        var newChildren = directCloneChildren(newProps.children);
-        if (newChildren) {
-            newProps.children = newChildren;
-        }
-    } else if (type & Types.Element) {
-        var _props = void 0;
-        var _propsToClone = vNode.props;
-
-        if (_propsToClone === EMPTY_OBJ || isNullOrUndefined(_propsToClone)) {
-            _props = EMPTY_OBJ;
-        } else {
-            _props = {};
-            for (var _key in _propsToClone) {
-                _props[_key] = _propsToClone[_key];
+            for (var _key in extraProps) {
+                _props[_key] = extraProps[_key];
             }
-        }
 
-        newVNode = new VNode(type, vNode.tag, vNode.props, directCloneChildren(vNode.children), vNode.className, vNode.key, vNode.ref);
+            newVNode = new VNode(type, vNode.tag, _props, vNode.children, _props.className || vNode.className, _props.key || vNode.key, _props.ref || vNode.ref);
+        } else {
+            newVNode = new VNode(type, vNode.tag, props, vNode.children, vNode.className, vNode.key, vNode.ref);
+        }
     } else if (type & Types.Text) {
         newVNode = createTextVNode(vNode.children, vNode.key);
     } else if (type & Types.HtmlComment) {
@@ -2400,31 +2380,6 @@ function directClone(vNode) {
     }
 
     return newVNode;
-}
-
-function directCloneChildren(children) {
-    if (children) {
-        if (isArray(children)) {
-            var len = children.length;
-            if (len > 0) {
-                var tmpArray = [];
-
-                for (var i = 0; i < len; i++) {
-                    var child = children[i];
-                    if (isStringOrNumber(child)) {
-                        tmpArray.push(child);
-                    } else if (!isInvalid(child) && child.type) {
-                        tmpArray.push(directClone(child));
-                    }
-                }
-                return tmpArray;
-            }
-        } else if (children.type) {
-            return directClone(children);
-        }
-    }
-
-    return children;
 }
 
 function preventDefault() {
@@ -2919,10 +2874,22 @@ function createElements(vNodes, parentDom, mountedQueue, isRender, parentVNode, 
     if (isStringOrNumber(vNodes)) {
         setTextContent(parentDom, vNodes);
     } else if (isArray(vNodes)) {
+        var cloned = false;
         for (var i = 0; i < vNodes.length; i++) {
-            createElement(vNodes[i], parentDom, mountedQueue, isRender, parentVNode, isSVG);
+            var child = vNodes[i];
+            if (child.dom) {
+                if (!cloned) {
+                    parentVNode.children = vNodes = vNodes.slice(0);
+                    cloned = true;
+                }
+                vNodes[i] = child = directClone(child);
+            }
+            createElement(child, parentDom, mountedQueue, isRender, parentVNode, isSVG);
         }
     } else {
+        if (vNodes.dom) {
+            parentVNode.children = vNodes = directClone(vNodes);
+        }
         createElement(vNodes, parentDom, mountedQueue, isRender, parentVNode, isSVG);
     }
 }
@@ -3084,42 +3051,41 @@ function patch(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG
 }
 
 function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
-    if (lastVNode !== nextVNode) {
-        var nextType = nextVNode.type;
-        var lastType = lastVNode.type;
+    var nextType = nextVNode.type;
+    var lastType = lastVNode.type;
 
-        if (nextType & Types.Element) {
-            if (lastType & Types.Element) {
-                patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            } else {
-                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            }
-        } else if (nextType & Types.TextElement) {
-            if (lastType === nextType) {
-                patchText(lastVNode, nextVNode);
-            } else {
-                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, isSVG);
-            }
-        } else if (nextType & Types.ComponentClass) {
-            if (lastType & Types.ComponentClass) {
-                patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            } else {
-                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            }
-            // } else if (nextType & Types.ComponentFunction) {
-            // if (lastType & Types.ComponentFunction) {
-            // patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue);
-            // } else {
-            // replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
-            // }
-        } else if (nextType & Types.ComponentInstance) {
-            if (lastType & Types.ComponentInstance) {
-                patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            } else {
-                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            }
+    if (nextType & Types.Element) {
+        if (lastType & Types.Element) {
+            patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
+        } else {
+            replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
+        }
+    } else if (nextType & Types.TextElement) {
+        if (lastType === nextType) {
+            patchText(lastVNode, nextVNode);
+        } else {
+            replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, isSVG);
+        }
+    } else if (nextType & Types.ComponentClass) {
+        if (lastType & Types.ComponentClass) {
+            patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
+        } else {
+            replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
+        }
+        // } else if (nextType & Types.ComponentFunction) {
+        // if (lastType & Types.ComponentFunction) {
+        // patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue);
+        // } else {
+        // replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
+        // }
+    } else if (nextType & Types.ComponentInstance) {
+        if (lastType & Types.ComponentInstance) {
+            patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
+        } else {
+            replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
         }
     }
+
     return nextVNode.dom;
 }
 
@@ -6725,7 +6691,7 @@ function initUnmountCallback(o, vNode) {
         o._parentDom = parentDom;
         o.leaveEndCallback = function (isLeaveEnd) {
             parentDom.removeChild(element);
-            if (!isLeaveEnd || o.get('a:delayDestroy')) {
+            if (!isLeaveEnd || !o.destroyed) {
                 o.destroy(vNode, null, parentDom, true);
             }
         };
