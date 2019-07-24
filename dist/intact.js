@@ -2372,6 +2372,10 @@ function directClone(vNode, extraProps) {
             for (var _key in extraProps) {
                 _props[_key] = extraProps[_key];
             }
+            var children = extraProps.children;
+            if (children) {
+                _props.children = normalizeChildren(children, false);
+            }
 
             newVNode = new VNode(type, vNode.tag, _props, vNode.children, _props.className || vNode.className, _props.key || vNode.key, _props.ref || vNode.ref);
         } else {
@@ -6695,7 +6699,7 @@ function initUnmountCallback(o, vNode) {
         o._parentDom = parentDom;
         o.leaveEndCallback = function (isLeaveEnd) {
             parentDom.removeChild(element);
-            if (!isLeaveEnd || !o.destroyed) {
+            if (!o.destroyed) {
                 o.destroy(vNode, null, parentDom, true);
             }
         };
