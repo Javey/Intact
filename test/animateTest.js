@@ -44,13 +44,14 @@ describe('Animate Test', function() {
     });
 
     let app;
-    beforeEach(() => {
+    beforeEach(function() {
+        this.enableTimeouts(false);
         app = Intact.mount(App, document.body);
     });
 
-    afterEach(() => {
-        document.body.removeChild(app.element);
-    });
+    // afterEach(() => {
+        // document.body.removeChild(app.element);
+    // });
 
     it('Animate appear and leave', function(done) {
         this.enableTimeouts(false);
@@ -236,6 +237,35 @@ describe('Animate Test', function() {
             sEql(children[1].className, '');
             done();
         }, 1500);
+    });
+
+    it('should not reuse dom if Animate key is undefined', function(done) {
+        this.enableTimeouts(false);
+        class Component1 extends Intact {
+            @Intact.template()
+            static template = `<Animate><div>test</div></Animate>`
+        }
+        class Component2 extends Intact {
+            @Intact.template()
+            static template = `<Animate><span>test</span></Animate>`
+        }
+        class A extends Intact {
+            @Intact.template()
+            static template = `<div><C key="a1" /><C key="a2" /></div>`;
+            _init() {
+                this.C = Component1;
+            }
+        }
+        class B extends Intact {
+            @Intact.template()
+            static template = `<div><C key="b1" /><C key="b2" /></div>`;
+            _init() {
+                this.C = Component2;
+            }
+        }
+        app.load(A);
+        app.load(B);
+        done();
     });
 
     it('should destroy component when leaving', function(done) {

@@ -4279,37 +4279,39 @@ Vdt$1.prototype = {
     constructor: Vdt$1,
 
     render: function render$$1(data, parentDom, queue, parentVNode, isSVG, blocks) {
-        this.renderVNode(data, blocks);
+        this.renderVNode(data, blocks, parentVNode);
         this.node = render(this.vNode, parentDom, queue, parentVNode, isSVG);
 
         return this.node;
     },
-    renderVNode: function renderVNode(data, blocks) {
+    renderVNode: function renderVNode(data, blocks, parentVNode) {
         if (data !== undefined) {
             this.data = data;
         }
-        // if (blocks !== undefined) {
         this.blocks = blocks;
-        // }
-        this.vNode = this.template(this.data, Vdt$1, this.blocks, this.template) || createCommentVNode('empty');
+        var vNode = this.vNode = this.template(this.data, Vdt$1, this.blocks, this.template) || createCommentVNode('empty');
+        // for Animate we need this key
+        if (vNode.key === undefined && parentVNode) {
+            vNode.key = parentVNode.key;
+        }
 
-        return this.vNode;
+        return vNode;
     },
     renderString: function renderString$$1(data, blocks, parent) {
         this.data = data;
-        var vNode = this.template(data, Vdt$1, blocks, this.template, true) || createCommentVNode('empty');
+        var vNode = this.template(data, Vdt$1, blocks, this.template) || createCommentVNode('empty');
 
         return toString$2(vNode, parent, Vdt$1.configure().disableSplitText);
     },
     update: function update(data, parentDom, queue, parentVNode, isSVG, blocks) {
         var oldVNode = this.vNode;
-        this.renderVNode(data, blocks);
+        this.renderVNode(data, blocks, parentVNode);
         this.node = patch(oldVNode, this.vNode, parentDom, queue, parentVNode, isSVG);
 
         return this.node;
     },
     hydrate: function hydrate$$1(data, dom, queue, parentDom, parentVNode, isSVG, blocks) {
-        this.renderVNode(data, blocks);
+        this.renderVNode(data, blocks, parentVNode);
         hydrate(this.vNode, dom, queue, parentDom, parentVNode, isSVG);
         this.node = this.vNode.dom;
 
