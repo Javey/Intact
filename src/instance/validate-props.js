@@ -4,7 +4,7 @@
  * 但是也无法验证复杂的数据结构（需要自己实现验证函数）
  */
 import {
-    error, isArray, isNullOrUndefined
+    error, isArray, isNullOrUndefined, isFunction
 } from '../utils';
 
 export default function validateProps(props, propTypes, componentName = '<anonymous>') {
@@ -18,7 +18,11 @@ export default function validateProps(props, propTypes, componentName = '<anonym
         }
 
         if (isNullOrUndefined(value)) {
-            if (expectedType.required) {
+            let required = expectedType.required;
+            if (isFunction(required)) {
+                required = required(props);
+            }
+            if (required) {
                 error(`Missing required prop on component "${componentName}": "${prop}".`);
                 return;
             } else {

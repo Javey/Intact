@@ -4983,7 +4983,11 @@ function validateProps(props, propTypes) {
         }
 
         if (isNullOrUndefined(value)) {
-            if (expectedType.required) {
+            var required = expectedType.required;
+            if (isFunction(required)) {
+                required = required(props);
+            }
+            if (required) {
                 error$1('Missing required prop on component "' + componentName + '": "' + prop + '".');
                 return;
             } else {

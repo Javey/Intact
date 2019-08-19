@@ -1075,6 +1075,11 @@ describe('Simple Test', function() {
             j: [Array, Number],
             // k: Symbol,
             l: ['default', 'primary', 'danger', 1],
+            m: {
+                required(props) {
+                    return props.required;
+                }
+            }
         };
 
         const error = console.error;
@@ -1131,6 +1136,7 @@ describe('Simple Test', function() {
             // test({b: 1, k: Symbol()});
             test({b: 1, l: 'primary'});
             test({b: 1, l: 1});
+            test({b: 1, required: true}, 'Missing required prop on component "A": "m".');
         });
 
         it('should warn when pass invalid prop on update', () => {
