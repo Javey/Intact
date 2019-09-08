@@ -4935,40 +4935,6 @@ var utils = (Object.freeze || Object)({
 	autobind: autobind
 });
 
-function Intact$2(props) {
-    var template = this.constructor.template;
-    // Intact.template is a decorator
-    if (!template || template === templateDecorator) {
-        template = this.template;
-    }
-    if (!template) {
-        throw new Error('Can not instantiate when template does not exist.');
-    }
-
-    // for debug
-    this.displayName = this.displayName;
-
-    // autobind this for methods
-    // in ie 8 we must get prototype through constructor first time
-    autobind(this.constructor.prototype, this, Intact$2, {});
-
-    this.vdt = Vdt$1(template);
-
-    // for string ref
-    this.refs = this.vdt.widgets || {};
-    // for compatibility v1.0
-    this.widgets = this.refs;
-
-    for (var i = 0; i < Intact$2._constructors.length; i++) {
-        Intact$2._constructors[i].call(this, props);
-    }
-}
-
-Intact$2._constructors = [];
-
-// for intact compatibility layer to inherit it
-Intact$2.template = templateDecorator;
-
 /**
  * 验证属性合法性，参考vue实现
  * 这种实现方式，使用起来很简单，无需引入额外的模块
@@ -5100,19 +5066,111 @@ function isPlainObject(value) {
     return toString$3.call(value) === '[object Object]';
 }
 
-Intact$2._constructors.push(function (props) {
-    this.props = extend({}, result(this, 'defaults'), props);
+function Intact$2(props) {
+    var template = this.constructor.template;
+    // Intact.template is a decorator
+    if (!template || template === templateDecorator) {
+        template = this.template;
+    }
+    if (!template) {
+        throw new Error('Can not instantiate when template does not exist.');
+    }
+
+    // for debug
+    this.displayName = this.displayName;
+
+    // autobind this for methods
+    // in ie 8 we must get prototype through constructor first time
+    autobind(this.constructor.prototype, this, Intact$2, {});
+
+    this.vdt = Vdt$1(template);
+
+    // for string ref
+    this.refs = this.vdt.widgets || {};
+    // for compatibility v1.0
+    this.widgets = this.refs;
+
+    this.props = {};
 
     this.uniqueId = this.props.widget || uniqueId('widget');
+
+    // for compatibility v1.0
+    this.attributes = this.props;
+    this._widget = this.uniqueId;
+
+    this._events = {};
+    this._keptEvents = {}; // save the events that do not off when destroyed
+
+    // lifecycle states
+    this.inited = false;
+    this.rendered = false;
+    this.mounted = false;
+    this.destroyed = false;
+
+    // if the flag is false, any set operation will not lead to update 
+    this._startRender = false;
+
+    this._updateCount = 0;
+    this._pendingUpdate = null;
+    this._pendingChangedEvents = [];
+
+    this.mountedQueue = null;
+
+    this._constructor(props);
+}
+
+Intact$2.prototype._constructor = function (props) {
+    var _this = this;
 
     {
         validateProps(props, this.constructor.propTypes, this.displayName || this.constructor.name);
     }
 
-    // for compatibility v1.0
-    this.attributes = this.props;
-    this._widget = this.uniqueId;
-});
+    extend(this.props, result(this, 'defaults'), props);
+
+    // bind events
+    each(props, function (value, key) {
+        if (isEventProp(key)) {
+            if (isArray(value)) {
+                for (var i = 0; i < value.length; i++) {
+                    if (value[i]) {
+                        _this.on(key.substr(3), value[i]);
+                    }
+                }
+            } else if (value) {
+                _this.on(key.substr(3), value);
+            }
+        }
+    });
+
+    var inited = function inited() {
+        _this.inited = true;
+
+        // trigger $receive event when initialize component
+        var keys$$1 = [];
+        each(props, function (value, key) {
+            _this.trigger('$receive:' + key, _this, value);
+            keys$$1.push(key);
+        });
+        if (keys$$1.length) {
+            _this.trigger('$receive', _this, keys$$1);
+        }
+        _this.trigger('$inited', _this);
+    };
+    var ret = this._init();
+
+    if (ret && ret.then) {
+        ret.then(inited, function (err) {
+            error$1('Unhandled promise rejection in _init: ', err);
+            inited();
+        });
+    } else {
+        inited();
+    }
+};
+
+// for intact compatibility layer to inherit it
+Intact$2.template = templateDecorator;
 
 Intact$2.prototype.defaults = noop;
 
@@ -5335,28 +5393,6 @@ function getChanges(tree, data) {
     return changes;
 }
 
-Intact$2._constructors.push(function (props) {
-    var _this = this;
-
-    this._events = {};
-    this._keptEvents = {}; // save the events that do not off when destroyed
-
-    // bind events
-    each(props, function (value, key) {
-        if (isEventProp(key)) {
-            if (isArray(value)) {
-                for (var i = 0; i < value.length; i++) {
-                    if (value[i]) {
-                        _this.on(key.substr(3), value[i]);
-                    }
-                }
-            } else if (value) {
-                _this.on(key.substr(3), value);
-            }
-        }
-    });
-});
-
 Intact$2.prototype.on = function (name, callback) {
     var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
@@ -5372,15 +5408,15 @@ Intact$2.prototype.on = function (name, callback) {
 };
 
 Intact$2.prototype.one = function (name, callback) {
-    var _this2 = this;
+    var _this = this;
 
     var fn = function fn() {
         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
         }
 
-        callback.apply(_this2, args);
-        _this2.off(name, fn);
+        callback.apply(_this, args);
+        _this.off(name, fn);
     };
     this.on(name, fn);
 
@@ -5430,50 +5466,6 @@ Intact$2.prototype.trigger = function (name) {
 
     return this;
 };
-
-Intact$2._constructors.push(function (props) {
-    var _this = this;
-
-    // lifecycle states
-    this.inited = false;
-    this.rendered = false;
-    this.mounted = false;
-    this.destroyed = false;
-
-    // if the flag is false, any set operation will not lead to update 
-    this._startRender = false;
-
-    this._updateCount = 0;
-    this._pendingUpdate = null;
-    this._pendingChangedEvents = [];
-
-    this.mountedQueue = null;
-
-    var inited = function inited() {
-        _this.inited = true;
-
-        // trigger $receive event when initialize component
-        var keys$$1 = [];
-        each(props, function (value, key) {
-            _this.trigger('$receive:' + key, _this, value);
-            keys$$1.push(key);
-        });
-        if (keys$$1.length) {
-            _this.trigger('$receive', _this, keys$$1);
-        }
-        _this.trigger('$inited', _this);
-    };
-    var ret = this._init();
-
-    if (ret && ret.then) {
-        ret.then(inited, function (err) {
-            error$1('Unhandled promise rejection in _init: ', err);
-            inited();
-        });
-    } else {
-        inited();
-    }
-});
 
 Intact$2.prototype._init = noop;
 Intact$2.prototype._beforeCreate = noop;

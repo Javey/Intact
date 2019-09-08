@@ -2,51 +2,9 @@ import Intact from './constructor';
 import {hc, render, h} from 'misstime/src';
 import {removeComponentClassOrInstance} from 'misstime/src/vdom';
 import {Types, EMPTY_OBJ} from 'misstime/src/vnode';
-import {warn, error, isFunction, hasOwn, result, noop, isArray, each} from '../utils';
+import {warn, isFunction, hasOwn, result, noop, isArray} from '../utils';
 import {MountedQueue, isEventProp} from 'misstime/src/utils';
 import validateProps from './validate-props';
-
-Intact._constructors.push(function(props) {
-    // lifecycle states
-    this.inited = false;
-    this.rendered = false;
-    this.mounted = false;
-    this.destroyed = false;
-
-    // if the flag is false, any set operation will not lead to update 
-    this._startRender = false;
-
-    this._updateCount = 0;
-    this._pendingUpdate = null;
-    this._pendingChangedEvents = [];
-
-    this.mountedQueue = null;
-
-    const inited = () => {
-        this.inited = true;
-
-        // trigger $receive event when initialize component
-        let keys = [];
-        each(props, (value, key) => {
-            this.trigger(`$receive:${key}`, this, value);
-            keys.push(key);
-        });
-        if (keys.length) {
-            this.trigger(`$receive`, this, keys);
-        }
-        this.trigger('$inited', this);
-    };
-    const ret = this._init();
-
-    if (ret && ret.then) {
-        ret.then(inited, err => {
-            error('Unhandled promise rejection in _init: ', err);
-            inited();
-        });
-    } else {
-        inited();
-    }
-});
 
 Intact.prototype._init = noop;
 Intact.prototype._beforeCreate = noop;

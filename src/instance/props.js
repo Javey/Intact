@@ -1,23 +1,8 @@
 import Intact from './constructor';
 import {
-    result, extend, get, set, castPath, hasOwn, uniqueId,
-    keys, isEqual, NextTick, isNullOrUndefined, noop
+    extend, get, set, castPath, hasOwn, keys,
+    isEqual, NextTick, isNullOrUndefined, noop
 } from '../utils';
-import validateProps from './validate-props';
-
-Intact._constructors.push(function(props) {
-    this.props = extend({}, result(this, 'defaults'), props);
-
-    this.uniqueId = this.props.widget || uniqueId('widget');
-
-    if (process.env.NODE_ENV !== 'production') {
-        validateProps(props, this.constructor.propTypes, this.displayName || this.constructor.name);
-    }
-
-    // for compatibility v1.0
-    this.attributes = this.props;
-    this._widget =  this.uniqueId;
-});
 
 Intact.prototype.defaults = noop;
 

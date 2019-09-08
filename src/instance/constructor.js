@@ -1,5 +1,10 @@
-import {autobind, templateDecorator} from '../utils';
+import {
+    autobind, templateDecorator, each, extend,
+    uniqueId, result, isArray, error
+} from '../utils';
 import Vdt from 'vdt/src/client';
+import validateProps from './validate-props';
+import {isEventProp} from 'misstime/src/utils';
 
 export default function Intact(props) {
     let template = this.constructor.template;
@@ -25,12 +30,82 @@ export default function Intact(props) {
     // for compatibility v1.0
     this.widgets = this.refs;
 
-    for (let i = 0; i < Intact._constructors.length; i++) {
-        Intact._constructors[i].call(this, props);
-    }
+    this.props = {};
+
+    this.uniqueId = this.props.widget || uniqueId('widget');
+
+    // for compatibility v1.0
+    this.attributes = this.props;
+    this._widget =  this.uniqueId;
+
+    this._events = {};
+    this._keptEvents = {}; // save the events that do not off when destroyed
+
+    // lifecycle states
+    this.inited = false;
+    this.rendered = false;
+    this.mounted = false;
+    this.destroyed = false;
+
+    // if the flag is false, any set operation will not lead to update 
+    this._startRender = false;
+
+    this._updateCount = 0;
+    this._pendingUpdate = null;
+    this._pendingChangedEvents = [];
+
+    this.mountedQueue = null;
+
+    this._constructor(props);
 }
 
-Intact._constructors = [];
+Intact.prototype._constructor = function(props) {
+    if (process.env.NODE_ENV !== 'production') {
+        validateProps(props, this.constructor.propTypes, this.displayName || this.constructor.name);
+    }
+
+    extend(this.props, result(this, 'defaults'), props);
+
+    // bind events
+    each(props, (value, key) => {
+        if (isEventProp(key)) {
+            if (isArray(value)) {
+                for (let i = 0; i < value.length; i++) {
+                    if (value[i]) {
+                        this.on(key.substr(3), value[i]);
+                    }
+                }
+            } else if (value) {
+                this.on(key.substr(3), value);
+            }
+        }
+    });
+
+    const inited = () => {
+        this.inited = true;
+
+        // trigger $receive event when initialize component
+        let keys = [];
+        each(props, (value, key) => {
+            this.trigger(`$receive:${key}`, this, value);
+            keys.push(key);
+        });
+        if (keys.length) {
+            this.trigger(`$receive`, this, keys);
+        }
+        this.trigger('$inited', this);
+    };
+    const ret = this._init();
+
+    if (ret && ret.then) {
+        ret.then(inited, err => {
+            error('Unhandled promise rejection in _init: ', err);
+            inited();
+        });
+    } else {
+        inited();
+    }
+};
 
 // for intact compatibility layer to inherit it
 Intact.template = templateDecorator;

@@ -1,26 +1,5 @@
 import Intact from './constructor';
-import {isEventProp} from 'misstime/src/utils';
-import {isArray, each, extend} from '../utils';
-
-Intact._constructors.push(function(props) {
-    this._events = {};
-    this._keptEvents = {}; // save the events that do not off when destroyed
-
-    // bind events
-    each(props, (value, key) => {
-        if (isEventProp(key)) {
-            if (isArray(value)) {
-                for (let i = 0; i < value.length; i++) {
-                    if (value[i]) {
-                        this.on(key.substr(3), value[i]);
-                    }
-                }
-            } else if (value) {
-                this.on(key.substr(3), value);
-            }
-        }
-    });
-});
+import {each, extend} from '../utils';
 
 Intact.prototype.on = function(name, callback, options = {}) {
     // the event which write in template must insert before which add in self component
