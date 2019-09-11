@@ -270,6 +270,10 @@ function initEnterEndCallback(o) {
             }
         }
 
+        // may this animation has ended before next enter frame
+        // so we cancel it
+        o._cancelEnterNextFrame && o._cancelEnterNextFrame();
+
         o.trigger(`${o.enterEventName}End`, element, isCancel);
     };
 }

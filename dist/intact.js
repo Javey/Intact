@@ -5090,7 +5090,7 @@ function Intact$2(props) {
     // for compatibility v1.0
     this.widgets = this.refs;
 
-    this.props = {};
+    this.props = extend({}, result(this, 'defaults'));
 
     this.uniqueId = this.props.widget || uniqueId('widget');
 
@@ -5126,7 +5126,7 @@ Intact$2.prototype._constructor = function (props) {
         validateProps(props, this.constructor.propTypes, this.displayName || this.constructor.name);
     }
 
-    extend(this.props, result(this, 'defaults'), props);
+    extend(this.props, props);
 
     // bind events
     each(props, function (value, key) {
