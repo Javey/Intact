@@ -2363,6 +2363,8 @@ function directClone(vNode, extraProps) {
     if (type & (Types.ComponentClassOrInstance | Types.Element)) {
         // maybe we does not shadow copy props
         var props = vNode.props || EMPTY_OBJ;
+        // if this is a instance vNode, then we must change its type to new instance again
+        var _type = type & Types.ComponentInstance ? Types.ComponentClass : type;
         if (extraProps) {
             // if exist extraProps, shadow copy
             var _props = {};
@@ -2377,9 +2379,9 @@ function directClone(vNode, extraProps) {
                 _props.children = normalizeChildren(children, false);
             }
 
-            newVNode = new VNode(type, vNode.tag, _props, vNode.children, _props.className || vNode.className, _props.key || vNode.key, _props.ref || vNode.ref);
+            newVNode = new VNode(_type, vNode.tag, _props, vNode.children, _props.className || vNode.className, _props.key || vNode.key, _props.ref || vNode.ref);
         } else {
-            newVNode = new VNode(type, vNode.tag, props, vNode.children, vNode.className, vNode.key, vNode.ref);
+            newVNode = new VNode(_type, vNode.tag, props, vNode.children, vNode.className, vNode.key, vNode.ref);
         }
     } else if (type & Types.Text) {
         newVNode = createTextVNode(vNode.children, vNode.key);
@@ -6683,6 +6685,10 @@ function initEnterEndCallback(o) {
                 });
             }
         }
+
+        // may this animation has ended before next enter frame
+        // so we cancel it
+        o._cancelEnterNextFrame && o._cancelEnterNextFrame();
 
         o.trigger(o.enterEventName + 'End', element, isCancel);
     };
