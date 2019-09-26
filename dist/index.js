@@ -2359,9 +2359,14 @@ function directClone(vNode, extraProps) {
     if (type & (Types.ComponentClassOrInstance | Types.Element)) {
         // maybe we does not shadow copy props
         var props = vNode.props || EMPTY_OBJ;
-        // if this is a instance vNode, then we must change its type to new instance again
-        var _type = type & Types.ComponentInstance ? Types.ComponentClass : type;
         if (extraProps) {
+            /**
+             * if this is a instance vNode, then we must change its type to new instance again
+             * 
+             * but if we change the type, it will lead to replace element because of different type.
+             * only change the type, when we really clone it
+             */
+            var _type = type & Types.ComponentInstance ? Types.ComponentClass : type;
             // if exist extraProps, shadow copy
             var _props = {};
             for (var key in props) {
@@ -2377,7 +2382,7 @@ function directClone(vNode, extraProps) {
 
             newVNode = new VNode(_type, vNode.tag, _props, vNode.children, _props.className || vNode.className, _props.key || vNode.key, _props.ref || vNode.ref);
         } else {
-            newVNode = new VNode(_type, vNode.tag, props, vNode.children, vNode.className, vNode.key, vNode.ref);
+            newVNode = new VNode(type, vNode.tag, props, vNode.children, vNode.className, vNode.key, vNode.ref);
         }
     } else if (type & Types.Text) {
         newVNode = createTextVNode(vNode.children, vNode.key);
@@ -2754,7 +2759,7 @@ function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode
     // when it is appended to parent dom. We change its value in processForm does not
     // work. So processForm after it has be appended to parent dom.
     if (parentDom) {
-        appendChild(parentDom, dom);
+        parentDom.appendChild(dom);
     }
     if (props !== EMPTY_OBJ) {
         patchProps(null, vNode, isSVG, true);
@@ -2812,8 +2817,8 @@ function createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue,
 function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
     return createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG, function (instance) {
         var dom = instance.init(lastVNode, vNode);
-        if (parentDom) {
-            appendChild(parentDom, dom);
+        if (parentDom && (!lastVNode || lastVNode.dom !== dom)) {
+            parentDom.appendChild(dom);
         }
 
         return dom;
@@ -3015,15 +3020,6 @@ function removeChild(parentDom, vNode) {
     }
 }
 
-function appendChild(parentDom, dom) {
-    // in IE8, when a element has appendChild,
-    // then its parentNode will be HTMLDocument object,
-    // so check the tagName for this case
-    if (!dom.parentNode || !dom.parentNode.tagName) {
-        parentDom.appendChild(dom);
-    }
-}
-
 function createRef(dom, ref, mountedQueue) {
     if (typeof ref === 'function') {
         // mountedQueue.push(() => ref(dom));
@@ -3086,7 +3082,7 @@ function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, 
         // }
     } else if (nextType & Types.ComponentInstance) {
         if (lastType & Types.ComponentInstance) {
-            patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
+            patchComponentInstance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
         } else {
             replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
         }
@@ -3196,7 +3192,7 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
     }
 }
 
-function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
+function patchComponentInstance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
     var lastInstance = lastVNode.children;
     var nextInstance = nextVNode.children;
     var dom = lastVNode.dom;
@@ -3390,14 +3386,14 @@ function patchChildrenByKey(a, b, dom, mountedQueue, parentVNode, isSVG) {
                 }
             }
         } else {
-            var keyIndex = {};
+            var keyIndex = new SimpleMap();
             for (i = bStart; i <= bEnd; i++) {
-                keyIndex[b[i].key] = i;
+                keyIndex.set(b[i].key, i);
             }
             for (i = aStart; i <= aEnd; i++) {
                 aNode = a[i];
                 if (patched < bLength) {
-                    j = keyIndex[aNode.key];
+                    j = keyIndex.get(aNode.key);
                     if (j !== undefined) {
                         bNode = b[j];
                         sources[j - bStart] = i;
@@ -3515,7 +3511,6 @@ function insertOrAppend(pos, length, newDom, nodes, dom, detectParent) {
         dom.insertBefore(newDom, nodes[nextPos].dom);
     } else {
         dom.appendChild(newDom);
-        // appendChild(dom, newDom);
     }
 }
 
