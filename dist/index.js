@@ -2352,21 +2352,21 @@ function addChild(vNodes, reference, isAddKey) {
     return newVNodes || vNodes;
 }
 
-function directClone(vNode, extraProps) {
+function directClone(vNode, extraProps, changeType) {
     var newVNode = void 0;
     var type = vNode.type;
 
     if (type & (Types.ComponentClassOrInstance | Types.Element)) {
         // maybe we does not shadow copy props
         var props = vNode.props || EMPTY_OBJ;
+        /**
+         * if this is a instance vNode, then we must change its type to new instance again
+         * 
+         * but if we change the type, it will lead to replace element because of different type.
+         * only change the type, when we really clone it
+         */
+        var _type = type & Types.ComponentInstance && changeType ? Types.ComponentClass : type;
         if (extraProps) {
-            /**
-             * if this is a instance vNode, then we must change its type to new instance again
-             * 
-             * but if we change the type, it will lead to replace element because of different type.
-             * only change the type, when we really clone it
-             */
-            var _type = type & Types.ComponentInstance ? Types.ComponentClass : type;
             // if exist extraProps, shadow copy
             var _props = {};
             for (var key in props) {
@@ -2382,7 +2382,7 @@ function directClone(vNode, extraProps) {
 
             newVNode = new VNode(_type, vNode.tag, _props, vNode.children, _props.className || vNode.className, _props.key || vNode.key, _props.ref || vNode.ref);
         } else {
-            newVNode = new VNode(type, vNode.tag, props, vNode.children, vNode.className, vNode.key, vNode.ref);
+            newVNode = new VNode(_type, vNode.tag, props, vNode.children, vNode.className, vNode.key, vNode.ref);
         }
     } else if (type & Types.Text) {
         newVNode = createTextVNode(vNode.children, vNode.key);
