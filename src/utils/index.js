@@ -444,7 +444,7 @@ export const error = hasConsole ?
 function isNative(Ctor) {
     return typeof Ctor === 'function' && /native code/.test(Ctor.toString());
 }
-const nextTick = (() => {
+export const nextTick = (() => {
     if (typeof Promise !== 'undefined' && isNative(Promise)) {
         const p = Promise.resolve();
         return (callback) => {
