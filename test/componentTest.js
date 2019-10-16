@@ -124,7 +124,7 @@ describe('Component Test', function() {
         sEql(destroyBFn.callCount, 0);
     });
 
-    it('update componenent which its nested component has changed dom', () => {
+    it('update componenent whose nested component has changed dom', () => {
         const A = Intact.extend({
             template: `<B ev-hide={self.proxy} />`,
             _init() {
@@ -158,6 +158,26 @@ describe('Component Test', function() {
         dispatchEvent(i.element.firstChild, 'click');
         eqlOuterHtml(i.element, '<div></div>');
         // document.body.removeChild(i.element);
+    });
+
+    it('update component with different tag is returned', () => {
+        const A = Intact.extend({
+            template: `<span>a</span>`
+        });
+        const B = Intact.extend({
+            template: `<section>b</section>`
+        });
+        const C = Intact.extend({
+            template: `<div><template v-if={self.get('show')}><A /><i>c</i></template><template v-else><B /><i>c</i></template></div>`,
+            _init() {
+                this.A = A;
+                this.B = B;
+            }
+        });
+
+        const i = Intact.mount(C, document.body);
+        i.set('show', true);
+        eqlOuterHtml(i.element, '<div><span>a</span><i>c</i></div>');
     });
 
     it('update when updating', function() {

@@ -2817,7 +2817,9 @@ function createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue,
 function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
     return createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG, function (instance) {
         var dom = instance.init(lastVNode, vNode);
-        if (parentDom && (!lastVNode || lastVNode.dom !== dom)) {
+        if (parentDom && (!lastVNode ||
+        // maybe we have reused the component and replaced the dom
+        lastVNode.dom !== dom && !dom.parentNode || !dom.parentNode.tagName)) {
             parentDom.appendChild(dom);
         }
 
