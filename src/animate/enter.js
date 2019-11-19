@@ -1,7 +1,8 @@
 import prototype from './prototype';
 import {
-    getAnimateType,
-    nextFrame, TransitionEvents
+    getAnimateInfo,
+    whenTransitionEnds,
+    nextFrame
 } from './utils';
 import checkMode from './check-mode';
 import leave from './leave';
@@ -91,7 +92,7 @@ function startEnterAnimate(o) {
         // 否则单个元素自己动画
         enter(o);
     }
-};
+}
 
 export default function enter(o) {
     if (!o.get('a:show') || o._entering) return;
@@ -102,11 +103,15 @@ export default function enter(o) {
     const continuity = o.get('a:continuity');
     const disabled = o.get('a:disabled');
 
-    // getAnimateType将添加enter-active className，在firefox下将导致动画提前执行
+    // getAnimateInfo将添加enter-active className，在firefox下将导致动画提前执行
     // 我们应该先于添加`enter` className去调用该函数
     let isTransition = false;
-    if (isCss && getAnimateType(element, o.enterActiveClass) !== 'animation') {
-        isTransition = true;
+    let info;
+    if (isCss) {
+        info = getAnimateInfo(element, o.enterActiveClass);
+        if (info.type !== 'animation') {
+            isTransition = true;
+        }
     }
 
     let endDirectly = false;
@@ -115,7 +120,7 @@ export default function enter(o) {
         endDirectly = continuity && !o.lastInstance._triggeredLeave;
 
         o.lastInstance._cancelLeaveNextFrame();
-        o.lastInstance._leaveEnd(null, true);
+        o.lastInstance._leaveEnd(true);
 
         // 保持连贯，添加leaveActiveClass
         if (continuity && !endDirectly && isCss && !disabled) {
@@ -125,7 +130,7 @@ export default function enter(o) {
 
     if (disabled) return;
 
-    initEnterEndCallback(o); 
+    initEnterEndCallback(o, info); 
    
     function start() {
         o._entering = true;
@@ -137,13 +142,16 @@ export default function enter(o) {
                 o._addClass(o.enterClass);
             }
 
-            TransitionEvents.on(element, o._enterEnd);
+            const cb = () => {
+                o._cancelEnterEnd = whenTransitionEnds(element, info, o._enterEnd);
+                triggerEnter(o);
+            };
 
             if (isTransition) {
-                o._cancelEnterNextFrame = nextFrame(() => triggerEnter(o));
+                o._cancelEnterNextFrame = nextFrame(cb);
             } else {
                 // 对于animation动画，同步添加enterActiveClass，避免闪动
-                triggerEnter(o);
+                cb();
             }
         } else {
             o._enterEnd();
@@ -246,13 +254,13 @@ function initEnterEndCallback(o) {
     const isCss = o.get('a:css');
     const disabled = o.get('a:disabled');
 
-    o._enterEnd = (e, isCancel) => {
-        if (e && e.target !== element) return;
-
-        TransitionEvents.off(element, o._enterEnd);
-
+    o._enterEnd = (isCancel) => {
+        o._enterEnd.isCalled = true;
+        if (o._cancelEnterEnd) {
+            o._cancelEnterEnd();
+            o._cancelEnterEnd = null;
+        }
         if (isCss && !disabled) {
-            e && e.stopPropagation && e.stopPropagation();
             o._removeClass(o.enterClass);
             o._removeClass(o.enterActiveClass);
         }
@@ -270,9 +278,12 @@ function initEnterEndCallback(o) {
             }
         }
 
-        // may this animation has ended before next enter frame
+        // maybe this animation has ended before next enter frame
         // so we cancel it
-        o._cancelEnterNextFrame && o._cancelEnterNextFrame();
+        if (o._cancelEnterNextFrame) {
+            o._cancelEnterNextFrame();
+            o._cancelEnterNextFrame = null;
+        }
 
         o.trigger(`${o.enterEventName}End`, element, isCancel);
     };

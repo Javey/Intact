@@ -86,19 +86,58 @@ function detectEvents() {
     }
 }
 
-export function getAnimateType(element, className) {
-    if (className) addClass(element, className);
-    const style = window.getComputedStyle(element);
-    const transitionDurations = style[`${transitionProp}Duration`].split(', ');
-    const animationDurations = style[`${animationProp}Duration`].split(', ');
-    const transitionDuration = getDuration(transitionDurations);
-    const animationDuration = getDuration(animationDurations);
-    if (className) removeClass(element, className);
-    return transitionDuration > animationDuration ? 'transition' : 'animation';
+export function whenTransitionEnds(element, info, cb) {
+    const {timeout, propCount} = info;
+    let ended = 0;
+    const end = () => {
+        TransitionEvents.off(element, onEnd);
+        !cb.isCalled && cb();
+        clearTimeout(timer);
+    };
+    const onEnd = e => {
+        if (e.target === element) {
+            e.stopPropagation();
+            if (++ended >= propCount) {
+                end();
+            }
+        }
+    };
+    const timer = setTimeout(() => {
+        if (ended < propCount) {
+            end();
+        }
+    }, timeout + 1);
+    TransitionEvents.on(element, onEnd);
+
+    return end;
 }
 
-export function getDuration(durations) {
-    return Math.max.apply(null, durations.map(d => d.slice(0, -1) * 1000));
+// inspired by vue
+export function getAnimateInfo(element, className) {
+    if (className) addClass(element, className);
+    const style = window.getComputedStyle(element);
+    const transitionDelays = style[`${transitionProp}Delay`].split(', ');
+    const transitionDurations = style[`${transitionProp}Duration`].split(', ');
+    const transitionTimeout = getTimeout(transitionDelays, transitionDurations);
+    const animationDelays = style[`${animationProp}Delay`].split(', ');
+    const animationDurations = style[`${animationProp}Duration`].split(', ');
+    const animationTimeout = getTimeout(animationDelays, animationDurations);
+    if (className) removeClass(element, className);
+
+    const type = transitionTimeout > animationTimeout ? 'transition' : 'animation';
+    const timeout = Math.max(transitionTimeout, animationTimeout);
+    const propCount = type === 'transition' ? transitionDurations.length : animationDurations.length;
+
+    return {type, timeout, propCount}; 
+}
+
+function getTimeout(delays, durations) {
+    const l = delays.length;
+    return Math.max.apply(null, durations.map((d, i) => toMs(d) + toMs(delays[i % l])));
+}
+
+function toMs(s) {
+    return s.slice(0, -1) * 1000; 
 }
 
 export function addEventListener(node, eventName, eventListener) {

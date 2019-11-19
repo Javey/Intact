@@ -1,5 +1,5 @@
 import prototype from './prototype';
-import {TransitionEvents, nextFrame} from './utils';
+import {getAnimateInfo, nextFrame, whenTransitionEnds} from './utils';
 import {inBrowser} from '../utils';
 import checkMode from './check-mode';
 import {Types} from 'misstime/src/vnode';
@@ -66,7 +66,7 @@ export default function leave(o) {
             endDirectly = true;
             o._cancelEnterNextFrame();
         }
-        o._enterEnd(null, true);
+        o._enterEnd(true);
     }
 
     if (disabled) return o.leaveEndCallback();
@@ -97,12 +97,14 @@ export default function leave(o) {
     if (!endDirectly) {
         // TransitionEvents.on(element, o._leaveEnd);
         // triggerLeave(o);
+        const info = getAnimateInfo(element);
         o._cancelLeaveNextFrame = nextFrame(() => {
             // 存在一种情况，当一个enter动画在完成的瞬间，
             // 这个元素被删除了，由于前面保持动画的连贯性
             // 添加了leaveActiveClass，则会导致绑定的leaveEnd
             // 立即执行，所以这里放到下一帧来绑定
-            TransitionEvents.on(element, o._leaveEnd);
+            // TransitionEvents.on(element, o._leaveEnd);
+            o._cancelLeaveEnd = whenTransitionEnds(element, info, o._leaveEnd);
             triggerLeave(o);
         });
     } else {
@@ -129,13 +131,13 @@ function initLeaveEndCallback(o) {
     const isCss = o.get('a:css');
     const disabled = o.get('a:disabled');
 
-    o._leaveEnd = (e, isCancel) => {
-        if (e && e.target !== element) return;
-
-        TransitionEvents.off(element, o._leaveEnd);
-
+    o._leaveEnd = (isCancel) => {
+        o._leaveEnd.isCalled = true;
+        if (o._cancelLeaveEnd) {
+            o._cancelLeaveEnd();
+            o._cancelLeaveEnd = null;
+        }
         if (isCss && !disabled) {
-            e && e.stopPropagation && e.stopPropagation();
             o._removeClass(o.leaveClass);
             o._removeClass(o.leaveActiveClass);
         }
