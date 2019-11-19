@@ -143,7 +143,9 @@ export default function enter(o) {
             }
 
             const cb = () => {
-                o._cancelEnterEnd = whenTransitionEnds(element, info, o._enterEnd);
+                if (isCss) {
+                    o._cancelEnterEnd = whenTransitionEnds(element, info, o._enterEnd);
+                }
                 triggerEnter(o);
             };
 

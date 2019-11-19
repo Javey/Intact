@@ -78,26 +78,26 @@ describe('Animate Test', function() {
         });
 
         app.load(C);
-        await wait(1000);
+        await wait(100);
         sEql(app.element.firstChild.className, 'animate-appear-active');
-        await wait(1000);
+        await wait(100);
         app.set('view', undefined);
-        await wait(1000);
+        await wait(100);
         sEql(app.element.firstChild.className, 'animate-leave-active animate-leave');
         sEql(destroyC.callCount, 1);
         sEql(destroyD.callCount, 0);
-        await wait(500);
+        await wait(50);
         app.load(C);
-        await wait(1000);
+        await wait(100);
         sEql(app.element.firstChild.className, 'animate-appear-active');
-        // sEql(destroyC.callCount, 1);
-        // sEql(destroyD.callCount, 0);
-        // await wait(200);
-        // app.set('view', undefined);
-        // await wait(100);
-        // sEql(app.element.firstChild.className, 'animate-leave-active animate-leave');
-        // await wait(1100);
-        // sEql(app.element.innerHTML, '');
+        sEql(destroyC.callCount, 1);
+        sEql(destroyD.callCount, 0);
+        await wait(200);
+        app.set('view', undefined);
+        await wait(100);
+        sEql(app.element.firstChild.className, 'animate-leave-active animate-leave');
+        await wait(1100);
+        sEql(app.element.innerHTML, '');
     });
 
     it('Animate nested', function(done) {

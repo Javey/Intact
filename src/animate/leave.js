@@ -97,14 +97,16 @@ export default function leave(o) {
     if (!endDirectly) {
         // TransitionEvents.on(element, o._leaveEnd);
         // triggerLeave(o);
-        const info = getAnimateInfo(element);
+        const info = isCss ? getAnimateInfo(element) : null;
         o._cancelLeaveNextFrame = nextFrame(() => {
             // 存在一种情况，当一个enter动画在完成的瞬间，
             // 这个元素被删除了，由于前面保持动画的连贯性
             // 添加了leaveActiveClass，则会导致绑定的leaveEnd
             // 立即执行，所以这里放到下一帧来绑定
             // TransitionEvents.on(element, o._leaveEnd);
-            o._cancelLeaveEnd = whenTransitionEnds(element, info, o._leaveEnd);
+            if (isCss) {
+                o._cancelLeaveEnd = whenTransitionEnds(element, info, o._leaveEnd);
+            }
             triggerLeave(o);
         });
     } else {
