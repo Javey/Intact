@@ -6044,21 +6044,62 @@ function detectEvents() {
     }
 }
 
-function getAnimateType(element, className) {
-    if (className) addClass(element, className);
-    var style = window.getComputedStyle(element);
-    var transitionDurations = style[transitionProp + 'Duration'].split(', ');
-    var animationDurations = style[animationProp + 'Duration'].split(', ');
-    var transitionDuration = getDuration(transitionDurations);
-    var animationDuration = getDuration(animationDurations);
-    if (className) removeClass(element, className);
-    return transitionDuration > animationDuration ? 'transition' : 'animation';
+function whenTransitionEnds(element, info, cb) {
+    var timeout = info.timeout,
+        propCount = info.propCount;
+
+    var ended = 0;
+    var end = function end() {
+        TransitionEvents.off(element, onEnd);
+        !cb.isCalled && cb();
+        clearTimeout(timer);
+    };
+    var onEnd = function onEnd(e) {
+        if (e.target === element) {
+            e.stopPropagation();
+            if (++ended >= propCount) {
+                end();
+            }
+        }
+    };
+    var timer = setTimeout(function () {
+        if (ended < propCount) {
+            end();
+        }
+    }, timeout + 1);
+    TransitionEvents.on(element, onEnd);
+
+    return end;
 }
 
-function getDuration(durations) {
-    return Math.max.apply(null, durations.map(function (d) {
-        return d.slice(0, -1) * 1000;
+// inspired by vue
+function getAnimateInfo(element, className) {
+    if (className) addClass(element, className);
+    var style = window.getComputedStyle(element);
+    var transitionDelays = style[transitionProp + 'Delay'].split(', ');
+    var transitionDurations = style[transitionProp + 'Duration'].split(', ');
+    var transitionTimeout = getTimeout(transitionDelays, transitionDurations);
+    var animationDelays = style[animationProp + 'Delay'].split(', ');
+    var animationDurations = style[animationProp + 'Duration'].split(', ');
+    var animationTimeout = getTimeout(animationDelays, animationDurations);
+    if (className) removeClass(element, className);
+
+    var type = transitionTimeout > animationTimeout ? 'transition' : 'animation';
+    var timeout = Math.max(transitionTimeout, animationTimeout);
+    var propCount = type === 'transition' ? transitionDurations.length : animationDurations.length;
+
+    return { type: type, timeout: timeout, propCount: propCount };
+}
+
+function getTimeout(delays, durations) {
+    var l = delays.length;
+    return Math.max.apply(null, durations.map(function (d, i) {
+        return toMs(d) + toMs(delays[i % l]);
     }));
+}
+
+function toMs(s) {
+    return s.slice(0, -1) * 1000;
 }
 
 function addEventListener$1(node, eventName, eventListener) {
@@ -6331,7 +6372,7 @@ function leave(o) {
             endDirectly = true;
             o._cancelEnterNextFrame();
         }
-        o._enterEnd(null, true);
+        o._enterEnd(true);
     }
 
     if (disabled) return o.leaveEndCallback();
@@ -6362,12 +6403,16 @@ function leave(o) {
     if (!endDirectly) {
         // TransitionEvents.on(element, o._leaveEnd);
         // triggerLeave(o);
+        var info = isCss ? getAnimateInfo(element) : null;
         o._cancelLeaveNextFrame = nextFrame(function () {
             // 存在一种情况，当一个enter动画在完成的瞬间，
             // 这个元素被删除了，由于前面保持动画的连贯性
             // 添加了leaveActiveClass，则会导致绑定的leaveEnd
             // 立即执行，所以这里放到下一帧来绑定
-            TransitionEvents.on(element, o._leaveEnd);
+            // TransitionEvents.on(element, o._leaveEnd);
+            if (isCss) {
+                o._cancelLeaveEnd = whenTransitionEnds(element, info, o._leaveEnd);
+            }
             triggerLeave(o);
         });
     } else {
@@ -6397,13 +6442,13 @@ function initLeaveEndCallback(o) {
     var isCss = o.get('a:css');
     var disabled = o.get('a:disabled');
 
-    o._leaveEnd = function (e, isCancel) {
-        if (e && e.target !== element) return;
-
-        TransitionEvents.off(element, o._leaveEnd);
-
+    o._leaveEnd = function (isCancel) {
+        o._leaveEnd.isCalled = true;
+        if (o._cancelLeaveEnd) {
+            o._cancelLeaveEnd();
+            o._cancelLeaveEnd = null;
+        }
         if (isCss && !disabled) {
-            e && e.stopPropagation && e.stopPropagation();
             o._removeClass(o.leaveClass);
             o._removeClass(o.leaveActiveClass);
         }
@@ -6524,11 +6569,15 @@ function enter(o) {
     var continuity = o.get('a:continuity');
     var disabled = o.get('a:disabled');
 
-    // getAnimateType将添加enter-active className，在firefox下将导致动画提前执行
+    // getAnimateInfo将添加enter-active className，在firefox下将导致动画提前执行
     // 我们应该先于添加`enter` className去调用该函数
     var isTransition = false;
-    if (isCss && getAnimateType(element, o.enterActiveClass) !== 'animation') {
-        isTransition = true;
+    var info = void 0;
+    if (isCss) {
+        info = getAnimateInfo(element, o.enterActiveClass);
+        if (info.type !== 'animation') {
+            isTransition = true;
+        }
     }
 
     var endDirectly = false;
@@ -6537,7 +6586,7 @@ function enter(o) {
         endDirectly = continuity && !o.lastInstance._triggeredLeave;
 
         o.lastInstance._cancelLeaveNextFrame();
-        o.lastInstance._leaveEnd(null, true);
+        o.lastInstance._leaveEnd(true);
 
         // 保持连贯，添加leaveActiveClass
         if (continuity && !endDirectly && isCss && !disabled) {
@@ -6547,7 +6596,7 @@ function enter(o) {
 
     if (disabled) return;
 
-    initEnterEndCallback(o);
+    initEnterEndCallback(o, info);
 
     function start() {
         o._entering = true;
@@ -6559,15 +6608,18 @@ function enter(o) {
                 o._addClass(o.enterClass);
             }
 
-            TransitionEvents.on(element, o._enterEnd);
+            var cb = function cb() {
+                if (isCss) {
+                    o._cancelEnterEnd = whenTransitionEnds(element, info, o._enterEnd);
+                }
+                triggerEnter(o);
+            };
 
             if (isTransition) {
-                o._cancelEnterNextFrame = nextFrame(function () {
-                    return triggerEnter(o);
-                });
+                o._cancelEnterNextFrame = nextFrame(cb);
             } else {
                 // 对于animation动画，同步添加enterActiveClass，避免闪动
-                triggerEnter(o);
+                cb();
             }
         } else {
             o._enterEnd();
@@ -6663,13 +6715,13 @@ function initEnterEndCallback(o) {
     var isCss = o.get('a:css');
     var disabled = o.get('a:disabled');
 
-    o._enterEnd = function (e, isCancel) {
-        if (e && e.target !== element) return;
-
-        TransitionEvents.off(element, o._enterEnd);
-
+    o._enterEnd = function (isCancel) {
+        o._enterEnd.isCalled = true;
+        if (o._cancelEnterEnd) {
+            o._cancelEnterEnd();
+            o._cancelEnterEnd = null;
+        }
         if (isCss && !disabled) {
-            e && e.stopPropagation && e.stopPropagation();
             o._removeClass(o.enterClass);
             o._removeClass(o.enterActiveClass);
         }
@@ -6685,9 +6737,12 @@ function initEnterEndCallback(o) {
             }
         }
 
-        // may this animation has ended before next enter frame
+        // maybe this animation has ended before next enter frame
         // so we cancel it
-        o._cancelEnterNextFrame && o._cancelEnterNextFrame();
+        if (o._cancelEnterNextFrame) {
+            o._cancelEnterNextFrame();
+            o._cancelEnterNextFrame = null;
+        }
 
         o.trigger(o.enterEventName + 'End', element, isCancel);
     };
@@ -6999,7 +7054,7 @@ function initMove(o, isUnmount) {
         } else {
             // 如果当前元素正在enter，而且是animation动画，则要enterEnd
             // 否则无法move
-            if (o._entering && getAnimateType(element) !== 'transition') {
+            if (o._entering && getAnimateInfo(element).type !== 'transition') {
                 o._enterEnd();
             }
             o._needMove = true;
