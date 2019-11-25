@@ -233,6 +233,10 @@ var hooks = {
     beforeInsert: null
 };
 
+var config = {
+    disableDelegate: false // for using in React/Vue, disable delegate the event
+};
+
 /** 
  * @fileoverview utility methods
  * @author javey
@@ -2464,7 +2468,7 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
         name = 'propertychange';
     }
 
-    if (!unDelegatesEvents[name]) {
+    if (!config.disableDelegate && !unDelegatesEvents[name]) {
         var delegatedRoots = delegatedEvents[name];
 
         if (nextEvent) {
@@ -4263,7 +4267,8 @@ var miss = (Object.freeze || Object)({
 	Types: Types,
 	VNode: VNode,
 	hooks: hooks,
-	clone: directClone
+	clone: directClone,
+	config: config
 });
 
 var parser = new Parser();
