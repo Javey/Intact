@@ -2409,21 +2409,24 @@ function stopPropagation() {
 var addEventListener = void 0;
 var removeEventListener = void 0;
 function fixEvent(fn) {
-    return function (event) {
-        // for compatibility
-        event._rawEvent = event;
+    if (!fn._$cb) {
+        fn._$cb = function (event) {
+            // for compatibility
+            event._rawEvent = event;
 
-        event.stopPropagation = stopPropagation;
-        if (!event.preventDefault) {
-            event.preventDefault = preventDefault;
-        }
-        fn(event);
-    };
+            event.stopPropagation = stopPropagation;
+            if (!event.preventDefault) {
+                event.preventDefault = preventDefault;
+            }
+            fn(event);
+        };
+    }
+    return fn._$cb;
 }
 if ('addEventListener' in doc) {
     addEventListener = function addEventListener(dom, name, fn) {
-        fn._$cb = fixEvent(fn);
-        dom.addEventListener(name, fn._$cb, false);
+        fn = fixEvent(fn);
+        dom.addEventListener(name, fn, false);
     };
 
     removeEventListener = function removeEventListener(dom, name, fn) {
@@ -2431,8 +2434,8 @@ if ('addEventListener' in doc) {
     };
 } else {
     addEventListener = function addEventListener(dom, name, fn) {
-        fn._$cb = fixEvent(fn);
-        dom.attachEvent('on' + name, fn._$cb);
+        fn = fixEvent(fn);
+        dom.attachEvent('on' + name, fn);
     };
 
     removeEventListener = function removeEventListener(dom, name, fn) {
@@ -5159,7 +5162,7 @@ Intact$2.prototype._constructor = function (props) {
         }
         _this.trigger('$inited', _this);
     };
-    var ret = this._init();
+    var ret = this._init(props);
 
     if (ret && ret.then) {
         ret.then(inited, function (err) {
@@ -5538,6 +5541,11 @@ Intact$2.prototype.destroy = function (lastVNode, nextVNode, parentDom) {
         return warn('destroyed multiple times');
     }
 
+    // 如果存在nextVNode，并且nextVNode也是一个组件类型，
+    // 并且，它俩的key相等，则不去destroy，而是在下一个组件init时
+    // 复用上一个dom，然后destroy上一个元素
+    this._destroy(lastVNode, nextVNode);
+
     var vdt = this.vdt;
 
     // 异步组件，可能还没有渲染
@@ -5553,10 +5561,6 @@ Intact$2.prototype.destroy = function (lastVNode, nextVNode, parentDom) {
         vdt.destroy();
     }
 
-    // 如果存在nextVNode，并且nextVNode也是一个组件类型，
-    // 并且，它俩的key相等，则不去destroy，而是在下一个组件init时
-    // 复用上一个dom，然后destroy上一个元素
-    this._destroy(lastVNode, nextVNode);
     this.destroyed = true;
     this.trigger('$destroyed', this);
     this.off();

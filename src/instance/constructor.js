@@ -95,7 +95,7 @@ Intact.prototype._constructor = function(props) {
         }
         this.trigger('$inited', this);
     };
-    const ret = this._init();
+    const ret = this._init(props);
 
     if (ret && ret.then) {
         ret.then(inited, err => {

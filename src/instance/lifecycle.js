@@ -76,6 +76,11 @@ Intact.prototype.destroy = function(lastVNode, nextVNode, parentDom) {
         return warn('destroyed multiple times');
     }
 
+    // 如果存在nextVNode，并且nextVNode也是一个组件类型，
+    // 并且，它俩的key相等，则不去destroy，而是在下一个组件init时
+    // 复用上一个dom，然后destroy上一个元素
+    this._destroy(lastVNode, nextVNode);
+
     const vdt = this.vdt;
 
     // 异步组件，可能还没有渲染
@@ -95,10 +100,6 @@ Intact.prototype.destroy = function(lastVNode, nextVNode, parentDom) {
         vdt.destroy();
     }
 
-    // 如果存在nextVNode，并且nextVNode也是一个组件类型，
-    // 并且，它俩的key相等，则不去destroy，而是在下一个组件init时
-    // 复用上一个dom，然后destroy上一个元素
-    this._destroy(lastVNode, nextVNode);
     this.destroyed = true;
     this.trigger('$destroyed', this);
     this.off();
