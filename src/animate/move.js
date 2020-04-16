@@ -39,7 +39,7 @@ prototype._update = function(lastVNode, vNode, isFromCheckMode) {
                 parentInstance.updateChildren.push(this);
             }
             // when we call _beforeUpdate twice then call _update twice
-            // this instance may exist in childaren
+            // this instance may exist in children
             // so we don't push it, but we need update position of it
             // ksc-fe/kpc#238
             const children = parentInstance.children;
@@ -81,7 +81,7 @@ prototype._update = function(lastVNode, vNode, isFromCheckMode) {
     // 因为存在moving元素被unmount又被mount的情况
     // 所以最先处理
     if (isMove) {
-        // if the _needUpdatePosition is true, see bellow for detail, update the position
+        // if the _needUpdatePosition is true, see above for detail, update the position
         updateChildren.forEach(instance => {
             if (!instance._leaving && instance._needUpdatePosition) {
                 instance.position = getPosition(instance);
@@ -204,6 +204,13 @@ function initMove(o, isUnmount) {
         }
     } else {
         o._needMove = false;
+        // if exist lastInstance but it has not moved
+        // reset the style
+        const lastInstance = o.lastInstance;
+        if (lastInstance) {
+            const s = element.style;
+            s.position = s.left = s.top = '';
+        }
     }
 }
 

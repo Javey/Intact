@@ -64,7 +64,7 @@
     "stylus-loader": "^3.0.2",
     "vdt": "git+https://github.com/Javey/vdt.js.git",
     "vdt-loader": "^1.4.4",
-    "webpack": "^2.4.1",
+    "webpack": "^3.12.0",
     "webpack-cli": "^3.1.0",
     "webpack-dev-server": "^3.1.14"
   }

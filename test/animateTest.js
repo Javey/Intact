@@ -275,6 +275,8 @@ describe('Animate Test', function() {
             sEql(children.length, 2);
             sEql(children[0].className, '');
             sEql(children[1].className, '');
+            sEql(children[0].getAttribute('style'), '');
+            sEql(children[1].getAttribute('style'), '');
             done();
         }, 3000); // this will be long time in firefox
     });
