@@ -6,9 +6,12 @@ import {Types} from 'misstime/src/vnode';
 
 prototype.init = inBrowser ? 
     function(lastVNode, nextVNode) {
-        const parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
-        if (parentDom && parentDom._reserve) {
-            lastVNode = parentDom._reserve[nextVNode.key];
+        if (!lastVNode) {
+            const parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
+            if (parentDom && parentDom._reserve) {
+                lastVNode = parentDom._reserve[nextVNode.key];
+            }
+
         }
 
         return this._super(lastVNode, nextVNode);

@@ -2236,7 +2236,8 @@ function createVNode(tag, props, children, className, key, ref) {
             }
             break;
         case 'function':
-            if (tag.prototype.init) {
+            // arrow function has not prototype
+            if (tag.prototype && tag.prototype.init) {
                 type = Types.ComponentClass;
             } else {
                 // return tag(props);
@@ -2828,10 +2829,16 @@ function createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue,
 function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
     return createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG, function (instance) {
         var dom = instance.init(lastVNode, vNode);
-        if (parentDom && (!lastVNode ||
-        // maybe we have reused the component and replaced the dom
-        lastVNode.dom !== dom && !dom.parentNode || !dom.parentNode.tagName)) {
-            parentDom.appendChild(dom);
+        if (parentDom) {
+            // for Animate component reuse dom in Intact
+            if (!lastVNode && parentDom._reserve) {
+                lastVNode = parentDom._reserve[vNode.key];
+            }
+            if (!lastVNode ||
+            // maybe we have reused the component and replaced the dom
+            lastVNode.dom !== dom && !dom.parentNode || !dom.parentNode.tagName) {
+                parentDom.appendChild(dom);
+            }
         }
 
         return dom;
@@ -6326,9 +6333,11 @@ function checkMode(o) {
 }
 
 prototype.init = inBrowser ? function (lastVNode, nextVNode) {
-    var parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
-    if (parentDom && parentDom._reserve) {
-        lastVNode = parentDom._reserve[nextVNode.key];
+    if (!lastVNode) {
+        var parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
+        if (parentDom && parentDom._reserve) {
+            lastVNode = parentDom._reserve[nextVNode.key];
+        }
     }
 
     return this._super(lastVNode, nextVNode);
@@ -6899,7 +6908,7 @@ prototype._update = function (lastVNode, vNode, isFromCheckMode) {
                 parentInstance.updateChildren.push(this);
             }
             // when we call _beforeUpdate twice then call _update twice
-            // this instance may exist in childaren
+            // this instance may exist in children
             // so we don't push it, but we need update position of it
             // ksc-fe/kpc#238
             var _children = parentInstance.children;
@@ -6939,7 +6948,7 @@ prototype._update = function (lastVNode, vNode, isFromCheckMode) {
     // 因为存在moving元素被unmount又被mount的情况
     // 所以最先处理
     if (isMove) {
-        // if the _needUpdatePosition is true, see bellow for detail, update the position
+        // if the _needUpdatePosition is true, see above for detail, update the position
         updateChildren.forEach(function (instance) {
             if (!instance._leaving && instance._needUpdatePosition) {
                 instance.position = getPosition(instance);
@@ -7073,6 +7082,13 @@ function initMove(o, isUnmount) {
         }
     } else {
         o._needMove = false;
+        // if exist lastInstance but it has not moved
+        // reset the style
+        var lastInstance = o.lastInstance;
+        if (lastInstance) {
+            var _s = element.style;
+            _s.position = _s.left = _s.top = '';
+        }
     }
 }
 

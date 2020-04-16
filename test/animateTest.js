@@ -318,6 +318,41 @@ describe('Animate Test', function() {
         }, 1200);
     });
 
+    it('patch Animate with a component after Animate ever leaved', () => {
+        const fn = sinon.spy();
+        const D = Intact.extend({
+            template: `<div>test</div>`,
+            _destroy: fn
+        });
+
+        const C = Intact.extend({
+            template: `
+                <div>
+                    <template v-if={self.get('a')}>
+                        <D />
+                        <D />
+                    </template>
+                    <template v-else>
+                        <D />
+                    </template>
+                    <Animate v-if={self.get('show')}>show</Animate>
+                </div>
+            `,
+            defaults() {
+                return {show: true, a: true};
+            },
+            _init() {
+                this.D = D;
+            }
+        });
+
+        const c = app.load(C);
+        c.set('show', false);
+        c.set('show', true);
+        c.set('a', false);
+        sEql(fn.callCount, 1);
+    });
+
     it('should not animate when a:disabled is equal to true', function(done) {
         const fn = sinon.spy();
         const D = Intact.extend({
