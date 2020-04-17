@@ -270,16 +270,21 @@ describe('Animate Test', function() {
         app.load(Detail);
         app.load(Index, {Component: new C()});
         sEql(_destroy.callCount, 1);
-        setTimeout(() => {
-            const children = app.element.firstChild.children;
-            sEql(children.length, 2);
-            sEql(children[0].className, '');
-            sEql(children[1].className, '');
-            sEql(children[0].getAttribute('style'), '');
-            sEql(children[1].getAttribute('style'), '');
-            done();
-        }, 3000); // this will be long time in firefox
-    });
+        let children = app.element.firstChild.children;
+        sEql(children.length, 2);
+        sEql(children[0].className, '');
+        sEql(children[1].className, '');
+        sEql(children[0].getAttribute('style'), '');
+        sEql(children[1].getAttribute('style'), '');
+
+        app.load(Detail);
+        children = app.element.firstChild.children;
+        sEql(children.length, 4);
+        sEql(children[0].style.position, 'absolute');
+        sEql(children[1].style.position, 'absolute');
+
+        done();
+});
 
     it('patch between Animate and non-Animate components', function(done) {
         this.enableTimeouts(false);

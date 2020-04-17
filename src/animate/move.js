@@ -207,7 +207,7 @@ function initMove(o, isUnmount) {
         // if exist lastInstance but it has not moved
         // reset the style
         const lastInstance = o.lastInstance;
-        if (lastInstance) {
+        if (!isUnmount && lastInstance) {
             const s = element.style;
             s.position = s.left = s.top = '';
         }
