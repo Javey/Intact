@@ -4626,6 +4626,8 @@ var eq = function eq(a, b, aStack, bStack) {
     if (a === b) return a !== 0 || 1 / a === 1 / b;
     // A strict comparison is necessary because `null == undefined`.
     if (isNullOrUndefined(a) || isNullOrUndefined(b)) return a === b;
+    // For misstime VNode
+    if (a instanceof VNode || b instanceof VNode) return a === b;
     // Compare `[[Class]]` names.
     var className$$1 = toString.call(a);
     if (className$$1 !== toString.call(b)) return false;

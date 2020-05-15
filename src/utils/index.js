@@ -1,6 +1,7 @@
 import {extend, isArray, each, isObject, hasOwn, noop, hasConsole} from 'vdt/src/lib/utils';
 import {isNullOrUndefined, indexOf, isStringOrNumber} from 'misstime/src/utils';
 import Vdt from 'vdt/src/client';
+import {VNode} from 'misstime/src/vnode';
 
 export {extend, isArray, each, isObject, hasOwn, isNullOrUndefined, noop, isStringOrNumber};
 
@@ -27,7 +28,7 @@ if (!(Object.setPrototypeOf || {}.__proto__)) {
             return object.__proto__ || nativeGetPrototypeOf.call(Object, object);
         }
     }
-    
+
     // fix that if ie <= 10 babel can't inherit class static methods
     // Object.setPrototypeOf = function(O, proto) {
     //     extend(O, proto);
@@ -56,7 +57,7 @@ function setPrototype(Parent, Child, name, value) {
     const prototype = Child.prototype;
     let tmp;
     if (
-        isSupportGetDescriptor && 
+        isSupportGetDescriptor &&
         (tmp = Object.getOwnPropertyDescriptor(Parent.prototype, name)) &&
         tmp.get
     ) {
@@ -92,7 +93,7 @@ export function inherit(Parent, prototype) {
             if (!_super || _super === templateDecorator) {
                 _super = Parent.prototype.template;
             }
-            proto._super = _super; 
+            proto._super = _super;
             Child.template = undefined;
             return setPrototype(Parent, Child, 'template', proto);
         } else if (!isFunction(proto)) {
@@ -102,7 +103,7 @@ export function inherit(Parent, prototype) {
         const fn = (() => {
             let _super = function(...args) {
                     return Parent.prototype[name].apply(this, args);
-                }, 
+                },
                 _superApply = function(args) {
                     return Parent.prototype[name].apply(this, args);
                 };
@@ -123,7 +124,7 @@ export function inherit(Parent, prototype) {
                 return returnValue;
             };
         })();
-        setPrototype(Parent, Child, name, fn); 
+        setPrototype(Parent, Child, name, fn);
     });
     Child.prototype.constructor = Child;
 
@@ -227,6 +228,8 @@ var eq = function(a, b, aStack, bStack) {
     if (a === b) return a !== 0 || 1 / a === 1 / b;
     // A strict comparison is necessary because `null == undefined`.
     if (isNullOrUndefined(a) || isNullOrUndefined(b)) return a === b;
+    // For misstime VNode
+    if (a instanceof VNode || b instanceof VNode) return a === b;
     // Compare `[[Class]]` names.
     var className = toString.call(a);
     if (className !== toString.call(b)) return false;
@@ -263,13 +266,13 @@ var eq = function(a, b, aStack, bStack) {
         // Objects with different constructors are not equivalent, but `Object`s or `Array`s
         // from different frames are.
         var aCtor = a.constructor, bCtor = b.constructor;
-        if (aCtor !== bCtor && 
+        if (aCtor !== bCtor &&
             !(
-                isFunction(aCtor) && 
+                isFunction(aCtor) &&
                 aCtor instanceof aCtor &&
-                isFunction(bCtor) && 
+                isFunction(bCtor) &&
                 bCtor instanceof bCtor
-            ) && 
+            ) &&
             ('constructor' in a && 'constructor' in b)
         ) {
             return false;
@@ -432,8 +435,8 @@ export function set(object, path, value) {
     return object;
 }
 
-export const warn = hasConsole ? 
-    function() { 
+export const warn = hasConsole ?
+    function() {
         console.warn.apply(console, arguments);
     } : noop;
 export const error = hasConsole ?
@@ -452,7 +455,7 @@ export const nextTick = (() => {
             // description in vue
             if (isIOS) setTimeout(noop);
         };
-    } else if (typeof MutationObserver !== 'undefined' && ( 
+    } else if (typeof MutationObserver !== 'undefined' && (
         isNative(MutationObserver) ||
         // PhantomJS and iOS 7.x
         MutationObserver.toString() === '[object MutationObserverConstructor]'
@@ -487,7 +490,7 @@ export function NextTick(eachCallback) {
     nextTick(() => this.callback());
 }
 NextTick.prototype.fire = function(callback, data) {
-    this.callback = callback; 
+    this.callback = callback;
     if (this.eachCallback) {
         this.eachCallback(data);
     }
