@@ -6191,6 +6191,14 @@ var CSSMatrix = typeof WebKitCSSMatrix !== 'undefined' ? WebKitCSSMatrix : funct
     }
 };
 
+// the elements that can not be moved by relative position
+var immovableElements = {
+    tr: true,
+    tbody: true,
+    td: true,
+    thead: true
+};
+
 var h = Vdt$1.miss.h;
 var _Vdt$utils = Vdt$1.utils;
 var c = _Vdt$utils.className;
@@ -6494,6 +6502,7 @@ function initLeaveEndCallback(o) {
 prototype._mount = function (lastVNode, vNode) {
     this.isAppear = detectIsAppear(this);
     this._parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
+    this._isImmovable = !!immovableElements[this.element.tagName.toLowerCase()];
 
     this.on('$change:a:transition', initClassName);
     initClassName(this);
@@ -6807,7 +6816,7 @@ function unmountCallback(o) {
         } else {
             // add a flag to indicate that this child will leave but we maybe call
             // _beforeUpdate twice before _update, so let _beforeUpdate reserve it
-            // ksc-fe/kpc#238 
+            // ksc-fe/kpc#238
             o._needLeave = true;
             parentInstance.unmountChildren.push(o);
         }
@@ -6984,14 +6993,21 @@ prototype._update = function (lastVNode, vNode, isFromCheckMode) {
         // 对于更新的元素，如果正在move，则将位置清空，以便确定最终位置
         updateChildren.forEach(function (instance) {
             if (instance._moving) {
-                var s = instance.element.style;
-                s.left = s.top = '';
+                if (instance._isImmovable) {
+                    instance._moveEnd();
+                } else {
+                    var s = instance.element.style;
+                    s.left = s.top = '';
+                }
             }
         });
 
         // 将要删除的元素，设为absolute，以便确定其它元素最终位置
         unmountChildren.forEach(function (instance) {
-            instance.element.style.position = 'absolute';
+            // 对于tr等表格元素，不能设置absolute
+            if (!instance._isImmovable) {
+                instance.element.style.position = 'absolute';
+            }
         });
 
         // 获取所有元素的新位置
@@ -7063,9 +7079,15 @@ function initMove(o, isUnmount) {
     if (dx || dy || oDx || oDy) {
         // 对于move中的元素，需要将它重新回到0
         var s = element.style;
+        var setOffset = !o._isImmovable ? function (x, y) {
+            s.left = x + 'px';
+            s.left = y + 'px';
+        } : function (x, y) {
+            s.transform = s.WebkitTransform = 'translate(' + x + 'px, ' + y + 'px)';
+        };
+
         if (isUnmount) {
-            s.left = oldPosition.left + 'px';
-            s.top = oldPosition.top + 'px';
+            setOffset(oldPosition.left, oldPosition.top);
             o._needMove = false;
         } else {
             // 如果当前元素正在enter，而且是animation动画，则要enterEnd
@@ -7074,9 +7096,12 @@ function initMove(o, isUnmount) {
                 o._enterEnd();
             }
             o._needMove = true;
-            s.position = 'relative';
-            s.left = dx + 'px';
-            s.top = dy + 'px';
+            if (!o._isImmovable) {
+                s.position = 'relative';
+            } else {
+                s.transition = s.WebkitTransition = 'none';
+            }
+            setOffset(dx, dy);
         }
     } else {
         o._needMove = false;
@@ -7085,7 +7110,7 @@ function initMove(o, isUnmount) {
         var lastInstance = o.lastInstance;
         if (!isUnmount && lastInstance) {
             var _s = element.style;
-            _s.position = _s.left = _s.top = '';
+            _s.transition = _s.WebkitTransition = _s.WebkitTransform = _s.transform = _s.position = _s.left = _s.top = '';
         }
     }
 }
@@ -7099,13 +7124,16 @@ function move(o) {
     var s = element.style;
 
     o._addClass(o.moveClass);
+    if (o._isImmovable) {
+        s.transition = s.WebkitTransition = '';
+    }
 
     o._moveEnd = function (e) {
         e && e.stopPropagation();
         if (!e || /transform$/.test(e.propertyName)) {
             TransitionEvents.off(element, o._moveEnd);
             o._removeClass(o.moveClass);
-            s.position = s.left = s.top = s.transform = s.WebkitTransform = '';
+            s.transition = s.WebkitTransition = s.position = s.left = s.top = s.transform = s.WebkitTransform = '';
             o.dx = o.dy = 0;
             o._moving = false;
         }
@@ -7118,7 +7146,11 @@ function move(o) {
 
 function triggerMove(o) {
     var s = o.element.style;
-    s.transform = s.WebkitTransform = 'translate(' + (0 - o.dx) + 'px, ' + (0 - o.dy) + 'px)';
+    if (!o._isImmovable) {
+        s.transform = s.WebkitTransform = 'translate(' + (0 - o.dx) + 'px, ' + (0 - o.dy) + 'px)';
+    } else {
+        s.transform = s.WebkitTransform = 'translate(0, 0)';
+    }
 }
 
 function getPosition(o) {

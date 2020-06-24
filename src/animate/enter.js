@@ -2,7 +2,8 @@ import prototype from './prototype';
 import {
     getAnimateInfo,
     whenTransitionEnds,
-    nextFrame
+    nextFrame,
+    immovableElements,
 } from './utils';
 import checkMode from './check-mode';
 import leave from './leave';
@@ -12,6 +13,7 @@ import {noop} from '../utils';
 prototype._mount = function(lastVNode, vNode) {
     this.isAppear = detectIsAppear(this);
     this._parentDom = this.parentVNode && this.parentVNode.dom || this.parentDom;
+    this._isImmovable = !!immovableElements[this.element.tagName.toLowerCase()];
 
     this.on('$change:a:transition', initClassName);
     initClassName(this);
@@ -35,13 +37,13 @@ prototype._mount = function(lastVNode, vNode) {
 
     initUnmountCallback(this, vNode);
 
-    startEnterAnimate(this); 
+    startEnterAnimate(this);
 };
 
 function initAShow(o) {
     const element = o.element;
     const display = element.style.display;
-    const originDisplay = display === 'none' ? '' : display; 
+    const originDisplay = display === 'none' ? '' : display;
     if (!o.get('a:show')) {
         element.style.display = 'none';
     }
@@ -130,8 +132,8 @@ export default function enter(o) {
 
     if (disabled) return;
 
-    initEnterEndCallback(o, info); 
-   
+    initEnterEndCallback(o, info);
+
     function start() {
         o._entering = true;
 
@@ -199,7 +201,7 @@ function detectIsAppear(o) {
     if (o.isRender) {
         let parent;
         if (
-            o.get('a:appear') && 
+            o.get('a:appear') &&
             (
                 o.parentDom ||
                 (parent = o.parentVNode) &&
@@ -332,7 +334,7 @@ function unmountCallback(o) {
         } else {
             // add a flag to indicate that this child will leave but we maybe call
             // _beforeUpdate twice before _update, so let _beforeUpdate reserve it
-            // ksc-fe/kpc#238 
+            // ksc-fe/kpc#238
             o._needLeave = true;
             parentInstance.unmountChildren.push(o);
         }
@@ -340,7 +342,7 @@ function unmountCallback(o) {
     } else if (isNotAnimate) {
         o.leaveEndCallback();
     } else {
-        leave(o); 
+        leave(o);
     }
 }
 
@@ -383,7 +385,7 @@ function getParentAnimate(o) {
 
 function hasJsTransition(o) {
     const events = o._events;
-    
+
     for (let key in events) {
         if (key[0] === 'a' && key[1] === ':') {
             if (events[key].length) {

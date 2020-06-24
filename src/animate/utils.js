@@ -128,7 +128,7 @@ export function getAnimateInfo(element, className) {
     const timeout = Math.max(transitionTimeout, animationTimeout);
     const propCount = type === 'transition' ? transitionDurations.length : animationDurations.length;
 
-    return {type, timeout, propCount}; 
+    return {type, timeout, propCount};
 }
 
 function getTimeout(delays, durations) {
@@ -137,7 +137,7 @@ function getTimeout(delays, durations) {
 }
 
 function toMs(s) {
-    return s.slice(0, -1) * 1000; 
+    return s.slice(0, -1) * 1000;
 }
 
 export function addEventListener(node, eventName, eventListener) {
@@ -192,14 +192,14 @@ export function nextFrame(fn) {
 }
 
 if (inBrowser) {
-    raf = window.requestAnimationFrame ? 
+    raf = window.requestAnimationFrame ?
         window.requestAnimationFrame.bind(window) : setTimeout;
 
     detectEvents();
 }
 
-export const CSSMatrix = typeof WebKitCSSMatrix !== 'undefined' ? 
-    WebKitCSSMatrix : 
+export const CSSMatrix = typeof WebKitCSSMatrix !== 'undefined' ?
+    WebKitCSSMatrix :
     function(transform) {
         this.m42 = 0;
         this.m41 = 0;
@@ -215,3 +215,11 @@ export const CSSMatrix = typeof WebKitCSSMatrix !== 'undefined' ?
             this.m42 = parseFloat(parts[5]);
         }
     };
+
+// the elements that can not be moved by relative position
+export const immovableElements = {
+    tr: true,
+    tbody: true,
+    td: true,
+    thead: true,
+};

@@ -63,7 +63,7 @@ prototype._update = function(lastVNode, vNode, isFromCheckMode) {
     const isMove = this.get('a:move');
 
     // 如果是in-out模式，但是没有元素enter，则直接leave
-    if (!isFromCheckMode && this._enteringAmount === 0 && 
+    if (!isFromCheckMode && this._enteringAmount === 0 &&
         parentInstance && parentInstance.get('a:mode') === 'in-out'
     ) {
         for (let i = 0; i < updateChildren.length; i++) {
@@ -74,7 +74,7 @@ prototype._update = function(lastVNode, vNode, isFromCheckMode) {
                 instance._delayLeave = false;
                 i--;
             }
-        } 
+        }
     }
 
     // 进行mount元素的进入动画
@@ -117,14 +117,21 @@ prototype._update = function(lastVNode, vNode, isFromCheckMode) {
         // 对于更新的元素，如果正在move，则将位置清空，以便确定最终位置
         updateChildren.forEach(instance => {
             if (instance._moving) {
-                const s = instance.element.style;
-                s.left = s.top = '';
+                if (instance._isImmovable) {
+                    instance._moveEnd();
+                } else {
+                    const s = instance.element.style;
+                    s.left = s.top = '';
+                }
             }
         });
 
         // 将要删除的元素，设为absolute，以便确定其它元素最终位置
         unmountChildren.forEach(instance => {
-            instance.element.style.position = 'absolute';
+            // 对于tr等表格元素，不能设置absolute
+            if (!instance._isImmovable) {
+                instance.element.style.position = 'absolute';
+            }
         });
 
         // 获取所有元素的新位置
@@ -187,9 +194,15 @@ function initMove(o, isUnmount) {
     if (dx || dy || oDx || oDy) {
         // 对于move中的元素，需要将它重新回到0
         const s = element.style;
+        const setOffset = !o._isImmovable ? (x, y) => {
+            s.left = `${x}px`;
+            s.left = `${y}px`;
+        } : (x, y) => {
+            s.transform = s.WebkitTransform = `translate(${x}px, ${y}px)`;
+        }
+
         if (isUnmount) {
-            s.left = `${oldPosition.left}px`;
-            s.top = `${oldPosition.top}px`;
+            setOffset(oldPosition.left, oldPosition.top);
             o._needMove = false;
         } else {
             // 如果当前元素正在enter，而且是animation动画，则要enterEnd
@@ -198,9 +211,12 @@ function initMove(o, isUnmount) {
                 o._enterEnd();
             }
             o._needMove = true;
-            s.position = 'relative';
-            s.left = `${dx}px`;
-            s.top = `${dy}px`;
+            if (!o._isImmovable) {
+                s.position = 'relative';
+            } else {
+                s.transition = s.WebkitTransition = 'none';
+            }
+            setOffset(dx, dy);
         }
     } else {
         o._needMove = false;
@@ -209,7 +225,7 @@ function initMove(o, isUnmount) {
         const lastInstance = o.lastInstance;
         if (!isUnmount && lastInstance) {
             const s = element.style;
-            s.position = s.left = s.top = '';
+            s.transition = s.WebkitTransition = s.WebkitTransform = s.transform = s.position = s.left = s.top = '';
         }
     }
 }
@@ -223,13 +239,16 @@ function move(o) {
     const s = element.style;
 
     o._addClass(o.moveClass);
+    if (o._isImmovable) {
+        s.transition = s.WebkitTransition = '';
+    }
 
     o._moveEnd = (e) => {
         e && e.stopPropagation();
         if (!e || /transform$/.test(e.propertyName)) {
             TransitionEvents.off(element, o._moveEnd);
             o._removeClass(o.moveClass);
-            s.position = s.left = s.top = s.transform = s.WebkitTransform = '';
+            s.transition = s.WebkitTransition = s.position = s.left = s.top = s.transform = s.WebkitTransform = '';
             o.dx = o.dy = 0;
             o._moving = false;
         }
@@ -242,7 +261,11 @@ function move(o) {
 
 function triggerMove(o) {
     const s = o.element.style;
-    s.transform = s.WebkitTransform = `translate(${0 - o.dx}px, ${0 - o.dy}px)`;
+    if (!o._isImmovable) {
+        s.transform = s.WebkitTransform = `translate(${0 - o.dx}px, ${0 - o.dy}px)`;
+    } else {
+        s.transform = s.WebkitTransform = `translate(0, 0)`;
+    }
 }
 
 function getPosition(o) {
