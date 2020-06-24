@@ -196,7 +196,7 @@ function initMove(o, isUnmount) {
         const s = element.style;
         const setOffset = !o._isImmovable ? (x, y) => {
             s.left = `${x}px`;
-            s.left = `${y}px`;
+            s.top = `${y}px`;
         } : (x, y) => {
             s.transform = s.WebkitTransform = `translate(${x}px, ${y}px)`;
         }

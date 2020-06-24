@@ -7081,7 +7081,7 @@ function initMove(o, isUnmount) {
         var s = element.style;
         var setOffset = !o._isImmovable ? function (x, y) {
             s.left = x + 'px';
-            s.left = y + 'px';
+            s.top = y + 'px';
         } : function (x, y) {
             s.transform = s.WebkitTransform = 'translate(' + x + 'px, ' + y + 'px)';
         };
