@@ -1,0 +1,41 @@
+{
+  "name": "misstime",
+  "version": "0.3.18",
+  "description": "",
+  "main": "dist/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Javey/misstime"
+  },
+  "scripts": {
+    "test": "karma start karma.mocha.conf.js",
+    "test:local": "karma start karma.conf.js",
+    "build": "rollup -c rollup.config.js",
+    "karma:benchmark": "karma start karma.benchmark.conf.js",
+    "karma:test": "karma start karma.server.conf.js",
+    "release": "npm run release-patch",
+    "prelease": "npm version prerelease && git push --tags --force && git push && npm publish",
+    "release-patch": "git checkout master && git push && npm version patch && git push --tags && git push && npm publish",
+    "release-minor": "git checkout master && git push && npm version minor && git push --tags && git push && npm publish",
+    "release-major": "git checkout master && git push && npm version major && git push --tags && git push && npm publish"
+  },
+  "author": "javey",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jasmine": "^3.6.3",
+    "istanbul-instrumenter-loader": "^3.0.1",
+    "jasmine-core": "^3.6.0",
+    "karma": "^6.1.0",
+    "karma-chrome-launcher": "^3.1.0",
+    "karma-coverage-istanbul-reporter": "^3.0.3",
+    "karma-jasmine": "^4.0.1",
+    "karma-jasmine-html-reporter": "^1.5.4",
+    "karma-webpack": "^5.0.0",
+    "ts-loader": "^8.0.14",
+    "typescript": "^4.1.3",
+    "webpack": "^5.20.1"
+  }
+}

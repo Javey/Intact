@@ -1,0 +1,22 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>advance-demo</title>
+    <link type="text/css" rel="stylesheet" href="/static/css/test.css">
+    </head>
+    <body>
+    <h1>index page powered by Advanced uses vdt template engine</h1>
+    <div>{{'{'}}test}</div>
+    <div innerHTML="AAA"></div>
+    <div>BBB</div>
+    <div>{{'<div>{test}</div>'}}</div>
+    <p>Hello {{test}}</p>
+    <script type="text/javascript">
+        var a = {{test}}
+    </script>
+    <b:main />
+    <b:js>
+        <script type="text/javascript" src="/node_modules/vdt/dist/vdt.js"></script>
+    </b:js>
+    </body>
+</html>

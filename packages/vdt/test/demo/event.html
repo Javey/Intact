@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+<script type="text/vdt" id="template">
+    <div ev-click={function() {console.log(1)}} ev-mouseover={function() {console.log(2)}}> 
+        <div ev-click={function() {console.log(3)}}>test</div>
+    </div>
+</script>
+   
+<script type="text/javascript" src="../../dist/vdt.js"></script>
+<script type="text/javascript">
+    var vdt = Vdt(document.getElementById('template').innerHTML),
+        model = {
+            users: [
+                {name: 'John', id: '1'},
+                {name: 'Javey', id: '2'},
+                {name: 'Tom', id: '3'},
+                {name: 'Sarah', id: '4'}
+            ],
+            input: '1',
+            time: new Date().toLocaleTimeString(),
+
+            add: function(e) {
+                model.users.push({name: e.target.value, id: model.users.length});
+                model.input = '';
+                vdt.update();
+            },
+
+            change: function(e) {
+                model.input = e.target.value;
+                vdt.update();
+            }
+        };
+
+    document.body.appendChild(vdt.render(model));
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+var layout = require('layout');
+
+<t:layout arguments>
+    <b:main>
+        test main
+        <div>{{'<div>test</div>'}}</div>
+    </b:main>
+
+    <b:js>
+        {{parent()}}
+        <script type="text/javascript">
+            var a = 1;
+            console.log(a);
+            if (a < 2) {
+                console.log('less than {{ test < 2 ? 'a' : 'b' }}');
+            }
+        </script>
+    </b:js>
+</t:layout>

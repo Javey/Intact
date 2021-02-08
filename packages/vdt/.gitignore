@@ -1,0 +1,13 @@
+node_modules
+.idea
+.vscode
+npm-debug.log
+/coverage
+site/.cache
+site/log
+site/dist
+site/node_modules
+site/build
+site/dist
+site/gh-pages
+site/static

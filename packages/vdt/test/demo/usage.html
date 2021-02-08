@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>vdt template engine demo</title>
+</head>
+<body>
+<script type="text/vdt" id="template">
+    var a = 1, // this is a
+        showInfo = function(index, name) {
+            alert('Click ' + index + ' ' + name);
+        }
+    <div class="users">
+        <input value={input} ev-change={add} ev-input={change}/> input: {input}
+        <ul>
+            {/* output users */}
+            {users.map(function(user, index) {
+                return <li className="user" id={user.id} ev-click={
+                    // use es5's bind or underscore's bind to pass arguments
+                    showInfo.bind(null, index, user.name)
+                    // or closure
+                    /*function() {
+                        showInfo(index, user.name);
+                    }*/
+                }>{index}: {user.name}</li>
+            })}
+        </ul>
+        {/* custom attributes */}
+        <div attributes={{'data-a': a, input: input}} id={a} ev-dblclick={function() {console.log('Dblclick')}}>This is a({a})</div>
+        <div>Now: {time}</div>
+    </div>
+</script>
+
+<script type="text/javascript" src="../../dist/vdt.js"></script>
+<script type="text/javascript">
+    var vdt = Vdt(document.getElementById('template').innerHTML),
+        model = {
+            users: [
+                {name: 'John', id: '1'},
+                {name: 'Javey', id: '2'},
+                {name: 'Tom', id: '3'},
+                {name: 'Sarah', id: '4'}
+            ],
+            input: '',
+            time: new Date().toLocaleTimeString(),
+
+            add: function(e) {
+                model.users.push({name: e.target.value, id: model.users.length});
+                model.input = '';
+                vdt.update();
+            },
+
+            change: function(e) {
+                model.input = e.target.value;
+                vdt.update();
+            }
+        };
+
+    document.body.appendChild(vdt.render(model));
+
+    setInterval(function() {
+        vdt.data.time = new Date().toLocaleTimeString();
+        vdt.update();
+    }, 1000);
+</script>
+</body>
+</html>

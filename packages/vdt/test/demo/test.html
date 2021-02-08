@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>vdt template engine demo</title>
+</head>
+<body>
+<script type="text/vdt" id="template">
+    return <div>
+        <div class="card">
+            <div class="aa" style={ scope.hide ? undefined : "display: block" } 
+                ev-click={function() {
+                    scope.hide = true; 
+                    this.update()
+                }.bind(this)}
+            >aaa</div>
+
+            {input != 1 ? <div class="users" style={{width: "100px", fontSize: "24px"}}>{time}</div> : null}
+
+            <div type="text/javascript">
+                var a = {input}
+                console.log(a)
+            </div>
+        </div>
+    </div>
+</script>
+
+<script type="text/javascript" src="../../dist/vdt.js"></script>
+<script type="text/javascript">
+    var vdt = Vdt(document.getElementById('template').innerHTML, {autoReturn: false}),
+        model = {
+            users: [
+                {name: 'John', id: '1'},
+                {name: 'Javey', id: '2'},
+                {name: 'Tom', id: '3'},
+                {name: 'Sarah', id: '4'}
+            ],
+            input: '1',
+            time: new Date().toLocaleTimeString(),
+
+            add: function(e) {
+                model.users.push({name: e.target.value, id: model.users.length});
+                model.input = '';
+                vdt.update();
+            },
+
+            change: function(e) {
+                model.input = e.target.value;
+                vdt.update();
+            }
+        };
+
+    document.body.appendChild(vdt.render(model));
+
+    setTimeout(function() {
+        vdt.data.time = new Date().toLocaleTimeString();
+        vdt.data.input = Math.random();
+        vdt.update();
+    }, 1000);
+</script>
+</body>
+</html>

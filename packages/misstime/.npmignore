@@ -1,0 +1,12 @@
+benchmark
+script
+test
+.babelrc
+node_modules
+.jshintrc
+npm-debug.log
+karma*
+gulpfile.js
+rollup.config.js
+webpack.config.js
+.travis.yml

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mocha</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../../node_modules/mocha/mocha.css"/>
+</head>
+<body>
+<div id="mocha"></div>
+
+<script type="text/vdt" id="parent">
+    <div className="card">
+        <div className="head">{title}</div>
+        <b:body>
+            <div>parent body</div>
+        </b:body>
+        <b:footer>
+            <div>parent footer</div>
+            <b:nested>
+                <div>parent nested footer</div>
+            </b:nested>
+        </b:footer>
+    </div>
+</script>
+<script type="text/vdt" id="child">
+    // You can also compile it in node, then require it by require.js
+    var parent = Vdt.compile(document.getElementById('parent').innerHTML);
+    <t:parent title="child title">
+        <b:body>
+            <div>child body</div>
+        </b:body>
+        <b:footer>
+            {parent()}
+            <div>child footer</div>
+            <b:child_nested>
+                <div>child nested footer</div>
+            </b:child_nested>
+        </b:footer>
+    </t:parent>
+</script>
+
+<script type="text/vdt" id="pass_arguments">
+    var parent = Vdt.compile(document.getElementById('parent').innerHTML);
+    <t:parent arguments title="child title">
+        <b:body>
+            <div>child body</div>
+        </b:body>
+        <b:footer>
+            {parent()}
+            <div>child footer</div>
+            <b:child_nested>
+                <div>child nested footer</div>
+            </b:child_nested>
+        </b:footer>
+    </t:parent>
+</script>
+
+<script type="text/vdt" id="child_with_title">
+    var parent = Vdt.compile(document.getElementById('parent').innerHTML);
+    <t:parent title={typeof title !== 'undefined' ? title : "child title"}>
+        <b:body>
+            <div>child body</div>
+        </b:body>
+        <b:footer>
+            {parent()}
+            <div>child footer</div>
+            <b:child_nested>
+                <div>child nested footer</div>
+            </b:child_nested>
+        </b:footer>
+    </t:parent>
+</script>
+
+<script type="text/vdt" id="grandson">
+    var _parent = Vdt.compile(document.getElementById('child_with_title').innerHTML);
+    <t:_parent title="grandson title">
+        <b:body>
+            <div>grandson body</div>
+        </b:body>
+        <b:child_nested>
+            {parent()}
+            <div>grandson footer</div>
+            <t:_parent title="nested template">
+            </t:_parent>
+        </b:child_nested>
+    </t:_parent>
+</script>
+
+<script type="text/vdt" id="directive">
+    <ul>
+        <li v-for={data} v-if={key % 2 === 0}>{value}</li>
+    </ul>
+</script>
+
+<script type="text/vdt" id="inline_style">
+    <div>
+        <div style={a === 1 ? "display: block;" : undefined}></div>
+        <div style={a === 1 ? "display: block;" : "display: none;"}></div>
+        <div style={a === 1 ? {display: 'block'} : undefined}></div>
+    </div>
+</script>
+
+<script type="text/vdt" id="v-model-text">
+    <input name="text" v-model="text" />
+</script>
+<script type="text/vdt" id="v-model-radio">
+    <div>
+        <input name="radio-with-constant-value" type="radio" v-model="radioConst" value="1" />
+        <input name="radio-with-variable-value" type="radio" v-model="radioVar" value={variable} />
+        <input name="radio-with-no-value" type="radio" v-model="radioNo" />
+        <input name="radio-groups" type="radio" v-model="radioGroup" v-for={list} value={value} />
+        <input name="radio-with-true-false" type="radio" v-model="radioTrueFalse" v-model-true="a" />
+    </div>
+</script>
+<script type="text/vdt" id="v-model-checkbox">
+    <div>
+        <input name="checkbox-with-constant-value" type="checkbox" v-model="checkboxConst" value="1" />
+        <input name="checkbox-with-variable-value" type="checkbox" v-model="checkboxVar" value={variable} />
+        <input name="checkbox-with-no-value" type="checkbox" v-model="checkboxNo" />
+        <input name="checkbox-groups" type="checkbox" v-model="checkboxGroup" v-for={list} value={value} />
+        <input name="checkbox-with-true-false" type="checkbox" v-model="checkboxTrueFalse" v-model-true="a" v-model-false={variable} />
+    </div>
+</script>
+<script type="text/vdt" id="v-model-select">
+    <select v-model="test">
+        <option v-for={list} value={value}>{value}</option>
+    </select>
+</script>
+<script type="text/vdt" id="v-model-multiple-select">
+    <select v-model="test" multiple={true}>
+        <option v-for={list} value={value}>{value}</option>
+    </select>
+</script>
+<script type="text/vdt" id="v-model-textarea">
+    <textarea v-model="test"></textarea>
+</script>
+
+
+<script src="../../node_modules/mocha/mocha.js"></script>
+<script src="../../node_modules/should/should.js"></script>
+<script src="../../dist/vdt.min.js"></script>
+<script src="../../node_modules/jquery/dist/jquery.js"></script>
+<script>mocha.setup('bdd')</script>
+<script src="tests.js"></script>
+<script>
+    mocha.run();
+</script>
+</body>
+</html>
