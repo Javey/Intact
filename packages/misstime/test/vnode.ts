@@ -40,6 +40,18 @@ describe('VNode', () => {
             );
         }
 
+        function createTestVNodeWithKey() {
+            return createElementVNode(
+                Types.CommonElement,
+                'i',
+                null,
+                ChildrenTypes.HasInvalidChildren,
+                null,
+                null,
+                'key',
+            );
+        }
+
         it('should normalize children', () => {
             const vNode = normalize(
                 [
@@ -51,11 +63,7 @@ describe('VNode', () => {
                 ]
             );
 
-            expect((vNode.children as VNode[])[0].key).toBe('$0');
-            expect((vNode.children as VNode[])[1].key).toBe('$1');
-            expect((vNode.children as VNode[])[2].key).toBe('$2$0');
-            expect((vNode.children as VNode[])[3].key).toBe('$3$0');
-            expect((vNode.children as VNode[])[4].key).toBe('$4');
+            expect((vNode.children as VNode[]).map(vNode => vNode.key)).toEqual(['$0', '$1', '$2', '$3', '$4']);
             expect(vNode.childrenType & ChildrenTypes.HasKeyedChildren).toBeGreaterThan(0);
         });
 
@@ -126,30 +134,8 @@ describe('VNode', () => {
 
         it('should normalize children that contains normalized vNode', () => {
             const child = createElementVNode(Types.CommonElement, 'span');
-            const vNode1 = normalize([
-                child, 
-                createElementVNode(
-                    Types.CommonElement,
-                    'i',
-                    null,
-                    ChildrenTypes.HasInvalidChildren,
-                    null,
-                    null,
-                    'key',
-                )
-            ]);
-            const vNode2 = normalize([
-                createElementVNode(
-                    Types.CommonElement,
-                    'i',
-                    null,
-                    ChildrenTypes.HasInvalidChildren,
-                    null,
-                    null,
-                    'key',
-                ),
-                child, 
-            ]);
+            const vNode1 = normalize([child, createTestVNodeWithKey()]);
+            const vNode2 = normalize([createTestVNodeWithKey(), child]);
 
             const children1 = vNode1.children as VNode[];
             const children2 = vNode2.children as VNode[];
@@ -158,27 +144,16 @@ describe('VNode', () => {
             expect(children2.map(vNode => vNode.key)).toEqual(['key', '$1']);
         });
 
-        it('should normalize children ')
+        it('should normalize children that contains normalized vNode in nested array', () => {
+            const child = createElementVNode(Types.CommonElement, 'span');
+            const childWithKey = createTestVNodeWithKey();
+            const vNode1 = normalize([child, childWithKey]);
+            const vNode2 = normalize([[child, childWithKey]]);
+            const vNode3 = normalize([[[child, childWithKey]]]);
+
+            [vNode1, vNode2, vNode3].forEach(vNode => {
+                expect((vNode.children as VNode[]).map(vNode => vNode.key)).toEqual(['$0', 'key']);
+            });
+        });
     });
-
-
-    // it('normalize invalid vNode', () => {
-         // const vNode = createElementVNode(
-            // Types.CommonElement,
-            // 'div',
-            // [
-                // createElementVNode(Types.CommonElement, 'span'),
-                // null,
-                // createElementVNode(Types.CommonElement, 'i'),
-                // false,
-            // ],
-            // ChildrenTypes.UnknownChildren,
-            // null,
-            // null,
-            // 'key'
-        // );
-
-        // const children = vNode.children as VNode[];
-        // expect(children.map(vNode => vNode.key)).toEqual(['$0', '$2']);
-    // });
 });

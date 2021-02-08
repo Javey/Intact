@@ -73,6 +73,37 @@ export function createTextVNode(text: string | number, key?: Key | null): VNodeT
     return new VNode(Types.Text, null, ChildrenTypes.HasInvalidChildren, text, null, null, key) as VNodeTextElement<null>;
 }
 
+export function createComponentVNode<P>(
+    tag: Component,
+    props?: Props<P, Component> | null,
+    key?: Key | null,
+    ref?: Ref<Component> | null,
+): VNodeComponent<P> {
+    // if (process.env.NODE_ENV !== 'production') {
+        // if (type & Types.Element) {
+            // throwError('Creating element vNodes using createCommentVNode is not allowed. Use createElementVNode method.');
+        // }
+    // }
+   
+    let type: Types;
+    if (tag.prototype && tag.prototype.$init) {
+        type = Types.ComponentClass;
+    } else {
+        type = Types.ComponentFunction;
+    }
+
+    return new VNode(
+        type,
+        tag,
+        ChildrenTypes.HasInvalidChildren,
+        null,
+        null,
+        props,
+        key,
+        ref
+    ) as VNodeComponent<P>;
+}
+
 export function directClone(vNode: VNode<any>): VNode<any> {
     const type = vNode.type & Types.ClearInUse;
     let props = vNode.props;
@@ -99,7 +130,6 @@ export function directClone(vNode: VNode<any>): VNode<any> {
     );
 }
 
-const keyPrefix = '$';
 function normalizeChildren(vNode: VNode<any>, children: Children) {
     let newChildren: any;
     let newChildrenType: ChildrenTypes = ChildrenTypes.HasInvalidChildren;
@@ -111,25 +141,26 @@ function normalizeChildren(vNode: VNode<any>, children: Children) {
         newChildren = children;
     } else if (isArray(children)) {
         const len = children.length;
+        const reference = {index: 0};
         for (let i = 0; i < len; i++) {
             let n = children[i];
 
             if (isInvalid(n) || isArray(n)) {
                 newChildren = newChildren || children.slice(0, i);
-                _normalizeVNodes(children, newChildren, i, '');
+                _normalizeVNodes(children, newChildren, i, reference);
                 break;
             } else if (isStringOrNumber(n)) {
                 newChildren = newChildren || children.slice(0, i);
-                newChildren.push(createTextVNode(n, keyPrefix + i));
+                newChildren.push(applyKey(createTextVNode(n), reference));
             } else {
                 if (process.env.NODE_ENV !== 'production') {
                     throwIfObjectIsNotVNode(n);
                 }
                 const key = n.key;
-                const needsCloning = (n.type & Types.InUseOrNormalized) > 0;
+                const type = n.type;
+                const needsCloning = (type & Types.InUseOrNormalized) > 0;
                 const isNullOrUndefinedKey = isNullOrUndefined(key);
-                // TODO: use bitwise in Types instead
-                const isPrefixed = isString(key) && key[0] === keyPrefix;
+                const isPrefixed = (type & Types.PrefixedKey) > 0;
 
                 if (needsCloning || isNullOrUndefinedKey || isPrefixed) {
                     newChildren = newChildren || children.slice(0, i);
@@ -137,7 +168,7 @@ function normalizeChildren(vNode: VNode<any>, children: Children) {
                         n = directClone(n);
                     }
                     if (isNullOrUndefinedKey || isPrefixed) {
-                        n.key = keyPrefix + i;
+                        applyKey(n, reference);
                     }
                     newChildren.push(n);
                 } else if (newChildren) {
@@ -146,6 +177,8 @@ function normalizeChildren(vNode: VNode<any>, children: Children) {
 
                 n.type |= Types.Normalized;
             }
+
+            reference.index++;
         }
 
         newChildren = newChildren || children;
@@ -155,6 +188,9 @@ function normalizeChildren(vNode: VNode<any>, children: Children) {
             newChildrenType = ChildrenTypes.HasKeyedChildren;
         }
     } else {
+        if (process.env.NODE_ENV !== 'production') {
+            throwIfObjectIsNotVNode(children);
+        }
         newChildren = children;
         if (children.type & Types.InUseOrNormalized) {
             newChildren = directClone(children);
@@ -170,45 +206,47 @@ function normalizeChildren(vNode: VNode<any>, children: Children) {
     return vNode;
 }
 
-function _normalizeVNodes(vNodes: any[], result: VNode<any>[], index: number, currentKey: string) {
+function applyKey(vNode: VNode<any>, reference: {index: number}) {
+    vNode.key = '$' + reference.index;
+    vNode.type |= Types.PrefixedKey;
+
+    return vNode;
+}
+
+function _normalizeVNodes(vNodes: any[], result: VNode<any>[], index: number, reference: {index: number}) {
     for (const len = vNodes.length; index < len; index++) {
         let n = vNodes[index];
 
         if (!isInvalid(n)) {
-            const newKey = currentKey + keyPrefix + index;
-
             if (isArray(n)) {
-                _normalizeVNodes(n, result, 0, newKey);
+                _normalizeVNodes(n, result, 0, reference);
+                continue;
             } else {
                 if (isStringOrNumber(n)) {
-                    n = createTextVNode(n, newKey);
+                    n = applyKey(createTextVNode(n), reference);
                 } else {
                     if (process.env.NODE_ENV !== 'production') {
                         throwIfObjectIsNotVNode(n);
                     }
-                    const oldKey = n.key;
-                    const isPrefixedKey = isString(oldKey) && oldKey[0] === keyPrefix;
+                    const type = n.type;
+                    const isPrefixed = (type & Types.PrefixedKey) > 0;
 
-                    if (n.type & Types.InUseOrNormalized || isPrefixedKey) {
+                    if (type & Types.InUseOrNormalized || isPrefixed) {
                         n = directClone(n);
                     }
 
                     n.type |= n.Normalized;
 
-                    if (!isPrefixedKey) {
-                        if (isNullOrUndefined(oldKey)) {
-                            n.key = newKey;
-                        } else {
-                            n.key = currentKey + oldKey;
-                        }
-                    } else if (oldKey.substring(0, currentKey.length) !== currentKey) {
-                        n.key = currentKey + oldKey;
+                    if (isNullOrUndefined(n.key) || isPrefixed) {
+                        applyKey(n, reference);
                     }
                 }
 
                 result.push(n);
             }
         }
+
+        reference.index++;
     }
 }
 

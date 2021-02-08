@@ -69,7 +69,7 @@ export const enum Types {
     Fragment = 1 << 10,
     InUse = 1 << 11,
     Normalized = 1 << 12,
-
+    PrefixedKey = 1 << 13,
 
     Component = ComponentClass | ComponentFunction,
 
@@ -112,6 +112,7 @@ export type Props<P, T = ComponentOrElement> = {
 export interface ComponentClass {
     $init(): Element;
     $update(): Element;
+    prototype: any;
 }
 
 export interface ComponentFunction {
