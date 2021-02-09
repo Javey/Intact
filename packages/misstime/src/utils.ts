@@ -66,3 +66,23 @@ export function throwError(message?: string) {
     }
     throw new Error(`Intact Error: ${message}`);
 }
+
+export function isEventProp(propName: string) {
+    return propName.substr(0, 3) === 'ev-';
+}
+
+const xlinkNS = "http://www.w3.org/1999/xlink";
+const xmlNS = "http://www.w3.org/XML/1998/namespace";
+export const namespaces: Record<string, string> = {
+    'xlink:href': xlinkNS,
+    'xlink:arcrole': xlinkNS,
+    'xlink:actuate': xlinkNS,
+    'xlink:show': xlinkNS,
+    'xlink:role': xlinkNS,
+    'xlink:title': xlinkNS,
+    'xlink:type': xlinkNS,
+    'xml:base': xmlNS,
+    'xml:lang': xmlNS,
+    'xml:space': xmlNS,
+};
+
