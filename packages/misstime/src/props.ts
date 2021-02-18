@@ -23,9 +23,10 @@ export function patchProp(prop: string, lastValue: any, nextValue: any, dom: Ele
         case 'multiple':
         case 'selectedIndex':
             break;
-        case 'autoFocus':
-            (dom as any).autofocus = !!nextValue;
-            break;
+        // case 'autoFocus':
+            // (dom as any).autofocus = !!nextValue;
+            // break;
+        case 'autofocus':
         case 'allowfullscreen':
         case 'autoplay':
         case 'capture':
@@ -50,13 +51,13 @@ export function patchProp(prop: string, lastValue: any, nextValue: any, dom: Ele
         case 'defaultChecked':
         case 'value':
         case 'volume':
-        case 'htmlFor':
             if (hasControlledValue && prop === 'value') break;
             value = isNullOrUndefined(nextValue) ? '' : nextValue;
             if ((dom as any)[prop] !== value) {
                 (dom as any)[prop] = value;
             }
             break;
+        // TODO: scrollLeft/scrollTop must be handled after style
         case 'scrollLeft':
         case 'scrollTop':
             value = isNullOrUndefined(nextValue) ? 0 : nextValue;

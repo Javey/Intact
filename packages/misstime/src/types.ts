@@ -1,5 +1,5 @@
 export interface VNode<P = any> {
-    dom: Element | null
+    dom: Element | Text | null
     type: Types
     tag: string | Component | null
     childrenType: ChildrenTypes

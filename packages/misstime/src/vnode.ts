@@ -16,7 +16,7 @@ import {
 import {throwIfObjectIsNotVNode, validateVNodeElementChildren} from './validate';
 
 export class VNode<P> implements IVNode<P> {
-    public dom: Element | null = null;
+    public dom: Element | Text | null = null;
     constructor(
         public type: Types,
         public tag: string | Component | null,

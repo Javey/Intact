@@ -30,6 +30,12 @@ describe('VNode', () => {
         expect(vNode.ref).toEqual(ref);
     });
 
+    it('should validate children', () => {
+        expect(() => {
+            createElementVNode(Types.CommonElement, 'input', 'test', ChildrenTypes.UnknownChildren);
+        }).toThrowError(`Intact Error: input elements can't have children.`);
+    });
+
     describe('Normalize Children', () => {
         function normalize(children: any) {
             return createElementVNode(
@@ -154,6 +160,10 @@ describe('VNode', () => {
             [vNode1, vNode2, vNode3].forEach(vNode => {
                 expect((vNode.children as VNode[]).map(vNode => vNode.key)).toEqual(['$0', 'key']);
             });
+        });
+
+        it('should throw error if has invalid child', () => {
+            expect(() => normalize([{}])).toThrowError();
         });
     });
 });

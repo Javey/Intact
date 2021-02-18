@@ -1,22 +1,36 @@
 import {VNode, Types, VNodeElement, VNodeComponent, ChildrenTypes, NormalizedChildren} from './types';
-import {isNullOrUndefined} from './utils';
+import {isNullOrUndefined, throwError} from './utils';
 import {directClone} from './vnode';
+import {mountProps} from './props';
 
 export function mount(vNode: VNode, parentDom: Element | null, isSVG: boolean, mountedQueue: Function[]): void {
     const type = (vNode.type |= Types.InUse);
 
     if (type & Types.Element) {
         mountElement(vNode as VNodeElement, parentDom, isSVG, mountedQueue);
+    } else if (type & Types.ComponentClass) {
+
+    } else if (type & Types.ComponentFunction) {
+
+    } else if (type & Types.Text) {
+        mountText(vNode as VNodeElement, parentDom);
+    } else if (process.env.NODE_ENV !== 'production') {
+        if (typeof vNode === 'object') {
+            throwError(
+                `mount() received an object that's not a valid VNode, you should stringify it first, ` +
+                `fix createVNode type or call normalizeChildren. Object: "${JSON.stringify(vNode)}".`
+            );
+        } else {
+            throwError(`mount() expects a valid VNode, instead it received an object with the type "${typeof vNode}".`);
+        }
     }
 }
 
 function mountElement(vNode: VNodeElement, parentDom: Element | null, isSVG: boolean, mountedQueue: Function[]) {
     const {type, props, className, childrenType, tag} = vNode;
 
-    isSVG = isSVG || (type && Types.SvgElement) > 0;
-    const dom = documentCreateElement(tag, isSVG);
-
-    vNode.dom = dom;
+    isSVG = isSVG || (type & Types.SvgElement) > 0;
+    const dom = vNode.dom = documentCreateElement(tag, isSVG);
 
     if (!isNullOrUndefined(className) && className !== '') {
         if (isSVG) {
@@ -49,6 +63,22 @@ function mountElement(vNode: VNodeElement, parentDom: Element | null, isSVG: boo
         ) {
             mountArrayChildren(children as VNode[], dom, childrenIsSVG, mountedQueue);
         }
+    }
+
+    if (!isNullOrUndefined(parentDom)) {
+        parentDom.appendChild(dom);
+    }
+
+    if (!isNullOrUndefined(props)) {
+        mountProps(vNode, type, props, dom, isSVG);
+    }
+}
+
+function mountText(vNode: VNodeElement, parentDom: Element | null) {
+    const dom = vNode.dom = document.createTextNode(vNode.children as string);
+
+    if (!isNullOrUndefined(parentDom)) {
+        parentDom.appendChild(dom);
     }
 }
 
