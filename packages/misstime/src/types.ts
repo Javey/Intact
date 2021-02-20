@@ -98,11 +98,14 @@ export type Children = NormalizedChildren | NormalizedChildren[] | boolean | Chi
 
 export type Key = string | number;
 
-export type ComponentOrElement = Component | Element;
+export interface RefObject<T> {
+    value: T | null;
+    readonly __is_ref: boolean,
+}
 
-export type Ref<T = ComponentOrElement> = (i: T | null) => any;
+export type Ref<T = Element> = ((i: T | null) => any) | RefObject<T>;
 
-export type Props<P, T = ComponentOrElement> = {
+export type Props<P, T = Element> = {
     children?: Children
     ref?: Ref<T> 
     key?: Key

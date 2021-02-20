@@ -2,6 +2,8 @@ import {VNode, Types, VNodeElement, VNodeComponent, ChildrenTypes, NormalizedChi
 import {isNullOrUndefined, throwError} from './utils';
 import {directClone} from './vnode';
 import {mountProps} from './props';
+import {mountRef} from './ref';
+import {setTextContent} from './common';
 
 export function mount(vNode: VNode, parentDom: Element | null, isSVG: boolean, mountedQueue: Function[]): void {
     const type = (vNode.type |= Types.InUse);
@@ -26,7 +28,7 @@ export function mount(vNode: VNode, parentDom: Element | null, isSVG: boolean, m
     }
 }
 
-function mountElement(vNode: VNodeElement, parentDom: Element | null, isSVG: boolean, mountedQueue: Function[]) {
+export function mountElement(vNode: VNodeElement, parentDom: Element | null, isSVG: boolean, mountedQueue: Function[]) {
     const {type, props, className, childrenType, tag} = vNode;
 
     isSVG = isSVG || (type & Types.SvgElement) > 0;
@@ -72,9 +74,11 @@ function mountElement(vNode: VNodeElement, parentDom: Element | null, isSVG: boo
     if (!isNullOrUndefined(props)) {
         mountProps(vNode, type, props, dom, isSVG);
     }
+
+    mountRef(vNode.ref, dom);
 }
 
-function mountText(vNode: VNodeElement, parentDom: Element | null) {
+export function mountText(vNode: VNodeElement, parentDom: Element | null) {
     const dom = vNode.dom = document.createTextNode(vNode.children as string);
 
     if (!isNullOrUndefined(parentDom)) {
@@ -82,7 +86,7 @@ function mountText(vNode: VNodeElement, parentDom: Element | null) {
     }
 }
 
-function mountArrayChildren(children: VNode[], dom: Element | null, isSVG: boolean, mountedQueue: Function[]) {
+export function mountArrayChildren(children: VNode[], dom: Element | null, isSVG: boolean, mountedQueue: Function[]) {
     for (let i = 0; i < children.length; i++) {
         let vNode = children[i];
 
@@ -98,8 +102,4 @@ function documentCreateElement(tag: string, isSVG: boolean): Element {
         return document.createElementNS("http://www.w3.org/2000/svg", tag);
     }
     return document.createElement(tag);
-}
-
-function setTextContent(dom: Element, children: string) {
-    dom.textContent = children;
 }

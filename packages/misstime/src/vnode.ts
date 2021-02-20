@@ -2,7 +2,7 @@ import {
     VNodeElement,
     VNodeComponent,
     VNodeTextElement,
-    VNode as IVNode, Component, Props, Ref, Key, Children, Types, NormalizedChildren, ComponentOrElement,
+    VNode as IVNode, Component, Props, Ref, Key, Children, Types, NormalizedChildren,
     ChildrenTypes,
 } from './types';
 import {

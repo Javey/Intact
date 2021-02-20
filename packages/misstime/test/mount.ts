@@ -1,6 +1,7 @@
 import {createElementVNode, createTextVNode} from '../src/vnode';
 import {Types, ChildrenTypes} from '../src/types';
 import {mount} from '../src/mount';
+import {createRef} from '../src/ref';
 
 describe('Mount', () => {
     let container: Element;
@@ -94,5 +95,39 @@ describe('Mount', () => {
     it('should throw error if we mount invalid vNode', () => {
         expect(() => mount([] as any, container, false, [])).toThrowError();
         expect(() => mount((() => {}) as any, container, false, [])).toThrowError();
+    });
+
+    it('should mount ref that is RefObject', () => {
+        const ref = createRef();        
+        const vNode = createElementVNode(
+            Types.InputElement,
+            'span',
+            null,
+            null,
+            null,
+            null,
+            null,
+            ref
+        );
+        mount(vNode, container, false, []);
+
+        expect(ref.value!.outerHTML).toBe('<span></span>');
+    });
+
+    it('should mount ref that is function', () => {
+        let ref: Element | null;        
+        const vNode = createElementVNode(
+            Types.InputElement,
+            'span',
+            null,
+            null,
+            null,
+            null,
+            null,
+            i => ref = i,
+        );
+        mount(vNode, container, false, []);
+
+        expect(ref!.outerHTML).toBe('<span></span>');
     });
 });

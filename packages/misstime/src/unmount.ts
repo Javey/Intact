@@ -1,0 +1,51 @@
+import {VNode, Types, ChildrenTypes, RefObject} from './types';
+import {mountRef} from './ref';
+import {isNullOrUndefined} from './utils';
+import {removeChild} from './common';
+
+export function remove(vNode: VNode, parentDom: Element) {
+    unmount(vNode);
+    removeChild(parentDom, vNode.dom as Element);
+}
+
+export function unmount(vNode: VNode) {
+    const type = vNode.type;
+    const children = vNode.children;
+
+    if (type & Types.Element) {
+        const ref = vNode.ref as RefObject<Element>;
+        const props = vNode.props;
+
+        mountRef(ref, null);
+
+        const childrenType = vNode.childrenType;
+
+        if (!isNullOrUndefined(props)) {
+            // TODO: remove events 
+        }
+
+        if (childrenType & ChildrenTypes.MultipleChildren) {
+            unmountAllChildren(children as VNode[]);
+        } else if (childrenType === ChildrenTypes.HasVNodeChildren) {
+            unmount(children as VNode);
+        }
+    } else if (children) {
+        // TODO: remove component
+    }
+}
+
+export function unmountAllChildren(children: VNode[]) {
+    for (let i = 0, len = children.length; i < len; ++i) {
+        unmount(children[i]);
+    }
+}
+
+export function clearDom(dom: Element) {
+    dom.textContent = '';
+}
+
+export function removeAllChildren(children: VNode[], dom: Element) {
+    unmountAllChildren(children);
+
+    clearDom(dom);
+}
