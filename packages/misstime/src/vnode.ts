@@ -302,10 +302,6 @@ function _normalizeVNodes(vNodes: any[], result: VNode<any>[], index: number, re
     // ) { }
 // }
 
-export const EMPTY_OBJ = {};
-if (process.env.NODE_ENV !== 'production') {
-    Object.freeze(EMPTY_OBJ);
-}
 
 // export function createVNode<P>(
     // tag: string,

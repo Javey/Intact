@@ -23,3 +23,8 @@ export function insertOrAppend(parentDom: Element, newNode: Element | Text, next
 export function normalizeEventName(name: string) {
     return name.substr(3);
 }
+
+export const EMPTY_OBJ = {};
+if (process.env.NODE_ENV !== 'production') {
+    Object.freeze(EMPTY_OBJ);
+}

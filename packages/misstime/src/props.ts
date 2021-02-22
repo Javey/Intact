@@ -4,6 +4,7 @@ import {delegatedEvents, handleDelegatedEvent} from './events/delegation';
 import {isLinkEvent, isSameLinkEvent} from './events/linkEvent';
 import {attachEvent} from './events/attachEvents';
 import {normalizeEventName} from './common';
+import {isControlledFormElement, processElement} from './wrappers/process';
 
 export function mountProps(vNode: VNode, type: Types, props: any, dom: Element, isSVG: boolean) {
     let hasControlledValue = false;
@@ -13,6 +14,9 @@ export function mountProps(vNode: VNode, type: Types, props: any, dom: Element, 
     // }
     for (const prop in props) {
         patchProp(prop, null, props[prop], dom, isSVG, hasControlledValue);
+    }
+    if (isFormElement) {
+        processElement(type, vNode, dom, props, true/*, hasControlledValue*/);
     }
 }
 
@@ -124,10 +128,6 @@ function patchStyle(lastValue: any, nextValue: any, dom: Element) {
             domStyle.setProperty(style, value);
         }
     }
-}
-
-function isControlledFormElement(props: any) {
-    
 }
 
 function patchEvent(name: string, lastValue: any, nextValue: any, dom: Element) {
