@@ -123,3 +123,15 @@ export interface ComponentFunction {
 }
 
 export type Component = ComponentClass | ComponentFunction;
+
+export interface LinkedEvent<T, E extends Event> {
+    data: T;
+    event: (data: T, event: E) => void;
+}
+
+export type MissTimeEventListener = EventListener | LinkedEvent<any, any> | null;
+
+export interface MissTimeElement extends Element {
+    [key: string]: any;
+    $EV?: Record<string, MissTimeEventListener>;
+};

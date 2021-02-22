@@ -1,5 +1,9 @@
-import {VNode, Types} from './types';
+import {VNode, Types, LinkedEvent} from './types';
 import {isNullOrUndefined, isString, isEventProp, namespaces} from './utils';
+import {delegatedEvents, handleDelegatedEvent} from './events/delegation';
+import {isLinkEvent, isSameLinkEvent} from './events/linkEvent';
+import {attachEvent} from './events/attachEvents';
+import {normalizeEventName} from './common';
 
 export function mountProps(vNode: VNode, type: Types, props: any, dom: Element, isSVG: boolean) {
     let hasControlledValue = false;
@@ -73,8 +77,10 @@ export function patchProp(prop: string, lastValue: any, nextValue: any, dom: Ele
             patchStyle(lastValue, nextValue, dom);
             break;
         default:
-            if (isEventProp(prop)) {
-                // TODO 
+            if (delegatedEvents[prop]) {
+                handleDelegatedEvent(prop, lastValue, nextValue, dom); 
+            } else if (isEventProp(prop)) {
+                patchEvent(prop, lastValue, nextValue, dom);
             } else if (isNullOrUndefined(nextValue)) {
                 dom.removeAttribute(prop); 
             } else if (isSVG && namespaces[prop]) {
@@ -112,7 +118,7 @@ function patchStyle(lastValue: any, nextValue: any, dom: Element) {
             }
         }
     } else {
-        // TODO: remove style if lastValue is string firstly
+        // TODO: remove style firstly if lastValue is string
         for (style in nextValue) {
             value = nextValue[style];
             domStyle.setProperty(style, value);
@@ -124,3 +130,20 @@ function isControlledFormElement(props: any) {
     
 }
 
+function patchEvent(name: string, lastValue: any, nextValue: any, dom: Element) {
+    if (isLinkEvent(nextValue)) {
+        if (isSameLinkEvent(lastValue, nextValue)) {
+            return;
+        }
+        nextValue = wrapLinkEvent(nextValue);
+    }
+    attachEvent(dom, normalizeEventName(name), nextValue);
+}
+
+function wrapLinkEvent(nextValue: LinkedEvent<any, any>) {
+    const ev = nextValue.event;
+
+    return function(e: Event) {
+        ev(nextValue.data, e);
+    }
+}
