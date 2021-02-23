@@ -21,8 +21,8 @@ export function processElement(
     }
 }
 
-export function isControlledFormElement(nextProps: any) {
-    return nextProps.type && isCheckedType(nextProps.type) ? 
-        !isNullOrUndefined(nextProps.checked) :
-        !isNullOrUndefined(nextProps.value);
-}
+// export function isControlledFormElement(nextProps: any) {
+    // return nextProps.type && isCheckedType(nextProps.type) ? 
+        // !isNullOrUndefined(nextProps.checked) :
+        // !isNullOrUndefined(nextProps.value);
+// }

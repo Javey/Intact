@@ -24,32 +24,6 @@ export interface VNodeComponent<P = any> extends VNode<P> {
     props?: Props<P, Component> | null,
     ref?: Ref<Component>,
 }
-// export type VNode<P = any> = VNodeElement<P> | VNodeComponent<P>;
-// export interface VNode<P = any> extends VNodeElement<P>, VNodeComponent<P> {
-    // tag: string | Component,
-    // props?: Props<P, ComponentOrElement> | null,
-    // ref?: Ref<Element> | Ref<Component>
-// }
-// export interface VNodeConstructor<P = any> {
-    // new (
-        // type: Types,
-        // tag: string,
-        // props?: Props<P> | null,
-        // children?: NormalizedChildren,
-        // className?: string | null,
-        // key?: Key,
-        // ref?: Ref<Element>,
-    // ): VNode<P>
-    // new (
-        // type: Types,
-        // tag: Component,
-        // props?: Props<P> | null,
-        // children?: NormalizedChildren,
-        // className?: string | null,
-        // key?: Key,
-        // ref?: Ref<Component>,
-    // ): VNode<P>
-// }
 
 export const enum Types {
     Text = 1,
@@ -105,7 +79,7 @@ export interface RefObject<T> {
 
 export type Ref<T = Element> = ((i: T | null) => any) | RefObject<T>;
 
-export type Props<P, T = Element> = {
+export type Props<P extends Record<string, any>, T = Element> = {
     children?: Children
     ref?: Ref<T> 
     key?: Key

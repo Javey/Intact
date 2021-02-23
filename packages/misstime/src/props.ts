@@ -4,23 +4,31 @@ import {delegatedEvents, handleDelegatedEvent} from './events/delegation';
 import {isLinkEvent, isSameLinkEvent} from './events/linkEvent';
 import {attachEvent} from './events/attachEvents';
 import {normalizeEventName} from './common';
-import {isControlledFormElement, processElement} from './wrappers/process';
+import {processElement} from './wrappers/process';
 
 export function mountProps(vNode: VNode, type: Types, props: any, dom: Element, isSVG: boolean) {
-    let hasControlledValue = false;
+    // let hasControlledValue = false;
     const isFormElement = (type & Types.FormElement) > 0;
     // if (isFormElement) {
         // hasControlledValue = isControlledFormElement(props);
     // }
     for (const prop in props) {
-        patchProp(prop, null, props[prop], dom, isSVG, hasControlledValue);
+        patchProp(prop, null, props[prop], dom, isSVG, isFormElement/*, hasControlledValue*/);
     }
     if (isFormElement) {
         processElement(type, vNode, dom, props, true/*, hasControlledValue*/);
     }
 }
 
-export function patchProp(prop: string, lastValue: any, nextValue: any, dom: Element, isSVG: boolean, hasControlledValue: boolean) {
+export function patchProp(
+    prop: string,
+    lastValue: any,
+    nextValue: any,
+    dom: Element,
+    isSVG: boolean,
+    // hasControlledValue: boolean
+    isFormElement: boolean,
+) {
     let value;
     switch (prop) {
         case 'children':
@@ -59,7 +67,8 @@ export function patchProp(prop: string, lastValue: any, nextValue: any, dom: Ele
         case 'defaultChecked':
         case 'value':
         case 'volume':
-            if (hasControlledValue && prop === 'value') break;
+            // if (hasControlledValue && prop === 'value') break;
+            if (isFormElement && prop === 'value') break;
             value = isNullOrUndefined(nextValue) ? '' : nextValue;
             if ((dom as any)[prop] !== value) {
                 (dom as any)[prop] = value;

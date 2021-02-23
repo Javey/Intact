@@ -1,5 +1,5 @@
 import {VNode, ChildrenTypes, Types} from '../types';
-import {isNullOrUndefined, isNumber, isArray} from '../utils';
+import {isNullOrUndefined, isNumber, isArray, isUndefined} from '../utils';
 import {EMPTY_OBJ} from '../common';
 
 export function applyValueSelect(nextProps: any, dom: HTMLSelectElement, mounting: boolean, vNode: VNode) {
@@ -21,13 +21,19 @@ export function applyValueSelect(nextProps: any, dom: HTMLSelectElement, mountin
         if (mounting && isNullOrUndefined(value)) {
             value = nextProps.defaultValue;
         }
-        updateChildOptions(vNode, value);
+        if (!isNullOrUndefined(value)) {
+            const flag = {hasSelected: false};
+            updateChildOptions(vNode, value, flag);
+            if (!flag.hasSelected) {
+                dom.selectedIndex = -1;
+            }
+        }
     }
 }
 
-function updateChildOptions(vNode: VNode, value: string) {
+function updateChildOptions(vNode: VNode, value: string, flag: {hasSelected: boolean}) {
     if (vNode.tag === 'option') {
-        updateChildOption(vNode, value);
+        updateChildOption(vNode, value, flag);
     } else {
         const children = vNode.children;
         const type = vNode.type;
@@ -37,23 +43,27 @@ function updateChildOptions(vNode: VNode, value: string) {
         } else if (type & Types.ComponentFunction) {
             // TODO
         } else if (vNode.childrenType === ChildrenTypes.HasVNodeChildren) {
-            updateChildOptions(children as VNode, value);
+            updateChildOptions(children as VNode, value, flag);
         } else if (vNode.childrenType & ChildrenTypes.MultipleChildren) {
             for (let i = 0, len = (children as VNode[]).length; i < len; ++i) {
-                updateChildOptions((children as VNode[])[i], value);
+                updateChildOptions((children as VNode[])[i], value, flag);
             }
         }
     }
 }
 
-function updateChildOption(vNode: VNode, value: string) {
+function updateChildOption(vNode: VNode, value: string, flag: {hasSelected: boolean}) {
     const props = vNode.props || EMPTY_OBJ;
     const dom = vNode.dom as HTMLOptionElement;
 
-    dom.value = props.value;
-    if (props.value === value || isArray(value) && value.indexOf(value, props.value) !== -1) {
+    // dom.value = props.value;
+    if (props.value === value || isArray(value) && value.indexOf(props.value) !== -1) {
+        flag.hasSelected = true;
         dom.selected = true;
-    } else if (!isNullOrUndefined(value) || !isNullOrUndefined(props.selected)) {
-        dom.selected = props.selected || false;
-    }
+    } 
+    // else if (!isNullOrUndefined(value) || !isNullOrUndefined(props.selected)) {
+        // const selected = props.selected || false;
+        // if (selected) flag.hasSelected = true;
+        // // dom.selected = selected;
+    // }
 }

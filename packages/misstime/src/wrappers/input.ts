@@ -11,9 +11,10 @@ export function applyValueInput(nextProps: any, dom: HTMLInputElement) {
     const {type, value, checked, multiple, defaultValue} = nextProps;
     const hasValue = !isNullOrUndefined(value);
 
-    if (type && type !== dom.type) {
-        dom.setAttribute('type', type);
-    }
+    // FIXME: it seems like it need not handle because patchProp will handle it
+    // if (type && type !== dom.type) {
+        // dom.setAttribute('type', type);
+    // }
     if (!isNullOrUndefined(multiple) && multiple !== dom.multiple) {
         dom.multiple = multiple;
     }

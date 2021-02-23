@@ -29,6 +29,85 @@ export class VNode<P> implements IVNode<P> {
     ) {}
 }
 
+export function createVNode<P extends Record<string, any>>(
+    tag: string | Component,
+    props?: Props<P, Component | Element> | null,
+    children?: Children | null,
+): VNode<P> {
+    let type: Types;
+    let isElement: boolean = false;
+    switch (typeof tag) {
+        case 'string':
+            isElement = true;
+            switch (tag) {
+                case 'input':
+                    type = Types.InputElement;
+                    break;
+                case 'select':
+                    type = Types.SelectElement;
+                    break;
+                case 'textarea':
+                    type = Types.TextareaElement;
+                    break;
+                case 'svg':
+                    type = Types.SvgElement;
+                    break;
+                default:
+                    type = Types.CommonElement;
+                    break;
+            }
+            break;
+        case 'function':
+            type = Types.Component;
+            break;
+        default:
+            throwError(`createVNode expects to get a string or function, but get a type: "${JSON.stringify(tag)}"`);
+    }
+
+    let key: Key | null = null;
+    let ref: Ref<Component | Element> | null = null;
+    let newProps: Props<any, Component | Element> | null = null;
+    let className: string | null = null;
+
+    if (!isNullOrUndefined(props)) {
+        for (const prop in props) {
+            if (isElement && prop === 'className') {
+                className = props.className!;
+            } else if (prop === 'key') {
+                key = props.key!;
+            } else if (prop === 'ref') {
+                ref = props.ref!;
+            } else if (prop === 'children') {
+                children = props.children;
+            } else {
+                if (isNullOrUndefined(newProps)) newProps = {};
+                newProps[prop] = props[prop];
+            }
+        }
+    }
+
+    if (isElement) {
+        return createElementVNode(
+            type!,
+            tag as string,
+            children,
+            ChildrenTypes.UnknownChildren,
+            className,
+            newProps,
+            key,
+            ref as Ref<Element>
+        );
+    }
+
+    if (children || key || ref) {
+        if (isNullOrUndefined(newProps)) newProps = {};
+        if (children) newProps.children = children;
+        if (key) newProps.key = key;
+        if (ref) newProps.ref = ref;
+    }
+    return createComponentVNode(tag as Component, newProps, key, ref as Ref<Component>);
+}
+
 export function createElementVNode<P>(
     type: Types,
     tag: string,
@@ -249,128 +328,3 @@ function _normalizeVNodes(vNodes: any[], result: VNode<any>[], index: number, re
         reference.index++;
     }
 }
-
-// function VNode<P>(
-    // type: Types,
-    // tag: string,
-    // props?: Props<P, Element>,
-    // children?: NormalizedChildren,
-    // className?: string | null,
-    // key?: Key,
-    // ref?: Ref<Element>
-// ): VNodeElement<P>; 
-// function VNode<P>(
-    // type: Types,
-    // tag: Component,
-    // props?: Props<P, Component>,
-    // children?: NormalizedChildren,
-    // className?: string | null,
-    // key?: Key,
-    // ref?: Ref<Component>
-// ): VNodeComponent<P>;
-// function VNode<P>(
-    // type: Types,
-    // tag: string | Component,
-    // props?: Props<P, ComponentOrElement>,
-    // children?: NormalizedChildren,
-    // className?: string | null,
-    // key?: Key,
-    // ref?: Ref<Element> | Ref<Component>
-// ): VNode<P> {
-    // return new VNode(type, tag, props, children, className, key, ref);  
-
-// }
-// export class VNode<P = any> implements IVNode<P> {
-    // public dom: Element | null = null;
-    // constructor(
-        // type: Types,
-        // tag: string | Component,
-        // props?: Props<P> | null,
-        // children?: NormalizedChildren,
-        // className?: string | null,
-        // key?: Key,
-        // ref?: Ref<ComponentOrElement>
-    // );
-    // constructor(
-        // public type: Types,
-        // public tag: string | Component,
-        // public props?: Props<P> | null,
-        // public children?: NormalizedChildren,
-        // public className?: string | null,
-        // public key?: Key,
-        // public ref?: Ref<ComponentOrElement>
-    // ) { }
-// }
-
-
-// export function createVNode<P>(
-    // tag: string,
-    // props?: Props<P, Element> | null,
-    // children?: Children,
-    // className?: string | null,
-    // key?: Key | null,
-    // ref?: Ref<Element> | null,
-// ): VNodeElement<P>;
-// export function createVNode<P>(
-    // tag: Component,
-    // props?: Props<P, Component> | null,
-    // children?: Children,
-    // className?: string | null,
-    // key?: Key | null,
-    // ref?: Ref<Component> | null,
-// ): VNodeComponent<P>;
-// export function createVNode<P>(
-    // tag: string | Component,
-    // props?: Props<P, ComponentOrElement> | null,
-    // children?: Children,
-    // className?: string | null,
-    // key?: Key | null,
-    // ref?: Ref<Component> | Ref<Element> | null,
-// ): VNode<P> {
-    // let type;
-    // if (!props) props = EMPTY_OBJ as P;
-    // switch (typeof tag) {
-        // case 'string':
-            // switch (tag) {
-                // case 'input':
-                    // type = Types.InputElement;
-                    // break;
-                // case 'select':
-                    // type = Types.SelectElement;
-                    // break;
-                // case 'textarea':
-                    // type = Types.TextareaElement;
-                    // break;
-                // case 'svg':
-                    // type = Types.SvgElement;
-                    // break;
-                // default:
-                    // type = Types.HtmlComment;
-                    // break;
-            // }
-            // break;
-        // case 'function':
-            // if (tag.prototype?.$init) {
-                // type = Types.ComponentClass;
-            // } else {
-                // type = Types.ComponentFunction;
-            // }
-            // break;
-        // default:
-            // throw new Error(`Unknown vNode type: ${tag}`);
-    // }
-
-    // if (type & Types.Component) {
-        // if (!isNullOrUndefined(children)) {
-            // if (props === EMPTY_OBJ) props = {} as P;
-            // props.children = normalizeChildren(children, false);
-        // }
-    // }
-// }
-
-// function normalizeChildren(vNodes: Children, shouldAddKey: boolean): NormalizedChildren {
-    // if(isArray(vNodes)) {
-    // }
-
-    // return vNodes;
-// }

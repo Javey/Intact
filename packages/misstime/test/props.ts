@@ -1,4 +1,4 @@
-import {createElementVNode} from '../src/vnode';
+import {createElementVNode, createVNode} from '../src/vnode';
 import {Types, ChildrenTypes, VNode} from '../src/types';
 import {mount} from '../src/mount';
 import {dispatchEvent} from './utils';
@@ -253,6 +253,174 @@ describe('Props', () => {
             render(vNode);
             dispatchEvent((vNode.dom as Element).firstElementChild!, 'click');
             expect(click).toHaveBeenCalledTimes(0);
+        });
+    });
+
+    describe('Form', () => {
+        describe('Input', () => {
+            it('should render value correctly', () => {
+                const vNode = createVNode('input', { value: 1 });
+                render(vNode);
+
+                expect((vNode.dom as HTMLInputElement).value).toBe('1');
+            });
+
+            it('should render defaultValue correctly', () => {
+                const vNode = createVNode('input', {defaultValue: 1});
+                render(vNode);
+
+                expect((vNode.dom as HTMLInputElement).value).toBe('1');
+                expect((vNode.dom as HTMLInputElement).defaultValue).toBe('1');
+            });
+
+            it('should render checked correctly', () => {
+                const vNode = createVNode('input', {type: 'checkbox', checked: true, value: 1});
+                render(vNode);
+                expect((vNode.dom as HTMLInputElement).checked).toBeTrue;
+                expect((vNode.dom as HTMLInputElement).value).toBe('1');
+
+                const vNode2 = createVNode('input', {checked: true});
+                render(vNode2);
+                expect((vNode2.dom as HTMLInputElement).checked).toBe(true);
+            });
+
+            it('should render multiple correctly', () => {
+                const vNode =createVNode('input', {multiple: true, type: 'file'});
+                render(vNode);
+
+                expect((vNode.dom as HTMLInputElement).multiple).toBe(true);
+            });
+        });
+
+        describe('Select', () => {
+            it('should render value correctly', () => {
+                const vNode = createVNode('select', {value: '2'}, [
+                    createVNode('option', {value: '1'}, '1'),
+                    createVNode('option', {value: '2'}, '2'),
+                ]);
+                render(vNode);
+
+                expect((vNode.dom as HTMLSelectElement).value).toBe('2');
+                expect((vNode.dom as HTMLSelectElement).selectedIndex).toBe(1);
+            });
+
+            it('should render defaultValue correctly', () => {
+                const vNode = createVNode('select', {defaultValue: '2'}, [
+                    createVNode('option', {value: '1'}, '1'),
+                    createVNode('option', {value: '2'}, '2'),
+                ]);
+                render(vNode);
+
+                expect((vNode.dom as HTMLSelectElement).value).toBe('2');
+                expect((vNode.dom as HTMLSelectElement).selectedIndex).toBe(1);
+            });
+
+            it('should set value to emtpy if value does not exist in options', () => {
+                const vNode = createVNode('select', {value: '1'}, createVNode('option', {value: '2'}, '2'));
+                render(vNode);
+                expect((vNode.dom as HTMLSelectElement).value).toBe('');
+
+                const vNode2 = createVNode('select', {value: null}, createVNode('option', {value: '2'}, '2'));
+                render(vNode2);
+                expect((vNode2.dom as HTMLSelectElement).value).toBe('2');
+
+                const vNode3 = createVNode('select', {value: undefined}, createVNode('option', {value: '2'}, '2'));
+                render(vNode3);
+                expect((vNode3.dom as HTMLSelectElement).value).toBe('2');
+
+                const vNode4 = createVNode('select', null, createVNode('option', {value: '2'}, '2'));
+                render(vNode4);
+                expect((vNode4.dom as HTMLSelectElement).value).toBe('2');
+            });
+
+            it('should render selectedIndex correctly', () => {
+                const vNode = createVNode('select', {selectedIndex: 1}, [
+                    createVNode('option', {value: '1'}, 1),
+                    createVNode('option', {value: '2'}, 2),
+                ]);
+                render(vNode);
+                expect((vNode.dom as HTMLSelectElement).value).toBe('2');
+
+                const vNode1 = createVNode('select', {selectedIndex: -1}, [
+                    createVNode('option', {value: '1'}, 1),
+                    createVNode('option', {value: '2'}, 2),
+                ]);
+                render(vNode1);
+                expect((vNode1.dom as HTMLSelectElement).value).toBe('');
+
+            });
+
+            it('should render multiple correctly', () => {
+                const vNode = createVNode('select', {value: ['1', '2'], multiple: true}, [
+                    createVNode('option', {value: '1'}, 1),
+                    createVNode('option', {value: '2'}, 2),
+                    createVNode('option', {value: '3'}, 3),
+                ]);
+                render(vNode);
+
+                const select = vNode.dom as HTMLSelectElement;
+                expect((select.children[0] as HTMLOptionElement).selected).toBeTrue();
+                expect((select.children[1] as HTMLOptionElement).selected).toBeTrue();
+                expect((select.children[2] as HTMLOptionElement).selected).toBeFalse();
+
+                const vNode2 = createVNode('select', {value: '1', multiple: true}, [
+                    createVNode('option', {value: '1'}, 1),
+                    createVNode('option', {value: '2'}, 2),
+                    createVNode('option', {value: '3'}, 3),
+                ]);
+                render(vNode2);
+
+                const select2 = vNode2.dom as HTMLSelectElement;
+                expect((select2.children[0] as HTMLOptionElement).selected).toBeTrue();
+                expect((select2.children[1] as HTMLOptionElement).selected).toBeFalse();
+                expect((select2.children[2] as HTMLOptionElement).selected).toBeFalse();
+            });
+
+            it('should render selected correctly', () => {
+                const vNode = createVNode('select', {value: '1'}, [
+                    createVNode('option', null, 1),
+                    createVNode('option', {value: '2', selected: true}, 2),
+                ]);
+                render(vNode);
+                expect((vNode.dom as HTMLSelectElement).value).toBe('');
+
+                const vNode2 = createVNode('select', {value: '1'}, [
+                    createVNode('option', {value: '1'}, 1),
+                    createVNode('option', {value: '2', selected: true}, 2),
+                ]);
+                render(vNode2);
+                expect((vNode2.dom as HTMLSelectElement).value).toBe('1');
+
+                const vNode3 = createVNode('select', {value: '2'}, [
+                    createVNode('option', {value: '1', selected: true}, 1),
+                    createVNode('option', {value: '2'}, 2),
+                ]);
+                render(vNode3);
+                expect((vNode3.dom as HTMLSelectElement).value).toBe('2');
+
+                const vNode4 = createVNode('select', {id: 'test'}, [
+                    createVNode('option', {value: '1'}, 1),
+                    createVNode('option', {value: '2', selected: true}, 2),
+                ]);
+                render(vNode4);
+                expect((vNode4.dom as HTMLSelectElement).value).toBe('2');
+            });
+        });
+
+        describe('Textarea', () => {
+            it('should render value correctly', () => {
+                const vNode = createVNode('textarea', {value: 'test'});
+                render(vNode);
+
+                expect((vNode.dom as HTMLTextAreaElement).value).toBe('test');
+            });
+
+            it('should render defaultValue correctly', () => {
+                const vNode = createVNode('textarea', {defaultValue: 'test'});
+                render(vNode);
+
+                expect((vNode.dom as HTMLTextAreaElement).value).toBe('test');
+            });
         });
     });
 });
