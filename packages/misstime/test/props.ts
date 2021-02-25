@@ -387,6 +387,17 @@ describe('Props', () => {
                 expect((select3.children[0] as HTMLOptionElement).selected).toBeFalse();
                 expect((select3.children[1] as HTMLOptionElement).selected).toBeFalse();
                 expect((select3.children[2] as HTMLOptionElement).selected).toBeFalse();
+
+                const vNode4 = h('select', {multiple: true}, [
+                    h('option', {value: '1'}, 1),
+                    h('option', {value: '2', selected: true}, 2),
+                    h('option', {value: '3'}, 3),
+                ]);
+                render(vNode4);
+                const select4 = vNode4.dom as HTMLSelectElement;
+                expect((select4.children[0] as HTMLOptionElement).selected).toBeFalse();
+                expect((select4.children[1] as HTMLOptionElement).selected).toBeTrue();
+                expect((select4.children[2] as HTMLOptionElement).selected).toBeFalse();
             });
 
             it('should render selected correctly', () => {

@@ -4,6 +4,7 @@ import {patch} from '../src/patch';
 import {mount} from '../src/mount';
 import {linkEvent} from '../src/events/linkEvent';
 import {dispatchEvent} from './utils';
+import {unmount} from '../src/unmount';
 
 describe('Patch', () => {
     let container: Element;
@@ -17,19 +18,20 @@ describe('Patch', () => {
         // document.body.removeChild(container);
     });
 
-    function reset() {
-        container.textContent = '';
-    }
     function render(vNode: VNode) {
         mount(vNode, container, false, []);
     }
-    function patchTest<P, Q>(vNode1: VNode<P>, vNode2: VNode<Q>, html?: string) {
-        reset();
-        render(vNode1);
+    function update(vNode1: VNode, vNode2: VNode) {
         patch(vNode1, vNode2, container, false, []);
+    }
+    function patchTest<P, Q>(vNode1: VNode<P>, vNode2: VNode<Q>, html?: string) {
+        container.textContent = '';
+        render(vNode1);
+        update(vNode1, vNode2);
         if (html !== undefined) {
             expect(container.innerHTML).toBe(html);
         }
+        return vNode2;
     }
 
     it('should replace element if tag is different', () => {
@@ -311,39 +313,59 @@ describe('Patch', () => {
             describe('Delegated', () => {
                 it('should do nothing if is the same LinkEvent', () => {
                     const click = jasmine.createSpy();
-                    patchTest(
+                    const childClick = jasmine.createSpy();
+                    const vNode = patchTest(
                         h('div', {'ev-click': linkEvent('data', click)}),
-                        h('div', {'ev-click': linkEvent('data', click)}),
+                        h('div', {'ev-click': linkEvent('data', click)},
+                            h('div', {'ev-click': childClick},
+                                h('div', {'ev-click': childClick})
+                            )
+                        )
+
                     );
 
                     dispatchEvent(container.firstElementChild!, 'click');
-                    if (click.calls.count() !== 1) debugger;
                     expect(click).toHaveBeenCalledTimes(1);
+
+                    update(
+                        vNode, 
+                        h('div', {'ev-click': linkEvent('data', click)},
+                            h('div', {'ev-click': null},
+                                h('div', {'ev-click': childClick})
+                            )
+                        )
+                    );
+                    dispatchEvent(container.firstElementChild!.firstElementChild!.firstElementChild!, 'click');
+                    expect(click).toHaveBeenCalledTimes(2);
+                    expect(childClick).toHaveBeenCalledTimes(1);
+
+                    unmount(vNode);
                 });
 
                 it('should detach event', () => {
                     const click = jasmine.createSpy();
-                    patchTest(
+                    const vNode = patchTest(
                         h('div', {'ev-click': click}),
                         h('div', {'ev-click': null}),
                     );
 
                     dispatchEvent(container.firstElementChild!, 'mouseenter');
                     expect(click).toHaveBeenCalledTimes(0);
+                    unmount(vNode);
                 });
 
                 it('should change event handler', () => {
                     const click1 = jasmine.createSpy();
                     const click2 = jasmine.createSpy();
-                    patchTest(
+                    const vNode = patchTest(
                         h('div', {'ev-click': click1}),
                         h('div', {'ev-click': click2}),
                     );
 
                     dispatchEvent(container.firstElementChild!, 'click');
                     expect(click1).toHaveBeenCalledTimes(0);
-                    if (click2.calls.count() !== 1) debugger;
                     expect(click2).toHaveBeenCalledTimes(1);
+                    unmount(vNode);
                 });
             });
         });
