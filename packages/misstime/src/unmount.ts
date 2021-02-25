@@ -2,6 +2,7 @@ import {VNode, Types, ChildrenTypes, RefObject} from './types';
 import {mountRef} from './ref';
 import {isNullOrUndefined} from './utils';
 import {removeChild} from './common';
+import {delegatedEvents, unmountDelegatedEvent} from './events/delegation';
 
 export function remove(vNode: VNode, parentDom: Element) {
     unmount(vNode);
@@ -21,7 +22,11 @@ export function unmount(vNode: VNode) {
         const childrenType = vNode.childrenType;
 
         if (!isNullOrUndefined(props)) {
-            // TODO: remove events 
+            for (const prop in props) {
+                if (delegatedEvents[prop]) {
+                    unmountDelegatedEvent(prop, vNode.dom as Element);
+                }
+            }
         }
 
         if (childrenType & ChildrenTypes.MultipleChildren) {

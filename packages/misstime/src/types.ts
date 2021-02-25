@@ -6,23 +6,23 @@ export interface VNode<P = any> {
     props?: Props<P, Component> | Props<P, Element> | null
     children?: NormalizedChildren
     className?: string | null
-    key?: Key | null
-    ref?: Ref<Component> | Ref<Element> | null
+    key: Key | null
+    ref: Ref<Component> | Ref<Element> | null
 }
 export interface VNodeElement<P = any> extends VNode<P> {
     tag: string,
     props?: Props<P, Element> | null,
-    ref?: Ref<Element>,
+    ref: Ref<Element>,
 }
 export interface VNodeTextElement<P = null> extends VNode<P> {
     tag: null,
     props?: null,
-    ref?: Ref<Element>,
+    ref: Ref<Element>,
 }
 export interface VNodeComponent<P = any> extends VNode<P> {
     tag: Component,
     props?: Props<P, Component> | null,
-    ref?: Ref<Component>,
+    ref: Ref<Component>,
 }
 
 export const enum Types {
@@ -108,4 +108,8 @@ export type MissTimeEventListener = EventListener | LinkedEvent<any, any> | null
 export interface MissTimeElement extends Element {
     [key: string]: any;
     $EV?: Record<string, MissTimeEventListener>;
+};
+
+export type Reference = {
+    value: boolean
 };

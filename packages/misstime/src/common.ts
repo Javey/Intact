@@ -1,4 +1,5 @@
 import {isNull} from './utils';
+import {Reference} from './types';
 
 export function replaceChild(parentDom: Element, newDom: Element, lastDom: Element) {
     parentDom.replaceChild(newDom, lastDom);
@@ -28,3 +29,5 @@ export const EMPTY_OBJ = {};
 if (process.env.NODE_ENV !== 'production') {
     Object.freeze(EMPTY_OBJ);
 }
+
+export const REFERENCE: Reference = {value: false};

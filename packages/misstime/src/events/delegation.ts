@@ -50,6 +50,7 @@ export function unmountDelegatedEvent(name: string, dom: MissTimeElement) {
 
     if (eventsObject && eventsObject[name]) {
         if (--attachedEventCounts[name] === 0) {
+            debugger;
             document.removeEventListener(normalizeEventName(name), attachedEvents[name]!);
         }
     }

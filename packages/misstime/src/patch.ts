@@ -1,9 +1,12 @@
-import {VNode, Types, ChildrenTypes, NormalizedChildren} from './types';
+import {VNode, Types, ChildrenTypes, NormalizedChildren, Reference} from './types';
 import {mount, mountArrayChildren} from './mount';
 import {remove, unmount, clearDom, removeAllChildren} from './unmount';
-import {replaceChild, setTextContent, removeChild, insertOrAppend} from './common';
+import {replaceChild, setTextContent, removeChild, insertOrAppend, EMPTY_OBJ, REFERENCE} from './common';
 import {isNullOrUndefined} from './utils';
 import {directClone} from './vnode';
+import {patchProp} from './props';
+import {processElement} from './wrappers/process';
+import {mountRef} from './ref';
 
 export function patch(lastVNode: VNode, nextVNode: VNode, parentDom: Element, isSVG: boolean, mountedQueue: Function[]) {
     const nextType = (nextVNode.type |= Types.InUse);
@@ -23,20 +26,38 @@ export function patch(lastVNode: VNode, nextVNode: VNode, parentDom: Element, is
 function replaceWithNewNode(lastVNode: VNode, nextVNode: VNode, parentDom: Element, isSVG: boolean, mountedQueue: Function[]) {
     unmount(lastVNode);
     mount(nextVNode, null, isSVG, mountedQueue); 
-    replaceChild(parentDom, lastVNode.dom as Element, nextVNode.dom as Element);
+    replaceChild(parentDom, nextVNode.dom as Element, lastVNode.dom as Element);
 }
 
 export function patchElement(lastVNode: VNode, nextVNode: VNode, isSVG: boolean, nextType: Types, mountedQueue: Function[]) {
     const dom = nextVNode.dom = lastVNode.dom as Element;
-    const lastProps = lastVNode.props;
-    const nextProps = nextVNode.props;
+    const lastProps = lastVNode.props || EMPTY_OBJ;
+    const nextProps = nextVNode.props || EMPTY_OBJ;
     
     isSVG = isSVG || (nextType & Types.SvgElement) > 0;
 
+    REFERENCE.value = false;
+    let isFormElement = false;
     if (lastProps !== nextProps) {
-        // TODO: 
+        if (nextProps !== EMPTY_OBJ) {
+            isFormElement = (nextType & Types.FormElement) > 0;
+            
+            for (const prop in nextProps) {
+                const lastValue = lastProps[prop];
+                const nextValue = nextProps[prop];
+                if (lastValue !== nextValue) {
+                    patchProp(prop, lastValue, nextValue, dom, isSVG, isFormElement, REFERENCE);
+                }
+            }
+        }
+        if (lastProps !== EMPTY_OBJ) {
+            for (const prop in lastProps) {
+                if (isNullOrUndefined(nextProps[prop]) && !isNullOrUndefined(lastProps[prop])) {
+                    patchProp(prop, lastProps[prop], null, dom, isSVG, isFormElement, REFERENCE);
+                }
+            }
+        }
     }
-
 
     // patch className
     const nextClassName = nextVNode.className;
@@ -67,6 +88,17 @@ export function patchElement(lastVNode: VNode, nextVNode: VNode, isSVG: boolean,
         isSVG && nextVNode.tag !== 'foreignObject',
         mountedQueue
     );
+
+    if (isFormElement) {
+        processElement(nextType, nextVNode, dom, nextProps, false, REFERENCE.value);
+    }
+
+    const lastRef = lastVNode.ref;
+    const nextRef = nextVNode.ref;
+    if (lastRef !== nextRef) {
+        mountRef(lastRef, null);
+        mountRef(nextRef, dom);
+    }
 }
 
 export function patchChildren(
@@ -156,7 +188,15 @@ export function patchChildren(
                         nextChildrenType === ChildrenTypes.HasKeyedChildren &&
                         lastChildrenType === ChildrenTypes.HasKeyedChildren
                     ) {
-                        // patchKeyedChildren();
+                        patchKeyedChildren(
+                            lastChildren as VNode[],
+                            nextChildren as VNode[],
+                            parentDom,
+                            isSVG,
+                            lastLength,
+                            nextLength,
+                            mountedQueue
+                        );
                     } else {
                         patchNonKeyedChildren(
                             lastChildren as VNode[],
@@ -233,7 +273,7 @@ function patchNonKeyedChildren(
     }
 }
 
-function patchKeydChildren(
+function patchKeyedChildren(
     a: VNode[],
     b: VNode[],
     parentDom: Element,

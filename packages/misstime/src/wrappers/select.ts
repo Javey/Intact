@@ -1,8 +1,14 @@
-import {VNode, ChildrenTypes, Types} from '../types';
+import {VNode, ChildrenTypes, Types, Reference} from '../types';
 import {isNullOrUndefined, isNumber, isArray, isUndefined} from '../utils';
-import {EMPTY_OBJ} from '../common';
+import {EMPTY_OBJ, REFERENCE} from '../common';
 
-export function applyValueSelect(nextProps: any, dom: HTMLSelectElement, mounting: boolean, vNode: VNode) {
+export function applyValueSelect(
+    nextProps: any,
+    dom: HTMLSelectElement,
+    mounting: boolean,
+    vNode: VNode,
+    isControlled: boolean,
+) {
     const multiple = nextProps.multiple;
     if (!isNullOrUndefined(multiple) && multiple !== dom.multiple) {
         dom.multiple = multiple;
@@ -21,17 +27,17 @@ export function applyValueSelect(nextProps: any, dom: HTMLSelectElement, mountin
         if (mounting && isNullOrUndefined(value)) {
             value = nextProps.defaultValue;
         }
-        if (!isNullOrUndefined(value)) {
-            const flag = {hasSelected: false};
-            updateChildOptions(vNode, value, flag);
-            if (!flag.hasSelected) {
+        if (!isNullOrUndefined(value) || isControlled || multiple) {
+            REFERENCE.value = false;
+            updateChildOptions(vNode, value, REFERENCE);
+            if (!REFERENCE.value) {
                 dom.selectedIndex = -1;
             }
         }
     }
 }
 
-function updateChildOptions(vNode: VNode, value: string, flag: {hasSelected: boolean}) {
+function updateChildOptions(vNode: VNode, value: string, flag: Reference) {
     if (vNode.tag === 'option') {
         updateChildOption(vNode, value, flag);
     } else {
@@ -52,18 +58,20 @@ function updateChildOptions(vNode: VNode, value: string, flag: {hasSelected: boo
     }
 }
 
-function updateChildOption(vNode: VNode, value: string, flag: {hasSelected: boolean}) {
+function updateChildOption(vNode: VNode, value: string, flag: Reference) {
     const props = vNode.props || EMPTY_OBJ;
     const dom = vNode.dom as HTMLOptionElement;
 
     // dom.value = props.value;
     if (props.value === value || isArray(value) && value.indexOf(props.value) !== -1) {
-        flag.hasSelected = true;
+        flag.value = true;
         dom.selected = true;
-    } 
-    // else if (!isNullOrUndefined(value) || !isNullOrUndefined(props.selected)) {
-        // const selected = props.selected || false;
-        // if (selected) flag.hasSelected = true;
-        // // dom.selected = selected;
-    // }
+    } else if (!isNullOrUndefined(value)) {
+        // if exist value ignore the selected prop of option
+        dom.selected = false;
+    } else if (!isNullOrUndefined(props.selected)) {
+        const selected = props.selected || false;
+        if (selected) flag.value = true;
+        dom.selected = selected;
+    }
 }

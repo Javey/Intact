@@ -12,7 +12,7 @@ export function createRef<T = Element>(): RefObject<T> {
     }
 }
 
-export function mountRef(ref?: Ref | null, value?: any) {
+export function mountRef(ref?: Ref<Component> | Ref<Element> | null, value?: any) {
     if (ref) {
         if (isFunction(ref)) {
             ref(value);

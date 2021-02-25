@@ -17,23 +17,50 @@ import {throwIfObjectIsNotVNode, validateVNodeElementChildren} from './validate'
 
 export class VNode<P> implements IVNode<P> {
     public dom: Element | Text | null = null;
+    public type: Types;
+    public tag: string | Component | null;
+    public childrenType: ChildrenTypes;
+    public props?: Props<P, Component> | Props<P, Element> | null;
+    public children?: NormalizedChildren;
+    public className?: string | null;
+    public key: Key | null;
+    public ref: Ref<Component> | Ref<Element> | null;
     constructor(
-        public type: Types,
-        public tag: string | Component | null,
-        public childrenType: ChildrenTypes,
-        public children?: NormalizedChildren,
-        public className?: string | null,
-        public props?: Props<P, Component>  | Props<P, Element> | null,
-        public key?: Key | null,
-        public ref?: Ref<Component> | Ref<Element> | null
-    ) {}
+        type: Types,
+        tag: string | Component | null,
+        childrenType: ChildrenTypes,
+        children?: NormalizedChildren,
+        className?: string | null,
+        props?: Props<P, Component>  | Props<P, Element> | null,
+        key?: Key | null,
+        ref?: Ref<Component> | Ref<Element> | null
+    ) {
+        this.type = type;
+        this.tag = tag;
+        this.childrenType = childrenType;
+        this.children = children;
+        this.className = className;
+        this.props = props;
+        this.key = key === undefined ? null : key;
+        this.ref = ref === undefined ? null : ref;
+    }
 }
 
+export function createVNode<P extends Record<string, any>>(
+    tag: string,
+    props?: Props<P, Element> | null,
+    children?: Children | null
+): VNodeElement<P>
+export function createVNode<P extends Record<string, any>>(
+    tag: Component,
+    props?: Props<P, Component> | null,
+    children?: Children | null
+): VNodeElement<P>
 export function createVNode<P extends Record<string, any>>(
     tag: string | Component,
     props?: Props<P, Component | Element> | null,
     children?: Children | null,
-): VNode<P> {
+): VNodeElement<P> | VNodeComponent<P> {
     let type: Types;
     let isElement: boolean = false;
     switch (typeof tag) {

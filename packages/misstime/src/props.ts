@@ -1,22 +1,19 @@
-import {VNode, Types, LinkedEvent} from './types';
+import {VNode, Types, LinkedEvent, Reference} from './types';
 import {isNullOrUndefined, isString, isEventProp, namespaces} from './utils';
 import {delegatedEvents, handleDelegatedEvent} from './events/delegation';
 import {isLinkEvent, isSameLinkEvent} from './events/linkEvent';
 import {attachEvent} from './events/attachEvents';
-import {normalizeEventName} from './common';
+import {normalizeEventName, REFERENCE} from './common';
 import {processElement} from './wrappers/process';
 
 export function mountProps(vNode: VNode, type: Types, props: any, dom: Element, isSVG: boolean) {
-    // let hasControlledValue = false;
     const isFormElement = (type & Types.FormElement) > 0;
-    // if (isFormElement) {
-        // hasControlledValue = isControlledFormElement(props);
-    // }
+    REFERENCE.value = false;
     for (const prop in props) {
-        patchProp(prop, null, props[prop], dom, isSVG, isFormElement/*, hasControlledValue*/);
+        patchProp(prop, null, props[prop], dom, isSVG, isFormElement, REFERENCE);
     }
     if (isFormElement) {
-        processElement(type, vNode, dom, props, true/*, hasControlledValue*/);
+        processElement(type, vNode, dom, props, true, REFERENCE.value);
     }
 }
 
@@ -26,8 +23,8 @@ export function patchProp(
     nextValue: any,
     dom: Element,
     isSVG: boolean,
-    // hasControlledValue: boolean
     isFormElement: boolean,
+    hasControlledValue: Reference,
 ) {
     let value;
     switch (prop) {
@@ -68,7 +65,10 @@ export function patchProp(
         case 'value':
         case 'volume':
             // if (hasControlledValue && prop === 'value') break;
-            if (isFormElement && prop === 'value') break;
+            if (isFormElement && prop === 'value') {
+                hasControlledValue.value = true;
+                break;
+            }
             value = isNullOrUndefined(nextValue) ? '' : nextValue;
             if ((dom as any)[prop] !== value) {
                 (dom as any)[prop] = value;
@@ -107,6 +107,10 @@ export function patchProp(
 
 function patchStyle(lastValue: any, nextValue: any, dom: Element) {
     if (isNullOrUndefined(nextValue)) {
+        // because we set style by cssText or setProperty,
+        // we must set style attribute before remove it in webkit,
+        // but it does not matter
+        // dom.setAttribute('style', '');
         dom.removeAttribute('style');
         return;
     }

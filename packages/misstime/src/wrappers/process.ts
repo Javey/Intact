@@ -10,12 +10,12 @@ export function processElement(
     dom: Element,
     nextProps: any,
     mounting: boolean,
-    // isControlled: boolean
+    isControlled: boolean
 ) {
     if (type & Types.InputElement) {
         applyValueInput(nextProps, dom as HTMLInputElement);
     } else if (type & Types.SelectElement) {
-        applyValueSelect(nextProps, dom as HTMLSelectElement, mounting, vNode);
+        applyValueSelect(nextProps, dom as HTMLSelectElement, mounting, vNode, isControlled);
     } else if (type & Types.TextareaElement) {
         applyValueTextArea(nextProps, dom as HTMLTextAreaElement, mounting);
     }
