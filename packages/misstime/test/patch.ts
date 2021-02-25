@@ -23,6 +23,7 @@ describe('Patch', () => {
     }
     function update(vNode1: VNode, vNode2: VNode) {
         patch(vNode1, vNode2, container, false, []);
+        return vNode2;
     }
     function patchTest<P, Q>(vNode1: VNode<P>, vNode2: VNode<Q>, html?: string) {
         container.textContent = '';
@@ -327,7 +328,7 @@ describe('Patch', () => {
                     dispatchEvent(container.firstElementChild!, 'click');
                     expect(click).toHaveBeenCalledTimes(1);
 
-                    update(
+                    const vNode2 = update(
                         vNode, 
                         h('div', {'ev-click': linkEvent('data', click)},
                             h('div', {'ev-click': null},
@@ -339,7 +340,7 @@ describe('Patch', () => {
                     expect(click).toHaveBeenCalledTimes(2);
                     expect(childClick).toHaveBeenCalledTimes(1);
 
-                    unmount(vNode);
+                    unmount(vNode2);
                 });
 
                 it('should detach event', () => {
