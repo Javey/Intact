@@ -22,14 +22,18 @@ export class Component<P = {}> implements ComponentClass<P> {
     public $SVG: boolean = false;
     public $vNode: VNodeComponent<P> | null = null;
     public $mountedQueue: Function[] | null = null;
+
+    private dom: Element | null = null;
+
     constructor(props: P) {
         this.props = props;
     }
-    $render() {
-        return document.createElement('div');
+    $render(lastVNode: VNodeComponent, nextVNode: VNodeComponent, parentDom: Element) {
+        this.dom = document.createElement('div');
+        parentDom.appendChild(this.dom);
     }
     $update() {
-        return document.createElement('div');
+        this.dom!.innerHTML = 'update';
     }
     $destroy() {
 

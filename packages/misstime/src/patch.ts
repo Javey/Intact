@@ -1,5 +1,5 @@
-import {VNode, Types, ChildrenTypes, NormalizedChildren, Reference, VNodeElement} from './types';
-import {mount, mountArrayChildren} from './mount';
+import {VNode, Types, ChildrenTypes, NormalizedChildren, Reference, VNodeElement, VNodeComponent} from './types';
+import {mount, mountArrayChildren, mountComponentClass} from './mount';
 import {remove, unmount, clearDom, removeAllChildren} from './unmount';
 import {replaceChild, setTextContent, removeChild, insertOrAppend, EMPTY_OBJ, REFERENCE} from './common';
 import {isNullOrUndefined} from './utils';
@@ -11,22 +11,52 @@ import {mountRef} from './ref';
 export function patch(lastVNode: VNode, nextVNode: VNode, parentDom: Element, isSVG: boolean, mountedQueue: Function[]) {
     const nextType = (nextVNode.type |= Types.InUse);
 
-    if (lastVNode.type !== nextType || lastVNode.tag !== nextVNode.tag || lastVNode.key !== nextVNode.key) {
-        if (lastVNode.type & Types.InUse) {
-            replaceWithNewNode(lastVNode, nextVNode, parentDom, isSVG, mountedQueue);
-        } else {
-            // Last vNode is not in use, it has crashed. Just mount next vNode and ignore last one.
-            mount(nextVNode, parentDom, isSVG, mountedQueue);
-        }
+    if (lastVNode.type !== nextType || lastVNode.key !== nextVNode.key) {
+        replaceWithNewNode(lastVNode, nextVNode, parentDom, isSVG, mountedQueue);
+    } else if (nextType & Types.ComponentClass) {
+        // if patch two class components, reuse its dom otherwise replace the dom totally.
+        patchComponentClass(lastVNode as VNodeComponent, nextVNode as VNodeComponent, parentDom, isSVG, mountedQueue);
+    } else if (lastVNode.tag !== nextVNode.tag) {
+        replaceWithNewNode(lastVNode, nextVNode, parentDom, isSVG, mountedQueue);
     } else if (nextType & Types.Element) {
         patchElement(lastVNode as VNodeElement, nextVNode as VNodeElement, isSVG, nextType, mountedQueue);
     }
 }
 
 function replaceWithNewNode(lastVNode: VNode, nextVNode: VNode, parentDom: Element, isSVG: boolean, mountedQueue: Function[]) {
-    unmount(lastVNode);
-    mount(nextVNode, null, isSVG, mountedQueue); 
-    replaceChild(parentDom, nextVNode.dom as Element, lastVNode.dom as Element);
+    if (lastVNode.type & Types.InUse) {
+        unmount(lastVNode);
+        mount(nextVNode, null, isSVG, mountedQueue); 
+        replaceChild(parentDom, nextVNode.dom as Element, lastVNode.dom as Element);
+    } else {
+        // Last vNode is not in use, it has crashed. Just mount next vNode and ignore last one.
+        mount(nextVNode, parentDom, isSVG, mountedQueue);
+    }
+}
+
+function patchComponentClass(lastVNode: VNodeComponent, nextVNode: VNodeComponent, parentDom: Element, isSVG: boolean, mountedQueue: Function[]) {
+    const nextTag = nextVNode.tag;
+    if (lastVNode.tag !== nextTag) {
+        mountComponentClass(lastVNode, nextVNode, parentDom, isSVG, mountedQueue); 
+    } else {
+        const instance = nextVNode.children = lastVNode.children;
+
+        // If component has crashed, ignore it to stay functional
+        /* istanbul ignore next */
+        if (isNullOrUndefined(instance)) return;
+
+        instance.$mountedQueue = mountedQueue;
+        instance.$vNode = nextVNode;
+
+        instance.$update(lastVNode, nextVNode, parentDom);
+
+        const lastRef = lastVNode.ref;
+        const nextRef = nextVNode.ref;
+        if (lastRef !== nextRef) {
+            mountRef(lastRef, null);
+            mountRef(nextRef, instance);
+        }
+    }
 }
 
 export function patchElement(lastVNode: VNodeElement, nextVNode: VNodeElement, isSVG: boolean, nextType: Types, mountedQueue: Function[]) {

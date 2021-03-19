@@ -22,7 +22,7 @@ export interface VNodeTextElement<P = null> extends VNode<P> {
 }
 export interface VNodeComponent<P = any> extends VNode<P> {
     children?: ComponentClass<P>,
-    tag: Component,
+    tag: ComponentConstructor<P>,
     props?: Props<P, Component> | null,
     ref: Ref<Component>,
 }
@@ -99,19 +99,19 @@ export interface ComponentClass<P> {
     $vNode: VNodeComponent<P> | null;
     $mountedQueue: Function[] | null;
 
-    $render(lastVNode: VNode | null, vNode: VNodeComponent<P> | null): Element;
-    $update(lastVNode: VNode | null, vNode: VNodeComponent<P> | null): Element;
-    $destroy(vNode: VNodeComponent<P> | null, nextVNode: VNode | null): void;
+    $render(lastVNode: VNodeComponent | null, vNode: VNodeComponent<P> | null, parentDom: Element): void;
+    $update(lastVNode: VNodeComponent | null, vNode: VNodeComponent<P> | null, parentDom: Element): void;
+    $destroy(vNode: VNodeComponent<P> | null, nextVNode: VNodeComponent | null, parentDom: Element): void;
 
     init?(props: P): any;
-    beforeCreate?(lastVNode: VNode | null, nextVNode: VNodeComponent<P> | null): void;
-    created?(lastVNode: VNode | null, nextVNode: VNodeComponent<P> | null): void;
-    beforeMount?(lastVNode: VNode | null, nextVNode: VNodeComponent<P> | null): void;
-    mounted?(lastVNode: VNode | null, nextVNode: VNodeComponent<P> | null): void;
-    beforeUpdate?(lastVNode: VNode | null, nextVNode: VNodeComponent<P> | null): void;
-    updated?(lastVNode: VNode | null, nextVNode: VNodeComponent<P> | null): void;
-    beforeDestroy?(vNode: VNodeComponent<P> | null, nextVNode: VNode | null): void;
-    destroyed?(vNode: VNodeComponent<P> | null, nextVNode: VNode | null): void;
+    beforeCreate?(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P> | null): void;
+    created?(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P> | null): void;
+    beforeMount?(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P> | null): void;
+    mounted?(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P> | null): void;
+    beforeUpdate?(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P> | null): void;
+    updated?(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P> | null): void;
+    beforeDestroy?(vNode: VNodeComponent<P> | null, nextVNode: VNodeComponent | null): void;
+    destroyed?(vNode: VNodeComponent<P> | null, nextVNode: VNodeComponent | null): void;
 }
 
 export interface ComponentFunction {

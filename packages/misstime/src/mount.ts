@@ -20,7 +20,7 @@ export function mount(vNode: VNode, parentDom: Element | null, isSVG: boolean, m
     if (type & Types.Element) {
         mountElement(vNode as VNodeElement, parentDom, isSVG, mountedQueue);
     } else if (type & Types.ComponentClass) {
-        mountComponentClass(vNode as VNodeComponent, parentDom, isSVG, mountedQueue);
+        mountComponentClass(null, vNode as VNodeComponent, parentDom!, isSVG, mountedQueue);
     } else if (type & Types.ComponentFunction) {
 
     } else if (type & Types.Text) {
@@ -87,11 +87,27 @@ export function mountElement(vNode: VNodeElement, parentDom: Element | null, isS
     mountRef(vNode.ref, dom);
 }
 
-export function mountComponentClass(vNode: VNodeComponent, parentDom: Element | null, isSVG: boolean, mountedQueue: Function[]) {
-    const dom = createComponentClassInstance(vNode, vNode.tag as ComponentConstructor, vNode.props || EMPTY_OBJ, isSVG, mountedQueue);
+export function mountComponentClass(
+    lastVNode: VNodeComponent | null,
+    vNode: VNodeComponent,
+    parentDom: Element,
+    isSVG: boolean,
+    mountedQueue: Function[]
+) {
+    const instance = new vNode.tag(vNode.props);
 
-    if (!isNullOrUndefined(parentDom)) {
-        parentDom.appendChild(dom);
+    instance.$SVG = isSVG;
+    instance.$vNode = vNode;
+    instance.$mountedQueue = mountedQueue;
+   
+    vNode.children = instance;
+
+    instance.$render(lastVNode, vNode, parentDom);
+
+    mountRef(vNode.ref, instance);
+
+    if (isFunction(instance.mounted)) {
+        mountedQueue.push(() => instance.mounted!(lastVNode, vNode));
     }
 }
 
@@ -121,23 +137,12 @@ function documentCreateElement(tag: string, isSVG: boolean): Element {
     return document.createElement(tag);
 }
 
-function createComponentClassInstance(vNode: VNodeComponent, Component: ComponentConstructor, props: Props, isSVG: boolean, mountedQueue: Function[]) {
-    const instance = new Component(props);
-
-    instance.$SVG = isSVG;
-    instance.$vNode = vNode;
-    instance.$mountedQueue = mountedQueue;
-   
-    vNode.children = instance;
-
-    const dom = instance.$render(null, vNode); 
-    vNode.dom = dom;
-
-    mountRef(vNode.ref, instance);
-
-    if (isFunction(instance.mounted)) {
-        mountedQueue.push(() => instance.mounted!(null, vNode));
-    }
-
-    return dom; 
-}
+// export function createComponentClassInstance(
+    // lastVNode: VNodeComponent | null,
+    // vNode: VNodeComponent,
+    // Component: ComponentConstructor,
+    // props: Props,
+    // isSVG: boolean,
+    // mountedQueue: Function[],
+// ) {
+// }

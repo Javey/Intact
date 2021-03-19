@@ -3,7 +3,7 @@ import {createVNode as h, createElementVNode} from '../src/vnode';
 import {patch} from '../src/patch';
 import {mount} from '../src/mount';
 import {linkEvent} from '../src/events/linkEvent';
-import {dispatchEvent} from './utils';
+import {dispatchEvent, Component} from './utils';
 import {unmount} from '../src/unmount';
 
 describe('Patch', () => {
@@ -425,6 +425,12 @@ describe('Patch', () => {
             const select = container.firstElementChild as HTMLSelectElement;
             expect(select.options[0].selected).toBeTrue();
             expect(select.options[1].selected).toBeFalse();
+        });
+    });
+
+    describe('ComponentClass', () => {
+        it('should update class Component', () => {
+            patchTest(h(Component), h(Component), '<div>update</div>');
         });
     });
 });
