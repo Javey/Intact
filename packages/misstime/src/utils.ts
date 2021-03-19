@@ -86,3 +86,6 @@ export const namespaces: Record<string, string> = {
     'xml:space': xmlNS,
 };
 
+export function warn(message: string) {
+    console.warn(message);
+}

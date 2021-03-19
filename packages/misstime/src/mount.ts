@@ -1,9 +1,18 @@
-import {VNode, Types, VNodeElement, VNodeComponent, ChildrenTypes, NormalizedChildren} from './types';
-import {isNullOrUndefined, throwError} from './utils';
+import {
+    VNode,
+    Types,
+    VNodeElement,
+    VNodeComponent,
+    ChildrenTypes, 
+    NormalizedChildren, 
+    Props,
+    ComponentConstructor,
+} from './types';
+import {isNullOrUndefined, throwError, isFunction} from './utils';
 import {directClone} from './vnode';
 import {mountProps} from './props';
 import {mountRef} from './ref';
-import {setTextContent} from './common';
+import {setTextContent, EMPTY_OBJ} from './common';
 
 export function mount(vNode: VNode, parentDom: Element | null, isSVG: boolean, mountedQueue: Function[]): void {
     const type = (vNode.type |= Types.InUse);
@@ -11,7 +20,7 @@ export function mount(vNode: VNode, parentDom: Element | null, isSVG: boolean, m
     if (type & Types.Element) {
         mountElement(vNode as VNodeElement, parentDom, isSVG, mountedQueue);
     } else if (type & Types.ComponentClass) {
-
+        mountComponentClass(vNode as VNodeComponent, parentDom, isSVG, mountedQueue);
     } else if (type & Types.ComponentFunction) {
 
     } else if (type & Types.Text) {
@@ -78,6 +87,14 @@ export function mountElement(vNode: VNodeElement, parentDom: Element | null, isS
     mountRef(vNode.ref, dom);
 }
 
+export function mountComponentClass(vNode: VNodeComponent, parentDom: Element | null, isSVG: boolean, mountedQueue: Function[]) {
+    const dom = createComponentClassInstance(vNode, vNode.tag as ComponentConstructor, vNode.props || EMPTY_OBJ, isSVG, mountedQueue);
+
+    if (!isNullOrUndefined(parentDom)) {
+        parentDom.appendChild(dom);
+    }
+}
+
 export function mountText(vNode: VNodeElement, parentDom: Element | null) {
     const dom = vNode.dom = document.createTextNode(vNode.children as string);
 
@@ -102,4 +119,25 @@ function documentCreateElement(tag: string, isSVG: boolean): Element {
         return document.createElementNS("http://www.w3.org/2000/svg", tag);
     }
     return document.createElement(tag);
+}
+
+function createComponentClassInstance(vNode: VNodeComponent, Component: ComponentConstructor, props: Props, isSVG: boolean, mountedQueue: Function[]) {
+    const instance = new Component(props);
+
+    instance.$SVG = isSVG;
+    instance.$vNode = vNode;
+    instance.$mountedQueue = mountedQueue;
+   
+    vNode.children = instance;
+
+    const dom = instance.$render(null, vNode); 
+    vNode.dom = dom;
+
+    mountRef(vNode.ref, instance);
+
+    if (isFunction(instance.mounted)) {
+        mountedQueue.push(() => instance.mounted!(null, vNode));
+    }
+
+    return dom; 
 }

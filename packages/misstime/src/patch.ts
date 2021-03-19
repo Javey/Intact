@@ -1,4 +1,4 @@
-import {VNode, Types, ChildrenTypes, NormalizedChildren, Reference} from './types';
+import {VNode, Types, ChildrenTypes, NormalizedChildren, Reference, VNodeElement} from './types';
 import {mount, mountArrayChildren} from './mount';
 import {remove, unmount, clearDom, removeAllChildren} from './unmount';
 import {replaceChild, setTextContent, removeChild, insertOrAppend, EMPTY_OBJ, REFERENCE} from './common';
@@ -19,7 +19,7 @@ export function patch(lastVNode: VNode, nextVNode: VNode, parentDom: Element, is
             mount(nextVNode, parentDom, isSVG, mountedQueue);
         }
     } else if (nextType & Types.Element) {
-        patchElement(lastVNode, nextVNode, isSVG, nextType, mountedQueue);
+        patchElement(lastVNode as VNodeElement, nextVNode as VNodeElement, isSVG, nextType, mountedQueue);
     }
 }
 
@@ -29,7 +29,7 @@ function replaceWithNewNode(lastVNode: VNode, nextVNode: VNode, parentDom: Eleme
     replaceChild(parentDom, nextVNode.dom as Element, lastVNode.dom as Element);
 }
 
-export function patchElement(lastVNode: VNode, nextVNode: VNode, isSVG: boolean, nextType: Types, mountedQueue: Function[]) {
+export function patchElement(lastVNode: VNodeElement, nextVNode: VNodeElement, isSVG: boolean, nextType: Types, mountedQueue: Function[]) {
     const dom = nextVNode.dom = lastVNode.dom as Element;
     const lastProps = lastVNode.props || EMPTY_OBJ;
     const nextProps = nextVNode.props || EMPTY_OBJ;

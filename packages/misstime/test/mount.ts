@@ -1,7 +1,9 @@
-import {createElementVNode, createTextVNode} from '../src/vnode';
-import {Types, ChildrenTypes} from '../src/types';
+import {createElementVNode, createTextVNode, createComponentVNode} from '../src/vnode';
+import {Types, ChildrenTypes, ComponentClass, Props, VNodeComponent} from '../src/types';
 import {mount} from '../src/mount';
 import {createRef} from '../src/ref';
+import {Component} from './utils';
+import {render} from '../src/render';
 
 describe('Mount', () => {
     let container: Element;
@@ -130,4 +132,23 @@ describe('Mount', () => {
 
         expect(ref!.outerHTML).toBe('<span></span>');
     });
+
+    it('should mount component', () => {
+        const vNode = createComponentVNode(Types.ComponentClass, Component);
+        mount(vNode, container, false, []);
+
+        expect(container.innerHTML).toBe('<div></div>');
+    });
+
+    it('should call mounted method when mounted', () => {
+        const mounted = jasmine.createSpy();
+        class TestComponent extends Component {
+            mounted() {
+                mounted();
+            }
+        }
+        render(createComponentVNode(Types.ComponentClass, TestComponent), container);
+        expect(mounted).toHaveBeenCalledTimes(1);
+    });
 });
+

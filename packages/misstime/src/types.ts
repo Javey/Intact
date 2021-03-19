@@ -4,12 +4,13 @@ export interface VNode<P = any> {
     tag: string | Component | null
     childrenType: ChildrenTypes
     props?: Props<P, Component> | Props<P, Element> | null
-    children?: NormalizedChildren
+    children?: NormalizedChildren | ComponentClass<P>
     className?: string | null
     key: Key | null
     ref: Ref<Component> | Ref<Element> | null
 }
 export interface VNodeElement<P = any> extends VNode<P> {
+    children?: NormalizedChildren,
     tag: string,
     props?: Props<P, Element> | null,
     ref: Ref<Element>,
@@ -20,6 +21,7 @@ export interface VNodeTextElement<P = null> extends VNode<P> {
     ref: Ref<Element>,
 }
 export interface VNodeComponent<P = any> extends VNode<P> {
+    children?: ComponentClass<P>,
     tag: Component,
     props?: Props<P, Component> | null,
     ref: Ref<Component>,
@@ -79,24 +81,44 @@ export interface RefObject<T> {
 
 export type Ref<T = Element> = ((i: T | null) => any) | RefObject<T>;
 
-export type Props<P extends Record<string, any>, T = Element> = {
+export type Props<P extends Record<string, any> = {}, T = Element> = {
     children?: Children
     ref?: Ref<T> 
     key?: Key
     className?: string
 } & P;
 
-export interface ComponentClass {
-    $init(): Element;
-    $update(): Element;
-    prototype: any;
+export interface ComponentConstructor<P = any> {
+    new (props: P): ComponentClass<P>
+}
+
+export interface ComponentClass<P> {
+    props: Props<P>;
+
+    $SVG: boolean;
+    $vNode: VNodeComponent<P> | null;
+    $mountedQueue: Function[] | null;
+
+    $render(lastVNode: VNode | null, vNode: VNodeComponent<P> | null): Element;
+    $update(lastVNode: VNode | null, vNode: VNodeComponent<P> | null): Element;
+    $destroy(vNode: VNodeComponent<P> | null, nextVNode: VNode | null): void;
+
+    init?(props: P): any;
+    beforeCreate?(lastVNode: VNode | null, nextVNode: VNodeComponent<P> | null): void;
+    created?(lastVNode: VNode | null, nextVNode: VNodeComponent<P> | null): void;
+    beforeMount?(lastVNode: VNode | null, nextVNode: VNodeComponent<P> | null): void;
+    mounted?(lastVNode: VNode | null, nextVNode: VNodeComponent<P> | null): void;
+    beforeUpdate?(lastVNode: VNode | null, nextVNode: VNodeComponent<P> | null): void;
+    updated?(lastVNode: VNode | null, nextVNode: VNodeComponent<P> | null): void;
+    beforeDestroy?(vNode: VNodeComponent<P> | null, nextVNode: VNode | null): void;
+    destroyed?(vNode: VNodeComponent<P> | null, nextVNode: VNode | null): void;
 }
 
 export interface ComponentFunction {
     (props: any): Children;
 }
 
-export type Component = ComponentClass | ComponentFunction;
+export type Component = ComponentConstructor<any> | ComponentFunction;
 
 export interface LinkedEvent<T, E extends Event> {
     data: T;
@@ -108,6 +130,7 @@ export type MissTimeEventListener = EventListener | LinkedEvent<any, any> | null
 export interface MissTimeElement extends Element {
     [key: string]: any;
     $EV?: Record<string, MissTimeEventListener>;
+    $V?: VNode | null;
 };
 
 export type Reference = {

@@ -4,6 +4,7 @@ import {
     VNodeTextElement,
     VNode as IVNode, Component, Props, Ref, Key, Children, Types, NormalizedChildren,
     ChildrenTypes,
+    ComponentClass,
 } from './types';
 import {
     isNullOrUndefined,
@@ -15,13 +16,13 @@ import {
 } from './utils';
 import {throwIfObjectIsNotVNode, validateVNodeElementChildren} from './validate';
 
-export class VNode<P> implements IVNode<P> {
+export class VNode<P = any> implements IVNode<P> {
     public dom: Element | Text | null = null;
     public type: Types;
     public tag: string | Component | null;
     public childrenType: ChildrenTypes;
     public props?: Props<P, Component> | Props<P, Element> | null;
-    public children?: NormalizedChildren;
+    public children?: NormalizedChildren | ComponentClass<P>;
     public className?: string | null;
     public key: Key | null;
     public ref: Ref<Component> | Ref<Element> | null;
@@ -29,7 +30,7 @@ export class VNode<P> implements IVNode<P> {
         type: Types,
         tag: string | Component | null,
         childrenType: ChildrenTypes,
-        children?: NormalizedChildren,
+        children?: NormalizedChildren | ComponentClass<P>,
         className?: string | null,
         props?: Props<P, Component>  | Props<P, Element> | null,
         key?: Key | null,
@@ -85,7 +86,11 @@ export function createVNode<P extends Record<string, any>>(
             }
             break;
         case 'function':
-            type = Types.Component;
+            if (tag.prototype && (tag.prototype as ComponentClass<P>).$render) {
+                type = Types.ComponentClass;
+            } else {
+                type = Types.ComponentFunction;
+            }
             break;
         default:
             throwError(`createVNode expects to get a string or function, but get a type: "${JSON.stringify(tag)}"`);
@@ -132,7 +137,8 @@ export function createVNode<P extends Record<string, any>>(
         if (key) newProps.key = key;
         if (ref) newProps.ref = ref;
     }
-    return createComponentVNode(tag as Component, newProps, key, ref as Ref<Component>);
+
+    return createComponentVNode(type!, tag as Component, newProps, key, ref as Ref<Component>);
 }
 
 export function createElementVNode<P>(
@@ -175,29 +181,23 @@ export function createElementVNode<P>(
     return vNode;
 }
 
-export function createTextVNode(text: string | number, key?: Key | null): VNodeTextElement<null> {
-    return new VNode(Types.Text, null, ChildrenTypes.HasInvalidChildren, text, null, null, key) as VNodeTextElement<null>;
+export function createTextVNode(text: string | number, key?: Key | null): VNodeTextElement {
+    return new VNode(Types.Text, null, ChildrenTypes.HasInvalidChildren, text, null, null, key) as VNodeTextElement;
 }
 
 export function createComponentVNode<P>(
+    type: Types,
     tag: Component,
     props?: Props<P, Component> | null,
     key?: Key | null,
     ref?: Ref<Component> | null,
 ): VNodeComponent<P> {
-    // if (process.env.NODE_ENV !== 'production') {
-        // if (type & Types.Element) {
-            // throwError('Creating element vNodes using createCommentVNode is not allowed. Use createElementVNode method.');
-        // }
-    // }
-   
-    let type: Types;
-    if (tag.prototype && tag.prototype.$init) {
-        type = Types.ComponentClass;
-    } else {
-        type = Types.ComponentFunction;
+    if (process.env.NODE_ENV !== 'production') {
+        if (type & Types.Element) {
+            throwError('Creating element vNodes using createCommentVNode is not allowed. Use createElementVNode method.');
+        }
     }
-
+   
     return new VNode(
         type,
         tag,
@@ -236,7 +236,7 @@ export function directClone(vNode: VNode<any>): VNode<any> {
     );
 }
 
-function normalizeChildren(vNode: VNode<any>, children: Children) {
+function normalizeChildren(vNode: VNode, children: Children) {
     let newChildren: any;
     let newChildrenType: ChildrenTypes = ChildrenTypes.HasInvalidChildren;
 
@@ -312,14 +312,14 @@ function normalizeChildren(vNode: VNode<any>, children: Children) {
     return vNode;
 }
 
-function applyKey(vNode: VNode<any>, reference: {index: number}) {
+function applyKey(vNode: VNode, reference: {index: number}) {
     vNode.key = '$' + reference.index;
     vNode.type |= Types.PrefixedKey;
 
     return vNode;
 }
 
-function _normalizeVNodes(vNodes: any[], result: VNode<any>[], index: number, reference: {index: number}) {
+function _normalizeVNodes(vNodes: any[], result: VNode[], index: number, reference: {index: number}) {
     for (const len = vNodes.length; index < len; index++) {
         let n = vNodes[index];
 
