@@ -1,5 +1,5 @@
-import {VNode, Types, MissTimeElement} from './types';
-import {isInvalid, throwError, warn, isNullOrUndefined} from './utils';
+import {VNode, Types, MissTimeElement} from './utils/types';
+import {isInvalid, throwError, warn, isNullOrUndefined} from './utils/utils';
 import {directClone} from './vnode';
 import {mount} from './mount';
 import {remove} from './unmount';

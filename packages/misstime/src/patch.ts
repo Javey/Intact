@@ -1,12 +1,12 @@
-import {VNode, Types, ChildrenTypes, NormalizedChildren, Reference, VNodeElement, VNodeComponent} from './types';
+import {VNode, Types, ChildrenTypes, NormalizedChildren, Reference, VNodeElement, VNodeComponent} from './utils/types';
 import {mount, mountArrayChildren, mountComponentClass} from './mount';
 import {remove, unmount, clearDom, removeAllChildren} from './unmount';
-import {replaceChild, setTextContent, removeChild, insertOrAppend, EMPTY_OBJ, REFERENCE} from './common';
-import {isNullOrUndefined} from './utils';
+import {replaceChild, setTextContent, removeChild, insertOrAppend, EMPTY_OBJ, REFERENCE} from './utils/common';
+import {isNullOrUndefined} from './utils/utils';
 import {directClone} from './vnode';
-import {patchProp} from './props';
+import {patchProp} from './utils/props';
 import {processElement} from './wrappers/process';
-import {mountRef} from './ref';
+import {mountRef} from './utils/ref';
 
 export function patch(lastVNode: VNode, nextVNode: VNode, parentDom: Element, isSVG: boolean, mountedQueue: Function[]) {
     const nextType = (nextVNode.type |= Types.InUse);

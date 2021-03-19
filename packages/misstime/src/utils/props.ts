@@ -1,10 +1,10 @@
 import {VNode, Types, LinkedEvent, Reference} from './types';
 import {isNullOrUndefined, isString, isEventProp, namespaces} from './utils';
-import {delegatedEvents, handleDelegatedEvent} from './events/delegation';
-import {isLinkEvent, isSameLinkEvent} from './events/linkEvent';
-import {attachEvent} from './events/attachEvents';
+import {delegatedEvents, handleDelegatedEvent} from '../events/delegation';
+import {isLinkEvent, isSameLinkEvent} from '../events/linkEvent';
+import {attachEvent} from '../events/attachEvents';
 import {normalizeEventName, REFERENCE} from './common';
-import {processElement} from './wrappers/process';
+import {processElement} from '../wrappers/process';
 
 export function mountProps(vNode: VNode, type: Types, props: any, dom: Element, isSVG: boolean) {
     const isFormElement = (type & Types.FormElement) > 0;

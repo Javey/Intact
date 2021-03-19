@@ -1,4 +1,4 @@
-import {VNode, Types, ChildrenTypes, VNodeElement} from '../src/types';
+import {VNode, Types, ChildrenTypes, VNodeElement} from '../src/utils/types';
 import {createVNode as h, createElementVNode} from '../src/vnode';
 import {patch} from '../src/patch';
 import {mount} from '../src/mount';

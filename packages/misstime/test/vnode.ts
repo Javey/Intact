@@ -1,5 +1,5 @@
 import {createElementVNode} from '../src/vnode';
-import {Types, ChildrenTypes, VNode}  from '../src/types';
+import {Types, ChildrenTypes, VNode}  from '../src/utils/types';
 
 describe('VNode', () => {
     it('should throw error if we createVNode for Component', () => {

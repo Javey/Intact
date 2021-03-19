@@ -1,4 +1,4 @@
-import {isNullOrUndefined} from '../utils';
+import {isNullOrUndefined} from '../utils/utils';
 import {attachEvent} from '../events/attachEvents';
 
 // export function inputEvents(dom: HTMLInputElement, nextProps: Props<any>) {

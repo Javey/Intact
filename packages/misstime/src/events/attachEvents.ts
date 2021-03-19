@@ -1,5 +1,5 @@
-import {isFunction} from '../utils';
-import {MissTimeElement} from '../types';
+import {isFunction} from '../utils/utils';
+import {MissTimeElement} from '../utils/types';
 
 type EventData = [string, EventListener];
 

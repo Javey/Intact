@@ -1,5 +1,5 @@
 import {createElementVNode, createVNode as h} from '../src/vnode';
-import {Types, ChildrenTypes, VNode} from '../src/types';
+import {Types, ChildrenTypes, VNode} from '../src/utils/types';
 import {mount} from '../src/mount';
 import {dispatchEvent} from './utils';
 import {linkEvent} from '../src/events/linkEvent';

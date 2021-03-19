@@ -7,12 +7,12 @@ import {
     NormalizedChildren, 
     Props,
     ComponentConstructor,
-} from './types';
-import {isNullOrUndefined, throwError, isFunction} from './utils';
+} from './utils/types';
+import {isNullOrUndefined, throwError, isFunction} from './utils/utils';
 import {directClone} from './vnode';
-import {mountProps} from './props';
-import {mountRef} from './ref';
-import {setTextContent, EMPTY_OBJ} from './common';
+import {mountProps} from './utils/props';
+import {mountRef} from './utils/ref';
+import {setTextContent, EMPTY_OBJ} from './utils/common';
 
 export function mount(vNode: VNode, parentDom: Element | null, isSVG: boolean, mountedQueue: Function[]): void {
     const type = (vNode.type |= Types.InUse);

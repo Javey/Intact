@@ -1,6 +1,6 @@
-import {VNode, ChildrenTypes, Types, Reference} from '../types';
-import {isNullOrUndefined, isNumber, isArray, isUndefined} from '../utils';
-import {EMPTY_OBJ, REFERENCE} from '../common';
+import {VNode, ChildrenTypes, Types, Reference} from '../utils/types';
+import {isNullOrUndefined, isNumber, isArray, isUndefined} from '../utils/utils';
+import {EMPTY_OBJ, REFERENCE} from '../utils/common';
 
 export function applyValueSelect(
     nextProps: any,

@@ -1,6 +1,6 @@
-import {isFunction, isNull} from '../utils';
-import {normalizeEventName} from '../common';
-import {LinkedEvent, MissTimeEventListener, MissTimeElement} from '../types';
+import {isFunction, isNull} from '../utils/utils';
+import {normalizeEventName} from '../utils/common';
+import {LinkedEvent, MissTimeEventListener, MissTimeElement} from '../utils/types';
 import {isLinkEvent, isSameLinkEvent} from './linkEvent';
 
 interface IEventData {

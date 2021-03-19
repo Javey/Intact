@@ -5,7 +5,7 @@ import {
     VNode as IVNode, Component, Props, Ref, Key, Children, Types, NormalizedChildren,
     ChildrenTypes,
     ComponentClass,
-} from './types';
+} from './utils/types';
 import {
     isNullOrUndefined,
     isArray,
@@ -13,8 +13,8 @@ import {
     isInvalid,
     isStringOrNumber,
     isString,
-} from './utils';
-import {throwIfObjectIsNotVNode, validateVNodeElementChildren} from './validate';
+} from './utils/utils';
+import {throwIfObjectIsNotVNode, validateVNodeElementChildren} from './utils/validate';
 
 export class VNode<P = any> implements IVNode<P> {
     public dom: Element | Text | null = null;

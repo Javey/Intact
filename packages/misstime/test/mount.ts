@@ -1,7 +1,7 @@
 import {createElementVNode, createTextVNode, createComponentVNode} from '../src/vnode';
-import {Types, ChildrenTypes, ComponentClass, Props, VNodeComponent} from '../src/types';
+import {Types, ChildrenTypes, ComponentClass, Props, VNodeComponent} from '../src/utils/types';
 import {mount} from '../src/mount';
-import {createRef} from '../src/ref';
+import {createRef} from '../src/utils/ref';
 import {Component} from './utils';
 import {render} from '../src/render';
 

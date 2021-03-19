@@ -1,8 +1,8 @@
-import {VNode, Types} from '../types';
+import {VNode, Types} from '../utils/types';
 import {applyValueInput, isCheckedType} from './input';
 import {applyValueSelect} from './select';
 import {applyValueTextArea} from './textarea';
-import {isNullOrUndefined} from '../utils';
+import {isNullOrUndefined} from '../utils/utils';
 
 export function processElement(
     type: Types,

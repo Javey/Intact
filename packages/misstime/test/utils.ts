@@ -1,4 +1,4 @@
-import {Props, ComponentClass, VNodeComponent} from '../src/types';
+import {Props, ComponentClass, VNodeComponent} from '../src/utils/types';
 
 export function dispatchEvent(target: Element, eventName: string, options?: Object) {
     let event;
