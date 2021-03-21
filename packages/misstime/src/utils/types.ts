@@ -92,7 +92,7 @@ export interface ComponentConstructor<P = any> {
     new (props: P): ComponentClass<P>
 }
 
-export interface ComponentClass<P> {
+export interface ComponentClass<P = any> {
     props: Props<P>;
 
     $SVG: boolean;
@@ -114,8 +114,8 @@ export interface ComponentClass<P> {
     destroyed?(vNode: VNodeComponent<P> | null, nextVNode: VNodeComponent | null): void;
 }
 
-export interface ComponentFunction {
-    (props: any): Children;
+export interface ComponentFunction<P = any> {
+    (props: Props<P>): Children;
 }
 
 export type Component = ComponentConstructor<any> | ComponentFunction;

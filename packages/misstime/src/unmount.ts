@@ -36,6 +36,9 @@ export function unmount(vNode: VNode) {
         }
     } else if (children) {
         // TODO: remove component
+        if (type & Types.ComponentClass) {
+            
+        }
     }
 }
 
