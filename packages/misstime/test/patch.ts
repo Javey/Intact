@@ -5,6 +5,7 @@ import {mount} from '../src/mount';
 import {linkEvent} from '../src/events/linkEvent';
 import {dispatchEvent, Component} from './utils';
 import {unmount} from '../src/unmount';
+import {Fragment} from '../src/utils/common';
 
 describe('Patch', () => {
     let container: Element;
@@ -19,10 +20,10 @@ describe('Patch', () => {
     });
 
     function render(vNode: VNode) {
-        mount(vNode, container, false, []);
+        mount(vNode, container, false, null, []);
     }
     function update(vNode1: VNode, vNode2: VNode) {
-        patch(vNode1, vNode2, container, false, []);
+        patch(vNode1, vNode2, container, false, null, []);
         return vNode2;
     }
     function patchTest<P, Q>(vNode1: VNode<P>, vNode2: VNode<Q>, html?: string) {
@@ -47,7 +48,7 @@ describe('Patch', () => {
         const vNode1 = h('div', {key: 1});
         const vNode2 = h('div', {key: 2});
         render(vNode1);
-        patch(vNode1, vNode2, container, false, []);
+        patch(vNode1, vNode2, container, false, null, []);
         expect(vNode1.dom === vNode2.dom).toBeFalse();
     });
 
@@ -71,6 +72,11 @@ describe('Patch', () => {
             patchTest(
                 h('div', null, h('a')),
                 h('div', null, [h('a'), h('b')]),
+                '<div><a></a><b></b></div>'
+            );
+            patchTest(
+                h('div', null, h('a')),
+                h('div', null, h(Fragment, null, [h('a'), h('b')])),
                 '<div><a></a><b></b></div>'
             );
         });

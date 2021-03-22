@@ -1,5 +1,5 @@
 import {VNode, Types, MissTimeElement} from './utils/types';
-import {isInvalid, throwError, warn, isNullOrUndefined} from './utils/utils';
+import {isInvalid, throwError, warn, isNullOrUndefined} from './utils/helpers';
 import {directClone} from './vnode';
 import {mount} from './mount';
 import {remove} from './unmount';
@@ -50,7 +50,7 @@ export function render(vNode: VNode | null | undefined, parentDom: MissTimeEleme
             if (vNode.type & Types.InUse) {
                 vNode = directClone(vNode);
             }
-            mount(vNode, parentDom, false, mountedQueue);
+            mount(vNode, parentDom, false, null, mountedQueue);
             parentDom.$V = vNode;
         }
     } else {
@@ -61,7 +61,7 @@ export function render(vNode: VNode | null | undefined, parentDom: MissTimeEleme
             if (vNode.type & Types.InUse) {
                 vNode = directClone(vNode);
             }
-            patch(lastVNode, vNode, parentDom, false, mountedQueue);
+            patch(lastVNode, vNode, parentDom, false, null, mountedQueue);
             parentDom.$V = vNode; 
         }
     }

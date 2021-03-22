@@ -1,4 +1,4 @@
-import {isNumber, throwError} from './utils';
+import {isNumber, throwError} from './helpers';
 import {VNodeElement, Types, ChildrenTypes} from './types';
 
 export function throwIfObjectIsNotVNode(vNode: any) {

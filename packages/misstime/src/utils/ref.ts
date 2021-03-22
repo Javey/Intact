@@ -1,5 +1,5 @@
 import {Component, RefObject, Ref} from './types';
-import {isFunction} from './utils';
+import {isFunction} from './helpers';
 
 export function isRef(o: any): o is RefObject<any> {
     return o.__is_ref; 

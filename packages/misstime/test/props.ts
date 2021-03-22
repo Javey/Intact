@@ -1,14 +1,14 @@
 import {createElementVNode, createVNode as h} from '../src/vnode';
 import {Types, ChildrenTypes, VNode} from '../src/utils/types';
-import {mount} from '../src/mount';
 import {dispatchEvent} from './utils';
 import {linkEvent} from '../src/events/linkEvent';
+import {render as r} from '../src/render';
 
 describe('Props', () => {
     let container: HTMLElement;
 
     function render(vNode: VNode) {
-        mount(vNode, container, false, []);
+        r(vNode, container);
     }
 
     beforeEach(() => {

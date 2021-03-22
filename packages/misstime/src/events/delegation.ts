@@ -1,4 +1,4 @@
-import {isFunction, isNull} from '../utils/utils';
+import {isFunction, isNull} from '../utils/helpers';
 import {normalizeEventName} from '../utils/common';
 import {LinkedEvent, MissTimeEventListener, MissTimeElement} from '../utils/types';
 import {isLinkEvent, isSameLinkEvent} from './linkEvent';

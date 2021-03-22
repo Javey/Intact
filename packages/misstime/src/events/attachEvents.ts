@@ -1,4 +1,4 @@
-import {isFunction} from '../utils/utils';
+import {isFunction} from '../utils/helpers';
 import {MissTimeElement} from '../utils/types';
 
 type EventData = [string, EventListener];

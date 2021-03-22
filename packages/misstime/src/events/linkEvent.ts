@@ -1,5 +1,5 @@
 import {LinkedEvent} from '../utils/types';
-import {isFunction, isNull} from '../utils/utils';
+import {isFunction, isNull} from '../utils/helpers';
 
 export function linkEvent<T, E extends Event>(data: T, event: (data: T, event: Event) => void): LinkedEvent<T, E> | null {
     if (isFunction(event)) {

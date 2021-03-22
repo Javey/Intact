@@ -2,7 +2,7 @@ import {VNode, Types} from '../utils/types';
 import {applyValueInput, isCheckedType} from './input';
 import {applyValueSelect} from './select';
 import {applyValueTextArea} from './textarea';
-import {isNullOrUndefined} from '../utils/utils';
+import {isNullOrUndefined} from '../utils/helpers';
 
 export function processElement(
     type: Types,

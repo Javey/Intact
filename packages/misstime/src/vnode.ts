@@ -5,6 +5,7 @@ import {
     VNode as IVNode, Component, Props, Ref, Key, Children, Types, NormalizedChildren,
     ChildrenTypes,
     ComponentClass,
+    IntactDom,
 } from './utils/types';
 import {
     isNullOrUndefined,
@@ -13,11 +14,12 @@ import {
     isInvalid,
     isStringOrNumber,
     isString,
-} from './utils/utils';
+} from './utils/helpers';
 import {throwIfObjectIsNotVNode, validateVNodeElementChildren} from './utils/validate';
+import {Fragment} from './utils/common';
 
 export class VNode<P = any> implements IVNode<P> {
-    public dom: Element | Text | null = null;
+    public dom: IntactDom | null = null;
     public type: Types;
     public tag: string | Component | null;
     public childrenType: ChildrenTypes;
@@ -80,6 +82,9 @@ export function createVNode<P extends Record<string, any>>(
                 case 'svg':
                     type = Types.SvgElement;
                     break;
+                case Fragment:
+                    type = Types.Fragment;
+                    break;
                 default:
                     type = Types.CommonElement;
                     break;
@@ -119,6 +124,9 @@ export function createVNode<P extends Record<string, any>>(
     }
 
     if (isElement) {
+        if (type! & Types.Fragment) {
+            return createFragment(children, ChildrenTypes.UnknownChildren, key);
+        }
         return createElementVNode(
             type!,
             tag as string,
@@ -185,6 +193,10 @@ export function createTextVNode(text: string | number, key?: Key | null): VNodeT
     return new VNode(Types.Text, null, ChildrenTypes.HasInvalidChildren, text, null, null, key) as VNodeTextElement;
 }
 
+export function createCommentVNode(comment: string, key?: Key | null): VNodeTextElement {
+    return new VNode(Types.HtmlComment, null, ChildrenTypes.HasInvalidChildren, comment, null, null, key) as VNodeTextElement;
+}
+
 export function createComponentVNode<P>(
     type: Types,
     tag: Component,
@@ -210,6 +222,25 @@ export function createComponentVNode<P>(
     ) as VNodeComponent<P>;
 }
 
+export function createFragment(children: Children, childrenType: ChildrenTypes, key?: Key | null): VNodeElement {
+    const fragment = createElementVNode(Types.Fragment, Types.Fragment as any, children, childrenType, null, null, key, null);
+
+    switch (fragment.childrenType) {
+        case ChildrenTypes.HasInvalidChildren:
+            fragment.children = createCommentVNode('');
+            fragment.childrenType = ChildrenTypes.HasVNodeChildren;
+            break;
+        case ChildrenTypes.HasTextChildren:
+            fragment.children = [createTextVNode(children as string)];
+            fragment.childrenType = ChildrenTypes.HasNonKeyedChildren;
+            break;
+        default:
+            break;
+    }
+
+    return fragment;
+}
+
 export function directClone(vNode: VNode<any>): VNode<any> {
     const type = vNode.type & Types.ClearInUse;
     let props = vNode.props;
@@ -224,16 +255,39 @@ export function directClone(vNode: VNode<any>): VNode<any> {
         }
     }
 
+    if ((type & Types.Fragment) === 0) {
+        return new VNode(
+            type,
+            vNode.tag,
+            vNode.childrenType,
+            vNode.children,
+            vNode.className,
+            props,
+            vNode.key,
+            vNode.ref
+        );
+    }
+
+    const childrenType = vNode.childrenType;
     return new VNode(
         type,
         vNode.tag,
-        vNode.childrenType,
-        vNode.children,
-        vNode.className,
-        props,
+        childrenType,
+        childrenType === ChildrenTypes.HasVNodeChildren ?
+            directClone(vNode.children as VNode) :
+            (vNode.children as VNode[]).map(directClone),
+        null,
+        null,
         vNode.key,
-        vNode.ref
+        null
     );
+    // return createFragment(
+        // childrenType === ChildrenTypes.HasVNodeChildren ?
+            // directClone(vNode.children as VNode) :
+            // (vNode.children as VNode[]).map(directClone),
+        // childrenType,
+        // vNode.key
+    // );
 }
 
 function normalizeChildren(vNode: VNode, children: Children) {

@@ -1,5 +1,5 @@
 import {VNode, Types, LinkedEvent, Reference} from './types';
-import {isNullOrUndefined, isString, isEventProp, namespaces} from './utils';
+import {isNullOrUndefined, isString, isEventProp, namespaces} from './helpers';
 import {delegatedEvents, handleDelegatedEvent} from '../events/delegation';
 import {isLinkEvent, isSameLinkEvent} from '../events/linkEvent';
 import {attachEvent} from '../events/attachEvents';

@@ -1,4 +1,4 @@
-import {isNullOrUndefined} from '../utils/utils';
+import {isNullOrUndefined} from '../utils/helpers';
 
 export function applyValueTextArea(nextProps: any, dom: HTMLTextAreaElement, mounting: boolean) {
     const value = nextProps.value;

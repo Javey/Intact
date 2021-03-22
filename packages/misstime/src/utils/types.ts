@@ -1,5 +1,5 @@
 export interface VNode<P = any> {
-    dom: Element | Text | null
+    dom: IntactDom | null
     type: Types
     tag: string | Component | null
     childrenType: ChildrenTypes
@@ -19,6 +19,7 @@ export interface VNodeTextElement<P = null> extends VNode<P> {
     tag: null,
     props?: null,
     ref: Ref<Element>,
+    children: string | number,
 }
 export interface VNodeComponent<P = any> extends VNode<P> {
     children?: ComponentClass<P>,
@@ -26,6 +27,8 @@ export interface VNodeComponent<P = any> extends VNode<P> {
     props?: Props<P, Component> | null,
     ref: Ref<Component>,
 }
+
+export type IntactDom = Element | Text | Comment
 
 export const enum Types {
     Text = 1,
@@ -99,8 +102,8 @@ export interface ComponentClass<P = any> {
     $vNode: VNodeComponent<P> | null;
     $mountedQueue: Function[] | null;
 
-    $render(lastVNode: VNodeComponent | null, vNode: VNodeComponent<P> | null, parentDom: Element): void;
-    $update(lastVNode: VNodeComponent | null, vNode: VNodeComponent<P> | null, parentDom: Element): void;
+    $render(lastVNode: VNodeComponent | null, vNode: VNodeComponent<P> | null, parentDom: Element, anchor: IntactDom | null): void;
+    $update(lastVNode: VNodeComponent | null, vNode: VNodeComponent<P> | null, parentDom: Element, anchor: IntactDom | null): void;
     $destroy(vNode: VNodeComponent<P> | null, nextVNode: VNodeComponent | null, parentDom: Element): void;
 
     init?(props: P): any;

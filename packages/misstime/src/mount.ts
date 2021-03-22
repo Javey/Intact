@@ -3,28 +3,34 @@ import {
     Types,
     VNodeElement,
     VNodeComponent,
+    VNodeTextElement,
     ChildrenTypes, 
     NormalizedChildren, 
     Props,
     ComponentConstructor,
+    IntactDom,
 } from './utils/types';
-import {isNullOrUndefined, throwError, isFunction} from './utils/utils';
+import {isNullOrUndefined, throwError, isFunction} from './utils/helpers';
 import {directClone} from './vnode';
 import {mountProps} from './utils/props';
 import {mountRef} from './utils/ref';
-import {setTextContent, EMPTY_OBJ} from './utils/common';
+import {setTextContent, EMPTY_OBJ, insertOrAppend} from './utils/common';
 
-export function mount(vNode: VNode, parentDom: Element | null, isSVG: boolean, mountedQueue: Function[]): void {
+export function mount(vNode: VNode, parentDom: Element | null, isSVG: boolean, anchor: IntactDom | null, mountedQueue: Function[]): void {
     const type = (vNode.type |= Types.InUse);
 
     if (type & Types.Element) {
-        mountElement(vNode as VNodeElement, parentDom, isSVG, mountedQueue);
+        mountElement(vNode as VNodeElement, parentDom, isSVG, anchor, mountedQueue);
     } else if (type & Types.ComponentClass) {
-        mountComponentClass(null, vNode as VNodeComponent, parentDom!, isSVG, mountedQueue);
+        mountComponentClass(null, vNode as VNodeComponent, parentDom!, isSVG, anchor, mountedQueue);
     } else if (type & Types.ComponentFunction) {
 
     } else if (type & Types.Text) {
-        mountText(vNode as VNodeElement, parentDom);
+        mountText(vNode as VNodeTextElement, parentDom, anchor);
+    } else if (type & Types.Fragment) {
+        mountFragment(vNode as VNodeElement, parentDom, isSVG, anchor, mountedQueue);
+    } else if (type & Types.HtmlComment) {
+        mountComment(vNode as VNodeTextElement, parentDom, anchor);
     } else if (process.env.NODE_ENV !== 'production') {
         if (typeof vNode === 'object') {
             throwError(
@@ -37,7 +43,7 @@ export function mount(vNode: VNode, parentDom: Element | null, isSVG: boolean, m
     }
 }
 
-export function mountElement(vNode: VNodeElement, parentDom: Element | null, isSVG: boolean, mountedQueue: Function[]) {
+export function mountElement(vNode: VNodeElement, parentDom: Element | null, isSVG: boolean, anchor: IntactDom | null, mountedQueue: Function[]) {
     const {type, props, className, childrenType, tag} = vNode;
 
     isSVG = isSVG || (type & Types.SvgElement) > 0;
@@ -67,17 +73,17 @@ export function mountElement(vNode: VNodeElement, parentDom: Element | null, isS
             if ((children as VNode).type & Types.InUse) {
                 vNode.children = children = directClone(children as VNode);
             }
-            mount(children as VNode, dom, childrenIsSVG, mountedQueue);
+            mount(children as VNode, dom, childrenIsSVG, anchor, mountedQueue);
         } else if (
             childrenType === ChildrenTypes.HasKeyedChildren ||
             childrenType === ChildrenTypes.HasNonKeyedChildren
         ) {
-            mountArrayChildren(children as VNode[], dom, childrenIsSVG, mountedQueue);
+            mountArrayChildren(children as VNode[], dom, childrenIsSVG, anchor, mountedQueue);
         }
     }
 
     if (!isNullOrUndefined(parentDom)) {
-        parentDom.appendChild(dom);
+        insertOrAppend(parentDom, dom, anchor);
     }
 
     if (!isNullOrUndefined(props)) {
@@ -92,6 +98,7 @@ export function mountComponentClass(
     vNode: VNodeComponent,
     parentDom: Element,
     isSVG: boolean,
+    anchor: IntactDom | null,
     mountedQueue: Function[]
 ) {
     const instance = new vNode.tag(vNode.props);
@@ -102,7 +109,7 @@ export function mountComponentClass(
    
     vNode.children = instance;
 
-    instance.$render(lastVNode, vNode, parentDom);
+    instance.$render(lastVNode, vNode, parentDom, anchor);
 
     mountRef(vNode.ref, instance);
 
@@ -111,22 +118,45 @@ export function mountComponentClass(
     }
 }
 
-export function mountText(vNode: VNodeElement, parentDom: Element | null) {
+export function mountText(vNode: VNodeTextElement, parentDom: Element | null, anchor: IntactDom | null) {
     const dom = vNode.dom = document.createTextNode(vNode.children as string);
 
     if (!isNullOrUndefined(parentDom)) {
-        parentDom.appendChild(dom);
+        insertOrAppend(parentDom, dom, anchor);
     }
 }
 
-export function mountArrayChildren(children: VNode[], dom: Element | null, isSVG: boolean, mountedQueue: Function[]) {
+export function mountFragment(vNode: VNodeElement, parentDom: Element | null, isSVG: boolean, anchor: IntactDom | null, mountedQueue: Function[]) {
+    // let children = vNode.children;
+    // let childrenType = vNode.childrenType;
+
+    // if (childrenType & ChildrenTypes.MultipleChildren && (children as VNode[]).length === 0) {
+        // childrenType = vNode.childrenType = ChildrenTypes.HasVNodeChildren;
+        // children = vNode.children = createVNode();
+    // }
+    if (vNode.childrenType === ChildrenTypes.HasVNodeChildren) {
+        mount(vNode.children as VNode, parentDom, isSVG, anchor, mountedQueue);
+    } else {
+        mountArrayChildren(vNode.children as VNode[], parentDom, isSVG, anchor, mountedQueue);
+    }
+}
+
+export function mountComment(vNode: VNodeTextElement, parentDom: Element | null, anchor: IntactDom | null) {
+    const dom = vNode.dom = document.createComment(vNode.children as string);
+
+    if (!isNullOrUndefined(parentDom)) {
+        insertOrAppend(parentDom, dom, anchor);
+    }
+}
+
+export function mountArrayChildren(children: VNode[], dom: Element | null, isSVG: boolean, anchor: IntactDom | null, mountedQueue: Function[]) {
     for (let i = 0; i < children.length; i++) {
         let vNode = children[i];
 
         if (vNode.type & Types.InUse) {
             children[i] = vNode = directClone(vNode);
         }
-        mount(vNode, dom, isSVG, mountedQueue);
+        mount(vNode, dom, isSVG, anchor, mountedQueue);
     }
 }
 

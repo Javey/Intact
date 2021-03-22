@@ -1,7 +1,7 @@
 import {VNode, Types, ChildrenTypes, RefObject} from './utils/types';
 import {mountRef} from './utils/ref';
-import {isNullOrUndefined} from './utils/utils';
-import {removeChild} from './utils/common';
+import {isNullOrUndefined} from './utils/helpers';
+import {removeChild, removeVNodeDom} from './utils/common';
 import {delegatedEvents, unmountDelegatedEvent} from './events/delegation';
 
 export function remove(vNode: VNode, parentDom: Element) {
@@ -52,8 +52,12 @@ export function clearDom(dom: Element) {
     dom.textContent = '';
 }
 
-export function removeAllChildren(children: VNode[], dom: Element) {
+export function removeAllChildren(children: VNode[], dom: Element, vNode: VNode) {
     unmountAllChildren(children);
 
-    clearDom(dom);
+    if (vNode.type & Types.Fragment) {
+        removeVNodeDom(vNode, dom);
+    } else {
+        clearDom(dom);
+    }
 }

@@ -1,5 +1,12 @@
-import {createElementVNode, createTextVNode, createComponentVNode} from '../src/vnode';
-import {Types, ChildrenTypes, ComponentClass, Props, VNodeComponent} from '../src/utils/types';
+import {
+    createElementVNode,
+    createTextVNode, 
+    createComponentVNode,
+    createCommentVNode,
+    createFragment,
+    createVNode as h,
+} from '../src/vnode';
+import {Types, ChildrenTypes, ComponentClass, Props, VNodeComponent, VNode} from '../src/utils/types';
 import {mount} from '../src/mount';
 import {createRef} from '../src/utils/ref';
 import {Component} from './utils';
@@ -21,7 +28,7 @@ describe('Mount', () => {
             'class-name',
             {id: 1}
         );
-        mount(vNode, container, false, []);
+        render(vNode, container);
         expect(container.innerHTML).toBe('<div class="class-name" id="1"><div></div></div>');
     });
 
@@ -32,13 +39,13 @@ describe('Mount', () => {
             'test',
             ChildrenTypes.UnknownChildren,
         );
-        mount(vNode, container, false, []);
+        render(vNode, container);
         expect(container.innerHTML).toBe('<div>test</div>');
     });
 
     it('should mount text vNode', () => {
         const vNode = createTextVNode('test');
-        mount(vNode, container, false, []);
+        render(vNode, container);
         expect(container.innerHTML).toBe('test');
     });
 
@@ -50,7 +57,7 @@ describe('Mount', () => {
             [child, child],
             ChildrenTypes.UnknownChildren,
         );
-        mount(vNode, container, false, []);
+        render(vNode, container);
         expect(container.innerHTML).toBe('<div><div></div><div></div></div>');
     });
 
@@ -62,7 +69,7 @@ describe('Mount', () => {
             [child, child],
             ChildrenTypes.HasNonKeyedChildren,
         );
-        mount(vNode, container, false, []);
+        render(vNode, container);
         expect(container.innerHTML).toBe('<div><div></div><div></div></div>');
     });
 
@@ -76,7 +83,7 @@ describe('Mount', () => {
             [foo, bar],
             ChildrenTypes.HasNonKeyedChildren,
         );
-        mount(vNode, container, false, []);
+        render(vNode, container);
         expect(container.innerHTML).toBe('<div><div><i></i></div><div><i></i></div></div>')
     });
 
@@ -88,15 +95,15 @@ describe('Mount', () => {
             ChildrenTypes.HasVNodeChildren, 
             'class-name'
         );
-        mount(vNode, container, false, []);
+        render(vNode, container);
 
         expect(container.firstChild!.namespaceURI).toBe('http://www.w3.org/2000/svg');
         expect(container.firstChild!.firstChild!.namespaceURI).toBe('http://www.w3.org/2000/svg');
     });
 
     it('should throw error if we mount invalid vNode', () => {
-        expect(() => mount([] as any, container, false, [])).toThrowError();
-        expect(() => mount((() => {}) as any, container, false, [])).toThrowError();
+        expect(() => mount([] as any, container, false, null, [])).toThrowError();
+        expect(() => mount((() => {}) as any, container, false, null, [])).toThrowError();
     });
 
     it('should mount ref that is RefObject', () => {
@@ -111,7 +118,7 @@ describe('Mount', () => {
             null,
             ref
         );
-        mount(vNode, container, false, []);
+        render(vNode, container);
 
         expect(ref.value!.outerHTML).toBe('<span></span>');
     });
@@ -128,14 +135,14 @@ describe('Mount', () => {
             null,
             i => ref = i,
         );
-        mount(vNode, container, false, []);
+        render(vNode, container);
 
         expect(ref!.outerHTML).toBe('<span></span>');
     });
 
     it('should mount component', () => {
         const vNode = createComponentVNode(Types.ComponentClass, Component);
-        mount(vNode, container, false, []);
+        render(vNode, container);
 
         expect(container.innerHTML).toBe('<div></div>');
     });
@@ -149,6 +156,86 @@ describe('Mount', () => {
         }
         render(createComponentVNode(Types.ComponentClass, TestComponent), container);
         expect(mounted).toHaveBeenCalledTimes(1);
+    });
+
+    it('should mount comment', () => {
+        const vNode = createCommentVNode('comment');
+        render(vNode, container);        
+
+        expect(container.innerHTML).toBe('<!--comment-->');
+    });
+
+    describe('Fragment', () => {
+        it('should mount Fragment that children is vNode', () => {
+            render(createFragment(
+                createElementVNode(Types.CommonElement, 'div'), 
+                ChildrenTypes.UnknownChildren
+            ), container);
+
+            expect(container.innerHTML).toBe('<div></div>');
+        });
+
+        it('should mount Fragment that child is text', () => {
+            render(createFragment(
+                'text',
+                ChildrenTypes.UnknownChildren
+            ), container);
+
+            expect(container.innerHTML).toBe('text');
+        });
+
+        it('should mount Fragment that child is invalid', () => {
+            render(createFragment(
+                null,
+                ChildrenTypes.UnknownChildren
+            ), container);
+
+            expect(container.innerHTML).toBe('<!---->');
+        });
+
+        it('should mount Fragment that children is vNode[]', () => {
+            render(createFragment(
+                [
+                    createElementVNode(Types.CommonElement, 'div'),
+                    null,
+                    createFragment(
+                        'text',
+                        ChildrenTypes.HasTextChildren,
+                    ),
+                    createElementVNode(Types.CommonElement, 'span'),
+                ],
+                ChildrenTypes.UnknownChildren
+            ), container);
+
+            expect(container.innerHTML).toBe('<div></div>text<span></span>');
+        });
+
+        it('should mount used Fragment', () => {
+            const child = createFragment(h('i'), ChildrenTypes.HasVNodeChildren);
+            const foo = createElementVNode(Types.CommonElement, 'div', child, ChildrenTypes.HasVNodeChildren);
+            const bar = createElementVNode(Types.CommonElement, 'div', child, ChildrenTypes.HasVNodeChildren);
+            const vNode = createElementVNode(
+                Types.CommonElement,
+                'div',
+                [foo, bar],
+                ChildrenTypes.HasNonKeyedChildren,
+            );
+            render(vNode, container);
+
+            expect(container.innerHTML).toBe('<div><div><i></i></div><div><i></i></div></div>')
+            expect((child.children as VNode).dom).toBe(container.firstElementChild!.firstElementChild!.firstElementChild);
+        });
+
+        it('should mount used Fragment which children is text', () => {
+            const fragment = createFragment('text', ChildrenTypes.UnknownChildren);
+            render(h('div', null, [
+                fragment,
+                fragment
+            ]), container);
+
+            expect(container.innerHTML).toBe('<div>texttext</div>');
+            expect((fragment.children as VNode[])[0].dom).toBe(container.firstElementChild!.firstChild as Text);
+        });
     });
 });
 
