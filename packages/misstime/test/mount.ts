@@ -190,7 +190,7 @@ describe('Mount', () => {
                 ChildrenTypes.UnknownChildren
             ), container);
 
-            expect(container.innerHTML).toBe('<!---->');
+            expect(container.innerHTML).toBe('');
         });
 
         it('should mount Fragment that children is vNode[]', () => {

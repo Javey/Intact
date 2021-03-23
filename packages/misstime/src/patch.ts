@@ -13,7 +13,7 @@ import {
     moveVNodeDom,
 } from './utils/common';
 import {isNullOrUndefined} from './utils/helpers';
-import {directClone} from './vnode';
+import {directClone, createVoidVNode} from './vnode';
 import {patchProp} from './utils/props';
 import {processElement} from './wrappers/process';
 import {mountRef} from './utils/ref';
@@ -37,6 +37,19 @@ export function patch(
         replaceWithNewNode(lastVNode, nextVNode, parentDom, isSVG, anchor, mountedQueue);
     } else if (nextType & Types.Element) {
         patchElement(lastVNode as VNodeElement, nextVNode as VNodeElement, isSVG, nextType, mountedQueue);
+    } else if (nextType & Types.Fragment) {
+        // patchFragment(lastVNode as VNodeElement, nextVNode as VNodeElement, parentDom, isSVG, anchor, mountedQueue);
+        patchChildren(
+            lastVNode.childrenType,
+            nextVNode.childrenType, 
+            (lastVNode as VNodeElement).children,
+            (nextVNode as VNodeElement).children,
+            parentDom,
+            isSVG,
+            anchor,
+            lastVNode,
+            mountedQueue
+        );
     }
 }
 
@@ -169,6 +182,41 @@ export function patchElement(lastVNode: VNodeElement, nextVNode: VNodeElement, i
         mountRef(nextRef, dom);
     }
 }
+
+// function patchFragment(lastVNode: VNodeElement, nextVNode: VNodeElement, parentDom: Element, isSVG: boolean, anchor: IntactDom | null, mountedQueue: Function[]) {
+    // const lastChildren = lastVNode.children as VNode[];
+    // let nextChildren = nextVNode.children;
+    // const lastChildrenType = lastVNode.childrenType;
+    // let nextChildrenType = nextVNode.childrenType;
+    // let anchor: Element | null = null;
+
+    // if (nextChildrenType & ChildrenTypes.MultipleChildren && (nextChildren as VNode[]).length === 0) {
+        // nextChildrenType = nextVNode.childrenType = ChildrenTypes.HasVNodeChildren;
+        // nextChildren = nextVNode.children = createVoidVNode();
+    // }
+
+    // const nextIsSingle = (nextChildrenType & ChildrenTypes.HasVNodeChildren) !== 0;
+
+    // if (lastChildrenType & ChildrenTypes.MultipleChildren) {
+        // const lastLen = lastChildren.length;
+
+        // // We need to known Fragment's edge node when
+        // if (
+            // // It uses keyed algorithm
+            // (lastChildrenType & nextChildrenType & ChildrenTypes.HasKeyedChildren) ||
+            // // It transforms from may to signle
+            // nextIsSingle ||
+            // // It will append more nodes
+            // (nextChildren as VNode[]).length > lastLen
+        // ) {
+            // // When Fragment has mutliple children there is always at least one vNode
+            // anchor = (findDomFromVNode(lastChildren[lastLen - 1], false) as Element).nextSibling as Element;
+        // }
+    // }
+
+    // patchChildren(lastChildrenType, nextChildrenType, lastChildren, nextChildren, parentDom, isSVG, anchor, lastVNode, mountedQueue);
+    // patchChildren(lastVNode.childrenType, nextVNode.childrenType, lastVNode.children, nextVNode.children, parentDom, isSVG, anchor, lastVNode, mountedQueue);
+// }
 
 export function patchChildren(
     lastChildrenType: ChildrenTypes,
@@ -348,6 +396,8 @@ function patchNonKeyedChildren(
     }
 }
 
+// https://github.com/localvoid/ivi/blob/e23c8572c9ef434c9ac1433e70eff17a88cb8362/packages/ivi/src/vdom/reconciler.ts#L585
+// https://yanni4night.github.io/js/2018/02/11/inferno-dom-diff.html
 function patchKeyedChildren(
     a: VNode[],
     b: VNode[],
@@ -460,7 +510,7 @@ function patchKeyedChildrenComplex(
         for (i = aStart; i <= aEnd; ++i) {
             aNode = a[i];
             if (patched < bLeft) {
-                for (j = bStart; i <= bEnd; ++j) {
+                for (j = bStart; j <= bEnd; ++j) {
                     bNode = b[j];
                     if (aNode.key === bNode.key) {
                         sources[j - bStart] = i + 1;

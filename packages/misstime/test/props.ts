@@ -8,6 +8,7 @@ describe('Props', () => {
     let container: HTMLElement;
 
     function render(vNode: VNode) {
+        (container as any).$V = null;
         r(vNode, container);
     }
 

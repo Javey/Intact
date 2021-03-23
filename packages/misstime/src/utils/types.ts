@@ -45,15 +45,16 @@ export const enum Types {
     SvgElement = 1 << 8,
 
     UnescapeText = 1 << 9,
-    Fragment = 1 << 10,
-    InUse = 1 << 11,
-    Normalized = 1 << 12,
-    PrefixedKey = 1 << 13,
+    Void = 1 << 10,
+    Fragment = 1 << 11,
+    InUse = 1 << 12,
+    Normalized = 1 << 13,
+    PrefixedKey = 1 << 14,
 
     Component = ComponentClass | ComponentFunction,
 
     FormElement = InputElement | SelectElement | TextareaElement,
-    TextElement = Text | HtmlComment,
+    TextElement = Text | HtmlComment | Void,
     Element = CommonElement | FormElement | SvgElement,
     HtmlElement = Element | TextElement,
     InUseOrNormalized = InUse | Normalized,

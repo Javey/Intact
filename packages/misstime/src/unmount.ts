@@ -6,7 +6,7 @@ import {delegatedEvents, unmountDelegatedEvent} from './events/delegation';
 
 export function remove(vNode: VNode, parentDom: Element) {
     unmount(vNode);
-    removeChild(parentDom, vNode.dom as Element);
+    removeVNodeDom(vNode, parentDom);
 }
 
 export function unmount(vNode: VNode) {

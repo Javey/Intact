@@ -193,6 +193,10 @@ export function createTextVNode(text: string | number, key?: Key | null): VNodeT
     return new VNode(Types.Text, null, ChildrenTypes.HasInvalidChildren, text, null, null, key) as VNodeTextElement;
 }
 
+export function createVoidVNode() {
+    return createTextVNode('', null);
+}
+
 export function createCommentVNode(comment: string, key?: Key | null): VNodeTextElement {
     return new VNode(Types.HtmlComment, null, ChildrenTypes.HasInvalidChildren, comment, null, null, key) as VNodeTextElement;
 }
@@ -206,7 +210,7 @@ export function createComponentVNode<P>(
 ): VNodeComponent<P> {
     if (process.env.NODE_ENV !== 'production') {
         if (type & Types.Element) {
-            throwError('Creating element vNodes using createCommentVNode is not allowed. Use createElementVNode method.');
+            throwError('Creating element vNodes using createComponentVNode is not allowed. Use createElementVNode method.');
         }
     }
    
@@ -227,7 +231,7 @@ export function createFragment(children: Children, childrenType: ChildrenTypes, 
 
     switch (fragment.childrenType) {
         case ChildrenTypes.HasInvalidChildren:
-            fragment.children = createCommentVNode('');
+            fragment.children = createVoidVNode();
             fragment.childrenType = ChildrenTypes.HasVNodeChildren;
             break;
         case ChildrenTypes.HasTextChildren:
