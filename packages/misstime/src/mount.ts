@@ -15,6 +15,7 @@ import {directClone} from './vnode';
 import {mountProps} from './utils/props';
 import {mountRef} from './utils/ref';
 import {setTextContent, EMPTY_OBJ, insertOrAppend} from './utils/common';
+import {validateKeys} from './utils/validate';
 
 export function mount(vNode: VNode, parentDom: Element | null, isSVG: boolean, anchor: IntactDom | null, mountedQueue: Function[]): void {
     const type = (vNode.type |= Types.InUse);
@@ -58,8 +59,7 @@ export function mountElement(vNode: VNodeElement, parentDom: Element | null, isS
     }
 
     if (process.env.NODE_ENV !== 'production') {
-        // TODO
-        // validateKeys(vNode);
+        validateKeys(vNode);
     }
 
     let children = vNode.children;

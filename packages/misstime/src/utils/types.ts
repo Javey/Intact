@@ -8,6 +8,7 @@ export interface VNode<P = any> {
     className?: string | null
     key: Key | null
     ref: Ref<Component> | Ref<Element> | null
+    isValidated?: boolean,
 }
 export interface VNodeElement<P = any> extends VNode<P> {
     children?: NormalizedChildren,
@@ -94,10 +95,12 @@ export type Props<P extends Record<string, any> = {}, T = Element> = {
 
 export interface ComponentConstructor<P = any> {
     new (props: P): ComponentClass<P>
+    displayName?: string
 }
 
 export interface ComponentClass<P = any> {
     props: Props<P>;
+    // displayName?: string;
 
     $SVG: boolean;
     $vNode: VNodeComponent<P> | null;

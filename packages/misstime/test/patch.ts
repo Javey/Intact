@@ -212,46 +212,39 @@ describe('Patch', () => {
                 h('div', null, [h('a'), h('b')]),
                 '<div><a></a><b></b></div>'
             );
-            // patch keyed children
-            patchTest(
-                h('div', null, [h('a'), h('b')]),
-                h('div', null, [h('span')]),
-                '<div><span></span></div>'
-            );
-            // patch non-keyed children
-            patchTest(
-                createElementVNode(
-                    Types.CommonElement,
-                    'div',
-                    [
-                        createElementVNode(Types.CommonElement, 'a'),
-                        createElementVNode(Types.CommonElement, 'b'),
-                    ],
-                    ChildrenTypes.HasNonKeyedChildren,
-                ),
-                createElementVNode(
-                    Types.CommonElement,
-                    'div',
-                    [
-                        createElementVNode(Types.CommonElement, 'span'),
-                    ],
-                    ChildrenTypes.HasNonKeyedChildren,
-                ),
-                '<div><span></span></div>'
-            );
+        });
+
+        describe('Non-Keyed', () => {
+            const map: Record<string, VNode> = {};
+            ['a', 'b', 'c', 'd'].forEach(key => map[key] = h('i', null, key));
+
+            it('should remove surplus nodes', () => {
+                patchTest(
+                    createElementVNode(Types.CommonElement, 'div', [map.a, map.b], ChildrenTypes.HasNonKeyedChildren),
+                    createElementVNode(Types.CommonElement, 'div', [map.a], ChildrenTypes.HasNonKeyedChildren),
+                    '<div><i>a</i></div>'
+                );
+            });
+
+            it('should mount new nodes', () => {
+                patchTest(
+                    createElementVNode(Types.CommonElement, 'div', [map.a], ChildrenTypes.HasNonKeyedChildren),
+                    createElementVNode(Types.CommonElement, 'div', [map.a, map.b], ChildrenTypes.HasNonKeyedChildren),
+                    '<div><i>a</i><i>b</i></div>'
+                );
+            });
         });
 
         describe('Keyed', () => {
-            it('should sync nodes with the same key at the end', () => {
+            const map: Record<string, VNode> = {};
+            ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'].forEach(key => {
+                map[key] = h('i', {key}, key);
+            });
+
+            it('should sync nodes with the same key at the end and insert new node', () => {
                 patchTest(
-                    h('div', null, [
-                        h('i', {key: 'a'}, 'a'),
-                        h('i', {key: 'b'}, 'b'),
-                    ]),
-                    h('div', null, [
-                        h('i', {key: 'c'}, 'c'),
-                        h('i', {key: 'b'}, 'b'),
-                    ]),
+                    h('div', null, [map.a, map.b]),
+                    h('div', null, [map.c, map.b]),
                     '<div><i>c</i><i>b</i></div>'
                 );
             });
@@ -259,68 +252,38 @@ describe('Patch', () => {
             describe('Short length', () => {
                 it('should remove whole content', () => {
                     patchTest(
-                        h('div', null, [
-                            h('i', {key: 'a'}, 'a'),
-                            h('i', {key: 'b'}, 'b'),
-                        ]),
-                        h('div', null, [
-                            h('i', {key: 'c'}, 'c'),
-                            h('i', {key: 'd'}, 'd'),
-                            h('i', {key: 'e'}, 'e'),
-                            h('i', {key: 'f'}, 'f'),
-                            h('i', {key: 'g'}, 'g'),
-                        ]),
+                        h('div', null, [map.a, map.b]),
+                        h('div', null, [map.c, map.d, map.e, map.f, map.g]),
                         '<div><i>c</i><i>d</i><i>e</i><i>f</i><i>g</i></div>'
                     );
                 });
 
                 it('should move node', () => {
                     patchTest(
-                        h('div', null, [
-                            h('i', {key: 'a'}, 'a'),
-                            h('i', {key: 'b'}, 'b'),
-                        ]),
-                        h('div', null, [
-                            h('i', {key: 'b'}, 'b'),
-                            h('i', {key: 'a'}, 'a'),
-                        ]),
+                        h('div', null, [map.a, map.b]),
+                        h('div', null, [map.b, map.a]),
                         '<div><i>b</i><i>a</i></div>'
                     );
                 });
 
                 it('should not remove whole content', () => {
                     patchTest(
-                        h('div', null, [
-                            h('i', {key: 'a'}, 'a'),
-                            h('i', {key: 'b'}, 'b'),
-                            h('i', {key: 'c'}, 'c'),
-                        ]),
-                        h('div', null, [
-                            h('i', {key: 'c'}, 'c'),
-                            h('i', {key: 'b'}, 'b'),
-                        ]),
+                        h('div', null, [map.a, map.b, map.c]),
+                        h('div', null, [map.c, map.b]),
                         '<div><i>c</i><i>b</i></div>'
                     );
                 });
 
                 it('should remove node that exceeds the next length', () => {
                      patchTest(
-                        h('div', null, [
-                            h('i', {key: 'b'}, 'b'),
-                            h('i', {key: 'c'}, 'c'),
-                            h('i', {key: 'a'}, 'a'),
-                        ]),
-                        h('div', null, [
-                            h('i', {key: 'c'}, 'c'),
-                            h('i', {key: 'b'}, 'b'),
-                        ]),
+                        h('div', null, [map.b, map.c, map.a]),
+                        h('div', null, [map.c, map.b]),
                         '<div><i>c</i><i>b</i></div>'
                     );
                 });
 
                 it('should clone vNode if in use', () => {
-                    const a = h('i', {key: 'a'}, 'a');
-                    const b = h('i', {key: 'b'}, 'b');
+                    const {a, b} = map;
                     patchTest(
                         createElementVNode(Types.CommonElement, 'div', [a, b], ChildrenTypes.HasKeyedChildren),
                         createElementVNode(Types.CommonElement, 'div', [b, a], ChildrenTypes.HasKeyedChildren),
@@ -342,46 +305,61 @@ describe('Patch', () => {
                     // j > aEnd && j <= bEnd
                     patchTest(
                         createElementVNode(Types.CommonElement, 'div', [a], ChildrenTypes.HasKeyedChildren),
-                        createElementVNode(Types.CommonElement, 'div', [a, a], ChildrenTypes.HasKeyedChildren),
-                        '<div><i>a</i><i>a</i></div>'
+                        createElementVNode(Types.CommonElement, 'div', [a, b], ChildrenTypes.HasKeyedChildren),
+                        '<div><i>a</i><i>b</i></div>'
+                    );
+
+                    // patched !== bLeft
+                    patchTest(
+                        createElementVNode(Types.CommonElement, 'div', [map.d, a], ChildrenTypes.HasKeyedChildren),
+                        createElementVNode(Types.CommonElement, 'div', [a, b], ChildrenTypes.HasKeyedChildren),
+                        '<div><i>a</i><i>b</i></div>'
                     );
                 });
             });
 
             describe('Long length', () => {
-                const map: Record<string, VNode> = {};
-                ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'].forEach(key => {
-                    map[key] = h('i', {key}, key);
+                const fillVNodes = Array.apply(null, {length: 32} as any).map((v, i) => {
+                    return h('i', {key: i});
                 });
+                const fillHtml = new Array(32).fill('<i></i>').join('');
 
                 it('should remove whole content', () => {
                     patchTest(
                         h('div', null, [map.a]),
-                        h('div', null, new Array(32).fill(map.b)),
-                        `<div>${new Array(32).fill('<i>b</i>').join('')}</div>`
+                        h('div', null, fillVNodes),
+                        `<div>${fillHtml}</div>`
+                    );
+                });
+
+                it('should move node', () => {
+                    patchTest(
+                        h('div', null, [map.a, fillVNodes, map.b]),
+                        h('div', null, [map.b, fillVNodes, map.a]),
+                        `<div><i>b</i>${fillHtml}<i>a</i></div>`
+                    );
+                });
+
+                it('should not remove whole content', () => {
+                    patchTest(
+                        h('div', null, [map.a, map.b, map.c, map.d]),
+                        createElementVNode(Types.CommonElement, 'div', [map.c, map.b, ...fillVNodes], ChildrenTypes.HasKeyedChildren),
+                        `<div><i>c</i><i>b</i>${fillHtml}</div>`
+                    );
+                });
+
+                it('should remove node that exceeds the next length', () => {
+                     patchTest(
+                        h('div', null, [
+                            fillVNodes, map.b, map.c, map.a
+                        ]),
+                        h('div', null, [
+                            map.b, fillVNodes, map.c
+                        ]),
+                        `<div><i>b</i>${fillHtml}<i>c</i></div>`
                     );
                 });
             });
-
-            // it('should move old vNode and mount new vNode', () => {
-                // patchTest(
-                    // h('div', null, [
-                        // h('i', {key: 'a'}, 'a'),
-                        // h(Fragment, {key: 'b'}, [h('a'), h('b')]),
-                        // h('i', {key: 'c'}, 'c'),
-                        // h('i', {key: 'd'}, 'd'),
-                    // ]),
-                    // h('div', null, [
-                        // h('i', {key: 'd'}, 'd'),
-                        // h('i', {key: 'c'}, 'c'),
-                        // h('i', {key: 'new1'}, 'new1'),
-                        // h(Fragment, {key: 'b'}, [h('a'), h('b')]),
-                        // h('i', {key: 'a'}, 'a'),
-                        // h('i', {key: 'new2'}, 'new2'),
-                    // ]),
-                    // '<div><i>d</i><i>c</i><i>new1</i><a></a><b></b><i>a</i><i>new2</i></div>'
-                // );
-            // });
         });
     });
 

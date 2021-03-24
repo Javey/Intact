@@ -28,6 +28,7 @@ export class VNode<P = any> implements IVNode<P> {
     public className?: string | null;
     public key: Key | null;
     public ref: Ref<Component> | Ref<Element> | null;
+    public isValidated?: boolean;
     constructor(
         type: Types,
         tag: string | Component | null,
@@ -38,6 +39,9 @@ export class VNode<P = any> implements IVNode<P> {
         key?: Key | null,
         ref?: Ref<Component> | Ref<Element> | null
     ) {
+        if (process.env.NODE_ENV !== 'production') {
+            this.isValidated = false;
+        }
         this.type = type;
         this.tag = tag;
         this.childrenType = childrenType;

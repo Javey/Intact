@@ -17,6 +17,7 @@ import {directClone, createVoidVNode} from './vnode';
 import {patchProp} from './utils/props';
 import {processElement} from './wrappers/process';
 import {mountRef} from './utils/ref';
+import {validateKeys} from './utils/validate';
 
 export function patch(
     lastVNode: VNode,
@@ -152,8 +153,7 @@ export function patchElement(lastVNode: VNodeElement, nextVNode: VNodeElement, i
     }
 
     if (process.env.NODE_ENV !== 'production') {
-        // TODO
-        // valiateKeys(nextVNode);
+        validateKeys(nextVNode);
     }
 
     const nextChildren = nextVNode.children;
@@ -566,7 +566,7 @@ function patchKeyedChildrenComplex(
                         }
                     }
                     sources[j - bStart] = i + 1;
-                    if (pos > i) {
+                    if (pos > j) {
                         moved = true;
                     } else {
                         pos = j;
@@ -601,7 +601,7 @@ function patchKeyedChildrenComplex(
                 }
                 nextPos = pos + 1;
                 mount(bNode, parentDom, isSVG, nextPos < bLength ? findDomFromVNode(b[nextPos], true) : null, mountedQueue);
-            } else if (j < 0 || i !== seq[i]) {
+            } else if (j < 0 || i !== seq[j]) {
                 pos = i + bStart;
                 bNode = b[pos];
                 nextPos = pos + 1;
