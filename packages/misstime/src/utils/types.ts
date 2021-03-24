@@ -102,7 +102,7 @@ export interface ComponentClass<P = any> {
     props: Props<P>;
 
     $SVG: boolean;
-    $vNode: VNodeComponent<P> | null;
+    // $vNode: VNodeComponent<P> | null;
     $mountedQueue: Function[] | null;
 
     $render(lastVNode: VNodeComponent | null, vNode: VNodeComponent<P> | null, parentDom: Element, anchor: IntactDom | null): void;

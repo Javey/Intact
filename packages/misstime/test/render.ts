@@ -1,6 +1,5 @@
 import {render} from '../src/core/render';
 import {createVNode as h} from '../src/core/vnode';
-import {Component} from './utils';
 
 describe('Render', () => {
     let container: Element;
@@ -9,16 +8,16 @@ describe('Render', () => {
         container = document.createElement('div');
     });
 
-    it('should call mounted method when mounted', () => {
-        const mounted = jasmine.createSpy();
-        class TestComponent extends Component {
-            mounted() {
-                mounted();
-            }
-        }
-        render(h(TestComponent), container);
-        expect(mounted).toHaveBeenCalledTimes(1);
-    });
+    // it('should call mounted method when mounted', () => {
+        // const mounted = jasmine.createSpy();
+        // class TestComponent extends Component {
+            // mounted() {
+                // mounted();
+            // }
+        // }
+        // render(h(TestComponent), container);
+        // expect(mounted).toHaveBeenCalledTimes(1);
+    // });
 
     it('should remove vNode if render null to container', () => {
         const vNode = h('div');

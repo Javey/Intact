@@ -104,7 +104,7 @@ export function mountComponentClass(
     const instance = new vNode.tag(vNode.props);
 
     instance.$SVG = isSVG;
-    instance.$vNode = vNode;
+    // instance.$vNode = vNode;
     instance.$mountedQueue = mountedQueue;
    
     vNode.children = instance;

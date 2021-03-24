@@ -417,3 +417,17 @@ function _normalizeVNodes(vNodes: any[], result: VNode[], index: number, referen
         reference.index++;
     }
 }
+
+export function normalizeRoot(vNode: Children): VNode {
+    if (isInvalid(vNode)) {
+        return createVoidVNode();
+    } 
+    if (isStringOrNumber(vNode)) {
+        return createTextVNode(vNode, null);
+    }
+    if (isArray(vNode)) {
+        return createFragment(vNode, ChildrenTypes.UnknownChildren, null);
+    }
+
+    return (vNode as VNode).type & Types.InUse ? directClone(vNode) : vNode;
+}
