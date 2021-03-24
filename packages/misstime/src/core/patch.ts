@@ -16,7 +16,7 @@ import {isNullOrUndefined} from '../utils/helpers';
 import {directClone, createVoidVNode} from './vnode';
 import {patchProp} from '../utils/props';
 import {processElement} from '../wrappers/process';
-import {mountRef} from '../utils/ref';
+import {mountRef, unmountRef} from '../utils/ref';
 import {validateKeys} from '../utils/validate';
 
 export function patch(
@@ -104,7 +104,7 @@ function patchComponentClass(
         const lastRef = lastVNode.ref;
         const nextRef = nextVNode.ref;
         if (lastRef !== nextRef) {
-            mountRef(lastRef, null);
+            unmountRef(lastRef);
             mountRef(nextRef, instance);
         }
     }
@@ -178,7 +178,7 @@ export function patchElement(lastVNode: VNodeElement, nextVNode: VNodeElement, i
     const lastRef = lastVNode.ref;
     const nextRef = nextVNode.ref;
     if (lastRef !== nextRef) {
-        mountRef(lastRef, null);
+        unmountRef(lastRef);
         mountRef(nextRef, dom);
     }
 }

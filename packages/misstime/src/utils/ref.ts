@@ -22,6 +22,6 @@ export function mountRef(ref?: Ref<Component> | Ref<Element> | null, value?: any
     }
 }
 
-export function unmountRef(ref?: Ref | null) {
+export function unmountRef(ref?: Ref<Component> | Ref<Element> | null) {
     mountRef(ref, null);
 }

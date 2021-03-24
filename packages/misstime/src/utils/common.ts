@@ -1,5 +1,5 @@
 import {isNull} from './helpers';
-import {Reference, IntactDom, VNode, Types, ChildrenTypes, ComponentConstructor} from './types';
+import {Reference, IntactDom, VNode, Types, ChildrenTypes, ComponentConstructor, ComponentClass} from './types';
 
 export function replaceChild(parentDom: Element, newDom: Element, lastDom: Element) {
     parentDom.replaceChild(newDom, lastDom);
@@ -79,8 +79,7 @@ function findChildVNode(vNode: VNode, startEdge: boolean, type: Types) {
     const children = vNode.children;
 
     if (type & Types.ComponentClass) {
-        // TODO
-        // return 
+        return (children as ComponentClass).$lastInput!;
     }
 
     if (type & Types.Fragment) {
@@ -104,6 +103,10 @@ export function moveVNodeDom(vNode: VNode, parentDom: Element, anchor: IntactDom
         const children = vNode.children;
 
         if (type & Types.ComponentClass) {
+            vNode = (children as ComponentClass).$lastInput!;
+        }
+
+        if (type & Types.ComponentFunction) {
             // TODO
         }
 

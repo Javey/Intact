@@ -1,5 +1,5 @@
-import {VNode, Types, ChildrenTypes, RefObject} from '../utils/types';
-import {mountRef} from '../utils/ref';
+import {VNode, Types, ChildrenTypes, RefObject, ComponentClass, VNodeComponent} from '../utils/types';
+import {unmountRef} from '../utils/ref';
 import {isNullOrUndefined} from '../utils/helpers';
 import {removeChild, removeVNodeDom} from '../utils/common';
 import {delegatedEvents, unmountDelegatedEvent} from '../events/delegation';
@@ -17,7 +17,7 @@ export function unmount(vNode: VNode) {
         const ref = vNode.ref as RefObject<Element>;
         const props = vNode.props;
 
-        mountRef(ref, null);
+        unmountRef(ref);
 
         const childrenType = vNode.childrenType;
 
@@ -37,7 +37,7 @@ export function unmount(vNode: VNode) {
     } else if (children) {
         // TODO: remove component
         if (type & Types.ComponentClass) {
-            
+            (children as ComponentClass).$destroy(vNode as VNodeComponent, null, parentDom);
         }
     }
 }

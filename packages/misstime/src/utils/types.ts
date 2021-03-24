@@ -99,10 +99,11 @@ export interface ComponentConstructor<P = any> {
 }
 
 export interface ComponentClass<P = any> {
-    props: Props<P>;
+    props: Props<P, ComponentClass>;
 
     $SVG: boolean;
     // $vNode: VNodeComponent<P> | null;
+    $lastInput: VNode | null;
     $mountedQueue: Function[] | null;
 
     $render(lastVNode: VNodeComponent | null, vNode: VNodeComponent<P> | null, parentDom: Element, anchor: IntactDom | null): void;
