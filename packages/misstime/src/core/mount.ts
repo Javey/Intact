@@ -9,13 +9,13 @@ import {
     Props,
     ComponentConstructor,
     IntactDom,
-} from './utils/types';
-import {isNullOrUndefined, throwError, isFunction} from './utils/helpers';
+} from '../utils/types';
+import {isNullOrUndefined, throwError, isFunction} from '../utils/helpers';
 import {directClone} from './vnode';
-import {mountProps} from './utils/props';
-import {mountRef} from './utils/ref';
-import {setTextContent, EMPTY_OBJ, insertOrAppend} from './utils/common';
-import {validateKeys} from './utils/validate';
+import {mountProps} from '../utils/props';
+import {mountRef} from '../utils/ref';
+import {setTextContent, EMPTY_OBJ, insertOrAppend} from '../utils/common';
+import {validateKeys} from '../utils/validate';
 
 export function mount(vNode: VNode, parentDom: Element | null, isSVG: boolean, anchor: IntactDom | null, mountedQueue: Function[]): void {
     const type = (vNode.type |= Types.InUse);

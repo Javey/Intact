@@ -1,4 +1,4 @@
-import {VNode, Types, ChildrenTypes, NormalizedChildren, Reference, VNodeElement, VNodeComponent, IntactDom} from './utils/types';
+import {VNode, Types, ChildrenTypes, NormalizedChildren, Reference, VNodeElement, VNodeComponent, IntactDom} from '../utils/types';
 import {mount, mountArrayChildren, mountComponentClass} from './mount';
 import {remove, unmount, clearDom, removeAllChildren} from './unmount';
 import {
@@ -11,13 +11,13 @@ import {
     findDomFromVNode,
     removeVNodeDom,
     moveVNodeDom,
-} from './utils/common';
-import {isNullOrUndefined} from './utils/helpers';
+} from '../utils/common';
+import {isNullOrUndefined} from '../utils/helpers';
 import {directClone, createVoidVNode} from './vnode';
-import {patchProp} from './utils/props';
-import {processElement} from './wrappers/process';
-import {mountRef} from './utils/ref';
-import {validateKeys} from './utils/validate';
+import {patchProp} from '../utils/props';
+import {processElement} from '../wrappers/process';
+import {mountRef} from '../utils/ref';
+import {validateKeys} from '../utils/validate';
 
 export function patch(
     lastVNode: VNode,

@@ -1,8 +1,8 @@
-import {createElementVNode, createVNode as h} from '../src/vnode';
+import {createElementVNode, createVNode as h} from '../src/core/vnode';
 import {Types, ChildrenTypes, VNode} from '../src/utils/types';
 import {dispatchEvent} from './utils';
 import {linkEvent} from '../src/events/linkEvent';
-import {render as r} from '../src/render';
+import {render as r} from '../src/core/render';
 
 describe('Props', () => {
     let container: HTMLElement;

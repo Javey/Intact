@@ -1,8 +1,8 @@
-import {VNode, Types, ChildrenTypes, RefObject} from './utils/types';
-import {mountRef} from './utils/ref';
-import {isNullOrUndefined} from './utils/helpers';
-import {removeChild, removeVNodeDom} from './utils/common';
-import {delegatedEvents, unmountDelegatedEvent} from './events/delegation';
+import {VNode, Types, ChildrenTypes, RefObject} from '../utils/types';
+import {mountRef} from '../utils/ref';
+import {isNullOrUndefined} from '../utils/helpers';
+import {removeChild, removeVNodeDom} from '../utils/common';
+import {delegatedEvents, unmountDelegatedEvent} from '../events/delegation';
 
 export function remove(vNode: VNode, parentDom: Element) {
     unmount(vNode);

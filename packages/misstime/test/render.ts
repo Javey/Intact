@@ -1,5 +1,5 @@
-import {render} from '../src/render';
-import {createVNode as h} from '../src/vnode';
+import {render} from '../src/core/render';
+import {createVNode as h} from '../src/core/vnode';
 import {Component} from './utils';
 
 describe('Render', () => {

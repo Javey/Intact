@@ -100,7 +100,6 @@ export interface ComponentConstructor<P = any> {
 
 export interface ComponentClass<P = any> {
     props: Props<P>;
-    // displayName?: string;
 
     $SVG: boolean;
     $vNode: VNodeComponent<P> | null;

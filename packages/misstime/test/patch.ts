@@ -1,10 +1,10 @@
 import {VNode, Types, ChildrenTypes, VNodeElement} from '../src/utils/types';
-import {createVNode as h, createElementVNode} from '../src/vnode';
-import {patch} from '../src/patch';
-import {mount} from '../src/mount';
+import {createVNode as h, createElementVNode} from '../src/core/vnode';
+import {patch} from '../src/core/patch';
+import {mount} from '../src/core/mount';
 import {linkEvent} from '../src/events/linkEvent';
 import {dispatchEvent, Component} from './utils';
-import {unmount} from '../src/unmount';
+import {unmount} from '../src/core/unmount';
 import {Fragment} from '../src/utils/common';
 
 describe('Patch', () => {

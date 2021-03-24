@@ -1,4 +1,4 @@
-import {createElementVNode} from '../src/vnode';
+import {createElementVNode} from '../src/core/vnode';
 import {Types, ChildrenTypes, VNode}  from '../src/utils/types';
 
 describe('VNode', () => {

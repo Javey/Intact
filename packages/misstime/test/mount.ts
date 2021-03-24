@@ -5,12 +5,12 @@ import {
     createCommentVNode,
     createFragment,
     createVNode as h,
-} from '../src/vnode';
+} from '../src/core/vnode';
 import {Types, ChildrenTypes, ComponentClass, Props, VNodeComponent, VNode} from '../src/utils/types';
-import {mount} from '../src/mount';
+import {mount} from '../src/core/mount';
 import {createRef} from '../src/utils/ref';
 import {Component} from './utils';
-import {render} from '../src/render';
+import {render} from '../src/core/render';
 
 describe('Mount', () => {
     let container: Element;

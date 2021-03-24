@@ -6,7 +6,7 @@ import {
     ChildrenTypes,
     ComponentClass,
     IntactDom,
-} from './utils/types';
+} from '../utils/types';
 import {
     isNullOrUndefined,
     isArray,
@@ -14,9 +14,9 @@ import {
     isInvalid,
     isStringOrNumber,
     isString,
-} from './utils/helpers';
-import {throwIfObjectIsNotVNode, validateVNodeElementChildren} from './utils/validate';
-import {Fragment} from './utils/common';
+} from '../utils/helpers';
+import {throwIfObjectIsNotVNode, validateVNodeElementChildren} from '../utils/validate';
+import {Fragment} from '../utils/common';
 
 export class VNode<P = any> implements IVNode<P> {
     public dom: IntactDom | null = null;
