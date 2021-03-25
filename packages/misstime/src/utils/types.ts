@@ -107,14 +107,14 @@ export type Props<P extends {}, T = Element> = {
     className?: string
 } & P;
 
-export interface ComponentConstructor<P = any, T extends ComponentClass<P> = ComponentClass<P>> {
-    new (props: P): T
+export interface ComponentConstructor<T extends ComponentClass = ComponentClass> {
+    new (props: any): T
     displayName?: string
 }
 
-export type VClass<P = any> = VNodeComponentClass<ComponentConstructor<P>>
+export type VClass<T extends ComponentClass = ComponentClass> = ComponentConstructor<T>
 
-export declare class ComponentClass<P = any> {
+export interface ComponentClass<P = any> {
     // static displayName?: string
 
     props: Props<P, ComponentClass>;
@@ -124,22 +124,22 @@ export declare class ComponentClass<P = any> {
     $lastInput: VNode | null;
     $mountedQueue: Function[] | null;
 
-    constructor(props: P)
+    // constructor(props: P)
 
-    $render(lastVNode: VClass | null, vNode: VClass<P>, parentDom: Element, anchor: IntactDom | null): void;
-    $mount(lastVNode: VClass | null, vNode: VClass<P>): void;
-    $update(lastVNode: VClass , vNode: VClass<P>, parentDom: Element, anchor: IntactDom | null): void;
-    $unmount(vNode: VClass<P> | null, nextVNode: VClass | null): void;
+    $render(lastVNode: VClass | null, vNode: VClass, parentDom: Element, anchor: IntactDom | null): void;
+    $mount(lastVNode: VClass | null, vNode: VClass<this>): void;
+    $update(lastVNode: VClass , vNode: VClass<this>, parentDom: Element, anchor: IntactDom | null): void;
+    $unmount(vNode: VClass<this> | null, nextVNode: VClass | null): void;
 
     init?(props: P): any;
-    beforeCreate?(lastVNode: VClass | null, nextVNode: VClass<P> | null): void;
-    created?(lastVNode: VClass | null, nextVNode: VClass<P> | null): void;
-    beforeMount?(lastVNode: VClass | null, nextVNode: VClass<P> | null): void;
-    mounted?(lastVNode: VClass | null, nextVNode: VClass<P> | null): void;
-    beforeUpdate?(lastVNode: VClass | null, nextVNode: VClass<P> | null): void;
-    updated?(lastVNode: VClass | null, nextVNode: VClass<P> | null): void;
-    beforeUnmount?(vNode: VClass<P> | null, nextVNode: VClass | null): void;
-    unmounted?(vNode: VClass<P> | null, nextVNode: VClass | null): void;
+    beforeCreate?(lastVNode: VClass | null, nextVNode: VClass<this> | null): void;
+    created?(lastVNode: VClass | null, nextVNode: VClass<this> | null): void;
+    beforeMount?(lastVNode: VClass | null, nextVNode: VClass<this> | null): void;
+    mounted?(lastVNode: VClass | null, nextVNode: VClass<this> | null): void;
+    beforeUpdate?(lastVNode: VClass | null, nextVNode: VClass<this> | null): void;
+    updated?(lastVNode: VClass | null, nextVNode: VClass<this> | null): void;
+    beforeUnmount?(vNode: VClass<this> | null, nextVNode: VClass | null): void;
+    unmounted?(vNode: VClass<this> | null, nextVNode: VClass | null): void;
 }
 
 export interface ComponentFunction<P = any> {
