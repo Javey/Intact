@@ -33,7 +33,7 @@ export abstract class Component<P = any> implements ComponentClass<P> {
     public $inited: boolean = false;
     public $rendered: boolean = false;
     public $mounted: boolean = false; 
-    public $destroyed: boolean = false;
+    public $unmouted: boolean = false;
 
     // private properties
     private $template: Template<Component>;
@@ -46,6 +46,11 @@ export abstract class Component<P = any> implements ComponentClass<P> {
     $render(lastVNode: VNodeComponent, nextVNode: VNodeComponent<P>, parentDom: Element, anchor: IntactDom | null) {
         const vNode = this.$lastInput = normalizeRoot(this.$template());
         mount(vNode, parentDom, this.$SVG, anchor, this.$mountedQueue!);
+        this.$rendered = true;
+    }
+
+    $mount(lastVNode: VNodeComponent, nextVNode: VNodeComponent<P>) {
+        this.$mounted = true;
     }
 
     $update(lastVNode: VNodeComponent, nextVNode: VNodeComponent<P>, parentDom: Element, anchor: IntactDom | null) {
@@ -55,12 +60,8 @@ export abstract class Component<P = any> implements ComponentClass<P> {
         this.$lastInput = vNode;
     }
 
-    $destroy(vNode: VNodeComponent<P>, nextVNode: VNodeComponent | null, parentDom: Element) {
+    $unmount(vNode: VNodeComponent<P>, nextVNode: VNodeComponent | null) {
         unmount(this.$lastInput!); 
-        // removeVNodeDom(this.$vNode!, parentDom);
+        this.$unmouted = true;
     }
-
-    // template(): Children {
-        // return null;
-    // }
 }

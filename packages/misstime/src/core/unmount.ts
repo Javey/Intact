@@ -14,10 +14,10 @@ export function unmount(vNode: VNode) {
     const children = vNode.children;
 
     if (type & Types.Element) {
-        const ref = vNode.ref as RefObject<Element>;
+        // const ref = vNode.ref as RefObject<Element>;
         const props = vNode.props;
 
-        unmountRef(ref);
+        unmountRef(vNode.ref);
 
         const childrenType = vNode.childrenType;
 
@@ -35,10 +35,11 @@ export function unmount(vNode: VNode) {
             unmount(children as VNode);
         }
     } else if (children) {
-        // TODO: remove component
         if (type & Types.ComponentClass) {
-            (children as ComponentClass).$destroy(vNode as VNodeComponent, null, parentDom);
+            (children as ComponentClass).$unmount(vNode as VNodeComponent, null);
+            unmountRef(vNode.ref);
         }
+        // TODO: remove component function
     }
 }
 

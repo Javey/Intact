@@ -113,9 +113,10 @@ export function mountComponentClass(
 
     mountRef(vNode.ref, instance);
 
-    if (isFunction(instance.mounted)) {
-        mountedQueue.push(() => instance.mounted!(lastVNode, vNode));
-    }
+    // if (isFunction(instance.mounted)) {
+        // mountedQueue.push(() => instance.mounted!(lastVNode, vNode));
+    // }
+    mountedQueue.push(() => instance.$mount(lastVNode, vNode));
 }
 
 export function mountText(vNode: VNodeTextElement, parentDom: Element | null, anchor: IntactDom | null) {

@@ -42,10 +42,13 @@ export function removeVNodeDom(vNode: VNode, parentDom: Element) {
             return;
         }
 
-        if (type & Types.ComponentClass) return;
+        const children = vNode.children;
+
+        if (type & Types.ComponentClass) {
+            vNode = (children as ComponentClass).$lastInput!;
+        }
         // TODO: ComponentFunction
 
-        const children = vNode.children;
         if (type & Types.Fragment) {
             if (vNode.childrenType === ChildrenTypes.HasVNodeChildren) {
                 vNode = children as VNode;

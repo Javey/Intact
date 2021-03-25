@@ -106,9 +106,10 @@ export interface ComponentClass<P = any> {
     $lastInput: VNode | null;
     $mountedQueue: Function[] | null;
 
-    $render(lastVNode: VNodeComponent | null, vNode: VNodeComponent<P> | null, parentDom: Element, anchor: IntactDom | null): void;
-    $update(lastVNode: VNodeComponent | null, vNode: VNodeComponent<P> | null, parentDom: Element, anchor: IntactDom | null): void;
-    $destroy(vNode: VNodeComponent<P> | null, nextVNode: VNodeComponent | null, parentDom: Element): void;
+    $render(lastVNode: VNodeComponent | null, vNode: VNodeComponent<P>, parentDom: Element, anchor: IntactDom | null): void;
+    $mount(lastVNode: VNodeComponent | null, vNode: VNodeComponent<P>): void;
+    $update(lastVNode: VNodeComponent, vNode: VNodeComponent<P>, parentDom: Element, anchor: IntactDom | null): void;
+    $unmount(vNode: VNodeComponent<P> | null, nextVNode: VNodeComponent | null): void;
 
     init?(props: P): any;
     beforeCreate?(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P> | null): void;
@@ -117,8 +118,8 @@ export interface ComponentClass<P = any> {
     mounted?(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P> | null): void;
     beforeUpdate?(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P> | null): void;
     updated?(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P> | null): void;
-    beforeDestroy?(vNode: VNodeComponent<P> | null, nextVNode: VNodeComponent | null): void;
-    destroyed?(vNode: VNodeComponent<P> | null, nextVNode: VNodeComponent | null): void;
+    beforeUnmount?(vNode: VNodeComponent<P> | null, nextVNode: VNodeComponent | null): void;
+    unmounted?(vNode: VNodeComponent<P> | null, nextVNode: VNodeComponent | null): void;
 }
 
 export interface ComponentFunction<P = any> {
