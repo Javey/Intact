@@ -23,11 +23,16 @@ export interface VNodeTextElement<P = null> extends VNode<P> {
     children: string | number,
     dom: Text | Comment | null,
 }
-export interface VNodeComponent<P = any> extends VNode<P> {
+export interface VNodeComponentClass<P = any> extends VNode<P> {
     children?: ComponentClass<P>,
     tag: ComponentConstructor<P>,
     props?: Props<P, Component> | null,
     ref: Ref<Component>,
+}
+
+export interface VNodeComponentFunction<P = any> extends VNode<P> {
+    tag: ComponentFunction<P>
+    children?: VNode 
 }
 
 export type IntactDom = Element | Text | Comment
@@ -103,24 +108,24 @@ export interface ComponentClass<P = any> {
     props: Props<P, ComponentClass>;
 
     $SVG: boolean;
-    // $vNode: VNodeComponent<P> | null;
+    // $vNode: VNodeComponentClass<P> | null;
     $lastInput: VNode | null;
     $mountedQueue: Function[] | null;
 
-    $render(lastVNode: VNodeComponent | null, vNode: VNodeComponent<P>, parentDom: Element, anchor: IntactDom | null): void;
-    $mount(lastVNode: VNodeComponent | null, vNode: VNodeComponent<P>): void;
-    $update(lastVNode: VNodeComponent, vNode: VNodeComponent<P>, parentDom: Element, anchor: IntactDom | null): void;
-    $unmount(vNode: VNodeComponent<P> | null, nextVNode: VNodeComponent | null): void;
+    $render(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass<P>, parentDom: Element, anchor: IntactDom | null): void;
+    $mount(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass<P>): void;
+    $update(lastVNode: VNodeComponentClass, vNode: VNodeComponentClass<P>, parentDom: Element, anchor: IntactDom | null): void;
+    $unmount(vNode: VNodeComponentClass<P> | null, nextVNode: VNodeComponentClass | null): void;
 
     init?(props: P): any;
-    beforeCreate?(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P> | null): void;
-    created?(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P> | null): void;
-    beforeMount?(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P> | null): void;
-    mounted?(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P> | null): void;
-    beforeUpdate?(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P> | null): void;
-    updated?(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P> | null): void;
-    beforeUnmount?(vNode: VNodeComponent<P> | null, nextVNode: VNodeComponent | null): void;
-    unmounted?(vNode: VNodeComponent<P> | null, nextVNode: VNodeComponent | null): void;
+    beforeCreate?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass<P> | null): void;
+    created?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass<P> | null): void;
+    beforeMount?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass<P> | null): void;
+    mounted?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass<P> | null): void;
+    beforeUpdate?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass<P> | null): void;
+    updated?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass<P> | null): void;
+    beforeUnmount?(vNode: VNodeComponentClass<P> | null, nextVNode: VNodeComponentClass | null): void;
+    unmounted?(vNode: VNodeComponentClass<P> | null, nextVNode: VNodeComponentClass | null): void;
 }
 
 export interface ComponentFunction<P = any> {

@@ -2,7 +2,7 @@ import {
     ComponentConstructor,
     ComponentClass, 
     Props,
-    VNodeComponent,
+    VNodeComponentClass,
     IntactDom,
     VNode,
     Children,
@@ -43,7 +43,7 @@ export abstract class Component<P = any> implements ComponentClass<P> {
         this.$template = (this.constructor as typeof Component).template as Template<Component>;
     }
 
-    $render(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P>, parentDom: Element, anchor: IntactDom | null) {
+    $render(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass<P>, parentDom: Element, anchor: IntactDom | null) {
         const vNode = this.$lastInput = normalizeRoot(this.$template());
 
         // reuse the dom even if they are different
@@ -57,18 +57,18 @@ export abstract class Component<P = any> implements ComponentClass<P> {
         this.$rendered = true;
     }
 
-    $mount(lastVNode: VNodeComponent, nextVNode: VNodeComponent<P>) {
+    $mount(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass<P>) {
         this.$mounted = true;
     }
 
-    $update(lastVNode: VNodeComponent, nextVNode: VNodeComponent<P>, parentDom: Element, anchor: IntactDom | null) {
+    $update(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass<P>, parentDom: Element, anchor: IntactDom | null) {
         this.props = (nextVNode.props || EMPTY_OBJ) as Props<P, ComponentClass>;
         const vNode = normalizeRoot(this.$template());
         patch(this.$lastInput!, vNode, parentDom, this.$SVG, anchor, this.$mountedQueue!);
         this.$lastInput = vNode;
     }
 
-    $unmount(vNode: VNodeComponent<P>, nextVNode: VNodeComponent | null) {
+    $unmount(vNode: VNodeComponentClass<P>, nextVNode: VNodeComponentClass | null) {
         unmount(this.$lastInput!); 
         this.$unmouted = true;
     }

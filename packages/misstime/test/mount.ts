@@ -6,7 +6,7 @@ import {
     createFragment,
     createVNode as h,
 } from '../src/core/vnode';
-import {Types, ChildrenTypes, ComponentClass, Props, VNodeComponent, VNode} from '../src/utils/types';
+import {Types, ChildrenTypes, ComponentClass, Props, VNodeComponentClass, VNode} from '../src/utils/types';
 import {mount} from '../src/core/mount';
 import {createRef} from '../src/utils/ref';
 import {render} from '../src/core/render';

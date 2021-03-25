@@ -1,6 +1,7 @@
-import {Props, ComponentClass, VNodeComponent} from '../src/utils/types';
+import {Props, ComponentClass, VNodeComponentClass, VNode} from '../src/utils/types';
 import {Component} from '../src/core/component';
 import {createVNode as h} from '../src/core/vnode';
+import {render} from '../src/core/render';
 
 export function dispatchEvent(target: Element, eventName: string, options?: Object) {
     let event;
@@ -19,9 +20,11 @@ export function dispatchEvent(target: Element, eventName: string, options?: Obje
     }
 }
 
-// export class MyComponent<P = {}> extends Component<P> {
-    // static template = () => {
-        // return h('div', null, 'test')
-    // }
-// }
-
+export function patchTest(container: Element, vNode1: VNode, vNode2: VNode, html?: string) {
+    render(vNode1, container);
+    render(vNode2, container);
+    if (html !== undefined) {
+        expect(container.innerHTML).toBe(html);
+    }
+    return vNode2;
+}

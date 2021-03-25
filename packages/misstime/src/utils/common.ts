@@ -46,10 +46,9 @@ export function removeVNodeDom(vNode: VNode, parentDom: Element) {
 
         if (type & Types.ComponentClass) {
             vNode = (children as ComponentClass).$lastInput!;
-        }
-        // TODO: ComponentFunction
-
-        if (type & Types.Fragment) {
+        } else if (type & Types.ComponentFunction) {
+            vNode = children as VNode;
+        } else if (type & Types.Fragment) {
             if (vNode.childrenType === ChildrenTypes.HasVNodeChildren) {
                 vNode = children as VNode;
             } else {
@@ -107,13 +106,9 @@ export function moveVNodeDom(vNode: VNode, parentDom: Element, anchor: IntactDom
 
         if (type & Types.ComponentClass) {
             vNode = (children as ComponentClass).$lastInput!;
-        }
-
-        if (type & Types.ComponentFunction) {
-            // TODO
-        }
-
-        if (type & Types.Fragment) {
+        } else if (type & Types.ComponentFunction) {
+            vNode = children as VNode;
+        } else if (type & Types.Fragment) {
             if (vNode.childrenType === ChildrenTypes.HasVNodeChildren) {
                 vNode = children as VNode;
             } else {

@@ -1,6 +1,7 @@
 import {
     VNodeElement,
-    VNodeComponent,
+    VNodeComponentClass,
+    VNodeComponentFunction,
     VNodeTextElement,
     VNode as IVNode, Component, Props, Ref, Key, Children, Types, NormalizedChildren,
     ChildrenTypes,
@@ -62,12 +63,12 @@ export function createVNode<P extends Record<string, any>>(
     tag: Component,
     props?: Props<P, Component> | null,
     children?: Children | null
-): VNodeElement<P>
+): VNodeComponentClass<P> | VNodeComponentFunction<P>
 export function createVNode<P extends Record<string, any>>(
     tag: string | Component,
     props?: Props<P, Component | Element> | null,
     children?: Children | null,
-): VNodeElement<P> | VNodeComponent<P> {
+): VNodeElement<P> | VNodeComponentClass<P> | VNodeComponentFunction<P> {
     let type: Types;
     let isElement: boolean = false;
     switch (typeof tag) {
@@ -95,7 +96,7 @@ export function createVNode<P extends Record<string, any>>(
             }
             break;
         case 'function':
-            if (tag.prototype && (tag.prototype as ComponentClass<P>).$render) {
+            if (tag.prototype && (tag.prototype as ComponentClass).$render) {
                 type = Types.ComponentClass;
             } else {
                 type = Types.ComponentFunction;
@@ -211,7 +212,7 @@ export function createComponentVNode<P>(
     props?: Props<P, Component> | null,
     key?: Key | null,
     ref?: Ref<Component> | null,
-): VNodeComponent<P> {
+): VNodeComponentClass<P> | VNodeComponentFunction<P> {
     if (process.env.NODE_ENV !== 'production') {
         if (type & Types.Element) {
             throwError('Creating element vNodes using createComponentVNode is not allowed. Use createElementVNode method.');
@@ -227,7 +228,7 @@ export function createComponentVNode<P>(
         props,
         key,
         ref
-    ) as VNodeComponent<P>;
+    ) as VNodeComponentClass<P>;
 }
 
 export function createFragment(children: Children, childrenType: ChildrenTypes, key?: Key | null): VNodeElement {

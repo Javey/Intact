@@ -1,4 +1,4 @@
-import {VNode, Types, ChildrenTypes, RefObject, ComponentClass, VNodeComponent} from '../utils/types';
+import {VNode, Types, ChildrenTypes, RefObject, ComponentClass, VNodeComponentClass} from '../utils/types';
 import {unmountRef} from '../utils/ref';
 import {isNullOrUndefined} from '../utils/helpers';
 import {removeChild, removeVNodeDom} from '../utils/common';
@@ -14,7 +14,6 @@ export function unmount(vNode: VNode) {
     const children = vNode.children;
 
     if (type & Types.Element) {
-        // const ref = vNode.ref as RefObject<Element>;
         const props = vNode.props;
 
         unmountRef(vNode.ref);
@@ -36,10 +35,15 @@ export function unmount(vNode: VNode) {
         }
     } else if (children) {
         if (type & Types.ComponentClass) {
-            (children as ComponentClass).$unmount(vNode as VNodeComponent, null);
+            (children as ComponentClass).$unmount(vNode as VNodeComponentClass, null);
             unmountRef(vNode.ref);
+        } else if (type & Types.ComponentFunction) {
+            unmount(children as VNode);
+        } else if (type & Types.Fragment) {
+            if (vNode.childrenType & ChildrenTypes.MultipleChildren) {
+                unmountAllChildren(children as VNode[]);
+            }
         }
-        // TODO: remove component function
     }
 }
 

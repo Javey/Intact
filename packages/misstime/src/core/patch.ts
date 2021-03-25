@@ -5,7 +5,8 @@ import {
     NormalizedChildren,
     Reference,
     VNodeElement,
-    VNodeComponent,
+    VNodeComponentClass,
+    VNodeComponentFunction,
     VNodeTextElement,
     IntactDom,
 } from '../utils/types';
@@ -23,7 +24,7 @@ import {
     moveVNodeDom,
 } from '../utils/common';
 import {isNullOrUndefined} from '../utils/helpers';
-import {directClone, createVoidVNode} from './vnode';
+import {directClone, createVoidVNode, normalizeRoot} from './vnode';
 import {patchProp} from '../utils/props';
 import {processElement} from '../wrappers/process';
 import {mountRef, unmountRef} from '../utils/ref';
@@ -43,11 +44,13 @@ export function patch(
         replaceWithNewNode(lastVNode, nextVNode, parentDom, isSVG, anchor, mountedQueue);
     } else if (nextType & Types.ComponentClass) {
         // if patch two class components, reuse its dom otherwise replace the dom totally.
-        patchComponentClass(lastVNode as VNodeComponent, nextVNode as VNodeComponent, parentDom, isSVG, anchor, mountedQueue);
+        patchComponentClass(lastVNode as VNodeComponentClass, nextVNode as VNodeComponentClass, parentDom, isSVG, anchor, mountedQueue);
     } else if (lastVNode.tag !== nextVNode.tag) {
         replaceWithNewNode(lastVNode, nextVNode, parentDom, isSVG, anchor, mountedQueue);
     } else if (nextType & Types.Element) {
         patchElement(lastVNode as VNodeElement, nextVNode as VNodeElement, isSVG, nextType, mountedQueue);
+    } else if (nextType & Types.ComponentFunction) {
+        patchComponentFunction(lastVNode as VNodeComponentFunction, nextVNode as VNodeComponentFunction, parentDom, isSVG, anchor, mountedQueue);
     } else if (nextType & Types.Text || nextType & Types.HtmlComment) {
         patchText(lastVNode as VNodeTextElement, nextVNode as VNodeTextElement); 
     } else if (nextType & Types.Fragment) {
@@ -91,8 +94,8 @@ function replaceWithNewNode(
 }
 
 function patchComponentClass(
-    lastVNode: VNodeComponent,
-    nextVNode: VNodeComponent, 
+    lastVNode: VNodeComponentClass,
+    nextVNode: VNodeComponentClass, 
     parentDom: Element,
     isSVG: boolean,
     anchor: IntactDom | null,
@@ -121,6 +124,20 @@ function patchComponentClass(
             mountRef(nextRef, instance);
         }
     }
+}
+
+function patchComponentFunction(
+    lastVNode: VNodeComponentFunction,
+    nextVNode: VNodeComponentFunction,
+    parentDom: Element,
+    isSVG: boolean,
+    anchor: IntactDom | null,
+    mountedQueue: Function[]
+) {
+    const nextChildren = normalizeRoot(nextVNode.tag(nextVNode.props || EMPTY_OBJ));
+
+    patch(lastVNode.children!, nextChildren, parentDom, isSVG, anchor, mountedQueue);
+    nextVNode.children = nextChildren;
 }
 
 export function patchElement(lastVNode: VNodeElement, nextVNode: VNodeElement, isSVG: boolean, nextType: Types, mountedQueue: Function[]) {

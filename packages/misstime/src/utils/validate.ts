@@ -1,5 +1,5 @@
 import {isNumber, isStringOrNumber, throwError, isArray, isInvalid, isNullOrUndefined} from './helpers';
-import {VNodeElement, VNode, VNodeComponent, Children, Types, ChildrenTypes, Key} from './types';
+import {VNodeElement, VNode, VNodeComponentClass, Children, Types, ChildrenTypes, Key} from './types';
 import {getComponentName} from './common';
 
 export function throwIfObjectIsNotVNode(vNode: any) {
@@ -143,7 +143,7 @@ function getTagName(vNode: Children) {
         } else if (type & Types.HtmlComment) {
             tagName = `Comment(${vNode.children})`;
         } else {
-            tagName = `<${getComponentName((vNode as VNodeComponent).tag)} />`;
+            tagName = `<${getComponentName((vNode as VNodeComponentClass).tag)} />`;
         }
     }
 
