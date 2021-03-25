@@ -26,7 +26,7 @@ export function mount(vNode: VNode, parentDom: Element | null, isSVG: boolean, a
         mountComponentClass(null, vNode as VNodeComponent, parentDom!, isSVG, anchor, mountedQueue);
     } else if (type & Types.ComponentFunction) {
 
-    } else if (type & Types.Text || type & Types.Void) {
+    } else if (type & Types.Text/*  || type & Types.Void */) {
         mountText(vNode as VNodeTextElement, parentDom, anchor);
     } else if (type & Types.Fragment) {
         mountFragment(vNode as VNodeElement, parentDom, isSVG, anchor, mountedQueue);
@@ -116,7 +116,7 @@ export function mountComponentClass(
     // if (isFunction(instance.mounted)) {
         // mountedQueue.push(() => instance.mounted!(lastVNode, vNode));
     // }
-    mountedQueue.push(() => instance.$mount(lastVNode, vNode));
+    mountedQueue.push(() => instance.$mount(lastVNode, vNode))
 }
 
 export function mountText(vNode: VNodeTextElement, parentDom: Element | null, anchor: IntactDom | null) {

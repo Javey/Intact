@@ -95,6 +95,19 @@ describe('Component', () => {
                 '<div><i>i</i></div>'
             );
         });
+
+        it('should reuse the dom even if it is a different component', () => {
+            class Test2 extends Component {
+                static template = () => {
+                    return [h('i', null, 3)]
+                }
+            }
+            render(h(Test), container);
+            const dom = container.firstElementChild;
+            render(h(Test2), container);
+            expect(container.firstElementChild).toBe(dom);
+            expect(container.innerHTML).toBe('<i>3</i>');
+        });
     });
 
     describe('Update', () => {

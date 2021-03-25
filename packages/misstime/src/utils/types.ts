@@ -21,6 +21,7 @@ export interface VNodeTextElement<P = null> extends VNode<P> {
     props?: null,
     ref: Ref<Element>,
     children: string | number,
+    dom: Text | Comment | null,
 }
 export interface VNodeComponent<P = any> extends VNode<P> {
     children?: ComponentClass<P>,

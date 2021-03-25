@@ -12,6 +12,7 @@ import {patch} from './patch';
 import {unmount} from './unmount';
 import {normalizeRoot} from './vnode';
 import {EMPTY_OBJ} from '../utils/common';
+import {isNull} from '../utils/helpers';
 
 export type Template<T extends Component> = (this: T) => Children
 
@@ -25,7 +26,6 @@ export abstract class Component<P = any> implements ComponentClass<P> {
 
     // internal properties
     public $SVG: boolean = false;
-    // public $input: VNodeComponent<P> | null = null;
     public $lastInput: VNode | null = null;
     public $mountedQueue: Function[] | null = null;
 
@@ -43,9 +43,17 @@ export abstract class Component<P = any> implements ComponentClass<P> {
         this.$template = (this.constructor as typeof Component).template as Template<Component>;
     }
 
-    $render(lastVNode: VNodeComponent, nextVNode: VNodeComponent<P>, parentDom: Element, anchor: IntactDom | null) {
+    $render(lastVNode: VNodeComponent | null, nextVNode: VNodeComponent<P>, parentDom: Element, anchor: IntactDom | null) {
         const vNode = this.$lastInput = normalizeRoot(this.$template());
-        mount(vNode, parentDom, this.$SVG, anchor, this.$mountedQueue!);
+
+        // reuse the dom even if they are different
+        let lastInput: VNode | null = null;
+        if (!isNull(lastVNode) && (lastInput = lastVNode.children!.$lastInput)) {
+            patch(lastInput, vNode, parentDom, this.$SVG, anchor, this.$mountedQueue!);
+        } else {
+            mount(vNode, parentDom, this.$SVG, anchor, this.$mountedQueue!);
+        }
+
         this.$rendered = true;
     }
 

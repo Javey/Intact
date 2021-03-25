@@ -1,5 +1,5 @@
 import {VNode, Types, ChildrenTypes, VNodeElement} from '../src/utils/types';
-import {createVNode as h, createElementVNode} from '../src/core/vnode';
+import {createVNode as h, createElementVNode, createVoidVNode, createTextVNode, createCommentVNode} from '../src/core/vnode';
 import {patch} from '../src/core/patch';
 import {mount} from '../src/core/mount';
 import {linkEvent} from '../src/events/linkEvent';
@@ -50,6 +50,24 @@ describe('Patch', () => {
         render(vNode1);
         patch(vNode1, vNode2, container, false, null, []);
         expect(vNode1.dom === vNode2.dom).toBeFalse();
+    });
+
+    describe('Patch the same type', () => {
+        it('should patch Text', () => {
+            patchTest(
+                createTextVNode('a'),
+                createTextVNode('b'),
+                'b'
+            );
+        });
+
+        it('should patch comment', () => {
+            patchTest(
+                createCommentVNode('a'),
+                createCommentVNode('b'),
+                '<!--b-->'
+            );
+        });
     });
 
     describe('Children', () => {

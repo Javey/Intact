@@ -1,4 +1,14 @@
-import {VNode, Types, ChildrenTypes, NormalizedChildren, Reference, VNodeElement, VNodeComponent, IntactDom} from '../utils/types';
+import {
+    VNode,
+    Types,
+    ChildrenTypes,
+    NormalizedChildren,
+    Reference,
+    VNodeElement,
+    VNodeComponent,
+    VNodeTextElement,
+    IntactDom,
+} from '../utils/types';
 import {mount, mountArrayChildren, mountComponentClass} from './mount';
 import {remove, unmount, clearDom, removeAllChildren} from './unmount';
 import {
@@ -38,6 +48,8 @@ export function patch(
         replaceWithNewNode(lastVNode, nextVNode, parentDom, isSVG, anchor, mountedQueue);
     } else if (nextType & Types.Element) {
         patchElement(lastVNode as VNodeElement, nextVNode as VNodeElement, isSVG, nextType, mountedQueue);
+    } else if (nextType & Types.Text || nextType & Types.HtmlComment) {
+        patchText(lastVNode as VNodeTextElement, nextVNode as VNodeTextElement); 
     } else if (nextType & Types.Fragment) {
         // patchFragment(lastVNode as VNodeElement, nextVNode as VNodeElement, parentDom, isSVG, anchor, mountedQueue);
         patchChildren(
@@ -88,6 +100,7 @@ function patchComponentClass(
 ) {
     const nextTag = nextVNode.tag;
     if (lastVNode.tag !== nextTag) {
+        unmount(lastVNode);
         mountComponentClass(lastVNode, nextVNode, parentDom, isSVG, anchor, mountedQueue); 
     } else {
         const instance = nextVNode.children = lastVNode.children;
@@ -180,6 +193,15 @@ export function patchElement(lastVNode: VNodeElement, nextVNode: VNodeElement, i
     if (lastRef !== nextRef) {
         unmountRef(lastRef);
         mountRef(nextRef, dom);
+    }
+}
+
+function patchText(lastVNode: VNodeTextElement, nextVNode: VNodeTextElement) {
+    const nextText = nextVNode.children as string;
+    const dom = nextVNode.dom = lastVNode.dom;
+
+    if (nextText !== lastVNode.children) {
+        dom!.nodeValue = nextText;
     }
 }
 
