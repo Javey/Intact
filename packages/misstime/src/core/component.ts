@@ -6,6 +6,7 @@ import {
     IntactDom,
     VNode,
     Children,
+    VClass,
 } from '../utils/types';
 import {mount} from './mount';
 import {patch} from './patch';
@@ -33,7 +34,7 @@ export abstract class Component<P = any> implements ComponentClass<P> {
     public $inited: boolean = false;
     public $rendered: boolean = false;
     public $mounted: boolean = false; 
-    public $unmouted: boolean = false;
+    public $unmounted: boolean = false;
 
     // private properties
     private $template: Template<Component>;
@@ -43,7 +44,7 @@ export abstract class Component<P = any> implements ComponentClass<P> {
         this.$template = (this.constructor as typeof Component).template as Template<Component>;
     }
 
-    $render(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass<P>, parentDom: Element, anchor: IntactDom | null) {
+    $render(lastVNode: VClass | null, nextVNode: VClass<P>, parentDom: Element, anchor: IntactDom | null) {
         const vNode = this.$lastInput = normalizeRoot(this.$template());
 
         // reuse the dom even if they are different
@@ -57,19 +58,19 @@ export abstract class Component<P = any> implements ComponentClass<P> {
         this.$rendered = true;
     }
 
-    $mount(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass<P>) {
+    $mount(lastVNode: VClass, nextVNode: VClass<P>) {
         this.$mounted = true;
     }
 
-    $update(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass<P>, parentDom: Element, anchor: IntactDom | null) {
+    $update(lastVNode: VClass, nextVNode: VClass<P>, parentDom: Element, anchor: IntactDom | null) {
         this.props = (nextVNode.props || EMPTY_OBJ) as Props<P, ComponentClass>;
         const vNode = normalizeRoot(this.$template());
         patch(this.$lastInput!, vNode, parentDom, this.$SVG, anchor, this.$mountedQueue!);
         this.$lastInput = vNode;
     }
 
-    $unmount(vNode: VNodeComponentClass<P>, nextVNode: VNodeComponentClass | null) {
+    $unmount(vNode: VClass<P>, nextVNode: VClass | null) {
         unmount(this.$lastInput!); 
-        this.$unmouted = true;
+        this.$unmounted = true;
     }
 }

@@ -1,39 +1,47 @@
-export interface VNode<P = any> {
+export type VNodeTag = string | Component | null
+
+export interface VNode<T extends VNodeTag = VNodeTag> {
     dom: IntactDom | null
     type: Types
-    tag: string | Component | null
+    tag: T
     childrenType: ChildrenTypes
-    props?: Props<P, Component> | Props<P, Element> | null
-    children?: NormalizedChildren | ComponentClass<P>
+    props?: VNodeProps<T> | null
+    children?: VNodeChildren<T> | null
     className?: string | null
     key: Key | null
-    ref: Ref<Component> | Ref<Element> | null
+    ref: VNodeRef<T> | null
     isValidated?: boolean,
 }
-export interface VNodeElement<P = any> extends VNode<P> {
-    children?: NormalizedChildren,
-    tag: string,
-    props?: Props<P, Element> | null,
-    ref: Ref<Element>,
-}
-export interface VNodeTextElement<P = null> extends VNode<P> {
-    tag: null,
-    props?: null,
-    ref: Ref<Element>,
+export interface VNodeElement extends VNode<string> { }
+export interface VNodeTextElement extends VNode<null> {
     children: string | number,
     dom: Text | Comment | null,
 }
-export interface VNodeComponentClass<P = any> extends VNode<P> {
-    children?: ComponentClass<P>,
-    tag: ComponentConstructor<P>,
-    props?: Props<P, Component> | null,
-    ref: Ref<Component>,
-}
+export interface VNodeComponentClass<T extends ComponentConstructor = ComponentConstructor> extends VNode<T> { }
+export interface VNodeComponentFunction<T extends ComponentFunction = ComponentFunction> extends VNode<T> { }
 
-export interface VNodeComponentFunction<P = any> extends VNode<P> {
-    tag: ComponentFunction<P>
-    children?: VNode 
-}
+export type VNodeProps<T extends VNodeTag> =
+    T extends string ? 
+        Props<any, Element> :
+        T extends null ?
+            Props<{}, Element> :
+            T extends ComponentConstructor<infer P> ?
+                Props<P, T> :
+                T extends ComponentFunction<infer P> ?
+                    Props<P, Element | ComponentClass<any>> :
+                    never
+
+export type VNodeChildren<T extends VNodeTag> =
+    T extends ComponentConstructor<infer P> ?
+        ComponentClass<P> :
+        NormalizedChildren
+
+export type VNodeRef<T extends VNodeTag> =
+    T extends ComponentConstructor<infer P> ?
+        Ref<ComponentClass<P>> :
+        T extends ComponentFunction<infer P> ?
+            Ref<Element | ComponentClass<any>> :
+            Ref<Element>
 
 export type IntactDom = Element | Text | Comment
 
@@ -92,19 +100,23 @@ export interface RefObject<T> {
 
 export type Ref<T = Element> = ((i: T | null) => any) | RefObject<T>;
 
-export type Props<P extends Record<string, any> = {}, T = Element> = {
+export type Props<P extends {}, T = Element> = {
     children?: Children
     ref?: Ref<T> 
     key?: Key
     className?: string
 } & P;
 
-export interface ComponentConstructor<P = any> {
-    new (props: P): ComponentClass<P>
+export interface ComponentConstructor<P = any, T extends ComponentClass<P> = ComponentClass<P>> {
+    new (props: P): T
     displayName?: string
 }
 
-export interface ComponentClass<P = any> {
+export type VClass<P = any> = VNodeComponentClass<ComponentConstructor<P>>
+
+export declare class ComponentClass<P = any> {
+    // static displayName?: string
+
     props: Props<P, ComponentClass>;
 
     $SVG: boolean;
@@ -112,27 +124,29 @@ export interface ComponentClass<P = any> {
     $lastInput: VNode | null;
     $mountedQueue: Function[] | null;
 
-    $render(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass<P>, parentDom: Element, anchor: IntactDom | null): void;
-    $mount(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass<P>): void;
-    $update(lastVNode: VNodeComponentClass, vNode: VNodeComponentClass<P>, parentDom: Element, anchor: IntactDom | null): void;
-    $unmount(vNode: VNodeComponentClass<P> | null, nextVNode: VNodeComponentClass | null): void;
+    constructor(props: P)
+
+    $render(lastVNode: VClass | null, vNode: VClass<P>, parentDom: Element, anchor: IntactDom | null): void;
+    $mount(lastVNode: VClass | null, vNode: VClass<P>): void;
+    $update(lastVNode: VClass , vNode: VClass<P>, parentDom: Element, anchor: IntactDom | null): void;
+    $unmount(vNode: VClass<P> | null, nextVNode: VClass | null): void;
 
     init?(props: P): any;
-    beforeCreate?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass<P> | null): void;
-    created?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass<P> | null): void;
-    beforeMount?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass<P> | null): void;
-    mounted?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass<P> | null): void;
-    beforeUpdate?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass<P> | null): void;
-    updated?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass<P> | null): void;
-    beforeUnmount?(vNode: VNodeComponentClass<P> | null, nextVNode: VNodeComponentClass | null): void;
-    unmounted?(vNode: VNodeComponentClass<P> | null, nextVNode: VNodeComponentClass | null): void;
+    beforeCreate?(lastVNode: VClass | null, nextVNode: VClass<P> | null): void;
+    created?(lastVNode: VClass | null, nextVNode: VClass<P> | null): void;
+    beforeMount?(lastVNode: VClass | null, nextVNode: VClass<P> | null): void;
+    mounted?(lastVNode: VClass | null, nextVNode: VClass<P> | null): void;
+    beforeUpdate?(lastVNode: VClass | null, nextVNode: VClass<P> | null): void;
+    updated?(lastVNode: VClass | null, nextVNode: VClass<P> | null): void;
+    beforeUnmount?(vNode: VClass<P> | null, nextVNode: VClass | null): void;
+    unmounted?(vNode: VClass<P> | null, nextVNode: VClass | null): void;
 }
 
 export interface ComponentFunction<P = any> {
     (props: Props<P>): Children;
 }
 
-export type Component = ComponentConstructor<any> | ComponentFunction;
+export type Component<P = any> = ComponentConstructor<P> | ComponentFunction<P>;
 
 export interface LinkedEvent<T, E extends Event> {
     data: T;

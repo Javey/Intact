@@ -3,10 +3,16 @@ import {
     VNodeComponentClass,
     VNodeComponentFunction,
     VNodeTextElement,
+    ComponentConstructor,
+    ComponentFunction,
     VNode as IVNode, Component, Props, Ref, Key, Children, Types, NormalizedChildren,
     ChildrenTypes,
     ComponentClass,
     IntactDom,
+    VNodeTag,
+    VNodeProps,
+    VNodeChildren,
+    VNodeRef,
 } from '../utils/types';
 import {
     isNullOrUndefined,
@@ -19,26 +25,26 @@ import {
 import {throwIfObjectIsNotVNode, validateVNodeElementChildren} from '../utils/validate';
 import {Fragment} from '../utils/common';
 
-export class VNode<P = any> implements IVNode<P> {
+export class VNode<P = any, T extends VNodeTag = VNodeTag> implements IVNode<P, T> {
     public dom: IntactDom | null = null;
     public type: Types;
-    public tag: string | Component | null;
+    public tag: T;
     public childrenType: ChildrenTypes;
-    public props?: Props<P, Component> | Props<P, Element> | null;
-    public children?: NormalizedChildren | ComponentClass<P>;
+    public props?: VNodeProps<P, T> | null;
+    public children?: VNodeChildren<P, T> | null;
     public className?: string | null;
     public key: Key | null;
-    public ref: Ref<Component> | Ref<Element> | null;
+    public ref: VNodeRef<P, T> | null;
     public isValidated?: boolean;
     constructor(
         type: Types,
-        tag: string | Component | null,
+        tag: T,
         childrenType: ChildrenTypes,
-        children?: NormalizedChildren | ComponentClass<P>,
+        children?: VNodeChildren<P, T> | null,
         className?: string | null,
-        props?: Props<P, Component>  | Props<P, Element> | null,
+        props?: VNodeProps<P, T> | null, 
         key?: Key | null,
-        ref?: Ref<Component> | Ref<Element> | null
+        ref?: VNodeRef<P, T> | null
     ) {
         if (process.env.NODE_ENV !== 'production') {
             this.isValidated = false;
@@ -60,13 +66,18 @@ export function createVNode<P extends Record<string, any>>(
     children?: Children | null
 ): VNodeElement<P>
 export function createVNode<P extends Record<string, any>>(
-    tag: Component,
-    props?: Props<P, Component> | null,
+    tag: ComponentConstructor<P>,
+    props?: Props<P, ComponentClass<P>> | null,
     children?: Children | null
-): VNodeComponentClass<P> | VNodeComponentFunction<P>
+): VNodeComponentClass<P>
+export function createVNode<P extends Record<string, any>>(
+    tag: ComponentFunction<P>,
+    props?: Props<P, ComponentClass<P> | Element> | null,
+    children?: Children | null
+): VNodeComponentFunction<P>
 export function createVNode<P extends Record<string, any>>(
     tag: string | Component,
-    props?: Props<P, Component | Element> | null,
+    props?: Props<P, ComponentClass<P> | Element> | null,
     children?: Children | null,
 ): VNodeElement<P> | VNodeComponentClass<P> | VNodeComponentFunction<P> {
     let type: Types;
@@ -107,8 +118,8 @@ export function createVNode<P extends Record<string, any>>(
     }
 
     let key: Key | null = null;
-    let ref: Ref<Component | Element> | null = null;
-    let newProps: Props<any, Component | Element> | null = null;
+    let ref: Ref<ComponentClass<P> | Element> | null = null;
+    let newProps: Props<any, ComponentClass<P> | Element> | null = null;
     let className: string | null = null;
 
     if (!isNullOrUndefined(props)) {
@@ -151,7 +162,7 @@ export function createVNode<P extends Record<string, any>>(
         if (ref) newProps.ref = ref;
     }
 
-    return createComponentVNode(type!, tag as Component, newProps, key, ref as Ref<Component>);
+    return createComponentVNode(type!, tag as Component, newProps, key, ref as Ref<ComponentClass<P>>);
 }
 
 export function createElementVNode<P>(
@@ -206,13 +217,34 @@ export function createCommentVNode(comment: string, key?: Key | null): VNodeText
     return new VNode(Types.HtmlComment, null, ChildrenTypes.HasInvalidChildren, comment, null, null, key) as VNodeTextElement;
 }
 
-export function createComponentVNode<P>(
+export function createComponentVNode<T extends ComponentFunction>(
     type: Types,
-    tag: Component,
-    props?: Props<P, Component> | null,
+    tag: T,
+    props: T extends ComponentFunction<infer P> ? Props<P, any> : null,
     key?: Key | null,
-    ref?: Ref<Component> | null,
-): VNodeComponentClass<P> | VNodeComponentFunction<P> {
+    ref?: Ref<any> | null,
+): VNodeComponentFunction<any, T>
+export function createComponentVNode<T extends ComponentConstructor>(
+    type: Types,
+    tag: T,
+    props: T extends ComponentConstructor<infer P> ? Props<P, T> : null,
+    key?: Key | null,
+    ref?: Ref<T> | null,
+): VNodeComponentClass<any, T>
+export function createComponentVNode<T extends ComponentFunction | ComponentConstructor>(
+    type: Types,
+    tag: T,
+    props: T extends ComponentConstructor<infer P> ? 
+        Props<P, T> :
+        T extends ComponentFunction<infer P> ?
+            Props<P, any> : null,
+    key?: Key | null,
+    ref?: Ref<T> | Ref<any> | null
+): T extends ComponentConstructor ?
+    VNodeComponentClass<any, T> :
+    T extends ComponentFunction ? 
+        VNodeComponentFunction<any, T> : never 
+{
     if (process.env.NODE_ENV !== 'production') {
         if (type & Types.Element) {
             throwError('Creating element vNodes using createComponentVNode is not allowed. Use createElementVNode method.');
@@ -227,8 +259,11 @@ export function createComponentVNode<P>(
         null,
         props,
         key,
-        ref
-    ) as VNodeComponentClass<P>;
+        ref as any
+    ) as T extends ComponentConstructor ?
+    VNodeComponentClass<any, T> :
+    T extends ComponentFunction ? 
+        VNodeComponentFunction<any, T> : never;// as VNodeComponentClass<P, T>;
 }
 
 export function createFragment(children: Children, childrenType: ChildrenTypes, key?: Key | null): VNodeElement {

@@ -1,4 +1,4 @@
-import {Component, RefObject, Ref} from './types';
+import {ComponentClass, RefObject, Ref} from './types';
 import {isFunction} from './helpers';
 
 export function isRef(o: any): o is RefObject<any> {
@@ -12,7 +12,7 @@ export function createRef<T = Element>(): RefObject<T> {
     }
 }
 
-export function mountRef(ref?: Ref<Component> | Ref<Element> | null, value?: any) {
+export function mountRef(ref?: Ref<ComponentClass> | Ref<Element> | null, value?: any) {
     if (ref) {
         if (isFunction(ref)) {
             ref(value);
@@ -22,6 +22,6 @@ export function mountRef(ref?: Ref<Component> | Ref<Element> | null, value?: any
     }
 }
 
-export function unmountRef(ref?: Ref<Component> | Ref<Element> | null) {
+export function unmountRef(ref?: Ref<ComponentClass> | Ref<Element> | null) {
     mountRef(ref, null);
 }

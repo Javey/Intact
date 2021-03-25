@@ -2,7 +2,7 @@ import {Component, Template} from '../../src/core/component';
 import {render} from '../../src/core/render';
 import {createVNode as h} from '../../src/core/vnode';
 import {Fragment} from '../../src/utils/common';
-import {VNode} from '../../src/utils/types';
+import {VNode, ComponentClass, Props} from '../../src/utils/types';
 import {patchTest as _patchTest} from '../utils';
 
 describe('Functional component', () => {
@@ -67,7 +67,16 @@ describe('Functional component', () => {
             );
         });
 
-        it('should replace functional component', () => {
+        it('should unmount functional component', () => {
+            let test: Test1 | null = null;
+            class Test1 extends Component {
+                static template = () => h('div');
+            }
+            function Test() {
+                return h(Test1, {ref: i => {
+                    if (i) test = i as Test1;
+                }} as Props<{}, ComponentClass<{}>>);
+            }
             const a = h(Test);
             const b = h('i', null, 'i');
             patchTest(
@@ -75,15 +84,7 @@ describe('Functional component', () => {
                 h('div', null, b),
                 '<div><i>i</i></div>'
             );
-        });
-
-        it('should remove functional component', () => {
-            const placeholder = h('div', {key: 'placeholder'});
-            patchTest(
-                h('div', null, [h(Test, {key: 'a'}), placeholder]),
-                h('div', null, [placeholder, h('i', {key: 'b'}, 'i')]),
-                '<div><div></div><i>i</i></div>'
-            );
+            expect(test!.$unmounted).toBe(true);
         });
     });
 });

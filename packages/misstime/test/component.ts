@@ -112,7 +112,7 @@ describe('Component', () => {
 
     describe('Update', () => {
         it('should update component which return HtmlElement vNode', () => {
-            class Test extends Component<{name: string}> {
+            class Test extends Component<{name: number}> {
                 static template: Template<Test> = function() {
                     return h('div', null, this.props.name)
                 }
