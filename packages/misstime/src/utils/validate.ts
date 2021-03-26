@@ -12,7 +12,7 @@ export function throwIfObjectIsNotVNode(vNode: any) {
     }
 }
 
-export function validateVNodeElementChildren(vNode: VNodeElement<any>) {
+export function validateVNodeElementChildren(vNode: VNodeElement) {
     if (vNode.childrenType & ChildrenTypes.HasInvalidChildren) {
         return;
     } 

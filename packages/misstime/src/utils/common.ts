@@ -25,7 +25,7 @@ export function normalizeEventName(name: string) {
     return name.substr(3);
 }
 
-export const EMPTY_OBJ = {};
+export const EMPTY_OBJ: any = {};
 if (process.env.NODE_ENV !== 'production') {
     Object.freeze(EMPTY_OBJ);
 }

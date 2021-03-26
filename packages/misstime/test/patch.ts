@@ -26,7 +26,7 @@ describe('Patch', () => {
         patch(vNode1, vNode2, container, false, null, []);
         return vNode2;
     }
-    function patchTest<P, Q>(vNode1: VNode<P>, vNode2: VNode<Q>, html?: string) {
+    function patchTest(vNode1: VNode, vNode2: VNode, html?: string) {
         container.textContent = '';
         render(vNode1);
         update(vNode1, vNode2);

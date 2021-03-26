@@ -113,7 +113,7 @@ describe('Component', () => {
     describe('Update', () => {
         it('should update component which return HtmlElement vNode', () => {
             class Test extends Component<{name: number}> {
-                static template: Template<Test> = function() {
+                static template: Template = function(this: Test) {
                     return h('div', null, this.props.name)
                 }
             }
@@ -125,7 +125,7 @@ describe('Component', () => {
 
         it('should replace dom', () => {
             class Test extends Component<{name: number}> {
-                static template: Template<Test> = function() {
+                static template: Template = function(this: Test) {
                     if (this.props.name === 1) {
                         return h('div'); 
                     } else {

@@ -6,7 +6,6 @@ import {
     IntactDom,
     VNode,
     Children,
-    VClass,
 } from '../utils/types';
 import {mount} from './mount';
 import {patch} from './patch';
@@ -15,14 +14,15 @@ import {normalizeRoot} from './vnode';
 import {EMPTY_OBJ} from '../utils/common';
 import {isNull} from '../utils/helpers';
 
-export type Template<T extends Component> = (this: T) => Children
+// export type Template<T> = (this: T) => Children
+export type Template = () => Children;
 
-export abstract class Component<P = any> implements ComponentClass<P> {
-    static template: Template<Component> | string;
-    static propTypes?: Record<string, any>;
-    static displayName?: string;
+export abstract class Component<P = {}> implements ComponentClass<P> {
+    static readonly template: Template | string;
+    static readonly propTypes?: Record<string, any>;
+    static readonly displayName?: string;
 
-    public props: Props<P, ComponentClass>;
+    public props: Props<P, ComponentClass<P>>;
     public refs: Record<string, any> = {}; 
 
     // internal properties
@@ -37,14 +37,14 @@ export abstract class Component<P = any> implements ComponentClass<P> {
     public $unmounted: boolean = false;
 
     // private properties
-    private $template: Template<Component>;
+    private $template: Template;
 
     constructor(props: P) {
-        this.props = props || EMPTY_OBJ as Props<P, ComponentClass>;
-        this.$template = (this.constructor as typeof Component).template as Template<Component>;
+        this.props = props || EMPTY_OBJ;
+        this.$template = (this.constructor as typeof Component).template as Template; 
     }
 
-    $render(lastVNode: VClass | null, nextVNode: VClass<P>, parentDom: Element, anchor: IntactDom | null) {
+    $render(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null) {
         const vNode = this.$lastInput = normalizeRoot(this.$template());
 
         // reuse the dom even if they are different
@@ -58,18 +58,18 @@ export abstract class Component<P = any> implements ComponentClass<P> {
         this.$rendered = true;
     }
 
-    $mount(lastVNode: VClass, nextVNode: VClass<P>) {
+    $mount(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass) {
         this.$mounted = true;
     }
 
-    $update(lastVNode: VClass, nextVNode: VClass<P>, parentDom: Element, anchor: IntactDom | null) {
-        this.props = (nextVNode.props || EMPTY_OBJ) as Props<P, ComponentClass>;
+    $update(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null) {
+        this.props = nextVNode.props || EMPTY_OBJ;
         const vNode = normalizeRoot(this.$template());
         patch(this.$lastInput!, vNode, parentDom, this.$SVG, anchor, this.$mountedQueue!);
         this.$lastInput = vNode;
     }
 
-    $unmount(vNode: VClass<P>, nextVNode: VClass | null) {
+    $unmount(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null) {
         unmount(this.$lastInput!); 
         this.$unmounted = true;
     }

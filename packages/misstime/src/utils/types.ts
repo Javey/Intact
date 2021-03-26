@@ -1,4 +1,4 @@
-export type VNodeTag = string | Component | null
+export type VNodeTag = string | ComponentConstructor | ComponentFunction | null
 
 export interface VNode<T extends VNodeTag = VNodeTag> {
     dom: IntactDom | null
@@ -14,33 +14,38 @@ export interface VNode<T extends VNodeTag = VNodeTag> {
 }
 export interface VNodeElement extends VNode<string> { }
 export interface VNodeTextElement extends VNode<null> {
-    children: string | number,
     dom: Text | Comment | null,
 }
-export interface VNodeComponentClass<T extends ComponentConstructor = ComponentConstructor> extends VNode<T> { }
+export interface VNodeComponentClass<T extends ComponentClass = ComponentClass> extends VNode<ComponentConstructor<T>> { }
 export interface VNodeComponentFunction<T extends ComponentFunction = ComponentFunction> extends VNode<T> { }
 
 export type VNodeProps<T extends VNodeTag> =
     T extends string ? 
-        Props<any, Element> :
+        Props<Record<string, any>, Element> :
         T extends null ?
             Props<{}, Element> :
-            T extends ComponentConstructor<infer P> ?
-                Props<P, T> :
+            T extends ComponentConstructor<infer C> ?
+                C extends ComponentClass<infer P> ?
+                    Props<P, C> :
+                    never :
                 T extends ComponentFunction<infer P> ?
                     Props<P, Element | ComponentClass<any>> :
                     never
 
 export type VNodeChildren<T extends VNodeTag> =
-    T extends ComponentConstructor<infer P> ?
-        ComponentClass<P> :
-        NormalizedChildren
+    T extends ComponentConstructor<infer C> ?
+        C: 
+        T extends ComponentFunction ?
+            VNode :
+            T extends null ?
+                string | number :
+                NormalizedChildren
 
 export type VNodeRef<T extends VNodeTag> =
-    T extends ComponentConstructor<infer P> ?
-        Ref<ComponentClass<P>> :
+    T extends ComponentConstructor<infer C> ?
+        Ref<C> :
         T extends ComponentFunction<infer P> ?
-            Ref<Element | ComponentClass<any>> :
+            Ref<any> :
             Ref<Element>
 
 export type IntactDom = Element | Text | Comment
@@ -108,16 +113,14 @@ export type Props<P extends {}, T = Element> = {
 } & P;
 
 export interface ComponentConstructor<T extends ComponentClass = ComponentClass> {
-    new (props: any): T
+    new (props: T extends ComponentClass<infer P> ? P : {}): T
     displayName?: string
 }
-
-export type VClass<T extends ComponentClass = ComponentClass> = ComponentConstructor<T>
 
 export interface ComponentClass<P = any> {
     // static displayName?: string
 
-    props: Props<P, ComponentClass>;
+    props: Props<P, ComponentClass<P>>;
 
     $SVG: boolean;
     // $vNode: VNodeComponentClass<P> | null;
@@ -126,27 +129,27 @@ export interface ComponentClass<P = any> {
 
     // constructor(props: P)
 
-    $render(lastVNode: VClass | null, vNode: VClass, parentDom: Element, anchor: IntactDom | null): void;
-    $mount(lastVNode: VClass | null, vNode: VClass<this>): void;
-    $update(lastVNode: VClass , vNode: VClass<this>, parentDom: Element, anchor: IntactDom | null): void;
-    $unmount(vNode: VClass<this> | null, nextVNode: VClass | null): void;
+    $render(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null): void;
+    $mount(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass): void;
+    $update(lastVNode: VNodeComponentClass , vNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null): void;
+    $unmount(vNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
 
     init?(props: P): any;
-    beforeCreate?(lastVNode: VClass | null, nextVNode: VClass<this> | null): void;
-    created?(lastVNode: VClass | null, nextVNode: VClass<this> | null): void;
-    beforeMount?(lastVNode: VClass | null, nextVNode: VClass<this> | null): void;
-    mounted?(lastVNode: VClass | null, nextVNode: VClass<this> | null): void;
-    beforeUpdate?(lastVNode: VClass | null, nextVNode: VClass<this> | null): void;
-    updated?(lastVNode: VClass | null, nextVNode: VClass<this> | null): void;
-    beforeUnmount?(vNode: VClass<this> | null, nextVNode: VClass | null): void;
-    unmounted?(vNode: VClass<this> | null, nextVNode: VClass | null): void;
+    beforeCreate?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
+    created?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
+    beforeMount?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
+    mounted?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
+    beforeUpdate?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
+    updated?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
+    beforeUnmount?(vNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
+    unmounted?(vNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
 }
 
 export interface ComponentFunction<P = any> {
     (props: Props<P>): Children;
 }
 
-export type Component<P = any> = ComponentConstructor<P> | ComponentFunction<P>;
+export type Component = ComponentConstructor | ComponentFunction;
 
 export interface LinkedEvent<T, E extends Event> {
     data: T;

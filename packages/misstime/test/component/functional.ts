@@ -72,10 +72,15 @@ describe('Functional component', () => {
             class Test1 extends Component {
                 static template = () => h('div');
             }
+            // function Test() {
+                // return h(Test1, {ref: i => {
+                    // if (i) test = i as Test1;
+                // }} as Props<{}, ComponentClass<{}>>);
+            // }
             function Test() {
                 return h(Test1, {ref: i => {
-                    if (i) test = i as Test1;
-                }} as Props<{}, ComponentClass<{}>>);
+                    if (i) test = i;
+                }})
             }
             const a = h(Test);
             const b = h('i', null, 'i');
