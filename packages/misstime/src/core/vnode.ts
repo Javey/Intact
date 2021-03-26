@@ -127,11 +127,11 @@ export function createVNode<T extends VNodeTag>(
     if (!isNullOrUndefined(props)) {
         for (const prop in props) {
             if (isElement && prop === 'className') {
-                className = props.className!;
+                className = props.className;
             } else if (prop === 'key') {
-                key = props.key!;
+                key = props.key;
             } else if (prop === 'ref') {
-                ref = props.ref!;
+                ref = props.ref;
             } else if (prop === 'children') {
                 children = props.children;
             } else {

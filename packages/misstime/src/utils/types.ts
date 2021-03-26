@@ -118,8 +118,6 @@ export interface ComponentConstructor<T extends ComponentClass = ComponentClass>
 }
 
 export interface ComponentClass<P = any> {
-    // static displayName?: string
-
     props: Props<P, ComponentClass<P>>;
 
     $SVG: boolean;
@@ -127,22 +125,10 @@ export interface ComponentClass<P = any> {
     $lastInput: VNode | null;
     $mountedQueue: Function[] | null;
 
-    // constructor(props: P)
-
     $render(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null): void;
     $mount(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass): void;
     $update(lastVNode: VNodeComponentClass , vNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null): void;
     $unmount(vNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
-
-    init?(props: P): any;
-    beforeCreate?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
-    created?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
-    beforeMount?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
-    mounted?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
-    beforeUpdate?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
-    updated?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
-    beforeUnmount?(vNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
-    unmounted?(vNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
 }
 
 export interface ComponentFunction<P = any> {

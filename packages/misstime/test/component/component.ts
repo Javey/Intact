@@ -1,8 +1,8 @@
-import {Component, Template} from '../src/core/component';
-import {render} from '../src/core/render';
-import {createVNode as h} from '../src/core/vnode';
-import {Fragment} from '../src/utils/common';
-import {VNode} from '../src/utils/types';
+import {Component, Template} from '../../src/core/component';
+import {render} from '../../src/core/render';
+import {createVNode as h, VNode as VNodeConstructor} from '../../src/core/vnode';
+import {Fragment, findDomFromVNode} from '../../src/utils/common';
+import {VNode, VNodeComponentClass} from '../../src/utils/types';
 
 describe('Component', () => {
     let container: Element;
