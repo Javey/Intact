@@ -1,5 +1,4 @@
 import {Props, ComponentClass, VNodeComponentClass, VNode} from '../src/utils/types';
-import {Component} from '../src/core/component';
 import {createVNode as h} from '../src/core/vnode';
 import {render} from '../src/core/render';
 

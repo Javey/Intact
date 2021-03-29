@@ -7,18 +7,23 @@ import {
     VNode,
     Children,
 } from '../utils/types';
-import {mount} from './mount';
-import {patch} from './patch';
-import {unmount} from './unmount';
-import {normalizeRoot} from './vnode';
+import {mount} from '../core/mount';
+import {patch} from '../core/patch';
+import {unmount} from '../core/unmount';
+import {normalizeRoot} from '../core/vnode';
 import {EMPTY_OBJ} from '../utils/common';
-import {isNull, isFunction} from '../utils/helpers';
-import {componentInited} from '../utils/component';
+import {isNull, isFunction, isUndefined, get, set, isObject, isNullOrUndefined, isString} from '../utils/helpers';
+import {componentInited, setProps} from '../utils/component';
+import {Event} from './event';
 
 // export type Template<T> = (this: T) => Children
 export type Template = () => Children;
+export type SetOptions = {
+    slient: boolean
+    // async: false
+}
 
-export abstract class Component<P = {}> implements ComponentClass<P> {
+export abstract class Component<P = {}> extends Event implements ComponentClass<P> {
     static readonly template: Template | string;
     static readonly propTypes?: Record<string, any>;
     static readonly displayName?: string;
@@ -41,6 +46,8 @@ export abstract class Component<P = {}> implements ComponentClass<P> {
     private $template: Template;
 
     constructor(props: P | null) {
+        super();
+
         if (process.env.NODE_ENV !== 'production') {
             // TODO
             // validateProps();
@@ -49,15 +56,7 @@ export abstract class Component<P = {}> implements ComponentClass<P> {
         this.$template = (this.constructor as typeof Component).template as Template; 
         this.props = {...this.defaults(), ...props};
 
-        this.initialize(props);
-    }
-
-    defaults(): P {
-        return EMPTY_OBJ;
-    }
-
-    protected initialize(props: P | null) {
-        if (isFunction(this.init))  {
+        if (isFunction(this.init)) {
             const ret = this.init(props);
             if (ret && ret.then) {
                 (ret as Promise<any>).then(() => componentInited(this), err => {
@@ -66,14 +65,44 @@ export abstract class Component<P = {}> implements ComponentClass<P> {
                     }
                     componentInited(this);
                 });
-            } else {
-                componentInited(this);
+                return;
             }
-        } else {
-            componentInited(this);
         }
-    } 
+        componentInited(this);
+    }
 
+    defaults(): P {
+        return EMPTY_OBJ;
+    }
+
+    set<K extends keyof P>(key: K, value: P[K], options?: SetOptions): void;
+    set(key: string, value: any, options?: SetOptions): void;
+    set(data: Partial<P> & Record<string, any>, options?: SetOptions): void;
+    set(key: string | Record<string, any>, value?: any, options?: SetOptions) {
+        if (isObject(key)) {
+            options = value as SetOptions;
+        } else {
+            key = {[key]: value};
+        } 
+
+        if (!isUndefined(options) && options.slient) {
+            for (let propName in key as P) {
+                set(this.props, propName, key[propName]);
+            }
+            return;
+        }
+
+        setProps(this, key, false);
+    }
+
+    get(): Props<P, ComponentClass<P>>;
+    get<K extends keyof Props<P, ComponentClass<P>>>(key: K): Props<P, ComponentClass<P>>[K]; 
+    get<K extends string>(key: K extends keyof Props<P, ComponentClass<P>> ? never : K): any;
+    get(key?: any) {
+        if (isUndefined(key)) return this.props;
+
+        return get(this.props, key);
+    }
 
     $render(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null) {
         if (isFunction(this.beforeMount)) {
@@ -91,10 +120,6 @@ export abstract class Component<P = {}> implements ComponentClass<P> {
         }
 
         this.$rendered = true;
-
-        // if (isFunction(this.beforeMount)) {
-            // this.beforeMount(lastVNode, nextVNode);
-        // }
     }
 
     $mount(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass) {
@@ -136,12 +161,11 @@ export abstract class Component<P = {}> implements ComponentClass<P> {
     }
 
     // lifecycle methods
-    init?(props: P | null): any;
-    // created?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass): void;
-    beforeMount?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass): void;
-    mounted?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass): void;
-    beforeUpdate?(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass): void;
-    updated?(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass): void;
-    beforeUnmount?(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null): void;
-    unmounted?(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null): void;
+    protected init?(props: P | null): any;
+    protected beforeMount?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass): void;
+    protected mounted?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass): void;
+    protected beforeUpdate?(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass): void;
+    protected updated?(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass): void;
+    protected beforeUnmount?(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null): void;
+    protected unmounted?(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null): void;
 }

@@ -1,4 +1,4 @@
-import {Component, Template} from '../../src/core/component';
+import {Component, Template} from '../../src/components/component';
 import {render} from '../../src/core/render';
 import {createVNode as h} from '../../src/core/vnode';
 import {Fragment} from '../../src/utils/common';

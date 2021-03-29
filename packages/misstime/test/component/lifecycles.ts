@@ -1,4 +1,4 @@
-import {Component, Template} from '../../src/core/component';
+import {Component, Template} from '../../src/components/component';
 import {render} from '../../src/core/render';
 import {createVNode as h, VNode as VNodeConstructor} from '../../src/core/vnode';
 import {Fragment, findDomFromVNode} from '../../src/utils/common';
@@ -55,7 +55,7 @@ describe('Component', () => {
                     // const dom = findDomFromVNode(this.$lastInput!, true); 
                     // dom!.textContent = 'a'; 
                     expect(this.$mounted).toBeFalse();
-                    // expect(this.$lastInput).toBeInstanceOf(VNodeConstructor);
+                    expect(this.$lastInput).toBeNull();
                     beforeMount();
                 }
                 mounted() {
