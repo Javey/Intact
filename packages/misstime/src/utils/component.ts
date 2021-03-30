@@ -41,6 +41,7 @@ export function patchProps(component: Component<any>, lastProps: Props<any>, nex
 
     if (lastProps !== nextProps) {
         const props = component.props;
+
         if (nextProps !== EMPTY_OBJ) {
             if (process.env.NODE_ENV !== 'production') {
                 // TODO

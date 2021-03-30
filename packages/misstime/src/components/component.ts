@@ -74,7 +74,7 @@ export abstract class Component<P = {}> extends Event implements ComponentClass<
         componentInited(this, triggerReceiveEvents);
     }
 
-    defaults(): P {
+    defaults(): Partial<P> {
         return EMPTY_OBJ;
     }
 
