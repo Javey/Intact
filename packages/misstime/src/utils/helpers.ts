@@ -1,26 +1,4 @@
-// export const browser = {};
-// if (typeof navigator !== 'undefined') {
-    // const ua = navigator.userAgent.toLowerCase();
-    // const index = ua.indexOf('msie ');
-    // if (~index) {
-        // browser.isIE = true;
-        // const version = parseInt(ua.substring(index + 5, ua.indexOf('.', index)), 10);
-        // browser.version = version;
-        // browser.isIE8 = version === 8;
-    // } else if (~ua.indexOf('trident/')) {
-        // browser.isIE = true;
-        // const rv = ua.indexOf('rv:');
-        // browser.version = parseInt(ua.substring(rv + 3, ua.indexOf('.', rv)), 10);
-    // } else if (~ua.indexOf('edge')) {
-        // browser.isEdge = true;
-    // } else if (~ua.indexOf('safari')) {
-        // if (~ua.indexOf('chrome')) {
-            // browser.isChrome = true;
-        // } else {
-            // browser.isSafari = true;
-        // }
-    // }
-// }
+import {ChangeTrace} from './types';
 
 export function isNullOrUndefined(o: any): o is null | undefined {
     return o === null || o === undefined;
@@ -112,20 +90,19 @@ export function get(object: object, path: string | number | symbol) {
     return (index && index === length) ? object : undefined;
 }
 
-export type changeTrace = {path: string, changes: [any, any]};
-export function set<O extends object, K extends keyof O>(object: O, path: K, value: O[K]): changeTrace[];
-export function set<O extends object, K extends string | number | symbol>(object: O, path: K extends keyof O ? never : K, value: any): changeTrace[];
-export function set<O extends object>(object: O, path: string | number | symbol, value?: any): changeTrace[] {
+export function set<O extends object, K extends keyof O>(object: O, path: K, value: O[K]): ChangeTrace[];
+export function set<O extends object, K extends string | number | symbol>(object: O, path: K extends keyof O ? never : K, value: any): ChangeTrace[];
+export function set<O extends object>(object: O, path: string | number | symbol, value?: any): ChangeTrace[] {
     if (process.env.NODE_ENV !== 'production') {
         if (typeof path === 'symbol') {
             throwError("set() does not support Symbol");
         }
     }
 
-    const changeTraces: changeTrace[] = [];
+    const changeTraces: ChangeTrace[] = [];
 
     if (hasOwn.call(object, path)) {
-        changeTraces.push({path: path as string, changes: [value, object[path as keyof O]]});
+        changeTraces.push({path: path as string, newValue: value,  oldValue: object[path as keyof O]});
         object[path as keyof O] = value;
         return changeTraces;
     }
@@ -151,7 +128,7 @@ export function set<O extends object>(object: O, path: string | number | symbol,
         nested = nested[key];
 
         prefix += key;
-        changeTraces.push({path: prefix, changes: [newValue, oldValue]});
+        changeTraces.push({path: prefix, newValue, oldValue});
         prefix += '.';
     }
 

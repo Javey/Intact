@@ -7,7 +7,7 @@ describe('Component', () => {
             const changeTraces = set(props, 'a', 2);
 
             expect(props).toEqual({a: 2});
-            expect(changeTraces).toEqual([{path: 'a', changes: [2, 1]}]);
+            expect(changeTraces).toEqual([{path: 'a', newValue: 2, oldValue: 1}]);
         });
 
         it('should set by path', () => {
@@ -16,8 +16,8 @@ describe('Component', () => {
 
             expect(props).toEqual({a: {b: 2}});
             expect(changeTraces).toEqual([
-                {path: 'a', changes: [{b: 2}, {b: 1}]},
-                {path: 'a.b', changes: [2, 1]},
+                {path: 'a', newValue: {b: 2}, oldValue: {b: 1}},
+                {path: 'a.b', newValue: 2, oldValue: 1},
             ]);
         });
 
@@ -27,9 +27,9 @@ describe('Component', () => {
 
             expect(props).toEqual({a: {b: 1, c: {d: 2}}} as any);
             expect(changeTraces).toEqual([
-                {path: 'a', changes: [{b: 1, c: {d: 2}}, {b: 1}]},
-                {path: 'a.c', changes: [{d: 2}, undefined]},
-                {path: 'a.c.d', changes: [2, undefined]},
+                {path: 'a', newValue: {b: 1, c: {d: 2}}, oldValue: {b: 1}},
+                {path: 'a.c', newValue: {d: 2}, oldValue: undefined},
+                {path: 'a.c.d', newValue: 2, oldValue: undefined},
             ]);
         });
     });

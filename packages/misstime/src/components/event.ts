@@ -1,14 +1,29 @@
-import {isUndefined} from '../utils/helpers';
+import {isUndefined, throwError, isFunction} from '../utils/helpers';
 
 export class Event {
     private $events: Record<string, Function[]> = {}; 
 
-    protected on(name: string, callback: Function) {
+    // internal properties
+    public $blockAddEvent: boolean = false;
+
+    on(name: string, callback: Function) {
+        if (process.env.NODE_ENV !== 'production') {
+            if (this.$blockAddEvent) {
+                throwError(
+                    'Adding event listener on `beforeUpdate` & `updated` is not allowed, ' + 
+                    'because it may invoke multiple times.' + 
+                    'Add it on `init`.'
+                );
+            }
+            if (!isFunction(callback)) {
+                throwError('Expect a function, but got ' + JSON.stringify(callback));
+            }
+        }
         const events = this.$events;
         (events[name] || (events[name] = [])).push(callback);
     }
 
-    protected one(name: string, callback: Function) {
+    one(name: string, callback: Function) {
         const fn = (...args: any[]) => {
             callback.apply(this, args);
             this.off(name, fn);
@@ -16,7 +31,7 @@ export class Event {
         this.on(name, fn);
     }
 
-    protected off(name?: string, callback?: Function) {
+    off(name?: string, callback?: Function) {
         if (isUndefined(name)) {
             this.$events = {};
             return;
@@ -39,7 +54,7 @@ export class Event {
         }
     }
 
-    protected trigger(name: string, ...args: any[]) {
+    trigger(name: string, ...args: any[]) {
         let callbacks = this.$events[name];
 
         if (!isUndefined(callbacks)) {

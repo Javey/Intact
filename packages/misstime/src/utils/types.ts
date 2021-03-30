@@ -153,3 +153,5 @@ export interface MissTimeElement extends Element {
 export type Reference = {
     value: boolean
 };
+
+export type ChangeTrace = {path: string, newValue: any, oldValue: any};

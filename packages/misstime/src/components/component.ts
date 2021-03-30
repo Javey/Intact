@@ -13,7 +13,7 @@ import {unmount} from '../core/unmount';
 import {normalizeRoot} from '../core/vnode';
 import {EMPTY_OBJ} from '../utils/common';
 import {isNull, isFunction, isUndefined, get, set, isObject, isNullOrUndefined, isString} from '../utils/helpers';
-import {componentInited, setProps} from '../utils/component';
+import {componentInited, setProps, mountProps, patchProps, DEV_callMethod} from '../utils/component';
 import {Event} from './event';
 
 // export type Template<T> = (this: T) => Children
@@ -35,6 +35,7 @@ export abstract class Component<P = {}> extends Event implements ComponentClass<
     public $SVG: boolean = false;
     public $lastInput: VNode | null = null;
     public $mountedQueue: Function[] | null = null;
+    public $blockRender: boolean = false;
 
     // lifecyle states
     public $inited: boolean = false;
@@ -44,31 +45,33 @@ export abstract class Component<P = {}> extends Event implements ComponentClass<
 
     // private properties
     private $template: Template;
+    private $defaults: Partial<P>;
 
     constructor(props: P | null) {
         super();
 
-        if (process.env.NODE_ENV !== 'production') {
-            // TODO
-            // validateProps();
-        }
-        
         this.$template = (this.constructor as typeof Component).template as Template; 
-        this.props = {...this.defaults(), ...props};
+
+        this.$defaults = this.defaults();
+        this.props = {...this.$defaults} as P;
+        let triggerReceiveEvents: Function | null = null;
+        if (!isNull(props)) {
+            triggerReceiveEvents = mountProps(this, props); 
+        }
 
         if (isFunction(this.init)) {
             const ret = this.init(props);
             if (ret && ret.then) {
-                (ret as Promise<any>).then(() => componentInited(this), err => {
+                (ret as Promise<any>).then(() => componentInited(this, triggerReceiveEvents), err => {
                     if (process.env.NODE_ENV !== 'production') {
                         console.error('Unhandled promise rejection in init: ', err);
                     }
-                    componentInited(this);
+                    componentInited(this, triggerReceiveEvents);
                 });
                 return;
             }
         }
-        componentInited(this);
+        componentInited(this, triggerReceiveEvents);
     }
 
     defaults(): P {
@@ -92,7 +95,7 @@ export abstract class Component<P = {}> extends Event implements ComponentClass<
             return;
         }
 
-        setProps(this, key, false);
+        setProps(this, key);
     }
 
     get(): Props<P, ComponentClass<P>>;
@@ -104,10 +107,16 @@ export abstract class Component<P = {}> extends Event implements ComponentClass<
         return get(this.props, key);
     }
 
+    forceUpdate() {
+        if (!this.$inited || this.$blockRender || this.$unmounted) return;
+    }
+
     $render(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null) {
+        this.$blockRender = true;
         if (isFunction(this.beforeMount)) {
             this.beforeMount(lastVNode, nextVNode);
         }
+        this.$blockRender = false;
 
         const vNode = this.$lastInput = normalizeRoot(this.$template());
 
@@ -131,18 +140,28 @@ export abstract class Component<P = {}> extends Event implements ComponentClass<
     }
 
     $update(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null) {
+        this.$blockRender = true;
+        patchProps(this, lastVNode.props, nextVNode.props, this.$defaults);
         if (isFunction(this.beforeUpdate)) {
-            this.beforeUpdate(lastVNode, nextVNode);
+            if (process.env.NODE_ENV !== 'production') {
+                DEV_callMethod(this, this.beforeUpdate, lastVNode, nextVNode);
+            } else {
+                this.beforeUpdate(lastVNode, nextVNode);
+            }
         }
+        this.$blockRender = false;
 
-        this.props = nextVNode.props || EMPTY_OBJ;
         const vNode = normalizeRoot(this.$template());
         patch(this.$lastInput!, vNode, parentDom, this.$SVG, anchor, this.$mountedQueue!);
         this.$lastInput = vNode;
 
         if(isFunction(this.updated)) {
             this.$mountedQueue!.push(() => {
-                this.updated!(lastVNode, nextVNode);
+                if (process.env.NODE_ENV !== 'production') {
+                    DEV_callMethod(this, this.updated!, lastVNode, nextVNode);
+                } else {
+                    this.updated!(lastVNode, nextVNode);
+                }
             });
         }
     }
@@ -161,11 +180,12 @@ export abstract class Component<P = {}> extends Event implements ComponentClass<
     }
 
     // lifecycle methods
-    protected init?(props: P | null): any;
-    protected beforeMount?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass): void;
-    protected mounted?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass): void;
-    protected beforeUpdate?(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass): void;
-    protected updated?(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass): void;
-    protected beforeUnmount?(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null): void;
-    protected unmounted?(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null): void;
+    init?(props: P | null): any;
+    beforeMount?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass): void;
+    mounted?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass): void;
+    beforeUpdate?(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass): void;
+    updated?(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass): void;
+    beforeUnmount?(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null): void;
+    unmounted?(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null): void;
 }
+
