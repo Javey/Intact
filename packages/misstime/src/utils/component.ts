@@ -55,18 +55,18 @@ export function patchProps(component: Component<any>, lastProps: Props<any>, nex
             }
 
             for (const prop in nextProps) {
-                const lastValue = lastProps[prop];
-                const nextValue = nextProps[prop];
+                const lastValue = rollbackToDefault(prop, lastProps[prop], defaultProps);
+                const nextValue = rollbackToDefault(prop, nextProps[prop], defaultProps);
 
                 if (lastValue !== nextValue) {
-                    patchProp(component, props, prop, lastValue, isUndefined(nextValue) ? defaultProps[prop] : nextValue, changeTraces);
+                    patchProp(component, props, prop, lastValue, nextValue, changeTraces);
                 }
             }             
         }
 
         if (lastProps !== EMPTY_OBJ) {
             for (const prop in lastProps) {
-                if (!hasOwn.call(nextProps, prop)) {
+                if (!isUndefined(lastProps[prop]) && !hasOwn.call(nextProps, prop)) {
                     patchProp(component, props, prop, lastProps[prop], defaultProps[prop], null);
                 }
             }
@@ -188,6 +188,10 @@ function rerender() {
             }
         }
     }
+}
+
+function rollbackToDefault(prop: string, value: any, defaultProps: any) {
+    return isUndefined(value) ? defaultProps[prop] : value;
 }
 
 export function DEV_callMethod(component: Component<any>, method: Function, lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass) {

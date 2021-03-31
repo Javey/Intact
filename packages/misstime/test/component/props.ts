@@ -38,58 +38,76 @@ describe('Component', () => {
         
         afterEach(() => render(null, container));
 
-        it('should set value to default when render undefined prop', () => {
-            render(h(Test, {name: undefined}), container);
+        describe('Mount', () => {
+            it('should set value to default when render undefined prop', () => {
+                render(h(Test, {name: undefined}), container);
 
-            expect(component!.props).toEqual({name: 1});
+                expect(component!.props).toEqual({name: 1});
+            });
+
+            it('should update prop and trigger $receive event', () => {
+                const onReceiveName = jasmine.createSpy();
+                const onReceiveAge = jasmine.createSpy();
+                interface MyTestProps extends TestProps {
+                    age: number
+                }
+                class MyTest extends Test<MyTestProps> {
+                    init() {
+                        this.on('$receive:name', onReceiveName);
+                        this.on('$receive:age', onReceiveAge);
+                    } 
+                }
+
+                render(h(MyTest, {name: 2, age: 1}), container);
+
+                expect((component as MyTest).props).toEqual({name: 2, age: 1});
+                expect(onReceiveName).toHaveBeenCalledOnceWith(2, 1);
+                expect(onReceiveAge).toHaveBeenCalledOnceWith(1, undefined);
+            });
+
+            it('should not trigger $receive event if values are equal', () => {
+                const onReceiveName = jasmine.createSpy();
+                class MyTest extends Test {
+                    init() {
+                        this.on('$receive:name', onReceiveName);
+                    } 
+                }
+
+                render(h(MyTest, {name: 1}), container);
+
+                expect(component!.props).toEqual({name: 1});
+                expect(onReceiveName).toHaveBeenCalledTimes(0);
+            });
+        })
+
+        describe('Patch', () => {
+            it('should do nothing if props are undefined', () => {
+                render(h(Test), container);
+                render(h(Test), container);
+
+                expect(component!.props).toEqual({name: 1});
+            });
+
+            it('should set prop to default value if next value is undefined', () => {
+                render(h(Test, {name: 2}), container);
+                render(h(Test, {name: undefined}), container);
+
+                expect(component!.props).toEqual({name: 1});
+            });
+
+            it('should set prop to default value if next value does not exist', () => {
+                render(h(Test, {name: 2}), container);
+                render(h(Test), container);
+
+                expect(component!.props).toEqual({name: 1});
+            });
+
+            it('should do nothing if next value does not exist but last value is undefined', () => {
+                render(h(Test, {name: undefined}), container);
+                render(h(Test), container);
+
+                expect(component!.props).toEqual({name: 1});
+            });
         });
-
-        it('should update prop and trigger $receive event', () => {
-            const onReceiveName = jasmine.createSpy();
-            const onReceiveAge = jasmine.createSpy();
-            interface MyTestProps extends TestProps {
-                age: number
-            }
-            class MyTest extends Test<MyTestProps> {
-                init() {
-                    this.on('$receive:name', onReceiveName);
-                    this.on('$receive:age', onReceiveAge);
-                } 
-            }
-
-            render(h(MyTest, {name: 2, age: 1}), container);
-
-            expect((component as MyTest).props).toEqual({name: 2, age: 1});
-            expect(onReceiveName).toHaveBeenCalledOnceWith(2, 1);
-            expect(onReceiveAge).toHaveBeenCalledOnceWith(1, undefined);
-        });
-
-        it('should not trigger $receive event if values are equal', () => {
-            const onReceiveName = jasmine.createSpy();
-            class MyTest extends Test {
-                init() {
-                    this.on('$receive:name', onReceiveName);
-                } 
-            }
-
-            render(h(MyTest, {name: 1}), container);
-
-            expect(component!.props).toEqual({name: 1});
-            expect(onReceiveName).toHaveBeenCalledTimes(0);
-        });
-
-        // it('should update props', () => {
-            // render(h(Test, {name: 1}), container);
-            // expect(component!.props).toEqual({name: 1} as any);
-
-            // render(h(Test, {name: 2}), container);
-            // expect(component!.props).toEqual({name: 2} as any);
-
-            // render(h(Test, {name: undefined}), container);
-            // expect(component!.props).toEqual({name: 1} as any);
-
-            // render(h(Test), container);
-            // expect(component!.props).toEqual({name: 1} as any);
-        // });
     });
 });
