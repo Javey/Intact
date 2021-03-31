@@ -121,13 +121,13 @@ export interface ComponentClass<P = any> {
     props: Props<P, ComponentClass<P>>;
 
     $SVG: boolean;
-    // $vNode: VNodeComponentClass<P> | null;
+    $vNode: VNodeComponentClass<ComponentClass<P>> | null;
     $lastInput: VNode | null;
     $mountedQueue: Function[] | null;
 
-    $render(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null): void;
+    $render(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null, mountedQueue: Function[]): void;
     $mount(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass): void;
-    $update(lastVNode: VNodeComponentClass , vNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null): void;
+    $update(lastVNode: VNodeComponentClass , vNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null, mountedQueue: Function[], force: boolean): void;
     $unmount(vNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
 }
 

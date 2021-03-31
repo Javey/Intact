@@ -113,9 +113,9 @@ function patchComponentClass(
         if (isNullOrUndefined(instance)) return;
 
         instance.$mountedQueue = mountedQueue;
-        // instance.$vNode = nextVNode;
+        instance.$vNode = nextVNode;
 
-        instance.$update(lastVNode, nextVNode, parentDom, anchor);
+        instance.$update(lastVNode, nextVNode, parentDom, anchor, mountedQueue, false);
 
         const lastRef = lastVNode.ref;
         const nextRef = nextVNode.ref;

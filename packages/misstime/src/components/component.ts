@@ -1,5 +1,4 @@
-import {
-    ComponentConstructor,
+import { ComponentConstructor,
     ComponentClass, 
     Props,
     VNodeComponentClass,
@@ -13,7 +12,7 @@ import {unmount} from '../core/unmount';
 import {normalizeRoot} from '../core/vnode';
 import {EMPTY_OBJ} from '../utils/common';
 import {isNull, isFunction, isUndefined, get, set, isObject, isNullOrUndefined, isString} from '../utils/helpers';
-import {componentInited, setProps, mountProps, patchProps, DEV_callMethod} from '../utils/component';
+import {componentInited, setProps, mountProps, patchProps, DEV_callMethod, forceUpdate} from '../utils/component';
 import {Event} from './event';
 
 // export type Template<T> = (this: T) => Children
@@ -33,9 +32,11 @@ export abstract class Component<P = {}> extends Event implements ComponentClass<
 
     // internal properties
     public $SVG: boolean = false;
+    public $vNode: VNodeComponentClass<Component<P>> | null = null;
     public $lastInput: VNode | null = null;
     public $mountedQueue: Function[] | null = null;
     public $blockRender: boolean = false;
+    public $queue: Function[] | null = null;
 
     // lifecyle states
     public $inited: boolean = false;
@@ -107,11 +108,18 @@ export abstract class Component<P = {}> extends Event implements ComponentClass<
         return get(this.props, key);
     }
 
-    forceUpdate() {
-        if (!this.$inited || this.$blockRender || this.$unmounted) return;
+    forceUpdate(callback?: Function) {
+        if (this.$unmounted) return;
+        forceUpdate(this, callback);
     }
 
-    $render(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null) {
+    $render(
+        lastVNode: VNodeComponentClass | null,
+        nextVNode: VNodeComponentClass,
+        parentDom: Element,
+        anchor: IntactDom | null,
+        mountedQueue: Function[]
+    ) {
         this.$blockRender = true;
         if (isFunction(this.beforeMount)) {
             this.beforeMount(lastVNode, nextVNode);
@@ -123,9 +131,9 @@ export abstract class Component<P = {}> extends Event implements ComponentClass<
         // reuse the dom even if they are different
         let lastInput: VNode | null = null;
         if (!isNull(lastVNode) && (lastInput = lastVNode.children!.$lastInput)) {
-            patch(lastInput, vNode, parentDom, this.$SVG, anchor, this.$mountedQueue!);
+            patch(lastInput, vNode, parentDom, this.$SVG, anchor, mountedQueue);
         } else {
-            mount(vNode, parentDom, this.$SVG, anchor, this.$mountedQueue!);
+            mount(vNode, parentDom, this.$SVG, anchor, mountedQueue);
         }
 
         this.$rendered = true;
@@ -139,9 +147,18 @@ export abstract class Component<P = {}> extends Event implements ComponentClass<
         }
     }
 
-    $update(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null) {
+    $update(
+        lastVNode: VNodeComponentClass,
+        nextVNode: VNodeComponentClass,
+        parentDom: Element, 
+        anchor: IntactDom | null,
+        mountedQueue: Function[],
+        force: boolean,
+    ) {
         this.$blockRender = true;
-        patchProps(this, lastVNode.props, nextVNode.props, this.$defaults);
+        if (!force) {
+            patchProps(this, lastVNode.props, nextVNode.props, this.$defaults);
+        }
         if (isFunction(this.beforeUpdate)) {
             if (process.env.NODE_ENV !== 'production') {
                 DEV_callMethod(this, this.beforeUpdate, lastVNode, nextVNode);
@@ -152,11 +169,11 @@ export abstract class Component<P = {}> extends Event implements ComponentClass<
         this.$blockRender = false;
 
         const vNode = normalizeRoot(this.$template());
-        patch(this.$lastInput!, vNode, parentDom, this.$SVG, anchor, this.$mountedQueue!);
+        patch(this.$lastInput!, vNode, parentDom, this.$SVG, anchor, mountedQueue);
         this.$lastInput = vNode;
 
         if(isFunction(this.updated)) {
-            this.$mountedQueue!.push(() => {
+            mountedQueue!.push(() => {
                 if (process.env.NODE_ENV !== 'production') {
                     DEV_callMethod(this, this.updated!, lastVNode, nextVNode);
                 } else {

@@ -1,7 +1,14 @@
 import type {Component} from '../components/component';
 import {Props, VNodeComponentClass, ChangeTrace} from './types';
-import {get, set, isNull, isEventProp, isUndefined, isNullOrUndefined, hasOwn} from './helpers';
-import {normalizeEventName, EMPTY_OBJ} from './common';
+import {get, set, isNull, isFunction, isEventProp, isUndefined, isNullOrUndefined, hasOwn} from './helpers';
+import {normalizeEventName, EMPTY_OBJ, findDomFromVNode, callAll} from './common';
+
+export const nextTick = typeof Promise !== 'undefined' ? 
+    (callback: Function) => Promise.resolve().then(() => callback()) :
+    (callback: Function) => window.setTimeout(callback, 0);
+let microTaskPending = false;
+
+const QUEUE: Component<any>[] = [];
 
 export function componentInited(component: Component<any>, triggerReceiveEvents: Function | null) {
     component.$inited = true;
@@ -37,9 +44,8 @@ export function patchProps(component: Component<any>, lastProps: Props<any>, nex
     lastProps || (lastProps = EMPTY_OBJ);
     nextProps || (nextProps = EMPTY_OBJ);
 
-    const changeTraces: ChangeTrace[] = [];
-
     if (lastProps !== nextProps) {
+        const changeTraces: ChangeTrace[] = [];
         const props = component.props;
 
         if (nextProps !== EMPTY_OBJ) {
@@ -65,9 +71,9 @@ export function patchProps(component: Component<any>, lastProps: Props<any>, nex
                 }
             }
         }
-    }
 
-    triggerReceiveEvents(component, changeTraces);
+        triggerReceiveEvents(component, changeTraces);
+    }
 }
 
 export function patchProp(component: Component<any>, props: Props<any>, prop: string, lastValue: any, nextValue: any, changeTraces: ChangeTrace[] | null) {
@@ -101,7 +107,7 @@ export function setProps(component: Component<any>, newProps: Props<any>) {
 
     const changesLength = changeTracesGroup.length;
     if (changesLength > 0) {
-        // step 1: trigger $change events
+        // trigger $change events
         for (let i = 0; i < changesLength; i++) {
             const changeTraces = changeTracesGroup[i];
             // we should iterate from back to front to trigger event in order like a.b.c -> a.b -> a
@@ -112,18 +118,38 @@ export function setProps(component: Component<any>, newProps: Props<any>) {
             }
         }
 
-        // step 2: update component
-        // component.$update();
+        forceUpdate(component, () => {
+            // trigger $changed events
+            for (let i = 0; i < changesLength; i++) {
+                const changeTraces = changeTracesGroup[i];
+                // we should iterate from back to front to trigger event in order like a.b.c -> a.b -> a
+                for (let j = changeTraces.length - 1; j > -1; j--) {
+                    const {path, newValue, oldValue} = changeTraces[j];
 
-        // step 3: trigger $changed events
-        for (let i = 0; i < changesLength; i++) {
-            const changeTraces = changeTracesGroup[i];
-            // we should iterate from back to front to trigger event in order like a.b.c -> a.b -> a
-            for (let j = changeTraces.length - 1; j > -1; j--) {
-                const {path, newValue, oldValue} = changeTraces[j];
-
-                component.trigger(`$changed:${path}`, newValue, oldValue);
+                    component.trigger(`$changed:${path}`, newValue, oldValue);
+                }
             }
+        });
+    }
+}
+
+export function forceUpdate(component: Component<any>, callback?: Function) {
+    if (!component.$inited || component.$blockRender) {
+        // component is rendering or updating
+        if (isFunction(callback)) {
+            component.$mountedQueue!.push(callback);
+        }
+    } else {
+        if (QUEUE.indexOf(component) === -1) {
+            QUEUE.push(component);
+        }
+        if (!microTaskPending) {
+            microTaskPending = true;
+            nextTick(rerender);
+        }
+
+        if (isFunction(callback)) {
+            (component.$queue || (component.$queue = [])).push(callback);
         }
     }
 }
@@ -132,6 +158,35 @@ function triggerReceiveEvents(component: Component<any>, changeTraces: ChangeTra
     for (let i = 0; i < changeTraces.length; i++) {
         const {path, newValue, oldValue} = changeTraces[i];
         component.trigger(`$receive:${path}`, newValue, oldValue);
+    }
+}
+
+function rerender() {
+    let component: Component<any> | undefined = undefined;
+    microTaskPending = false;
+
+    while (component = QUEUE.shift()) {
+        if (!component.$unmounted) {
+            const mountedQueue: Function[] = [];
+            const vNode = component.$vNode!;
+            component.$update(
+                vNode, 
+                vNode,
+                (findDomFromVNode(component.$lastInput!, true) as Element).parentNode as Element,
+                null,
+                mountedQueue,
+                true,
+            );
+            callAll(mountedQueue); 
+
+            const queue = component.$queue;
+            if (queue) {
+                for (let i = 0; i < queue.length; i++) {
+                    queue[i].call(component);
+                }
+                component.$queue = null;
+            }
+        }
     }
 }
 

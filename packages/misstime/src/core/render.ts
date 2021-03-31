@@ -4,6 +4,7 @@ import {directClone} from './vnode';
 import {mount} from './mount';
 import {remove} from './unmount';
 import {patch} from './patch';
+import {callAll} from '../utils/common';
 
 const hasDocumentAvailable: boolean = typeof document !== 'undefined';
 
@@ -66,7 +67,5 @@ export function render(vNode: VNode | null | undefined, parentDom: MissTimeEleme
         }
     }
 
-    for (let i = 0; i < mountedQueue.length; i++) {
-        mountedQueue[i]();
-    }
+    callAll(mountedQueue);
 }
