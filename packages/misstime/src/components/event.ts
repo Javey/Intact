@@ -1,11 +1,19 @@
 import {isUndefined, throwError, isFunction} from '../utils/helpers';
 
-export class Event {
+type World = "world";
+
+type Greeting = `hello ${World}`;
+
+export class Event<P> {
     private $events: Record<string, Function[]> = {}; 
 
     // internal properties
     public $blockAddEvent: boolean = false;
 
+    on<K extends Extract<keyof P, string>>(name: `$receive:${K}`, callback: (newValue: P[K], oldValue: P[K] | undefined) => void): void;
+    on<K extends Extract<keyof P, string>>(name: `$change:${K}`, callback: (newValue: P[K], oldValue: P[K]) => void): void;
+    on<K extends Extract<keyof P, string>>(name: `$changed:${K}`, callback: (newValue: P[K], oldValue: P[K]) => void): void;
+    on(name: string, callback: Function): void;
     on(name: string, callback: Function) {
         if (process.env.NODE_ENV !== 'production') {
             if (this.$blockAddEvent) {

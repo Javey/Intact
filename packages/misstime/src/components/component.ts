@@ -22,7 +22,7 @@ export type SetOptions = {
     // async: false
 }
 
-export abstract class Component<P = {}> extends Event implements ComponentClass<P> {
+export abstract class Component<P extends {} = {}> extends Event<P> implements ComponentClass<P> {
     static readonly template: Template | string;
     static readonly propTypes?: Record<string, any>;
     static readonly displayName?: string;
