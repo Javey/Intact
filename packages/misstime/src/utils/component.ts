@@ -69,6 +69,61 @@ export function renderAsyncComponent(
     });
 }
 
+export function updateSyncComponent(
+    component: Component<any>,
+    lastVNode: VNodeComponentClass,
+    nextVNode: VNodeComponentClass,
+    parentDom: Element, 
+    anchor: IntactDom | null,
+    mountedQueue: Function[],
+    force: boolean,
+) {
+    component.$blockRender = true;
+    if (!force) {
+        patchProps(component, lastVNode.props, nextVNode.props, component.$defaults);
+    }
+    if (isFunction(component.beforeUpdate)) {
+        if (process.env.NODE_ENV !== 'production') {
+            DEV_callMethod(component, component.beforeUpdate, lastVNode, nextVNode);
+        } else {
+            /* istanbul ignore next */
+            component.beforeUpdate(lastVNode, nextVNode);
+        }
+    }
+    component.$blockRender = false;
+
+    const vNode = normalizeRoot(component.$template());
+    patch(component.$lastInput!, vNode, parentDom, component.$SVG, anchor, mountedQueue);
+    component.$lastInput = vNode;
+
+    if(isFunction(component.updated)) {
+        mountedQueue!.push(() => {
+            if (process.env.NODE_ENV !== 'production') {
+                DEV_callMethod(component, component.updated!, lastVNode, nextVNode);
+            } else {
+                /* istanbul ignore next */
+                component.updated!(lastVNode, nextVNode);
+            }
+        });
+    }
+}
+
+export function updateAsyncComponent(
+    component: Component<any>,
+    lastVNode: VNodeComponentClass,
+    nextVNode: VNodeComponentClass,
+    parentDom: Element, 
+    anchor: IntactDom | null,
+    mountedQueue: Function[],
+    force: boolean,
+) {
+    component.on('$inited', () => {
+        mountedQueue = [];
+        updateSyncComponent(component, lastVNode, nextVNode, parentDom, anchor, mountedQueue, force);
+        callAll(mountedQueue);
+    });
+}
+
 export function componentInited(component: Component<any>, triggerReceiveEvents: Function | null) {
     component.$inited = true;
 

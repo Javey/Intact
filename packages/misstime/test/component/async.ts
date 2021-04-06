@@ -13,7 +13,7 @@ describe('Component', () => {
         document.body.appendChild(container);
     });
 
-    class Test extends Component {
+    class Test extends Component<{name?: number}> {
         static template(this: Test) {
             expect(this.get('name')).toBeTruthy();
             return h('div', null, this.get('name'));
@@ -29,59 +29,110 @@ describe('Component', () => {
     }
 
     describe('Async Component', () => {
-        it('should mount async component', async () => {
-            render(h(Test), container);
-            expect(container.innerHTML).toBe('<!--async-->');
+        describe('Mount', () => {
+            it('should mount async component', async () => {
+                render(h(Test), container);
+                expect(container.innerHTML).toBe('<!--async-->');
 
-            await wait(200);
-            expect(container.innerHTML).toBe('<div>1</div>');
-        });
-
-        it('should trigger event correctly', async () => {
-            const onChangeName = jasmine.createSpy();
-            const onChangedName = jasmine.createSpy().and.callFake(() => {
+                await wait(200);
                 expect(container.innerHTML).toBe('<div>1</div>');
             });
-            class MyTest extends Test {
-                init() {
-                    this.on('$change:name', onChangeName);
-                    this.on('$changed:name', onChangedName);
-                    return super.init();
-                }
-            }
 
-            render(h(MyTest), container);
-            await wait(200);
-            expect(onChangeName).toHaveBeenCalledOnceWith(1, undefined);
-            expect(onChangedName).toHaveBeenCalledOnceWith(1, undefined);
+            it('should trigger event correctly', async () => {
+                const onChangeName = jasmine.createSpy();
+                const onChangedName = jasmine.createSpy().and.callFake(() => {
+                    expect(container.innerHTML).toBe('<div>1</div>');
+                });
+                class MyTest extends Test {
+                    init() {
+                        this.on('$change:name', onChangeName);
+                        this.on('$changed:name', onChangedName);
+                        return super.init();
+                    }
+                }
+
+                render(h(MyTest), container);
+                await wait(200);
+                expect(onChangeName).toHaveBeenCalledOnceWith(1, undefined);
+                expect(onChangedName).toHaveBeenCalledOnceWith(1, undefined);
+            });
+
+            it('should call beforeMount and mounted correctly', async () => {
+                const beforeMount = jasmine.createSpy();
+                const mounted = jasmine.createSpy();
+
+                class MyTest extends Test {
+                    beforeMount() {
+                        beforeMount();
+                    }
+
+                    mounted() {
+                        mounted();
+                    }
+                }
+
+                render(h(MyTest), container);
+                expect(beforeMount).toHaveBeenCalledTimes(0);
+                expect(mounted).toHaveBeenCalledTimes(0);
+
+                await wait(200);
+                expect(beforeMount).toHaveBeenCalledTimes(1);
+                expect(mounted).toHaveBeenCalledTimes(1);
+            });
         });
 
-        it('should call beforeMount and mount correctly', async () => {
-            const beforeMount = jasmine.createSpy();
-            const mounted = jasmine.createSpy();
+        describe('Update', () => {
+            it('should update correctly', async () => {
+                render(h(Test), container);
+                render(h(Test, {name: 2}), container);
 
-            class MyTest extends Test {
-                beforeMount() {
-                    beforeMount();
+                expect(container.innerHTML).toBe('<!--async-->');
+
+                await wait(200);
+                expect(container.innerHTML).toBe('<div>2</div>');
+            });
+
+            it('should trigger events correctly', async () => {
+                const onReceiveName = jasmine.createSpy().and.callFake(() => {
+                    expect(container.innerHTML).toBe('<div>1</div>');
+                });
+                class MyTest extends Test {
+                    init() {
+                        this.on('$receive:name', onReceiveName);
+                        return super.init();
+                    }
                 }
 
-                mounted() {
-                    mounted();
+                render(h(MyTest), container);
+                render(h(MyTest, {name: 2}), container);
+
+                await wait(200);
+                expect(onReceiveName).toHaveBeenCalledOnceWith(2, undefined);
+            });
+
+            it('should call beforeUpdate and updated correctly', async () => {
+                const beforeUpdate = jasmine.createSpy();
+                const updated = jasmine.createSpy();
+
+                class MyTest extends Test {
+                    beforeUpdate() {
+                        beforeUpdate();
+                    }
+
+                    updated() {
+                        updated();
+                    }
                 }
-            }
 
-            render(h(MyTest), container);
-            expect(beforeMount).toHaveBeenCalledTimes(0);
-            expect(mounted).toHaveBeenCalledTimes(0);
+                render(h(MyTest), container);
+                render(h(MyTest), container);
+                expect(beforeUpdate).toHaveBeenCalledTimes(0);
+                expect(updated).toHaveBeenCalledTimes(0);
 
-            await wait(200);
-            expect(beforeMount).toHaveBeenCalledTimes(1);
-            expect(mounted).toHaveBeenCalledTimes(1);
-        });
-
-        it('should update correctly', async () => {
-            render(h(Test), container);
-            render(h(Test), container);
+                await wait(200);
+                expect(beforeUpdate).toHaveBeenCalledTimes(1);
+                expect(updated).toHaveBeenCalledTimes(1);
+            });
         });
     });
 });

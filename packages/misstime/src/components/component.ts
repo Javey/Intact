@@ -23,6 +23,8 @@ import {
     forceUpdate,
     renderSyncComponnet,
     renderAsyncComponent,
+    updateSyncComponent,
+    updateAsyncComponent,
 } from '../utils/component';
 import {Event} from './event';
 
@@ -148,33 +150,10 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         mountedQueue: Function[],
         force: boolean,
     ) {
-        this.$blockRender = true;
-        if (!force) {
-            patchProps(this, lastVNode.props, nextVNode.props, this.$defaults);
-        }
-        if (isFunction(this.beforeUpdate)) {
-            if (process.env.NODE_ENV !== 'production') {
-                DEV_callMethod(this, this.beforeUpdate, lastVNode, nextVNode);
-            } else {
-                /* istanbul ignore next */
-                this.beforeUpdate(lastVNode, nextVNode);
-            }
-        }
-        this.$blockRender = false;
-
-        const vNode = normalizeRoot(this.$template());
-        patch(this.$lastInput!, vNode, parentDom, this.$SVG, anchor, mountedQueue);
-        this.$lastInput = vNode;
-
-        if(isFunction(this.updated)) {
-            mountedQueue!.push(() => {
-                if (process.env.NODE_ENV !== 'production') {
-                    DEV_callMethod(this, this.updated!, lastVNode, nextVNode);
-                } else {
-                    /* istanbul ignore next */
-                    this.updated!(lastVNode, nextVNode);
-                }
-            });
+        if (this.$inited) {
+            updateSyncComponent(this, lastVNode, nextVNode, parentDom, anchor, mountedQueue, force);
+        } else {
+            updateAsyncComponent(this, lastVNode, nextVNode, parentDom, anchor, mountedQueue, force);
         }
     }
 
