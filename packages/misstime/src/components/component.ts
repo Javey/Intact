@@ -120,6 +120,11 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         forceUpdate(this, callback);
     }
 
+    watch(key: string, callback: Function) {
+        this.on(`$change:${key}`, callback);
+        this.on(`$receive:${key}`, (v: any) => this.set(key, v));
+    }
+
     $render(
         lastVNode: VNodeComponentClass | null,
         nextVNode: VNodeComponentClass,
