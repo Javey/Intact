@@ -1,6 +1,7 @@
 import {Props, ComponentClass, VNodeComponentClass, VNode} from '../src/utils/types';
 import {createVNode as h} from '../src/core/vnode';
 import {render} from '../src/core/render';
+import {nextTick as _nextTick} from '../src/utils/component';
 
 export function dispatchEvent(target: Element, eventName: string, options?: Object) {
     let event;
@@ -26,4 +27,10 @@ export function patchTest(container: Element, vNode1: VNode, vNode2: VNode, html
         expect(container.innerHTML).toBe(html);
     }
     return vNode2;
+}
+
+export async function nextTick() {
+    return new Promise(resolve => {
+        _nextTick(resolve);
+    });
 }

@@ -5,6 +5,8 @@ import { ComponentConstructor,
     IntactDom,
     VNode,
     Children,
+    Template,
+    SetOptions,
 } from '../utils/types';
 import {mount} from '../core/mount';
 import {patch} from '../core/patch';
@@ -14,13 +16,6 @@ import {EMPTY_OBJ} from '../utils/common';
 import {isNull, isFunction, isUndefined, get, set, isObject, isNullOrUndefined, isString} from '../utils/helpers';
 import {componentInited, setProps, mountProps, patchProps, DEV_callMethod, forceUpdate} from '../utils/component';
 import {Event} from './event';
-
-// export type Template<T> = (this: T) => Children
-export type Template = () => Children;
-export type SetOptions = {
-    slient: boolean
-    // async: false
-}
 
 export abstract class Component<P extends {} = {}> extends Event<P> implements ComponentClass<P> {
     static readonly template: Template | string;
@@ -34,7 +29,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     public $SVG: boolean = false;
     public $vNode: VNodeComponentClass<Component<P>> | null = null;
     public $lastInput: VNode | null = null;
-    public $mountedQueue: Function[] | null = null;
+    public $mountedQueue: Function[];
     public $blockRender: boolean = false;
     public $queue: Function[] | null = null;
 
@@ -48,9 +43,10 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     private $template: Template;
     private $defaults: Partial<P>;
 
-    constructor(props: P | null) {
+    constructor(props: P | null, mountedQueue: Function[]) {
         super();
 
+        this.$mountedQueue = mountedQueue;
         this.$template = (this.constructor as typeof Component).template as Template; 
 
         this.$defaults = this.defaults();
@@ -89,7 +85,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
             key = {[key]: value};
         } 
 
-        if (!isUndefined(options) && options.slient) {
+        if (!isUndefined(options) && options.silent) {
             for (let propName in key as P) {
                 set(this.props, propName, key[propName]);
             }
@@ -163,6 +159,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
             if (process.env.NODE_ENV !== 'production') {
                 DEV_callMethod(this, this.beforeUpdate, lastVNode, nextVNode);
             } else {
+                /* istanbul ignore next */
                 this.beforeUpdate(lastVNode, nextVNode);
             }
         }
@@ -177,6 +174,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
                 if (process.env.NODE_ENV !== 'production') {
                     DEV_callMethod(this, this.updated!, lastVNode, nextVNode);
                 } else {
+                    /* istanbul ignore next */
                     this.updated!(lastVNode, nextVNode);
                 }
             });
@@ -190,6 +188,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
 
         unmount(this.$lastInput!); 
         this.$unmounted = true;
+        this.off();
 
         if (isFunction(this.unmounted)) {
             this.unmounted(vNode, nextVNode);

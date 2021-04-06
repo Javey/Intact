@@ -102,11 +102,11 @@ export function mountComponentClass(
     anchor: IntactDom | null,
     mountedQueue: Function[]
 ) {
-    const instance = new vNode.tag(vNode.props);
+    const instance = new vNode.tag(vNode.props, mountedQueue);
 
     instance.$SVG = isSVG;
     instance.$vNode = vNode;
-    instance.$mountedQueue = mountedQueue;
+    // instance.$mountedQueue = mountedQueue;
    
     vNode.children = instance;
 

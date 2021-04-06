@@ -113,7 +113,7 @@ export type Props<P extends {}, T = Element> = {
 } & P;
 
 export interface ComponentConstructor<T extends ComponentClass = ComponentClass> {
-    new (props: T extends ComponentClass<infer P> ? P : {}): T
+    new (props: T extends ComponentClass<infer P> ? P : {}, mountedQueue: Function[]): T
     displayName?: string
 }
 
@@ -155,3 +155,10 @@ export type Reference = {
 };
 
 export type ChangeTrace = {path: string, newValue: any, oldValue: any};
+
+export type Template = () => Children;
+
+export type SetOptions = {
+    silent: boolean
+    // async: false
+}

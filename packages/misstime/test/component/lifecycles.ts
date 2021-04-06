@@ -1,8 +1,8 @@
-import {Component, Template} from '../../src/components/component';
+import {Component} from '../../src/components/component';
 import {render} from '../../src/core/render';
 import {createVNode as h, VNode as VNodeConstructor} from '../../src/core/vnode';
 import {Fragment, findDomFromVNode} from '../../src/utils/common';
-import {VNode, VNodeComponentClass} from '../../src/utils/types';
+import {VNode, VNodeComponentClass, Template} from '../../src/utils/types';
 
 describe('Component', () => {
     let container: Element;
@@ -13,36 +13,6 @@ describe('Component', () => {
     });
 
     describe('Lifecycle', () => {
-        // it('should call beforeCreate & created', () => {
-            // const beforeCreate = jasmine.createSpy();
-            // const created = jasmine.createSpy();
-
-            // class Test extends Component {
-                // private title?: string;
-                // static template = function(this: Test) {
-                    // return h('div', null, this.title);
-                // }
-                // beforeCreate(props: null) {
-                    // this.title = 'a'
-                    // expect(this.$inited).toBeFalse();
-                    // expect(this.$lastInput).toBeNull();
-                    // beforeCreate(props);
-                // }
-                // created(lastVNode: null, nextVNode: VNodeComponentClass<Test>) {
-                    // expect(this.$inited).toBeTrue();
-                    // expect(this.$rendered).toBeFalse();
-                    // expect(this.$lastInput).toBeNull();
-                    // expect(nextVNode.children).toBe(this);
-                    // created();
-                // }
-            // }
-
-            // render(h(Test), container);
-            // expect(container.innerHTML).toBe('<div>a</div>');
-            // expect(beforeCreate).toHaveBeenCalledOnceWith(null);
-            // expect(created).toHaveBeenCalledTimes(1);
-        // });
-
         it('should call beforeMount & mounted', () => {
             const beforeMount = jasmine.createSpy();
             const mounted = jasmine.createSpy();

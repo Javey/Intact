@@ -5,6 +5,7 @@ import {normalizeEventName, EMPTY_OBJ, findDomFromVNode, callAll} from './common
 
 export const nextTick = typeof Promise !== 'undefined' ? 
     (callback: Function) => Promise.resolve().then(() => callback()) :
+    /* istanbul ignore next */
     (callback: Function) => window.setTimeout(callback, 0);
 let microTaskPending = false;
 
@@ -78,6 +79,7 @@ export function patchProps(component: Component<any>, lastProps: Props<any>, nex
 
 export function patchProp(component: Component<any>, props: Props<any>, prop: string, lastValue: any, nextValue: any, changeTraces: ChangeTrace[] | null) {
     if (isEventProp(prop)) {
+        prop = normalizeEventName(prop);
         if (!isNullOrUndefined(lastValue)) {
             component.off(prop, lastValue);
         }
@@ -96,7 +98,7 @@ export function setProps(component: Component<any>, newProps: Props<any>) {
     const props = component.props;
     const changeTracesGroup: ChangeTrace[][] = [];
 
-    for (let propName in props) {
+    for (let propName in newProps) {
         const lastValue = get(props, propName);
         const nextValue = newProps[propName];
 
@@ -118,7 +120,7 @@ export function setProps(component: Component<any>, newProps: Props<any>) {
             }
         }
 
-        forceUpdate(component, () => {
+        component.forceUpdate(() => {
             // trigger $changed events
             for (let i = 0; i < changesLength; i++) {
                 const changeTraces = changeTracesGroup[i];
@@ -135,9 +137,9 @@ export function setProps(component: Component<any>, newProps: Props<any>) {
 
 export function forceUpdate(component: Component<any>, callback?: Function) {
     if (!component.$inited || component.$blockRender) {
-        // component is rendering or updating
+        // component is before rendering or updating
         if (isFunction(callback)) {
-            component.$mountedQueue!.push(callback);
+            component.$mountedQueue.push(callback);
         }
     } else {
         if (QUEUE.indexOf(component) === -1) {

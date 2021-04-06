@@ -1,8 +1,8 @@
-import {Component, Template} from '../../src/components/component';
+import {Component} from '../../src/components/component';
 import {render} from '../../src/core/render';
 import {createVNode as h} from '../../src/core/vnode';
 import {Fragment} from '../../src/utils/common';
-import {VNode, ComponentClass, Props} from '../../src/utils/types';
+import {VNode, ComponentClass, Props, Template} from '../../src/utils/types';
 import {patchTest as _patchTest} from '../utils';
 
 describe('Functional component', () => {

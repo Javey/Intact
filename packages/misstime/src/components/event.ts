@@ -5,7 +5,7 @@ type World = "world";
 type Greeting = `hello ${World}`;
 
 export class Event<P> {
-    private $events: Record<string, Function[]> = {}; 
+    private $events: Record<string, Function[] | undefined> = {}; 
 
     // internal properties
     public $blockAddEvent: boolean = false;
@@ -19,8 +19,8 @@ export class Event<P> {
             if (this.$blockAddEvent) {
                 throwError(
                     'Adding event listener on `beforeUpdate` & `updated` is not allowed, ' + 
-                    'because it may invoke multiple times.' + 
-                    'Add it on `init`.'
+                    'because it may invoke multiple times. ' + 
+                    'You should add it on `init`.'
                 );
             }
             if (!isFunction(callback)) {
@@ -50,7 +50,7 @@ export class Event<P> {
         if (isUndefined(callbacks)) return;
 
         if (isUndefined(callback)) {
-            delete this.$events[name];
+            this.$events[name] = undefined;
             return;
         }
 
