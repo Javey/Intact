@@ -34,3 +34,9 @@ export async function nextTick() {
         _nextTick(resolve);
     });
 }
+
+export async function wait(duration: number) {
+    return new Promise(resolve => {
+        setTimeout(resolve, duration);
+    });
+}

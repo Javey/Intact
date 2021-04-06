@@ -11,10 +11,19 @@ import { ComponentConstructor,
 import {mount} from '../core/mount';
 import {patch} from '../core/patch';
 import {unmount} from '../core/unmount';
-import {normalizeRoot} from '../core/vnode';
+import {normalizeRoot, createCommentVNode} from '../core/vnode';
 import {EMPTY_OBJ} from '../utils/common';
 import {isNull, isFunction, isUndefined, get, set, isObject, isNullOrUndefined, isString} from '../utils/helpers';
-import {componentInited, setProps, mountProps, patchProps, DEV_callMethod, forceUpdate} from '../utils/component';
+import {
+    componentInited, 
+    setProps,
+    mountProps,
+    patchProps, 
+    DEV_callMethod,
+    forceUpdate,
+    renderSyncComponnet,
+    renderAsyncComponent,
+} from '../utils/component';
 import {Event} from './event';
 
 export abstract class Component<P extends {} = {}> extends Event<P> implements ComponentClass<P> {
@@ -40,8 +49,8 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     public $unmounted: boolean = false;
 
     // private properties
-    private $template: Template;
-    private $defaults: Partial<P>;
+    public $template: Template;
+    public $defaults: Partial<P>;
 
     constructor(props: P | null, mountedQueue: Function[]) {
         super();
@@ -116,23 +125,11 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         anchor: IntactDom | null,
         mountedQueue: Function[]
     ) {
-        this.$blockRender = true;
-        if (isFunction(this.beforeMount)) {
-            this.beforeMount(lastVNode, nextVNode);
-        }
-        this.$blockRender = false;
-
-        const vNode = this.$lastInput = normalizeRoot(this.$template());
-
-        // reuse the dom even if they are different
-        let lastInput: VNode | null = null;
-        if (!isNull(lastVNode) && (lastInput = lastVNode.children!.$lastInput)) {
-            patch(lastInput, vNode, parentDom, this.$SVG, anchor, mountedQueue);
+        if (this.$inited) {
+            renderSyncComponnet(this, lastVNode, nextVNode, parentDom, anchor, mountedQueue);
         } else {
-            mount(vNode, parentDom, this.$SVG, anchor, mountedQueue);
+            renderAsyncComponent(this, lastVNode, nextVNode, parentDom, anchor, mountedQueue);
         }
-
-        this.$rendered = true;
     }
 
     $mount(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass) {

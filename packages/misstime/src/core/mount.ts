@@ -114,7 +114,7 @@ export function mountComponentClass(
 
     mountRef(vNode.ref, instance);
 
-    mountedQueue.push(() => instance.$mount(lastVNode, vNode))
+    // mountedQueue.push(() => instance.$mount(lastVNode, vNode))
 }
 
 export function mountComponentFunction(vNode: VNodeComponentFunction, parentDom: Element | null, isSVG: boolean, anchor: IntactDom | null, mountedQueue: Function[]) {

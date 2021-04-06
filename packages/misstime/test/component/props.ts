@@ -36,7 +36,7 @@ describe('Component', () => {
             }
         }
         
-        // afterEach(() => render(null, container));
+        afterEach(() => render(null, container));
 
         describe('Mount', () => {
             it('should set value to default when render undefined prop', () => {
@@ -283,7 +283,7 @@ describe('Component', () => {
                 render(h(Test), container);
 
                 expect(onChangeName).toHaveBeenCalledTimes(3);
-                expect(onChangedName).toHaveBeenCalledTimes(2);
+                expect(onChangedName).toHaveBeenCalledTimes(3);
                 expect(onRender).toHaveBeenCalledTimes(1);
                 expect(container.innerHTML).toBe('<div>3</div>');
 

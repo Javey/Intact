@@ -1,7 +1,11 @@
 import type {Component} from '../components/component';
-import {Props, VNodeComponentClass, ChangeTrace} from './types';
+import {Props, VNodeComponentClass, ChangeTrace, IntactDom, VNode} from './types';
 import {get, set, isNull, isFunction, isEventProp, isUndefined, isNullOrUndefined, hasOwn} from './helpers';
 import {normalizeEventName, EMPTY_OBJ, findDomFromVNode, callAll} from './common';
+import {normalizeRoot, createCommentVNode} from '../core/vnode';
+import {patch} from '../core/patch';
+import {mount} from '../core/mount';
+import {unmount} from '../core/unmount';
 
 export const nextTick = typeof Promise !== 'undefined' ? 
     (callback: Function) => Promise.resolve().then(() => callback()) :
@@ -11,12 +15,68 @@ let microTaskPending = false;
 
 const QUEUE: Component<any>[] = [];
 
+export function renderSyncComponnet(
+    component: Component<any>,
+    lastVNode: VNodeComponentClass | null,
+    nextVNode: VNodeComponentClass,
+    parentDom: Element,
+    anchor: IntactDom | null,
+    mountedQueue: Function[]
+) {
+    component.$blockRender = true;
+    if (isFunction(component.beforeMount)) {
+        component.beforeMount(lastVNode, nextVNode);
+    }
+    component.$blockRender = false;
+
+    const vNode = normalizeRoot(component.$template());
+    // reuse the dom even if they are different
+    let lastInput: VNode | null = null;
+    if (!isNull(lastVNode) && (lastInput = lastVNode.children!.$lastInput)) {
+        patch(lastInput, vNode, parentDom, component.$SVG, anchor, mountedQueue);
+    } else {
+        mount(vNode, parentDom, component.$SVG, anchor, mountedQueue);
+    }
+    component.$lastInput = vNode;
+
+    mountedQueue.push(() => {
+        component.$mount(lastVNode, nextVNode);
+        callAllQueue(component);
+    });
+
+    component.$rendered = true;
+}
+
+export function renderAsyncComponent(
+    component: Component<any>,
+    lastVNode: VNodeComponentClass | null,
+    nextVNode: VNodeComponentClass,
+    parentDom: Element,
+    anchor: IntactDom | null,
+    mountedQueue: Function[]
+) {
+    if (isNull(lastVNode)) {
+        // set nextVNode to lastVNode to let renderSyncComponent to patch
+        lastVNode = nextVNode;
+        const vNode = component.$lastInput = createCommentVNode('async');
+        mount(vNode, parentDom, component.$SVG, anchor, mountedQueue);
+    }
+
+    component.on('$inited', () => {
+        mountedQueue = [];
+        renderSyncComponnet(component, lastVNode, nextVNode, parentDom, anchor, mountedQueue);
+        callAll(mountedQueue);
+    });
+}
+
 export function componentInited(component: Component<any>, triggerReceiveEvents: Function | null) {
     component.$inited = true;
 
     if (!isNull(triggerReceiveEvents)) {
         triggerReceiveEvents();
     }
+
+    component.trigger('$inited');
 }
 
 export function mountProps(component: Component<any>, nextProps: Props<any>) {
@@ -136,7 +196,11 @@ export function setProps(component: Component<any>, newProps: Props<any>) {
 }
 
 export function forceUpdate(component: Component<any>, callback?: Function) {
-    if (!component.$inited || component.$blockRender) {
+    if (!component.$inited) {
+        if (isFunction(callback)) {
+            (component.$queue || (component.$queue = [])).push(callback);
+        }
+    } else if (component.$blockRender) {
         // component is before rendering or updating
         if (isFunction(callback)) {
             component.$mountedQueue.push(callback);
@@ -180,15 +244,18 @@ function rerender() {
                 true,
             );
             callAll(mountedQueue); 
-
-            const queue = component.$queue;
-            if (queue) {
-                for (let i = 0; i < queue.length; i++) {
-                    queue[i].call(component);
-                }
-                component.$queue = null;
-            }
+            callAllQueue(component);
         }
+    }
+}
+
+function callAllQueue(component: Component<any>) {
+    const queue = component.$queue;
+    if (queue) {
+        for (let i = 0; i < queue.length; i++) {
+            queue[i].call(component);
+        }
+        component.$queue = null;
     }
 }
 

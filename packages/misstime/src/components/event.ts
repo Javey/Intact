@@ -31,13 +31,13 @@ export class Event<P> {
         (events[name] || (events[name] = [])).push(callback);
     }
 
-    one(name: string, callback: Function) {
-        const fn = (...args: any[]) => {
-            callback.apply(this, args);
-            this.off(name, fn);
-        }
-        this.on(name, fn);
-    }
+    // one(name: string, callback: Function) {
+        // const fn = (...args: any[]) => {
+            // callback.apply(this, args);
+            // this.off(name, fn);
+        // }
+        // this.on(name, fn);
+    // }
 
     off(name?: string, callback?: Function) {
         if (isUndefined(name)) {
