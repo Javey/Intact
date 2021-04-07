@@ -1,11 +1,12 @@
 import type {Component} from '../components/component';
-import {Props, VNodeComponentClass, ChangeTrace, IntactDom, VNode} from './types';
+import {Props, VNodeComponentClass, ChangeTrace, IntactDom, VNode, ComponentConstructor} from './types';
 import {get, set, isNull, isFunction, isEventProp, isUndefined, isNullOrUndefined, hasOwn} from './helpers';
-import {normalizeEventName, EMPTY_OBJ, findDomFromVNode, callAll} from './common';
+import {normalizeEventName, EMPTY_OBJ, findDomFromVNode, callAll, getComponentName} from './common';
 import {normalizeRoot, createCommentVNode} from '../core/vnode';
 import {patch} from '../core/patch';
 import {mount} from '../core/mount';
 import {unmount} from '../core/unmount';
+import {validateProps} from '../utils/validate';
 
 export const nextTick = typeof Promise !== 'undefined' ? 
     (callback: Function) => Promise.resolve().then(() => callback()) :
@@ -136,8 +137,11 @@ export function componentInited(component: Component<any>, triggerReceiveEvents:
 
 export function mountProps(component: Component<any>, nextProps: Props<any>) {
     if (process.env.NODE_ENV !== 'production') {
-        // TODO
-        // validateProps();
+        validateProps(
+            nextProps,
+            (component.constructor as ComponentConstructor).typeDefs,
+            getComponentName(component.constructor as ComponentConstructor)
+        );
     }
     
     const props = component.props;
@@ -166,8 +170,11 @@ export function patchProps(component: Component<any>, lastProps: Props<any>, nex
 
         if (nextProps !== EMPTY_OBJ) {
             if (process.env.NODE_ENV !== 'production') {
-                // TODO
-                // validateProps();
+                validateProps(
+                    nextProps,
+                    (component.constructor as ComponentConstructor).typeDefs,
+                    getComponentName(component.constructor as ComponentConstructor)
+                );
             }
 
             for (const prop in nextProps) {

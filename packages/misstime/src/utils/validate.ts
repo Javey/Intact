@@ -1,5 +1,28 @@
-import {isNumber, isStringOrNumber, throwError, isArray, isInvalid, isNullOrUndefined} from './helpers';
-import {VNodeElement, VNode, VNodeComponentClass, Children, Types, ChildrenTypes, Key} from './types';
+import {
+    isNumber,
+    isStringOrNumber,
+    throwError,
+    isArray,
+    isInvalid,
+    isNullOrUndefined,
+    isString, 
+    isFunction,
+    isObject,
+    error,
+} from './helpers';
+import {
+    VNodeElement, 
+    VNode,
+    VNodeComponentClass,
+    Children,
+    Types,
+    ChildrenTypes,
+    Key,
+    Props,
+    TypePrimitive,
+    TypeObject,
+    TypeDefs,
+} from './types';
 import {getComponentName} from './common';
 
 export function throwIfObjectIsNotVNode(vNode: any) {
@@ -81,7 +104,7 @@ function getValidateKeysError(vNodes: VNode[], forceKeyed: boolean): string | un
             continue;
         }
 
-        if (typeof vNode === 'object') {
+        if (isObject(vNode)) {
             if (vNode.isValidated) {
                 continue;
             }
@@ -148,4 +171,120 @@ function getTagName(vNode: Children) {
     }
 
     return `>> ${tagName}\n`;
+}
+
+export function validateProps<T extends Record<string, any>>(props?: Props<T>, typeDefs?: TypeDefs<T>, componentName: string = '<anonymous>') {
+    if (isNullOrUndefined(props) || isNullOrUndefined(typeDefs)) return;
+
+    for (let prop in typeDefs) {
+        const value = props[prop];
+        let expectedType = typeDefs[prop] as TypeObject;
+
+        if (!isObject(expectedType)) {
+            expectedType = {type: expectedType};
+        }
+
+        if (isNullOrUndefined(value)) {
+            let required = expectedType.required;
+            if (isFunction(required)) {
+                required = required(props);
+            }
+            if (required) {
+                error(`Missing required prop on component "${componentName}": "${prop}".`);
+                return;
+            } 
+            continue;
+        }
+
+        let type = expectedType.type;
+        if (!isNullOrUndefined(type)) {
+            if (!isArray(type))  {
+                type = [type];
+            }
+
+            let _valid = false;
+            let _isStringOrNumber = false;
+            const expectedTypes = [];
+            
+            for (let i = 0; i < type.length; i++) {
+                const t = type[i];
+                if (isNullOrUndefined(t)) continue;
+
+                const {expectedType, valid, isStringOrNumber} = assertType(value, t);
+                expectedTypes.push(expectedType || '');
+                _isStringOrNumber = isStringOrNumber;
+                if (valid) {
+                    _valid = valid;
+                    break;
+                }
+            }
+
+            if (!_valid) {
+                error(
+                    `Invalid type of prop "${prop}" on component "${componentName}". ` +
+                    `Expected ${expectedTypes.join(', ')}, but got ` + 
+                    `${toRawType(value, _isStringOrNumber)}.`
+                );
+                return;
+            }
+        }
+
+        const validator = expectedType.validator;
+        if (validator) {
+            const result = validator(value);
+            if (result === false) {
+                error(`Invalid prop "${prop}" on component "${componentName}": custom validator check failed.`);
+            } else if (result !== true) {
+                error(`Invalid prop "${prop}" on component "${componentName}": ${result}`);
+            }
+        }
+    }
+}
+
+const simpleCheckRE = /^(String|Number|Boolean|Function|Symbol)$/;
+function assertType(value: any, type: Exclude<TypePrimitive, null | undefined>) {
+    if (isNumber(type)) {
+        return {valid: type === value, expectedType: type, isStringOrNumber: true};
+    } else if (isString(type)) {
+        return {valid: type === value, expectedType: `"${type}"`, isStringOrNumber: true};
+    }
+
+    let valid: boolean;
+    const expectedType = getType(type);
+
+    if (simpleCheckRE.test(expectedType)) {
+        const t = typeof value;
+        valid = t === expectedType.toLowerCase();
+
+        if (!valid && t === 'object') {
+            valid = value instanceof type;
+        }
+    } else if (expectedType === 'Object') {
+        valid = isObject(value);
+    } else if (expectedType === 'Array') {
+        valid = isArray(value);
+    } else {
+        valid = value instanceof type;
+    }
+
+    return {valid, expectedType, isStringOrNumber: false};
+}
+
+function getType(type: Function) {
+    const match = type && type.toString().match(/^\s*function (\w+)/);
+    return match ? match[1] : '';
+}
+
+const toString = Object.prototype.toString;
+function toRawType(value: any, isStringOrNumber: boolean) {
+    if (isStringOrNumber) {
+        if (isString(value)) {
+            return `"${value}"`;
+        }
+        return value;
+    }
+
+    if (value !== value) return 'NaN';
+
+    return toString.call(value).slice(8, -1);
 }

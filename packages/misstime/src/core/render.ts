@@ -1,5 +1,5 @@
 import {VNode, Types, MissTimeElement} from '../utils/types';
-import {isInvalid, throwError, warn, isNullOrUndefined} from '../utils/helpers';
+import {isInvalid, throwError, error, isNullOrUndefined} from '../utils/helpers';
 import {directClone} from './vnode';
 import {mount} from './mount';
 import {remove} from './unmount';
@@ -11,7 +11,7 @@ const hasDocumentAvailable: boolean = typeof document !== 'undefined';
 /* istanbul ignore next */
 if (process.env.NODE_ENV !== 'production') {
     if (hasDocumentAvailable && !document.body) {
-        warn(
+        error(
             'Intact warning: you cannot initialize intact without "document.body".' + 
             ' Wait on "DOMContentLoaded" event, add script to bottom of body,' + 
             ' or use async/defer attributes on script tag.'

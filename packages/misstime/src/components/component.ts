@@ -8,6 +8,7 @@ import {
     Children,
     Template,
     SetOptions,
+    TypeDefs,
 } from '../utils/types';
 import {mount} from '../core/mount';
 import {patch} from '../core/patch';
@@ -31,7 +32,7 @@ import {Event} from './event';
 
 export abstract class Component<P extends {} = {}> extends Event<P> implements ComponentClass<P> {
     static readonly template: Template | string;
-    static readonly propTypes?: Record<string, any>;
+    static readonly typeDefs?: TypeDefs<any>;
     static readonly displayName?: string;
 
     public props: Props<P, ComponentClass<P>>;

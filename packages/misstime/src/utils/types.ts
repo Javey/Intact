@@ -115,6 +115,7 @@ export type Props<P extends {}, T = Element> = {
 export interface ComponentConstructor<T extends ComponentClass = ComponentClass> {
     new (props: T extends ComponentClass<infer P> ? P : {}, mountedQueue: Function[]): T
     displayName?: string
+    typeDefs?: TypeDefs<T extends ComponentClass<infer P> ? P : {}>
 }
 
 export interface ComponentClass<P = any> {
@@ -163,3 +164,12 @@ export type SetOptions = {
     silent: boolean
     // async: false
 }
+
+export type TypePrimitive = Function | string | number | null | undefined; 
+export type TypeObject = {
+    type: TypePrimitive | TypePrimitive[],
+    validator?: Function,
+    required?: boolean | Function,
+}
+export type TypeDefs<T> = {[key in keyof Props<T>]?: TypePrimitive | TypePrimitive[] | TypeObject};
+

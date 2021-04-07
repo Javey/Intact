@@ -68,8 +68,8 @@ export const namespaces: Record<string, string> = {
     'xml:space': xmlNS,
 };
 
-export function warn(message: string) {
-    console.warn(message);
+export function error(message: string) {
+    console.error(message);
 }
 
 export const hasOwn = Object.prototype.hasOwnProperty;
