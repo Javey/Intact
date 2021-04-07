@@ -167,7 +167,7 @@ export type SetOptions = {
 
 export type TypePrimitive = Function | string | number | null | undefined; 
 export type TypeObject = {
-    type: TypePrimitive | TypePrimitive[],
+    type?: TypePrimitive | TypePrimitive[],
     validator?: Function,
     required?: boolean | Function,
 }

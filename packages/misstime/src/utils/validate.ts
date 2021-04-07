@@ -180,7 +180,7 @@ export function validateProps<T extends Record<string, any>>(props?: Props<T>, t
         const value = props[prop];
         let expectedType = typeDefs[prop] as TypeObject;
 
-        if (!isObject(expectedType)) {
+        if (!isPlainObject(expectedType)) {
             expectedType = {type: expectedType};
         }
 
@@ -256,11 +256,14 @@ function assertType(value: any, type: Exclude<TypePrimitive, null | undefined>) 
         const t = typeof value;
         valid = t === expectedType.toLowerCase();
 
-        if (!valid && t === 'object') {
+        if (valid && t === 'number' && value !== value) {
+            // for NaN
+            valid = false;
+        } if (!valid && t === 'object') {
             valid = value instanceof type;
         }
     } else if (expectedType === 'Object') {
-        valid = isObject(value);
+        valid = isPlainObject(value);
     } else if (expectedType === 'Array') {
         valid = isArray(value);
     } else {
@@ -287,4 +290,8 @@ function toRawType(value: any, isStringOrNumber: boolean) {
     if (value !== value) return 'NaN';
 
     return toString.call(value).slice(8, -1);
+}
+
+function isPlainObject(value: any): value is object {
+    return toString.call(value) === '[object Object]';
 }
