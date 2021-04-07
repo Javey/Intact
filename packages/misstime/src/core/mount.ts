@@ -89,12 +89,12 @@ export function mountElement(
             if ((children as VNode).type & Types.InUse) {
                 vNode.children = children = directClone(children as VNode);
             }
-            mount(children as VNode, dom, parentComponent, childrenIsSVG, anchor, mountedQueue);
+            mount(children as VNode, dom, parentComponent, childrenIsSVG, null, mountedQueue);
         } else if (
             childrenType === ChildrenTypes.HasKeyedChildren ||
             childrenType === ChildrenTypes.HasNonKeyedChildren
         ) {
-            mountArrayChildren(children as VNode[], dom, parentComponent, childrenIsSVG, anchor, mountedQueue);
+            mountArrayChildren(children as VNode[], dom, parentComponent, childrenIsSVG, null, mountedQueue);
         }
     }
 

@@ -12,10 +12,10 @@ describe('Component', () => {
         document.body.appendChild(container);
     });
 
-    afterEach(() => {
-        render(null, container);
-        document.body.removeChild(container);
-    });
+    // afterEach(() => {
+        // render(null, container);
+        // document.body.removeChild(container);
+    // });
 
     function patchTest(vNode1: VNode, vNode2: VNode, html?: string) {
         render(vNode1, container);
@@ -61,6 +61,21 @@ describe('Component', () => {
 
             render(h(Test), container);
             expect(container.innerHTML).toBe('');
+        });
+
+        it('should get parent component correctly', () => {
+            class Test extends Component {
+                static template(this: Test) {
+                    return h('div', null, this.get('children'));
+                }
+            } 
+
+            let component: Test | null;
+            render(h('div', null, h(Test, {ref: i => component = i})), container);
+            expect(component!.$parent).toBeNull();
+
+            render(h(Test, null, h(Test, {ref: i => component = i})), container);
+            expect(component!.$parent).toBeInstanceOf(Test);
         });
     });
 
