@@ -84,6 +84,22 @@ describe('Component', () => {
                 expect(beforeMount).toHaveBeenCalledTimes(1);
                 expect(mounted).toHaveBeenCalledTimes(1);
             });
+
+            it('should mount even if it has thrown error', async () => {
+                class ErrorComponent extends Component {
+                    static template() {
+                        return h('div') 
+                    }
+
+                    init() {
+                        return Promise.reject('some reason');
+                    }
+                }
+
+                render(h(ErrorComponent), container);
+                await wait(0)
+                expect(container.innerHTML).toBe('<div></div>');
+            });
         });
 
         describe('Update', () => {

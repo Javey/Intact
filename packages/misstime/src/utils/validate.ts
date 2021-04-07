@@ -173,6 +173,7 @@ function getTagName(vNode: Children) {
     return `>> ${tagName}\n`;
 }
 
+// @reference Vue
 export function validateProps<T extends Record<string, any>>(props?: Props<T>, typeDefs?: TypeDefs<T>, componentName: string = '<anonymous>') {
     if (isNullOrUndefined(props) || isNullOrUndefined(typeDefs)) return;
 
