@@ -18,6 +18,10 @@ describe('Mount', () => {
         container = document.createElement('div');
     });
 
+    afterEach(() => {
+        render(null, container);
+    });
+
     it('should mount vNode', () => {
         const vNode = createElementVNode(
             Types.CommonElement, 
@@ -101,8 +105,8 @@ describe('Mount', () => {
     });
 
     it('should throw error if we mount invalid vNode', () => {
-        expect(() => mount([] as any, container, false, null, [])).toThrowError();
-        expect(() => mount((() => {}) as any, container, false, null, [])).toThrowError();
+        expect(() => mount([] as any, container, null, false, null, [])).toThrowError();
+        expect(() => mount((() => {}) as any, container, null, false, null, [])).toThrowError();
     });
 
     it('should mount ref that is RefObject', () => {

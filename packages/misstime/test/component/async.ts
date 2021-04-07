@@ -13,6 +13,11 @@ describe('Component', () => {
         document.body.appendChild(container);
     });
 
+    afterEach(() => {
+        render(null, container);
+        document.body.removeChild(container);
+    });
+
     class Test extends Component<{name?: number}> {
         static template(this: Test) {
             expect(this.get('name')).toBeTruthy();

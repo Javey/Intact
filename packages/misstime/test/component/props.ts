@@ -13,6 +13,11 @@ describe('Component', () => {
         document.body.appendChild(container);
     });
 
+    afterEach(() => {
+        render(null, container);
+        document.body.removeChild(container);
+    });
+
     function patchTest(vNode1: VNode, vNode2: VNode, html?: string) {
         render(vNode1, container);
         render(vNode2, container);

@@ -33,9 +33,9 @@ export function renderSyncComponnet(
     // reuse the dom even if they are different
     let lastInput: VNode | null = null;
     if (!isNull(lastVNode) && (lastInput = lastVNode.children!.$lastInput)) {
-        patch(lastInput, vNode, parentDom, component.$SVG, anchor, mountedQueue);
+        patch(lastInput, vNode, parentDom, component, component.$SVG, anchor, mountedQueue);
     } else {
-        mount(vNode, parentDom, component.$SVG, anchor, mountedQueue);
+        mount(vNode, parentDom, component, component.$SVG, anchor, mountedQueue);
     }
     component.$lastInput = vNode;
 
@@ -59,7 +59,7 @@ export function renderAsyncComponent(
         // set nextVNode to lastVNode to let renderSyncComponent to patch
         lastVNode = nextVNode;
         const vNode = component.$lastInput = createCommentVNode('async');
-        mount(vNode, parentDom, component.$SVG, anchor, mountedQueue);
+        mount(vNode, parentDom, component, component.$SVG, anchor, mountedQueue);
     }
 
     component.on('$inited', () => {
@@ -93,7 +93,7 @@ export function updateSyncComponent(
     component.$blockRender = false;
 
     const vNode = normalizeRoot(component.$template());
-    patch(component.$lastInput!, vNode, parentDom, component.$SVG, anchor, mountedQueue);
+    patch(component.$lastInput!, vNode, parentDom, component, component.$SVG, anchor, mountedQueue);
     component.$lastInput = vNode;
 
     if(isFunction(component.updated)) {

@@ -124,6 +124,7 @@ export interface ComponentClass<P = any> {
     $vNode: VNodeComponentClass<ComponentClass<P>> | null;
     $lastInput: VNode | null;
     $mountedQueue: Function[] | null;
+    $parent: ComponentClass | null;
 
     $render(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null, mountedQueue: Function[]): void;
     $mount(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass): void;

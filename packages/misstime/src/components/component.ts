@@ -1,4 +1,5 @@
-import { ComponentConstructor,
+import { 
+    ComponentConstructor,
     ComponentClass, 
     Props,
     VNodeComponentClass,
@@ -43,6 +44,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     public $mountedQueue: Function[];
     public $blockRender: boolean = false;
     public $queue: Function[] | null = null;
+    public $parent: ComponentClass | null = null;
 
     // lifecyle states
     public $inited: boolean = false;
@@ -122,7 +124,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
 
     watch(key: string, callback: Function) {
         this.on(`$change:${key}`, callback);
-        this.on(`$receive:${key}`, (v: any) => this.set(key, v));
+        this.on(`$receive:${key}`, callback);
     }
 
     $render(

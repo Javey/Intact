@@ -51,7 +51,7 @@ export function render(vNode: VNode | null | undefined, parentDom: MissTimeEleme
             if (vNode.type & Types.InUse) {
                 vNode = directClone(vNode);
             }
-            mount(vNode, parentDom, false, null, mountedQueue);
+            mount(vNode, parentDom, null, false, null, mountedQueue);
             parentDom.$V = vNode;
         }
     } else {
@@ -62,7 +62,7 @@ export function render(vNode: VNode | null | undefined, parentDom: MissTimeEleme
             if (vNode.type & Types.InUse) {
                 vNode = directClone(vNode);
             }
-            patch(lastVNode, vNode, parentDom, false, null, mountedQueue);
+            patch(lastVNode, vNode, parentDom, null, false, null, mountedQueue);
             parentDom.$V = vNode; 
         }
     }

@@ -12,6 +12,11 @@ describe('Component', () => {
         document.body.appendChild(container);
     });
 
+    afterEach(() => {
+        render(null, container);
+        document.body.removeChild(container);
+    });
+
     describe('Lifecycle', () => {
         it('should call beforeMount & mounted', () => {
             const beforeMount = jasmine.createSpy();

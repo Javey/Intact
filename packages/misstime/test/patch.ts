@@ -6,6 +6,7 @@ import {linkEvent} from '../src/events/linkEvent';
 import {dispatchEvent} from './utils';
 import {unmount} from '../src/core/unmount';
 import {Fragment} from '../src/utils/common';
+import {render as _render} from '../src/core/render';
 
 describe('Patch', () => {
     let container: Element;
@@ -16,20 +17,20 @@ describe('Patch', () => {
     });
 
     afterEach(() => {
-        // document.body.removeChild(container);
+        _render(null, container);
+        document.body.removeChild(container);
     });
 
     function render(vNode: VNode) {
-        mount(vNode, container, false, null, []);
+        _render(vNode, container);
     }
-    function update(vNode1: VNode, vNode2: VNode) {
-        patch(vNode1, vNode2, container, false, null, []);
-        return vNode2;
+    function update(vNode: VNode) {
+        _render(vNode, container);
+        return vNode;
     }
     function patchTest(vNode1: VNode, vNode2: VNode, html?: string) {
-        container.textContent = '';
         render(vNode1);
-        update(vNode1, vNode2);
+        render(vNode2);
         if (html !== undefined) {
             expect(container.innerHTML).toBe(html);
         }
@@ -48,7 +49,7 @@ describe('Patch', () => {
         const vNode1 = h('div', {key: 1});
         const vNode2 = h('div', {key: 2});
         render(vNode1);
-        patch(vNode1, vNode2, container, false, null, []);
+        render(vNode2);
         expect(vNode1.dom === vNode2.dom).toBeFalse();
     });
 
@@ -462,7 +463,7 @@ describe('Patch', () => {
             patchTest(
                 h('div', {style: {color: 'red'}}),
                 h('div'),
-                '<div style=""></div>'
+                '<div></div>'
             );
         });
 
@@ -522,7 +523,6 @@ describe('Patch', () => {
                     expect(click).toHaveBeenCalledTimes(1);
 
                     const vNode2 = update(
-                        vNode, 
                         h('div', {'ev-click': linkEvent('data', click)},
                             h('div', {'ev-click': null},
                                 h('div', {'ev-click': childClick})

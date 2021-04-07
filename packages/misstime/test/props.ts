@@ -18,7 +18,8 @@ describe('Props', () => {
     });
 
     afterEach(() => {
-        // document.body.removeChild(container);
+        r(null, container);
+        document.body.removeChild(container);
     });
 
     it('should ignore some props', () => {

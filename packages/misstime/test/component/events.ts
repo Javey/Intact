@@ -13,7 +13,10 @@ describe('Component', () => {
         document.body.appendChild(container);
     });
 
-    afterEach(() => render(null, container));
+    afterEach(() => {
+        render(null, container);
+        document.body.removeChild(container);
+    });
 
     class Test extends Component<{'ev-click'?: Function}> {
         static template = function(this: Test) {
