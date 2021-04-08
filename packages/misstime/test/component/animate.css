@@ -1,0 +1,6 @@
+.animate-enter {
+    opacity: 0;
+}
+.animate-enter-active {
+    transition: opacity 2s
+}

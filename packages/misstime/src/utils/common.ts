@@ -130,3 +130,5 @@ export function callAll(mountedQueue: Function[]) {
         mountedQueue[i]();
     }
 }
+
+export const hasDocumentAvailable: boolean = typeof document !== 'undefined';

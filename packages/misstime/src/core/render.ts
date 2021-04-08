@@ -4,9 +4,7 @@ import {directClone} from './vnode';
 import {mount} from './mount';
 import {remove} from './unmount';
 import {patch} from './patch';
-import {callAll} from '../utils/common';
-
-const hasDocumentAvailable: boolean = typeof document !== 'undefined';
+import {callAll, hasDocumentAvailable} from '../utils/common';
 
 /* istanbul ignore next */
 if (process.env.NODE_ENV !== 'production') {

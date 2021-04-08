@@ -25,6 +25,10 @@ module.exports = function(config) {
                             loader: 'istanbul-instrumenter-loader',
                             options: {esModule: true}
                         }
+                    },
+                    {
+                        test: /\.css$/,
+                        use: ['style-loader', 'css-loader'],
                     }
                 ]
             },

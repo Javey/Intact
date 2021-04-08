@@ -128,7 +128,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         this.on(`$receive:${key}`, callback);
     }
 
-    compute<T>(getter: () => T) {
+    // compute<T>(getter: () => T) {
         // if ((getter as any)._result) return (getter as any)._result;
         
         // const oldGet = this.get;
@@ -138,7 +138,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         // const result = getter.call(this);
         // (getter as any)._result = result;
         // return result;
-    }
+    // }
 
     $render(
         lastVNode: VNodeComponentClass | null,
