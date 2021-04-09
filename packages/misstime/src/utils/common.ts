@@ -1,5 +1,14 @@
 import {isNull} from './helpers';
-import {Reference, IntactDom, VNode, Types, ChildrenTypes, ComponentConstructor, ComponentClass} from './types';
+import {
+    Reference,
+    IntactDom,
+    VNode, 
+    Types,
+    ChildrenTypes,
+    ComponentConstructor,
+    ComponentFunction,
+    ComponentClass
+} from './types';
 
 export function replaceChild(parentDom: Element, newDom: Element, lastDom: Element) {
     parentDom.replaceChild(newDom, lastDom);
@@ -121,7 +130,7 @@ export function moveVNodeDom(vNode: VNode, parentDom: Element, anchor: IntactDom
     } while (vNode);
 }
 
-export function getComponentName(tag: ComponentConstructor) {
+export function getComponentName(tag: ComponentConstructor | ComponentFunction) {
     return tag.name || tag.displayName; // || tag.constructor.name || (tag.toString().match(/^function\s*([^\s(]+)/) || [])[1];
 }
 

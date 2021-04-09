@@ -136,14 +136,6 @@ export function componentInited(component: Component<any>, triggerReceiveEvents:
 }
 
 export function mountProps(component: Component<any>, nextProps: Props<any>) {
-    if (process.env.NODE_ENV !== 'production') {
-        validateProps(
-            nextProps,
-            (component.constructor as ComponentConstructor).typeDefs,
-            getComponentName(component.constructor as ComponentConstructor)
-        );
-    }
-    
     const props = component.props;
     const changeTraces: ChangeTrace[] = [];
     for (let prop in nextProps) {
@@ -169,14 +161,6 @@ export function patchProps(component: Component<any>, lastProps: Props<any>, nex
         const props = component.props;
 
         if (nextProps !== EMPTY_OBJ) {
-            if (process.env.NODE_ENV !== 'production') {
-                validateProps(
-                    nextProps,
-                    (component.constructor as ComponentConstructor).typeDefs,
-                    getComponentName(component.constructor as ComponentConstructor)
-                );
-            }
-
             for (const prop in nextProps) {
                 const lastValue = rollbackToDefault(prop, lastProps[prop], defaultProps);
                 const nextValue = rollbackToDefault(prop, nextProps[prop], defaultProps);

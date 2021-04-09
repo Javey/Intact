@@ -135,6 +135,8 @@ export interface ComponentClass<P = any> {
 
 export interface ComponentFunction<P = any> {
     (props: Props<P>): Children;
+    displayName?: string
+    typeDefs?: TypeDefs<P>
 }
 
 export type Component = ComponentConstructor | ComponentFunction;

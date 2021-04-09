@@ -29,7 +29,7 @@ import {directClone, createVoidVNode, normalizeRoot} from './vnode';
 import {patchProp} from '../utils/props';
 import {processElement} from '../wrappers/process';
 import {mountRef, unmountRef} from '../utils/ref';
-import {validateKeys} from '../utils/validate';
+import {validateKeys, validateProps} from '../utils/validate';
 
 export function patch(
     lastVNode: VNode,
@@ -111,6 +111,10 @@ function patchComponentClass(
         unmount(lastVNode);
         mountComponentClass(lastVNode, nextVNode, parentDom, parentComponent, isSVG, anchor, mountedQueue); 
     } else {
+        if (process.env.NODE_ENV !== 'production') {
+            validateProps(nextVNode);
+        }
+
         const instance = nextVNode.children = lastVNode.children;
 
         // If component has crashed, ignore it to stay functional
@@ -141,6 +145,10 @@ function patchComponentFunction(
     anchor: IntactDom | null,
     mountedQueue: Function[]
 ) {
+    if (process.env.NODE_ENV !== 'production') {
+        validateProps(nextVNode);
+    }
+
     const nextChildren = normalizeRoot(nextVNode.tag(nextVNode.props || EMPTY_OBJ));
 
     patch(lastVNode.children!, nextChildren, parentDom, parentComponent, isSVG, anchor, mountedQueue);

@@ -17,7 +17,7 @@ import {directClone, normalizeRoot} from './vnode';
 import {mountProps} from '../utils/props';
 import {mountRef} from '../utils/ref';
 import {setTextContent, EMPTY_OBJ, insertOrAppend} from '../utils/common';
-import {validateKeys} from '../utils/validate';
+import {validateKeys, validateProps} from '../utils/validate';
 
 export function mount(
     vNode: VNode,
@@ -118,6 +118,10 @@ export function mountComponentClass(
     anchor: IntactDom | null,
     mountedQueue: Function[]
 ) {
+    if (process.env.NODE_ENV !== 'production') {
+        validateProps(vNode);
+    }
+
     const instance = new vNode.tag(vNode.props, mountedQueue);
 
     instance.$SVG = isSVG;
@@ -142,6 +146,9 @@ export function mountComponentFunction(
     anchor: IntactDom | null,
     mountedQueue: Function[]
 ) {
+    if (process.env.NODE_ENV !== 'production') {
+        validateProps(vNode);
+    }
     mount((vNode.children = normalizeRoot(vNode.tag(vNode.props || EMPTY_OBJ))), parentDom, parentComponent, isSVG, anchor, mountedQueue);
 }
 

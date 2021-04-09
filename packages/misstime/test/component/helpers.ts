@@ -123,5 +123,28 @@ describe('Component', () => {
             test({b: 1, l: 1});
             test({b: 1, required: true}, 'Missing required prop on component "A": "m".');
         });
+
+        it('should warn when pass invalid props on functional component', () => {
+            const Test = (props: any) => h('div');
+            Test.typeDefs = {
+                a: Boolean,
+                b: {
+                    type: Number,
+                    required: true,
+                },
+            };
+
+            function test(props: any, msg?: string) {
+                if (msg) {
+                    expect(() => render(h(Test, props), container)).toThrowError(new RegExp(msg));
+                } else {
+                    expect(() => render(h(Test, props), container)).not.toThrow();
+                }
+            }
+
+            test({a: 1}, 'Invalid type of prop "a" on component "Test". Expected Boolean, but got Number.');
+            test({a: true}, 'Missing required prop on component "Test": "b".');
+            test({b: 1});
+        });
     });
 });
