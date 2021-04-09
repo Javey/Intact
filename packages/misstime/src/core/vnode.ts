@@ -13,6 +13,7 @@ import {
     VNodeProps,
     VNodeChildren,
     VNodeRef,
+    TransitionHooks,
 } from '../utils/types';
 import {
     isNullOrUndefined,
@@ -36,6 +37,7 @@ export class VNode<T extends VNodeTag = VNodeTag> implements IVNode<T> {
     public key: Key | null;
     public ref: VNodeRef<T> | null;
     public isValidated?: boolean;
+    public transition?: TransitionHooks;
     constructor(
         type: Types,
         tag: T,
@@ -60,23 +62,6 @@ export class VNode<T extends VNodeTag = VNodeTag> implements IVNode<T> {
     }
 }
 
-// export function createVNode(
-    // tag: string,
-    // props?: Props<any, Element> | null,
-    // children?: Children | null
-// ): VNodeElement
-// export function createVNode<T extends ComponentConstructor>(
-    // tag: T,
-    // props?: VNodeProps<T> | null,
-    // children?: Children | null
-// ): VNodeComponentClass<T>
-// export function createVNode<T extends ComponentFunction>(
-    // tag: T,
-    // props?: VNodeProps<T> | null,
-    // children?: Children | null
-// ): VNodeComponentFunction<T>
-// let a : VNodeProps<string>;
-// a!.a = 1
 export function createVNode<T extends VNodeTag>(
     tag: T,
     props?: VNodeProps<T> | null,
@@ -219,20 +204,6 @@ export function createCommentVNode(comment: string, key?: Key | null): VNodeText
     return new VNode(Types.HtmlComment, null, ChildrenTypes.HasInvalidChildren, comment, null, null, key) as VNodeTextElement;
 }
 
-// export function createComponentVNode<T extends ComponentFunction>(
-    // type: Types,
-    // tag: T,
-    // props: VNodeProps<T> | null,//  T extends ComponentFunction<infer P> ? Props<P, any> : null,
-    // key?: Key | null,
-    // ref?: Ref<any> | null,
-// ): VNodeComponentFunction<T>
-// export function createComponentVNode<T extends ComponentConstructor>(
-    // type: Types,
-    // tag: T,
-    // props: VNodeProps<T> | null, // T extends ComponentConstructor<infer P> ? Props<P, T> : null,
-    // key?: Key | null,
-    // ref?: Ref<T> | null,
-// ): VNode<T>
 export function createComponentVNode<T extends ComponentFunction | ComponentConstructor>(
     type: Types,
     tag: T,
@@ -291,8 +262,9 @@ export function directClone(vNode: VNode<any>): VNode<any> {
         }
     }
 
+    let newVNode: VNode;
     if ((type & Types.Fragment) === 0) {
-        return new VNode(
+        newVNode = new VNode(
             type,
             vNode.tag,
             vNode.childrenType,
@@ -302,28 +274,25 @@ export function directClone(vNode: VNode<any>): VNode<any> {
             vNode.key,
             vNode.ref
         );
+    } else {
+        const childrenType = vNode.childrenType;
+        newVNode = new VNode(
+            type,
+            vNode.tag,
+            childrenType,
+            childrenType === ChildrenTypes.HasVNodeChildren ?
+                directClone(vNode.children as VNode) :
+                (vNode.children as VNode[]).map(directClone),
+            null,
+            null,
+            vNode.key,
+            null
+        );
     }
 
-    const childrenType = vNode.childrenType;
-    return new VNode(
-        type,
-        vNode.tag,
-        childrenType,
-        childrenType === ChildrenTypes.HasVNodeChildren ?
-            directClone(vNode.children as VNode) :
-            (vNode.children as VNode[]).map(directClone),
-        null,
-        null,
-        vNode.key,
-        null
-    );
-    // return createFragment(
-        // childrenType === ChildrenTypes.HasVNodeChildren ?
-            // directClone(vNode.children as VNode) :
-            // (vNode.children as VNode[]).map(directClone),
-        // childrenType,
-        // vNode.key
-    // );
+    newVNode.transition = vNode.transition;
+    
+    return newVNode;
 }
 
 function normalizeChildren(vNode: VNode, children: Children) {

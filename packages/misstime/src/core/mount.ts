@@ -11,8 +11,9 @@ import {
     ComponentConstructor,
     IntactDom,
     ComponentClass,
+    TransitionElement
 } from '../utils/types';
-import {isNullOrUndefined, throwError, isFunction} from '../utils/helpers';
+import {isNullOrUndefined, throwError, isFunction, isUndefined} from '../utils/helpers';
 import {directClone, normalizeRoot} from './vnode';
 import {mountProps} from '../utils/props';
 import {mountRef} from '../utils/ref';
@@ -61,7 +62,7 @@ export function mountElement(
     anchor: IntactDom | null,
     mountedQueue: Function[],
 ) {
-    const {type, props, className, childrenType, tag} = vNode;
+    const {type, props, className, childrenType, tag, transition} = vNode;
 
     isSVG = isSVG || (type & Types.SvgElement) > 0;
     const dom = vNode.dom = documentCreateElement(tag, isSVG);
@@ -98,12 +99,17 @@ export function mountElement(
         }
     }
 
-    if (!isNullOrUndefined(parentDom)) {
-        insertOrAppend(parentDom, dom, anchor);
-    }
-
     if (!isNullOrUndefined(props)) {
         mountProps(vNode, type, props, dom, isSVG);
+    }
+
+    if (!isUndefined(transition)) {
+        transition.beforeEnter(dom as TransitionElement); 
+        mountedQueue.push(() => transition.enter(dom as TransitionElement));
+    }
+
+    if (!isNullOrUndefined(parentDom)) {
+        insertOrAppend(parentDom, dom, anchor);
     }
 
     mountRef(vNode.ref, dom);

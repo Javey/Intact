@@ -10,10 +10,7 @@ import {
     SetOptions,
     TypeDefs,
 } from '../utils/types';
-import {mount} from './mount';
-import {patch} from './patch';
 import {unmount} from './unmount';
-import {normalizeRoot, createCommentVNode} from './vnode';
 import {EMPTY_OBJ} from '../utils/common';
 import {
     isNull,
@@ -29,8 +26,6 @@ import {
     componentInited, 
     setProps,
     mountProps,
-    patchProps, 
-    DEV_callMethod,
     forceUpdate,
     renderSyncComponnet,
     renderAsyncComponent,
@@ -44,12 +39,12 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     static readonly typeDefs?: TypeDefs<any>;
     static readonly displayName?: string;
 
-    public props: Props<P, ComponentClass<P>>;
+    public props: Props<P, this>;
     public refs: Record<string, any> = {}; 
 
     // internal properties
     public $SVG: boolean = false;
-    public $vNode: VNodeComponentClass<Component<P>> | null = null;
+    public $vNode: VNodeComponentClass<this> | null = null;
     public $lastInput: VNode | null = null;
     public $mountedQueue: Function[];
     public $blockRender: boolean = false;
@@ -209,4 +204,3 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     beforeUnmount?(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null): void;
     unmounted?(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null): void;
 }
-

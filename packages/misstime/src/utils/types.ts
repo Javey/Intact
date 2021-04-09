@@ -11,6 +11,7 @@ export interface VNode<T extends VNodeTag = VNodeTag> {
     key: Key | null
     ref: VNodeRef<T> | null
     isValidated?: boolean,
+    transition?: TransitionHooks
 }
 export interface VNodeElement extends VNode<string> { }
 export interface VNodeTextElement extends VNode<null> {
@@ -18,6 +19,19 @@ export interface VNodeTextElement extends VNode<null> {
 }
 export interface VNodeComponentClass<T extends ComponentClass = ComponentClass> extends VNode<ComponentConstructor<T>> { }
 export interface VNodeComponentFunction<T extends ComponentFunction = ComponentFunction> extends VNode<T> { }
+
+export interface TransitionHooks {
+    beforeEnter(el: TransitionElement): void
+    enter(el: TransitionElement): void
+    leave(el: TransitionElement, remove: () => void): void
+}
+
+export interface TransitionElement {
+    _enterCb?: PendingCallback
+    _leaveCb?: PendingCallback
+}
+
+export type PendingCallback = (cancelled?: boolean) => void
 
 export type VNodeProps<T extends VNodeTag> =
     T extends string ? 
@@ -103,9 +117,11 @@ export interface RefObject<T> {
     readonly __is_ref: boolean,
 }
 
-export type Ref<T = Element> = ((i: T | null) => any) | RefObject<T>;
+export type RefFunction<T> = { bivarianceHack(i: T | null): any }["bivarianceHack"];
 
-export type Props<P extends {}, T = Element> = {
+export type Ref<T> = RefFunction<T> | RefObject<T>;
+
+export type Props<P extends {}, T extends Element | ComponentClass = Element> = {
     children?: Children
     ref?: Ref<T> 
     key?: Key
@@ -160,7 +176,7 @@ export type Reference = {
 
 export type ChangeTrace = {path: string, newValue: any, oldValue: any};
 
-export type Template = () => Children;
+export type Template<T = any> = (this: T) => Children;
 
 export type SetOptions = {
     silent: boolean
