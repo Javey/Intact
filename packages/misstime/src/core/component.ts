@@ -10,12 +10,21 @@ import {
     SetOptions,
     TypeDefs,
 } from '../utils/types';
-import {mount} from '../core/mount';
-import {patch} from '../core/patch';
-import {unmount} from '../core/unmount';
-import {normalizeRoot, createCommentVNode} from '../core/vnode';
+import {mount} from './mount';
+import {patch} from './patch';
+import {unmount} from './unmount';
+import {normalizeRoot, createCommentVNode} from './vnode';
 import {EMPTY_OBJ} from '../utils/common';
-import {isNull, isFunction, isUndefined, get, set, isObject, isNullOrUndefined, isString} from '../utils/helpers';
+import {
+    isNull,
+    isFunction,
+    isUndefined,
+    get,
+    set,
+    isObject,
+    isNullOrUndefined,
+    isString
+} from '../utils/helpers';
 import {
     componentInited, 
     setProps,
@@ -28,7 +37,7 @@ import {
     updateSyncComponent,
     updateAsyncComponent,
 } from '../utils/component';
-import {Event} from './event';
+import {Event} from '../events/componentEvent';
 
 export abstract class Component<P extends {} = {}> extends Event<P> implements ComponentClass<P> {
     static readonly template: Template | string;

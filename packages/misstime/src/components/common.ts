@@ -1,6 +1,6 @@
 import type {Animate} from './animate';
 import {addClass, removeClass} from './heplers';
-import {findDomFromVNode} from '../../utils/common';
+import {findDomFromVNode} from '../utils/common';
 import {nextFrame, whenAnimationEnds} from './heplers';
 
 export function addAnimateClass(component: Animate<any>, dom: Element, className: string) {

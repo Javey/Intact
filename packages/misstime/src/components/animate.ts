@@ -1,15 +1,9 @@
-import {Component} from '../component';
-import {ComponentConstructor, ComponentFunction, VNodeProps, TypeDefs} from '../../utils/types';
-import {createVNode as h} from '../../core/vnode'; 
-import {isNullOrUndefined} from '../../utils/helpers';
+import {Component} from '../core/component';
+import {ComponentConstructor, ComponentFunction, VNodeProps, TypeDefs} from '../utils/types';
+import {createVNode as h} from '../core/vnode'; 
+import {isNullOrUndefined} from '../utils/helpers';
 import {className, nextFrame} from './heplers';
 import {onEnter} from './common';
-
-export enum AnimateMode {
-    Both = 'both',
-    InOut = 'in-out',
-    OutIn = 'out-in',
-}
 
 export type AnimateTag = string | ComponentConstructor | ComponentFunction
 
@@ -17,7 +11,7 @@ export type AnimateProps<T extends AnimateTag = string> = {
     tag?: AnimateTag 
     transition?: string
     appear?: boolean
-    mode?: AnimateMode
+    mode?: 'both' | 'in-out' | 'out-in' 
     disabled?: boolean
     move?: boolean
     show?: boolean
@@ -41,7 +35,7 @@ export class Animate<T extends AnimateTag = string> extends Component<AnimatePro
         tag: [String, Function],
         transition: String,
         appear: Boolean,
-        mode: [AnimateMode.Both, AnimateMode.InOut, AnimateMode.OutIn],
+        mode: ['both', 'in-out', 'out-in'],
         disabled: Boolean,
         move: Boolean,
         show: Boolean,
@@ -50,12 +44,12 @@ export class Animate<T extends AnimateTag = string> extends Component<AnimatePro
 
     public classNames: Record<string, boolean> = {}
 
-    defaults() {
+    defaults(): AnimateProps<T> {
         return {
             tag: 'div',
             transition: 'animate',
             appear: false,
-            mode: AnimateMode.Both,
+            mode: 'both',
             disabled: false,
             move: true,
             show: true,

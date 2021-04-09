@@ -1,4 +1,4 @@
-import {Component} from '../../src/components/component';
+import {Component} from '../../src/core/component';
 import {render} from '../../src/core/render';
 import {createVNode as h, VNode as VNodeConstructor} from '../../src/core/vnode';
 import {Fragment, findDomFromVNode} from '../../src/utils/common';

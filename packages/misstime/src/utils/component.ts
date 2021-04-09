@@ -1,4 +1,4 @@
-import type {Component} from '../components/component';
+import type {Component} from '../core/component';
 import {Props, VNodeComponentClass, ChangeTrace, IntactDom, VNode, ComponentConstructor} from './types';
 import {get, set, isNull, isFunction, isEventProp, isUndefined, isNullOrUndefined, hasOwn} from './helpers';
 import {normalizeEventName, EMPTY_OBJ, findDomFromVNode, callAll, getComponentName} from './common';

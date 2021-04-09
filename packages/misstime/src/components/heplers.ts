@@ -1,5 +1,5 @@
-import {isNull, isNullOrUndefined, isString} from '../../utils/helpers';
-import {hasDocumentAvailable} from '../../utils/common';
+import {isNull, isNullOrUndefined, isString} from '../utils/helpers';
+import {hasDocumentAvailable} from '../utils/common';
 
 export enum AnimateType {
     Transition = 0,
