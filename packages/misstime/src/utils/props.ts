@@ -74,7 +74,7 @@ export function patchProp(
                 (dom as any)[prop] = value;
             }
             break;
-        // TODO: scrollLeft/scrollTop must be handled after style
+        // TODO: scrollLeft/scrollTop must be handled after style and mounted (use mountedQueue)
         case 'scrollLeft':
         case 'scrollTop':
             value = isNullOrUndefined(nextValue) ? 0 : nextValue;
@@ -108,7 +108,7 @@ export function patchProp(
 function patchStyle(lastValue: any, nextValue: any, dom: Element) {
     if (isNullOrUndefined(nextValue)) {
         // because we set style by cssText or setProperty,
-        // we must set style attribute before remove it in webkit,
+        // we must set style attribute before removing it in webkit,
         // but it does not matter
         // dom.setAttribute('style', '');
         dom.removeAttribute('style');

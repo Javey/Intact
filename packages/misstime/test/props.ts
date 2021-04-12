@@ -17,10 +17,10 @@ describe('Props', () => {
         document.body.appendChild(container);
     });
 
-    afterEach(() => {
-        r(null, container);
-        document.body.removeChild(container);
-    });
+    // afterEach(() => {
+        // r(null, container);
+        // document.body.removeChild(container);
+    // });
 
     it('should ignore some props', () => {
         const vNode = createElementVNode(
@@ -112,6 +112,7 @@ describe('Props', () => {
                 scrollLeft: 10,
             }
         );
+        // render(h('div', null, vNode));
         render(vNode);
 
         expect((container.firstChild as HTMLElement).scrollLeft).toBe(10);

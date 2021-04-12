@@ -149,7 +149,7 @@ function patchComponentFunction(
         validateProps(nextVNode);
     }
 
-    const nextChildren = normalizeRoot(nextVNode.tag(nextVNode.props || EMPTY_OBJ));
+    const nextChildren = normalizeRoot(nextVNode.tag(nextVNode.props || EMPTY_OBJ), nextVNode);
 
     patch(lastVNode.children!, nextChildren, parentDom, parentComponent, isSVG, anchor, mountedQueue);
     nextVNode.children = nextChildren;

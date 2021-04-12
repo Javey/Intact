@@ -30,7 +30,7 @@ export function renderSyncComponnet(
     }
     component.$blockRender = false;
 
-    const vNode = normalizeRoot(component.$template());
+    const vNode = normalizeRoot(component.$template(), nextVNode);
     // reuse the dom even if they are different
     let lastInput: VNode | null = null;
     if (!isNull(lastVNode) && (lastInput = lastVNode.children!.$lastInput)) {
@@ -93,7 +93,7 @@ export function updateSyncComponent(
     }
     component.$blockRender = false;
 
-    const vNode = normalizeRoot(component.$template());
+    const vNode = normalizeRoot(component.$template(), nextVNode);
     patch(component.$lastInput!, vNode, parentDom, component, component.$SVG, anchor, mountedQueue);
     component.$lastInput = vNode;
 

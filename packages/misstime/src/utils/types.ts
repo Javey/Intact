@@ -26,9 +26,10 @@ export interface TransitionHooks {
     leave(el: TransitionElement, remove: () => void): void
 }
 
-export interface TransitionElement {
+export interface TransitionElement extends Element {
     _enterCb?: PendingCallback
     _leaveCb?: PendingCallback
+    $TC?: Record<string, boolean>
 }
 
 export type PendingCallback = (cancelled?: boolean) => void
@@ -42,8 +43,8 @@ export type VNodeProps<T extends VNodeTag> =
                 C extends ComponentClass<infer P> ?
                     Props<P, C> :
                     never :
-                T extends ComponentFunction<infer P> ?
-                    Props<P, Element | ComponentClass<any>> :
+                T extends ComponentFunction<infer P, infer R> ?
+                    Props<P, R> :
                     never
 
 export type VNodeChildren<T extends VNodeTag> =
@@ -58,8 +59,8 @@ export type VNodeChildren<T extends VNodeTag> =
 export type VNodeRef<T extends VNodeTag> =
     T extends ComponentConstructor<infer C> ?
         Ref<C> :
-        T extends ComponentFunction<infer P> ?
-            Ref<any> :
+        T extends ComponentFunction<infer P, infer R> ?
+            Ref<R> :
             Ref<Element>
 
 export type IntactDom = Element | Text | Comment
@@ -106,7 +107,7 @@ export const enum ChildrenTypes {
     MultipleChildren = HasNonKeyedChildren | HasKeyedChildren,
 }
 
-export type NormalizedChildren = VNode | VNode[] | null | undefined | string | number;
+export type NormalizedChildren = VNode<any> | VNode<any>[] | null | undefined | string | number;
 
 export type Children = NormalizedChildren | NormalizedChildren[] | boolean | Children[];
 
@@ -121,7 +122,7 @@ export type RefFunction<T> = { bivarianceHack(i: T | null): any }["bivarianceHac
 
 export type Ref<T> = RefFunction<T> | RefObject<T>;
 
-export type Props<P extends {}, T extends Element | ComponentClass = Element> = {
+export type Props<P extends {}, T extends Element | ComponentClass = Element | ComponentClass> = {
     children?: Children
     ref?: Ref<T> 
     key?: Key
@@ -137,6 +138,7 @@ export interface ComponentConstructor<T extends ComponentClass = ComponentClass>
 export interface ComponentClass<P = any> {
     props: Props<P, ComponentClass<P>>;
 
+    $inited: boolean;
     $SVG: boolean;
     $vNode: VNodeComponentClass<ComponentClass<P>> | null;
     $lastInput: VNode | null;
@@ -149,8 +151,8 @@ export interface ComponentClass<P = any> {
     $unmount(vNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass | null): void;
 }
 
-export interface ComponentFunction<P = any> {
-    (props: Props<P>): Children;
+export interface ComponentFunction<P = any, R extends Element | ComponentClass = Element | ComponentClass> {
+    (props: Props<P, R>): Children;
     displayName?: string
     typeDefs?: TypeDefs<P>
 }

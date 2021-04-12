@@ -5,6 +5,7 @@ import {Fragment, findDomFromVNode} from '../../src/utils/common';
 import {VNode, VNodeComponentClass, Template} from '../../src/utils/types';
 import {Animate} from '../../src/components/animate';
 import './animate.css';
+import {Transition} from '../../src/components/transition';
 
 describe('Component', () => {
     let container: Element;
@@ -15,6 +16,7 @@ describe('Component', () => {
     });
 
     it('Enter', () => {
-        render(h(Animate, {tag: 'div'}, 'show'), container);
+        // render(h(Animate, {tag: 'div'}, 'show'), container);
+        render(h(Transition, {appear: true}, h('div', null, 'show')), container);
     });
 });

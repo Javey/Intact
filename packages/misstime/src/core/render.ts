@@ -1,4 +1,4 @@
-import {VNode, Types, MissTimeElement} from '../utils/types';
+import {VNode, Types, MissTimeElement, VNodeTag} from '../utils/types';
 import {isInvalid, throwError, error, isNullOrUndefined} from '../utils/helpers';
 import {directClone} from './vnode';
 import {mount} from './mount';

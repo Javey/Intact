@@ -145,8 +145,8 @@ export function nextFrame(fn: () => void) {
 }
 
 // @reference Vue
-export function whenAnimationEnds(dom: Element, cb: () => void) {
-    const {timeout, propCount} = getAnimationInfo(dom);
+export function whenTransitionEnds(dom: Element, cb: () => void) {
+    const {timeout, propCount} = getTransitionInfo(dom);
     let ended = 0;
     const onEnd = (e: Event) => {
         if (e.target === dom && ++ended >= propCount) {
@@ -167,7 +167,7 @@ export function whenAnimationEnds(dom: Element, cb: () => void) {
     TransitionEvents.on(dom, onEnd);
 }
 
-export function getAnimationInfo(dom: Element): AnimationInfo {
+export function getTransitionInfo(dom: Element): AnimationInfo {
     const styles: any = window.getComputedStyle(dom);
     const getStyleProperties = (key: string) => (styles[key] || '').split(', ');
     const transitionDelays = getStyleProperties(transitionProp + 'Delay');

@@ -99,6 +99,10 @@ export function mountElement(
         }
     }
 
+    if (!isNullOrUndefined(parentDom)) {
+        insertOrAppend(parentDom, dom, anchor);
+    }
+
     if (!isNullOrUndefined(props)) {
         mountProps(vNode, type, props, dom, isSVG);
     }
@@ -106,10 +110,6 @@ export function mountElement(
     if (!isUndefined(transition)) {
         transition.beforeEnter(dom as TransitionElement); 
         mountedQueue.push(() => transition.enter(dom as TransitionElement));
-    }
-
-    if (!isNullOrUndefined(parentDom)) {
-        insertOrAppend(parentDom, dom, anchor);
     }
 
     mountRef(vNode.ref, dom);
@@ -155,7 +155,7 @@ export function mountComponentFunction(
     if (process.env.NODE_ENV !== 'production') {
         validateProps(vNode);
     }
-    mount((vNode.children = normalizeRoot(vNode.tag(vNode.props || EMPTY_OBJ))), parentDom, parentComponent, isSVG, anchor, mountedQueue);
+    mount((vNode.children = normalizeRoot(vNode.tag(vNode.props || EMPTY_OBJ), vNode)), parentDom, parentComponent, isSVG, anchor, mountedQueue);
 }
 
 export function mountText(vNode: VNodeTextElement, parentDom: Element | null, anchor: IntactDom | null) {

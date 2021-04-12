@@ -1,6 +1,6 @@
 import {Component} from '../core/component';
 import {isNullOrUndefined, isArray, error, isUndefined, isFunction} from '../utils/helpers';
-import {VNode, Props, TransitionHooks, TransitionElement} from '../utils/types';
+import {VNode, Props, TransitionHooks, TransitionElement, Types, VNodeComponentClass} from '../utils/types';
 
 export type BaseTransitionCallback = (el: TransitionElement) => void;
 export type BaseTransitionDoneCallback = (el: TransitionElement, done: () => void) => void;
@@ -26,8 +26,7 @@ export interface BaseTransitionProps {
     onAppearCancelled?: BaseTransitionCallback
 }
 
-
-class BaseTransition extends Component<BaseTransitionProps> {
+export class BaseTransition extends Component<BaseTransitionProps> {
     static template(this: BaseTransition) {
         const props = this.props;
         const children = props.children;
@@ -49,8 +48,10 @@ class BaseTransition extends Component<BaseTransitionProps> {
             return null;
         }
 
-        const enterHooks = resolveTranstionHooks(vNode, props, this);
+        const enterHooks = resolveTransitionHooks(vNode, props, this);
         setTransitionHooks(vNode, enterHooks);
+
+        return vNode;
     }
 
     private isLeaving: boolean = false;
@@ -60,7 +61,7 @@ class BaseTransition extends Component<BaseTransitionProps> {
     } 
 }
 
-function resolveTranstionHooks(
+function resolveTransitionHooks(
     vNode: VNode,
     props: Props<BaseTransitionProps, BaseTransition>,
     component: BaseTransition
@@ -189,5 +190,14 @@ function callHook(hook: Function | undefined, el: TransitionElement) {
 }
 
 function setTransitionHooks(vNode: VNode, hooks: TransitionHooks) {
-    
+    if (vNode.type & Types.ComponentClass) {
+        const component = (vNode as VNodeComponentClass).children;
+        if (!isNullOrUndefined(component) && component.$inited) {
+            setTransitionHooks(component.$lastInput!, hooks);
+        } else {
+            vNode.transition = hooks;
+        }
+    } else {
+        vNode.transition = hooks;
+    } 
 }

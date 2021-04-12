@@ -1,4 +1,4 @@
-import {isNull} from './helpers';
+import {isNull, isUndefined} from './helpers';
 import {
     Reference,
     IntactDom,
@@ -7,7 +7,8 @@ import {
     ChildrenTypes,
     ComponentConstructor,
     ComponentFunction,
-    ComponentClass
+    ComponentClass,
+    TransitionElement,
 } from './types';
 
 export function replaceChild(parentDom: Element, newDom: Element, lastDom: Element) {
@@ -47,7 +48,13 @@ export function removeVNodeDom(vNode: VNode, parentDom: Element) {
     do {
         const type = vNode.type;
         if (type & Types.HtmlElement) {
-            removeChild(parentDom, vNode.dom!);
+            const transition = vNode.transition;
+            if (isUndefined(transition)) {
+                removeChild(parentDom, vNode.dom!);
+            } else {
+                const dom = vNode.dom;
+                transition.leave(dom as TransitionElement, () => removeChild(parentDom, dom!));
+            }
             return;
         }
 
@@ -107,6 +114,7 @@ export function moveVNodeDom(vNode: VNode, parentDom: Element, anchor: IntactDom
         const type = vNode.type;
 
         if (type & Types.HtmlElement) {
+            // TODO: move with transtion
             insertOrAppend(parentDom, vNode.dom!, anchor);
             return;
         }

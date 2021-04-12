@@ -22,6 +22,7 @@ import {
     isInvalid,
     isStringOrNumber,
     isString,
+    isUndefined,
 } from '../utils/helpers';
 import {throwIfObjectIsNotVNode, validateVNodeElementChildren} from '../utils/validate';
 import {Fragment} from '../utils/common';
@@ -248,7 +249,7 @@ export function createFragment(children: Children, childrenType: ChildrenTypes, 
     return fragment;
 }
 
-export function directClone(vNode: VNode<any>): VNode<any> {
+export function directClone(vNode: VNode): VNode {
     const type = vNode.type & Types.ClearInUse;
     let props = vNode.props;
 
@@ -415,16 +416,29 @@ function _normalizeVNodes(vNodes: any[], result: VNode[], index: number, referen
     }
 }
 
-export function normalizeRoot(vNode: Children): VNode {
+export function normalizeRoot(vNode: Children, parentVNode: VNode): VNode {
+    let root: VNode;
     if (isInvalid(vNode)) {
-        return createVoidVNode();
-    } 
-    if (isStringOrNumber(vNode)) {
-        return createTextVNode(vNode, null);
-    }
-    if (isArray(vNode)) {
-        return createFragment(vNode, ChildrenTypes.UnknownChildren, null);
+        root = createVoidVNode();
+    } else if (isStringOrNumber(vNode)) {
+        root = createTextVNode(vNode, null);
+    } else if (isArray(vNode)) {
+        root = createFragment(vNode, ChildrenTypes.UnknownChildren, null);
+    } else {
+        root = (vNode as VNode).type & Types.InUse ? directClone(vNode) : vNode;
     }
 
-    return (vNode as VNode).type & Types.InUse ? directClone(vNode) : vNode;
+    const transition = parentVNode.transition;
+    if (!isUndefined(transition)) {
+        if (process.env.NODE_ENV !== 'production') {
+            const type = root.type;
+            if (!(type & Types.Component || type & Types.Element)) {
+                throwError(`Component inside <Transtion> must render a single elememt node.`);
+            }
+        }
+        root.transition = transition;
+    }
+
+    return root;
 }
+

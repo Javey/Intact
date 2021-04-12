@@ -27,7 +27,8 @@ describe('Functional component', () => {
             function Test() {
                 return h('div', null, 'test');
             }
-            render(h(Test), container);
+            const vNode = h(Test);
+            render(vNode, container);
             expect(container.innerHTML).toBe('<div>test</div>');
         });
 

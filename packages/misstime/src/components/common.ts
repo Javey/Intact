@@ -1,7 +1,7 @@
 import type {Animate} from './animate';
 import {addClass, removeClass} from './heplers';
 import {findDomFromVNode} from '../utils/common';
-import {nextFrame, whenAnimationEnds} from './heplers';
+import {nextFrame, whenTransitionEnds} from './heplers';
 
 export function addAnimateClass(component: Animate<any>, dom: Element, className: string) {
     component.classNames[className] = true;
@@ -23,7 +23,7 @@ export function onEnter(component: Animate<any>) {
     nextFrame(() => {
         addAnimateClass(component, dom, `${transition}-enter-active`);
         removeAnimateClass(component, dom, `${transition}-enter`);
-        whenAnimationEnds(dom, () => onEnterEnd(component, dom));
+        whenTransitionEnds(dom, () => onEnterEnd(component, dom));
     });
 }
 
