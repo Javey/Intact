@@ -1,13 +1,24 @@
 import {Component} from '../core/component';
-import {isNullOrUndefined, isArray, error, isUndefined, isFunction} from '../utils/helpers';
+import {
+    isNullOrUndefined, 
+    isArray,
+    error,
+    isUndefined,
+    isNull,
+    isFunction,
+    isStringOrNumber,
+    throwError,
+} from '../utils/helpers';
 import {VNode, Props, TransitionHooks, TransitionElement, Types, VNodeComponentClass} from '../utils/types';
+import {findDomFromVNode} from '../utils/common';
 
 export type BaseTransitionCallback = (el: TransitionElement) => void;
 export type BaseTransitionDoneCallback = (el: TransitionElement, done: () => void) => void;
 
 export interface BaseTransitionProps {
-    mode?: 'in-out' | 'out-in' | 'default'
+    // mode?: 'in-out' | 'out-in' | 'default'
     appear?: boolean
+    show?: boolean
 
     // enter
     onBeforeEnter?: BaseTransitionCallback
@@ -38,15 +49,21 @@ export class BaseTransition extends Component<BaseTransitionProps> {
                     `<Transition> can only be used on a single element or component. ` + 
                     `Use <TransitionGroup> for lists.`
                 );
+            } else if (
+                isStringOrNumber(children) || 
+                typeof children === 'boolean' || 
+                (children as VNode).type & Types.TextElement
+            ) {
+                throwError(`<Transtion> received a invalid element: ${JSON.stringify(children)}.`);
             }
         }
 
-        const {mode} = props;
-        const vNode = children as VNode;
+        // const {mode} = props;
+        const vNode = (isArray(children) ? children[0] : children) as VNode;
        
-        if (this.isLeaving) {
-            return null;
-        }
+        // if (this.isLeaving) {
+            // return null;
+        // }
 
         const enterHooks = resolveTransitionHooks(vNode, props, this);
         setTransitionHooks(vNode, enterHooks);
@@ -54,11 +71,46 @@ export class BaseTransition extends Component<BaseTransitionProps> {
         return vNode;
     }
 
-    private isLeaving: boolean = false;
+    // private isLeaving: boolean = false;
+    public leavingVNodesCache: Record<string, VNode> = {};
+    public el: TransitionElement | null = null;
 
-    init() {
+    defaults() {
+        return {show: true};
+    }
+    
+    mounted() {
+        const lastInput = this.$lastInput!;
+        // is a void vNode 
+        if (lastInput.type & Types.Text) return;
 
-    } 
+        const el = this.el = findDomFromVNode(lastInput, true) as TransitionElement;
+        const display = el.style.display;
+        const originDisplay = display === 'none' ? '' : display;
+
+        if (!this.props.show) {
+            setDisplay(el, 'none');
+        }
+
+        this.on('$receive:show', (show) => {
+            if (show) {
+                lastInput.transition!.beforeEnter(el);
+                setDisplay(el, originDisplay);
+                lastInput.transition!.enter(el);
+            } else {
+                lastInput.transition!.leave(el, () => {
+                    setDisplay(el, 'none');
+                });
+            }
+        });
+    }
+
+    unmounted() {
+        const el = this.el;
+        if (!isNull(el)) {
+            el.$TD = undefined;
+        }
+    }
 }
 
 function resolveTransitionHooks(
@@ -68,7 +120,7 @@ function resolveTransitionHooks(
 ): TransitionHooks {
     const {
         appear,
-        mode,
+        // mode,
         onBeforeEnter,
         onEnter,
         onAfterEnter,
@@ -83,7 +135,8 @@ function resolveTransitionHooks(
         onAppearCancelled
     } = props;
 
-    // const key = vNode.key;
+    const key = vNode.key as string;
+    const leavingVNodesCache = component.leavingVNodesCache;
 
     return {
         beforeEnter(el) {
@@ -96,9 +149,20 @@ function resolveTransitionHooks(
                 }
             }
 
-            // if (el._leaveCb) {
-                // el._leaveCb(true);
-            // }
+            // for same element (show)
+            if (el._leaveCb) {
+                el._leaveCb(true);
+            }
+
+            // for toggled element with the same key (v-if)
+            const leavingVNode = leavingVNodesCache[key]; 
+            if (!isUndefined(leavingVNode) && vNode.tag === leavingVNode.tag) {
+                const el = findDomFromVNode(leavingVNode, true) as TransitionElement;
+                const leaveCb = el._leaveCb;
+                if (!isUndefined(leaveCb)) {
+                    leaveCb();
+                }
+            }
             
             callHook(hook, el);
         },
@@ -131,7 +195,7 @@ function resolveTransitionHooks(
                 el._enterCb = undefined;
             };
 
-            if (hook) {
+            if (!isUndefined(hook)) {
                 hook(el, done);
                 if (hook.length <= 1) {
                     done();
@@ -142,14 +206,13 @@ function resolveTransitionHooks(
         },
 
         leave(el, remove) {
-            // const key = vNode.key;
             if (el._enterCb) {
                 el._enterCb(true);
             }
-
             if (component.$unmounted) {
                 return remove();
             }
+
             callHook(onBeforeLeave, el);
             let called = false;
             const done = el._leaveCb = (cancelled?) => {
@@ -162,9 +225,14 @@ function resolveTransitionHooks(
                     callHook(onAfterLeave, el);
                 }
                 el._leaveCb = undefined;
-            }
+                if (leavingVNodesCache[key] === vNode) {
+                    delete leavingVNodesCache[key];
+                }
+            };
 
-            if (onLeave) {
+            leavingVNodesCache[key] = vNode;
+
+            if (!isUndefined(onLeave)) {
                 onLeave(el, done);
                 if (onLeave.length <= 1) {
                     done();
@@ -177,16 +245,9 @@ function resolveTransitionHooks(
 }
 
 function callHook(hook: Function | undefined, el: TransitionElement) {
-    if (isUndefined(hook)) return;
-    hook(el);
-    
-    // if (isFunction(hook)) {
-        // hook(el);
-    // } else {
-        // for (let i = 0; i < hook.length; i++) {
-            // hook[i](el);
-        // }
-    // }
+    if (!isUndefined(hook)) {
+        hook(el);
+    } 
 }
 
 function setTransitionHooks(vNode: VNode, hooks: TransitionHooks) {
@@ -200,4 +261,8 @@ function setTransitionHooks(vNode: VNode, hooks: TransitionHooks) {
     } else {
         vNode.transition = hooks;
     } 
+}
+
+function setDisplay(dom: TransitionElement, display: string) {
+    dom.$TD = dom.style.display = display;
 }

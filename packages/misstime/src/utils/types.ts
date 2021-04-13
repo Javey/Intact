@@ -26,10 +26,11 @@ export interface TransitionHooks {
     leave(el: TransitionElement, remove: () => void): void
 }
 
-export interface TransitionElement extends Element {
+export interface TransitionElement extends HTMLElement {
     _enterCb?: PendingCallback
     _leaveCb?: PendingCallback
     $TC?: Record<string, boolean>
+    $TD?: string
 }
 
 export type PendingCallback = (cancelled?: boolean) => void

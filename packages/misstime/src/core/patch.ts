@@ -10,6 +10,7 @@ import {
     VNodeTextElement,
     IntactDom,
     ComponentClass,
+    TransitionElement,
 } from '../utils/types';
 import {mount, mountArrayChildren, mountComponentClass} from './mount';
 import {remove, unmount, clearDom, removeAllChildren} from './unmount';
@@ -24,7 +25,7 @@ import {
     removeVNodeDom,
     moveVNodeDom,
 } from '../utils/common';
-import {isNullOrUndefined} from '../utils/helpers';
+import {isNullOrUndefined, isUndefined} from '../utils/helpers';
 import {directClone, createVoidVNode, normalizeRoot} from './vnode';
 import {patchProp} from '../utils/props';
 import {processElement} from '../wrappers/process';
@@ -83,7 +84,7 @@ function replaceWithNewNode(
 ) {
     if (lastVNode.type & Types.InUse) {
         unmount(lastVNode);
-        if ((nextVNode.type & lastVNode.type & Types.HtmlElement)) {
+        if ((nextVNode.type & lastVNode.type & Types.HtmlElement) && isUndefined(lastVNode.transition)) {
             // single dom
             mount(nextVNode, null, parentComponent, isSVG, null, mountedQueue); 
             replaceChild(parentDom, nextVNode.dom as Element, lastVNode.dom as Element);
@@ -195,12 +196,19 @@ export function patchElement(
     // patch className
     const nextClassName = nextVNode.className;
     if (lastVNode.className !== nextClassName) {
+        const transitionClassname = (dom as TransitionElement).$TC;
         if (isNullOrUndefined(nextClassName)) {
-            dom.removeAttribute('class');
+            if (isUndefined(transitionClassname)) {
+                dom.removeAttribute('class');
+            } else {
+                dom.className = Object.keys(transitionClassname).join(' ');
+            }
         } else if (isSVG) {
             dom.setAttribute('class', nextClassName);
-        } else {
+        } else if (isUndefined(transitionClassname)) {
             dom.className = nextClassName;
+        } else {
+            dom.className = nextClassName + ' ' + Object.keys(transitionClassname).join(' ');
         }
     }
 

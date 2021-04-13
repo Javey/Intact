@@ -252,6 +252,7 @@ export function forceUpdate(component: Component<any>, callback?: Function) {
             component.$mountedQueue.push(callback);
         }
     } else {
+        // TODO: if QUEUE.length === 0, update immediately
         if (QUEUE.indexOf(component) === -1) {
             QUEUE.push(component);
         }

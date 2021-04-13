@@ -1,6 +1,8 @@
-.animate-enter {
+.transition-enter-from,
+.transition-leave-to {
     opacity: 0;
 }
-.animate-enter-active {
+.transition-enter-active,
+.transition-leave-active {
     transition: opacity 2s
 }

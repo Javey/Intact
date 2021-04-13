@@ -1,5 +1,5 @@
-import {VNode, Types, LinkedEvent, Reference} from './types';
-import {isNullOrUndefined, isString, isEventProp, namespaces} from './helpers';
+import {VNode, Types, LinkedEvent, Reference, TransitionElement} from './types';
+import {isNullOrUndefined, isUndefined, isString, isEventProp, namespaces} from './helpers';
 import {delegatedEvents, handleDelegatedEvent} from '../events/delegation';
 import {isLinkEvent, isSameLinkEvent} from '../events/linkEvent';
 import {attachEvent} from '../events/attachEvents';
@@ -112,34 +112,39 @@ function patchStyle(lastValue: any, nextValue: any, dom: Element) {
         // but it does not matter
         // dom.setAttribute('style', '');
         dom.removeAttribute('style');
-        return;
-    }
-    const domStyle = (dom as HTMLElement).style;
-    if (isString(nextValue)) {
-        domStyle.cssText = nextValue; 
-        return;
+    } else {
+        const domStyle = (dom as HTMLElement).style;
+        if (isString(nextValue)) {
+            domStyle.cssText = nextValue; 
+        } else {
+            let style;
+            let value;
+            if (!isNullOrUndefined(lastValue) && !isString(lastValue)) {
+                for (style in nextValue) {
+                    value = nextValue[style];
+                    if (value !== lastValue[style]) {
+                        domStyle.setProperty(style, value);
+                    }
+                }
+                for (style in lastValue) {
+                    if (isNullOrUndefined(nextValue[style])) {
+                        domStyle.removeProperty(style);
+                    }
+                }
+            } else {
+                // TODO: remove style firstly if lastValue is string
+                for (style in nextValue) {
+                    value = nextValue[style];
+                    domStyle.setProperty(style, value);
+                }
+            }
+        }
     }
 
-    let style;
-    let value;
-    if (!isNullOrUndefined(lastValue) && !isString(lastValue)) {
-        for (style in nextValue) {
-            value = nextValue[style];
-            if (value !== lastValue[style]) {
-                domStyle.setProperty(style, value);
-            }
-        }
-        for (style in lastValue) {
-            if (isNullOrUndefined(nextValue[style])) {
-                domStyle.removeProperty(style);
-            }
-        }
-    } else {
-        // TODO: remove style firstly if lastValue is string
-        for (style in nextValue) {
-            value = nextValue[style];
-            domStyle.setProperty(style, value);
-        }
+    // handle Transition display
+    const display = (dom as TransitionElement).$TD;
+    if (!isUndefined(display)) {
+        (dom as TransitionElement).style.display = display; 
     }
 }
 

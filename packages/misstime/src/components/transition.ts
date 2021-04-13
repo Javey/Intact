@@ -47,7 +47,7 @@ Transition.typeDefs = TransitionTypeDefs;
 
 export function resolveTransitionProps(props: TransitionProps): BaseTransitionProps {
      const {
-        name = 'v',
+        name = 'transition',
         // type,
         css = true,
         // duration,
@@ -188,6 +188,9 @@ function removeTransitionClass(el: TransitionElement, className: string) {
     const transitionClassname = el.$TC;
     if (!isUndefined(transitionClassname)) {
         delete transitionClassname[className];
+        if (Object.keys(transitionClassname).length === 0) {
+            el.$TC = undefined;
+        }
     }
 }
 

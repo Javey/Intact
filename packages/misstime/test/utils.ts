@@ -2,6 +2,7 @@ import {Props, ComponentClass, VNodeComponentClass, VNode} from '../src/utils/ty
 import {createVNode as h} from '../src/core/vnode';
 import {render} from '../src/core/render';
 import {nextTick as _nextTick} from '../src/utils/component';
+import {nextFrame as _nextFrame} from '../src/components/heplers';
 
 export function dispatchEvent(target: Element, eventName: string, options?: Object) {
     let event;
@@ -35,8 +36,12 @@ export async function nextTick() {
     });
 }
 
-export async function wait(duration: number) {
+export function wait(duration: number) {
     return new Promise(resolve => {
         setTimeout(resolve, duration);
     });
+}
+
+export function nextFrame() {
+    return new Promise<void>(resolve => _nextFrame(resolve));
 }
