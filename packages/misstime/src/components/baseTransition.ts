@@ -150,7 +150,7 @@ function resolveTransitionHooks(
             }
 
             // for same element (show)
-            if (el._leaveCb) {
+            if (!isUndefined(el._leaveCb)) {
                 el._leaveCb(true);
             }
 
@@ -206,7 +206,7 @@ function resolveTransitionHooks(
         },
 
         leave(el, remove) {
-            if (el._enterCb) {
+            if (!isUndefined(el._enterCb)) {
                 el._enterCb(true);
             }
             if (component.$unmounted) {

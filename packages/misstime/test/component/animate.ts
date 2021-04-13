@@ -164,6 +164,20 @@ describe('Component', () => {
                 
                 await wait(0);
                 expect((container.firstElementChild! as HTMLDivElement).style.cssText).toBe('font-size: 12px; display: none;');
+
+                render(h('div', null, 'show'), container);
+                expect(container.innerHTML).toBe('<div>show</div>');
+            });
+
+            it('should show a leaving element', async () => {
+                render(h(Transition, null, h('div', null, 'show')), container);
+                render(h(Transition, {show: false}, h('div', null, 'show')), container);
+                render(h(Transition, {show: true}, h('div', null, 'show')), container);
+
+                const dom = container.firstElementChild!;
+
+                await testTransition(dom, 'enter');
+                expect((dom as HTMLElement).style.display).toBe('');
             });
         });
     });

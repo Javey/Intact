@@ -2,7 +2,7 @@
 import {ComponentFunction, TransitionElement, Types} from '../utils/types';
 import {BaseTransition, BaseTransitionProps} from './baseTransition';
 import {createComponentVNode} from '../core/vnode'; 
-import {isNullOrUndefined, isUndefined, isObject} from '../utils/helpers';
+import {isNullOrUndefined, isUndefined, isNull, isObject} from '../utils/helpers';
 import {addClass, removeClass, nextFrame, whenTransitionEnds} from './heplers';
 
 export interface TransitionProps extends BaseTransitionProps {
@@ -85,11 +85,30 @@ export function resolveTransitionProps(props: TransitionProps): BaseTransitionPr
         onAppearCancelled = onEnterCancelled,
     } = baseProps;
 
+    let cancelNextFrame: (() => void) | null = null;
+
+    const cancelFrame = () => {
+        if (!isNull(cancelNextFrame)) {
+            cancelNextFrame();
+            forceReflow();
+            cancelNextFrame = null;
+        }
+    }
+
     const finishEnter = (el: TransitionElement, isAppear: boolean, done?: () => void) => {
         if (isAppear) {
-            removeTransitionClass(el, appearToClass); 
+            if (!isNull(cancelNextFrame)) {
+                removeTransitionClass(el, appearFromClass);
+            } else {
+                removeTransitionClass(el, appearToClass); 
+            }
             removeTransitionClass(el, appearActiveClass);
         } else {
+            if (!isNull(cancelNextFrame)) {
+                removeTransitionClass(el, enterFromClass);
+            } else {
+                removeTransitionClass(el, enterToClass); 
+            }
             removeTransitionClass(el, enterToClass); 
             removeTransitionClass(el, enterActiveClass);
         }
@@ -99,7 +118,11 @@ export function resolveTransitionProps(props: TransitionProps): BaseTransitionPr
     };
 
     const finishLeave = (el: TransitionElement, done?: () => void) => {
-        removeTransitionClass(el, leaveToClass);
+        if (!isNull(cancelNextFrame)) {
+            removeTransitionClass(el, leaveFromClass);
+        } else {
+            removeTransitionClass(el, leaveToClass);
+        }
         removeTransitionClass(el, leaveActiveClass);
         if (!isUndefined(done)) {
             done();
@@ -113,7 +136,7 @@ export function resolveTransitionProps(props: TransitionProps): BaseTransitionPr
             if (!isUndefined(hook)) {
                 hook(el, resolve);
             }
-            nextFrame(() => {
+            cancelNextFrame = nextFrame(() => {
                 if(isAppear) {
                     removeTransitionClass(el, appearFromClass);
                     addTransitionClass(el, appearToClass);
@@ -124,6 +147,7 @@ export function resolveTransitionProps(props: TransitionProps): BaseTransitionPr
                 if (isUndefined(hook) || hook.length <= 1) {
                     whenTransitionEnds(el, resolve); 
                 }
+                cancelNextFrame = null;
             });
         }
     };
@@ -138,6 +162,7 @@ export function resolveTransitionProps(props: TransitionProps): BaseTransitionPr
         onEnter: makeEnterHook(false),
         onEnterCancelled(el) {
             finishEnter(el, false);
+            cancelFrame();
             if (!isUndefined(onEnterCancelled)) {
                 onEnterCancelled(el);
             }
@@ -151,6 +176,7 @@ export function resolveTransitionProps(props: TransitionProps): BaseTransitionPr
         onAppear: makeEnterHook(true),
         onAppearCancelled(el) {
             finishEnter(el, true);
+            cancelFrame();
             if (!isUndefined(onAppearCancelled)) {
                 onAppearCancelled(el);
             }
@@ -161,16 +187,18 @@ export function resolveTransitionProps(props: TransitionProps): BaseTransitionPr
             addTransitionClass(el, leaveFromClass);
             forceReflow();
             addTransitionClass(el, leaveActiveClass);
-            nextFrame(() => {
+            cancelNextFrame = nextFrame(() => {
                 removeTransitionClass(el, leaveFromClass);
                 addTransitionClass(el, leaveToClass);
                 if (isUndefined(onLeave) || onLeave.length <= 1) {
                     whenTransitionEnds(el, resolve);
                 }
+                cancelNextFrame = null;
             });
         },
         onLeaveCancelled(el) {
             finishLeave(el);
+            cancelFrame();
             if (!isUndefined(onLeaveCancelled)) {
                 onLeaveCancelled(el);
             }

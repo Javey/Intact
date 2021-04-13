@@ -14,7 +14,8 @@ export type AnimationInfo = {
 
 export let addClass: (dom: Element, className: string) => void;
 export let removeClass: (dom: Element, className: string) => void;
-let raf: (fn: () => void) => void;
+let raf: (fn: () => void) => number;
+let caf: (handle: number) => void;
 const endEvents: string[] = [];
 let transitionProp = 'transition';
 let animationProp = 'animation';
@@ -24,6 +25,11 @@ if (hasDocumentAvailable) {
         (window as any).mozRequestAnimationFrame ||
         (window as any).msRequestAnimationFrame ||
         window.setTimeout;
+    caf = window.cancelAnimationFrame ||
+        window.webkitCancelAnimationFrame ||
+        (window as any).mozCancelRequestAnimationFrame ||
+        (window as any).msAnimationFrame ||
+        window.clearTimeout
 
     const testEl = document.createElement('div');
 
@@ -141,7 +147,15 @@ export function className(obj?: Record<string | number, any> | null | string) {
 }
 
 export function nextFrame(fn: () => void) {
-    raf!(() => raf!(fn));
+    let innerFrame: number;
+    let frame = raf!(() => {
+        innerFrame = raf!(fn);
+    });
+
+    return () => {
+        caf(frame);
+        caf(innerFrame);
+    }
 }
 
 // @reference Vue
