@@ -1,4 +1,4 @@
-import {isNull, isUndefined} from './helpers';
+import {isNull, isNullOrUndefined} from './helpers';
 import {
     Reference,
     IntactDom,
@@ -49,7 +49,7 @@ export function removeVNodeDom(vNode: VNode, parentDom: Element) {
         const type = vNode.type;
         if (type & Types.HtmlElement) {
             const transition = vNode.transition;
-            if (isUndefined(transition)) {
+            if (isNullOrUndefined(transition)) {
                 removeChild(parentDom, vNode.dom!);
             } else {
                 const dom = vNode.dom;

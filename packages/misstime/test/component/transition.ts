@@ -5,18 +5,8 @@ import {Fragment, findDomFromVNode} from '../../src/utils/common';
 import {VNode, VNodeComponentClass, Template, TransitionElement} from '../../src/utils/types';
 import {Transition} from '../../src/components/transition';
 import {createRef} from '../../src/utils/ref';
-import {wait, nextFrame} from '../utils';
-import './animate.css';
-
-async function testTransition(dom: Element, type: string) {
-    expect(dom.className).toBe(`transition-${type}-from transition-${type}-active`);
-
-    await nextFrame();
-    expect(dom.className).toBe(`transition-${type}-active transition-${type}-to`);
-
-    await wait(2100);
-    expect(dom.className).toBe('');
-}
+import {wait, nextFrame, testTransition} from '../utils';
+import './transition.css';
 
 describe('Component', () => {
     let container: Element;

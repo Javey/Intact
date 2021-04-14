@@ -1,35 +1,51 @@
-suite('undefined vs void 0', () => {
-    benchmark('undefined', () => {
-        var a;
-        a === undefined;
+// suite('undefined vs void 0', () => {
+    // benchmark('undefined', () => {
+        // var a;
+        // a === undefined;
+    // });
+
+    // benchmark('void 0', () => {
+        // var a;
+        // a === void 0;
+    // });
+// });
+
+// suite('detect property', () => {
+    // const a = {a: 1, b: 1, c: 'c'};
+    // const hasOwn = Object.prototype.hasOwnProperty;
+
+    // benchmark('undefined', () => {
+        // a.d === undefined;
+    // });
+
+    // benchmark('void 0', () => {
+        // a.d === void 0;
+    // });
+
+    // benchmark('in', () => {
+        // 'd' in a;
+    // });
+
+    // benchmark('hasOwnProperty', () => {
+        // hasOwn.call(a, 'd');
+    // });
+// });
+
+suite('if (undefined) vs if (undefined === undefined)', () => {
+    const a = undefined;
+
+    benchmark('if (undefined)', () => {
+        if (a) { }
     });
 
-    benchmark('void 0', () => {
-        var a;
-        a === void 0;
+    benchmark('if (isUndefined(undefined))', () => {
+        if (isUndefined(a)) {  }
     });
 });
 
-suite('detect property', () => {
-    const a = {a: 1, b: 1, c: 'c'};
-    const hasOwn = Object.prototype.hasOwnProperty;
-
-    benchmark('undefined', () => {
-        a.d === undefined;
-    });
-
-    benchmark('void 0', () => {
-        a.d === void 0;
-    });
-
-    benchmark('in', () => {
-        'd' in a;
-    });
-
-    benchmark('hasOwnProperty', () => {
-        hasOwn.call(a, 'd');
-    });
-});
+function isUndefined(a) {
+    return a === void 0;
+}
 
 // suite('diff two objects', () => {
     // const a = {a: 1, b: 1, c: 1};

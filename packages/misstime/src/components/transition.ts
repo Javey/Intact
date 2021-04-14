@@ -206,12 +206,12 @@ export function resolveTransitionProps(props: TransitionProps): BaseTransitionPr
     }
 }
 
-function addTransitionClass(el: TransitionElement, className: string) {
+export function addTransitionClass(el: TransitionElement, className: string) {
     addClass(el, className);
     (el.$TC || (el.$TC = {}))[className] = true;
 }
 
-function removeTransitionClass(el: TransitionElement, className: string) {
+export function removeTransitionClass(el: TransitionElement, className: string) {
     removeClass(el, className);
     const transitionClassname = el.$TC;
     if (!isUndefined(transitionClassname)) {
@@ -222,6 +222,6 @@ function removeTransitionClass(el: TransitionElement, className: string) {
     }
 }
 
-function forceReflow() {
+export function forceReflow() {
     return document.body.offsetHeight;
 }

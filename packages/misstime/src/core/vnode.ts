@@ -14,6 +14,7 @@ import {
     VNodeChildren,
     VNodeRef,
     TransitionHooks,
+    TransitionPosition,
 } from '../utils/types';
 import {
     isNullOrUndefined,
@@ -38,7 +39,9 @@ export class VNode<T extends VNodeTag = VNodeTag> implements IVNode<T> {
     public key: Key | null;
     public ref: VNodeRef<T> | null;
     public isValidated?: boolean;
-    public transition?: TransitionHooks;
+    public transition: TransitionHooks | null;
+    public position: TransitionPosition | null;
+    public newPosition: TransitionPosition | null;
     constructor(
         type: Types,
         tag: T,
@@ -60,6 +63,12 @@ export class VNode<T extends VNodeTag = VNodeTag> implements IVNode<T> {
         this.props = props;
         this.key = key === undefined ? null : key;
         this.ref = ref === undefined ? null : ref;
+
+        // for Transition
+        this.transition = null;
+        // FIXME: Is it necessary to initialize these properties to prevent V8 from de-optimization
+        this.position = null;
+        this.newPosition = null;
     }
 }
 
@@ -296,7 +305,7 @@ export function directClone(vNode: VNode): VNode {
     return newVNode;
 }
 
-function normalizeChildren(vNode: VNode, children: Children) {
+export function normalizeChildren(vNode: VNode, children: Children) {
     let newChildren: any;
     let newChildrenType: ChildrenTypes = ChildrenTypes.HasInvalidChildren;
 
@@ -429,7 +438,7 @@ export function normalizeRoot(vNode: Children, parentVNode: VNode): VNode {
     }
 
     const transition = parentVNode.transition;
-    if (!isUndefined(transition)) {
+    if (!isNullOrUndefined(transition)) {
         if (process.env.NODE_ENV !== 'production') {
             const type = root.type;
             if (!(type & Types.Component || type & Types.Element)) {

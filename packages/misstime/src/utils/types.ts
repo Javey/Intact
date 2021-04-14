@@ -11,7 +11,9 @@ export interface VNode<T extends VNodeTag = VNodeTag> {
     key: Key | null
     ref: VNodeRef<T> | null
     isValidated?: boolean,
-    transition?: TransitionHooks
+    transition: TransitionHooks | null
+    position: TransitionPosition | null
+    newPosition: TransitionPosition | null
 }
 export interface VNodeElement extends VNode<string> { }
 export interface VNodeTextElement extends VNode<null> {
@@ -29,8 +31,14 @@ export interface TransitionHooks {
 export interface TransitionElement extends HTMLElement {
     _enterCb?: PendingCallback
     _leaveCb?: PendingCallback
+    _moveCb?: (e?: TransitionEvent) => void
     $TC?: Record<string, boolean>
     $TD?: string
+}
+
+export interface TransitionPosition {
+    top: number
+    left: number
 }
 
 export type PendingCallback = (cancelled?: boolean) => void

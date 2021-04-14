@@ -26,8 +26,16 @@ if (hasDocumentAvailable) {
     * fixes v8 "wrong map" de-optimization
     */
     if (window.Node) {
-        (Node.prototype as any).$EV = null;
-        (Node.prototype as any).$V = null;
+        const prototype = Node.prototype as any;
+        prototype.$EV = null;
+        prototype.$V = null;
+
+        // Transtion Element
+        prototype.$TC = undefined;
+        prototype.$TD = undefined;
+        prototype._enterCb = undefined;
+        prototype._leaveCb = undefined;
+        prototype._moveCb = undefined;
     }
 }
 
