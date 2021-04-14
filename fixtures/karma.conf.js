@@ -4,10 +4,10 @@ const path = require('path');
 module.exports = function(config) {
     config.set({
         files: [
-            'test/**/*.ts',
+            path.resolve(__dirname, 'test.index.js'),
         ],
         preprocessors: {
-            '**/*.ts': ['webpack'],
+            [path.resolve(__dirname, 'test.index.js')]: ['webpack'],
         },
         webpack: {
             mode: 'development',
@@ -19,7 +19,7 @@ module.exports = function(config) {
                     },
                     {
                         test: /\.ts$/,
-                        include: path.resolve('./src'),
+                        include: /packages\/\w+\/src\/.*\.ts$/,
                         enforce: 'post',
                         use: {
                             loader: 'istanbul-instrumenter-loader',
@@ -43,7 +43,7 @@ module.exports = function(config) {
         reporters: ['kjhtml', 'coverage-istanbul'],
         coverageIstanbulReporter: {
             reports: ['html', 'text-summary', 'lcovonly'],
-            dir: path.resolve('./test/coverage/'),
+            dir: path.resolve('./coverage/'),
             fixWebpackSourcePaths: true,
         },
     });

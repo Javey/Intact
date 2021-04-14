@@ -173,11 +173,11 @@ export interface LinkedEvent<T, E extends Event> {
     event: (data: T, event: E) => void;
 }
 
-export type MissTimeEventListener = EventListener | LinkedEvent<any, any> | null;
+export type IntactEventListener = EventListener | LinkedEvent<any, any> | null;
 
-export interface MissTimeElement extends Element {
+export interface IntactElement extends Element {
     [key: string]: any;
-    $EV?: Record<string, MissTimeEventListener>;
+    $EV?: Record<string, IntactEventListener>;
     $V?: VNode | null;
 };
 

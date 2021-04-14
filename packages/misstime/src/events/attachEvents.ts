@@ -1,9 +1,9 @@
 import {isFunction} from '../utils/helpers';
-import {MissTimeElement} from '../utils/types';
+import {IntactElement} from '../utils/types';
 
 type EventData = [string, EventListener];
 
-export function attachEvent(dom: MissTimeElement, eventName: string, handler: EventListener) {
+export function attachEvent(dom: IntactElement, eventName: string, handler: EventListener) {
     const previousKey = `$${eventName}`;
     const previousArgs = (dom as any)[previousKey] as EventData;
 

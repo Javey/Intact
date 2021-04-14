@@ -1,6 +1,6 @@
 import {isFunction, isNull} from '../utils/helpers';
 import {normalizeEventName} from '../utils/common';
-import {LinkedEvent, MissTimeEventListener, MissTimeElement} from '../utils/types';
+import {LinkedEvent, IntactEventListener, IntactElement} from '../utils/types';
 import {isLinkEvent, isSameLinkEvent} from './linkEvent';
 
 interface IEventData {
@@ -30,11 +30,11 @@ const attachedEvents = getDelegatedEventObject<EventListener | null>(null);
 
 export const delegatedEvents = getDelegatedEventObject<boolean>(true);
 
-function updateOrAddDelegatedEvent(name: string, dom: MissTimeElement) {
+function updateOrAddDelegatedEvent(name: string, dom: IntactElement) {
     let eventsObject = dom.$EV;
 
     if (!eventsObject) {
-        eventsObject = dom.$EV = getDelegatedEventObject<MissTimeEventListener>(null);
+        eventsObject = dom.$EV = getDelegatedEventObject<IntactEventListener>(null);
     }
     if (!eventsObject[name]) {
         if (++attachedEventCounts[name] === 1) {
@@ -45,7 +45,7 @@ function updateOrAddDelegatedEvent(name: string, dom: MissTimeElement) {
     return eventsObject;
 }
 
-export function unmountDelegatedEvent(name: string, dom: MissTimeElement) {
+export function unmountDelegatedEvent(name: string, dom: IntactElement) {
     const eventsObject = dom.$EV;
 
     if (eventsObject && eventsObject[name]) {
@@ -61,9 +61,9 @@ export function unmountDelegatedEvent(name: string, dom: MissTimeElement) {
 
 export function handleDelegatedEvent(
     name: string,
-    lastEvent: MissTimeEventListener,
-    nextEvent: MissTimeEventListener,
-    dom: MissTimeElement,
+    lastEvent: IntactEventListener,
+    nextEvent: IntactEventListener,
+    dom: IntactElement,
 ) {
     if (isFunction(nextEvent)) {
         updateOrAddDelegatedEvent(name, dom)[name] = nextEvent;
@@ -129,7 +129,7 @@ function stopPropagation(this: Event) {
 }
 
 function dispatchEvents(event: Event, isClick: boolean, name: string, eventData: IEventData) {
-    let dom: MissTimeElement = getTargetNode(event);
+    let dom: IntactElement = getTargetNode(event);
     let count = attachedEventCounts[name];
 
     do {
@@ -152,7 +152,7 @@ function dispatchEvents(event: Event, isClick: boolean, name: string, eventData:
                 }
             }
         }
-        dom = dom.parentNode as MissTimeElement;
+        dom = dom.parentNode as IntactElement;
     } while (!isNull(dom))
 }
 

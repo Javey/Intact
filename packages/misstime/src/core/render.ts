@@ -1,4 +1,4 @@
-import {VNode, Types, MissTimeElement, VNodeTag} from '../utils/types';
+import {VNode, Types, IntactElement, VNodeTag} from '../utils/types';
 import {isInvalid, throwError, error, isNullOrUndefined} from '../utils/helpers';
 import {directClone} from './vnode';
 import {mount} from './mount';
@@ -39,7 +39,7 @@ if (hasDocumentAvailable) {
     }
 }
 
-export function render(vNode: VNode | null | undefined, parentDom: MissTimeElement): void {
+export function render(vNode: VNode | null | undefined, parentDom: IntactElement): void {
     if (process.env.NODE_ENV !== 'production') {
         if (documentBody === parentDom) {
             throwError('you cannot render() to the "document.body". Use an empty element as container instead.');
