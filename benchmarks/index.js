@@ -31,17 +31,30 @@
     // });
 // });
 
-suite('if (undefined) vs if (undefined === undefined)', () => {
+suite('if (!a) vs if (isUndefined(a))', () => {
     const a = undefined;
 
-    benchmark('if (undefined)', () => {
-        if (a) { }
+    benchmark('if (!a)', () => {
+        if (!a) { }
     });
 
-    benchmark('if (isUndefined(undefined))', () => {
+    benchmark('if (isUndefined(a))', () => {
         if (isUndefined(a)) {  }
     });
 });
+
+suite('if (a) vs if (!(a === undefined))', () => {
+    const a = undefined;
+
+    benchmark('if (a)', () => {
+        if (a) { }
+    });
+
+    benchmark('if (!isUndefined(a))', () => {
+        if (!isUndefined(a)) {  }
+    });
+});
+
 
 function isUndefined(a) {
     return a === void 0;
