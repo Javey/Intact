@@ -12,16 +12,15 @@ import {
 } from '../utils/types';
 import {unmount} from './unmount';
 import {EMPTY_OBJ} from '../utils/common';
+import {get, set} from '../utils/helpers';
 import {
     isNull,
     isFunction,
     isUndefined,
-    get,
-    set,
     isObject,
     isNullOrUndefined,
     isString
-} from '../utils/helpers';
+} from 'intact-shared';
 import {
     componentInited, 
     setProps,

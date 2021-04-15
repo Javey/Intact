@@ -1,6 +1,6 @@
 import {VNode, Types, ChildrenTypes, RefObject, ComponentClass, VNodeComponentClass} from '../utils/types';
 import {unmountRef} from '../utils/ref';
-import {isNullOrUndefined} from '../utils/helpers';
+import {isNullOrUndefined} from 'intact-shared';
 import {removeChild, removeVNodeDom} from '../utils/common';
 import {delegatedEvents, unmountDelegatedEvent} from '../events/delegation';
 

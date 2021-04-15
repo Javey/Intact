@@ -34,6 +34,9 @@ module.exports = function(config) {
             },
             resolve: {
                 extensions: ['.ts', '.js'],
+                alias: {
+                    'intact-shared': path.resolve(__dirname, '../packages/shared/src/index.ts'),
+                }
             },
             devtool: 'inline-source-map',
         },

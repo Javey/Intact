@@ -24,7 +24,7 @@ import {
     isStringOrNumber,
     isString,
     isUndefined,
-} from '../utils/helpers';
+} from 'intact-shared';
 import {throwIfObjectIsNotVNode, validateVNodeElementChildren} from '../utils/validate';
 import {Fragment} from '../utils/common';
 

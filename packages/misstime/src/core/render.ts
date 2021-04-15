@@ -1,5 +1,5 @@
 import {VNode, Types, IntactElement, VNodeTag} from '../utils/types';
-import {isInvalid, throwError, error, isNullOrUndefined} from '../utils/helpers';
+import {isInvalid, throwError, error, isNullOrUndefined} from 'intact-shared';
 import {directClone} from './vnode';
 import {mount} from './mount';
 import {remove} from './unmount';

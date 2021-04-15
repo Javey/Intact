@@ -1,4 +1,3 @@
-import {isNull, isNullOrUndefined} from './helpers';
 import {
     Reference,
     IntactDom,
@@ -10,6 +9,7 @@ import {
     ComponentClass,
     TransitionElement,
 } from './types';
+import {isNull, isNullOrUndefined} from 'intact-shared';
 
 export function replaceChild(parentDom: Element, newDom: Element, lastDom: Element) {
     parentDom.replaceChild(newDom, lastDom);

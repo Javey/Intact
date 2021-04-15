@@ -2,7 +2,7 @@
 import {ComponentFunction, TransitionElement, Types} from '../utils/types';
 import {BaseTransition, BaseTransitionProps} from './baseTransition';
 import {createComponentVNode} from '../core/vnode'; 
-import {isNullOrUndefined, isUndefined, isObject} from '../utils/helpers';
+import {isNullOrUndefined, isUndefined, isObject} from 'intact-shared';
 import {addClass, removeClass, nextFrame, whenTransitionEnds} from './heplers';
 
 export interface TransitionProps extends BaseTransitionProps {

@@ -42,7 +42,7 @@ export interface ASTElement extends ASTNode {
 
 export interface ASTAttribute extends ASTNode {
     name?: string 
-    value: ASTNode 
+    value: ASTNode[] | ASTNode 
 }
 
 export interface ASTEmptyExpression extends ASTNode {

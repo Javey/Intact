@@ -1,5 +1,6 @@
 import {VNode, Types, LinkedEvent, Reference, TransitionElement} from './types';
-import {isNullOrUndefined, isUndefined, isString, isEventProp, namespaces} from './helpers';
+import {isEventProp, namespaces} from './helpers';
+import {isNullOrUndefined, isUndefined, isString} from 'intact-shared';
 import {delegatedEvents, handleDelegatedEvent} from '../events/delegation';
 import {isLinkEvent, isSameLinkEvent} from '../events/linkEvent';
 import {attachEvent} from '../events/attachEvents';

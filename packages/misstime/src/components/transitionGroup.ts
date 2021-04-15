@@ -1,7 +1,7 @@
 import {Component} from '../core/component';
 import {TransitionProps, resolveTransitionProps, forceReflow, addTransitionClass, removeTransitionClass} from './transition';
 import {VNode, ChildrenTypes, Types, VNodeElement, TransitionElement} from '../utils/types';
-import {isNullOrUndefined, error, isNull, isUndefined, throwError} from '../utils/helpers';
+import {isNullOrUndefined, error, isNull, isUndefined, throwError} from 'intact-shared';
 import {setTransitionHooks, resolveTransitionHooks, BaseTransition, isInvalidTranstionChild} from './baseTransition';
 import {createElementVNode, createFragment, normalizeChildren, createVoidVNode} from '../core/vnode';
 import {findDomFromVNode} from '../utils/common';

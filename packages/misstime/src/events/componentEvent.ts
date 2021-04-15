@@ -1,4 +1,4 @@
-import {isUndefined, throwError, isFunction} from '../utils/helpers';
+import {isUndefined, throwError, isFunction} from 'intact-shared';
 
 type World = "world";
 

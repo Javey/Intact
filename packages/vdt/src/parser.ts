@@ -1,4 +1,3 @@
-import {trimRight, selfClosingTags, textTags} from './helpers';
 import {
     Types,
     ASTNode,
@@ -10,6 +9,7 @@ import {
     // ASTUnescapeText,
     Options,
 } from './types';
+import {trimRight, selfClosingTags, textTags, isWhiteSpace} from './helpers';
 import {defaultOptions} from './common';
 
 type Braces = {count: number};
@@ -267,6 +267,84 @@ export class Parser {
         }
 
         return element;
+    }
+
+    private parseJSXChildren(element: ASTElement, hasVRaw: boolean) {
+        const children: ASTNode[] = [];
+        let endTag = element.value + '>';
+        let current: ASTElement | null = null;
+
+        switch (element.type) {
+            case Types.JSXBlock:
+                endTag = '</b:' + endTag;
+                break;
+            case Types.JSXVdt:
+                endTag = '</t:' + endTag;
+                break;
+            default:
+                endTag = '</' + endTag;
+                break;
+        }
+
+        if (hasVRaw) {
+            while (this.index < this.length) {
+                if (this.isExpect(endTag)) {
+                    break;
+                }
+                children.push(this.scanJSXText([endTag]));
+            }
+        } else {
+            this.skipWhitespaceBetweenElements(endTag);
+            while (this.index < this.length) {
+                if (this.isExpect(endTag)) {
+                    break;
+                }
+                current = this.parseJSXChild(element, endTag, current);
+                children.push(current);
+            }
+        }
+        this.parseJSXClosingElement(endTag, element);
+
+        // ignore skipped child
+        const ret = [];
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            if (!child.skip) {
+                ret.push(child);
+            }
+        }
+
+        return ret;
+    }
+
+    scanJSXText(stopChars: (string | (() => boolean))[]) {
+        const start = this.index;
+        const l = stopChars.length;
+        const node = this.node(Types.JSXText);
+        let i: number;
+        let charCode: number;
+
+        loop:
+        while (this.index < this.length) {
+            charCode = this.charCode();
+            if (isWhiteSpace(charCode)) {
+                if (charCode === 10) {
+                    this.updateLine();
+                }
+            } else {
+                for (i = 0; i < l; i++) {
+                    if (
+                        typeof stopChars[i] === 'function' && stopChars[i]() || 
+                        this.isExpect(stopChars[i])
+                    ) {
+                        break loop;
+                    }
+                }
+            }
+            this.updateIndex();
+        }
+
+        return this.setValue(node, start);
     }
 
     private parseJSXExpressionContainer() {

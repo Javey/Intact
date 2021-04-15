@@ -9,7 +9,7 @@ import {
     isFunction,
     isObject,
     error,
-} from './helpers';
+} from 'intact-shared';
 import {
     VNodeElement, 
     VNode,

@@ -6,7 +6,7 @@ import {
     isFunction,
     isStringOrNumber,
     throwError,
-} from '../utils/helpers';
+} from 'intact-shared';
 import {
     VNode,
     Props,

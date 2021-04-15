@@ -1,4 +1,4 @@
-import {isNullOrUndefined} from '../utils/helpers';
+import {isNullOrUndefined} from 'intact-shared';
 
 export function applyValueTextArea(nextProps: any, dom: HTMLTextAreaElement, mounting: boolean) {
     const value = nextProps.value;

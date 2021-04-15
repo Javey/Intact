@@ -25,7 +25,7 @@ import {
     removeVNodeDom,
     moveVNodeDom,
 } from '../utils/common';
-import {isNullOrUndefined, isUndefined} from '../utils/helpers';
+import {isNullOrUndefined, isUndefined} from 'intact-shared';
 import {directClone, createVoidVNode, normalizeRoot} from './vnode';
 import {patchProp} from '../utils/props';
 import {processElement} from '../wrappers/process';

@@ -1,4 +1,4 @@
-import {isNullOrUndefined} from '../utils/helpers';
+import {isNullOrUndefined} from 'intact-shared';
 import {attachEvent} from '../events/attachEvents';
 
 // export function inputEvents(dom: HTMLInputElement, nextProps: Props<any>) {

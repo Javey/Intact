@@ -1,4 +1,4 @@
-import {isFunction} from '../utils/helpers';
+import {isFunction} from 'intact-shared';
 import {IntactElement} from '../utils/types';
 
 type EventData = [string, EventListener];

@@ -1,4 +1,4 @@
-import {isFunction, isNull} from '../utils/helpers';
+import {isFunction, isNull} from 'intact-shared';
 import {normalizeEventName} from '../utils/common';
 import {LinkedEvent, IntactEventListener, IntactElement} from '../utils/types';
 import {isLinkEvent, isSameLinkEvent} from './linkEvent';

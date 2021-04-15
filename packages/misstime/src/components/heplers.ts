@@ -1,4 +1,4 @@
-import {isNull, isNullOrUndefined, isString} from '../utils/helpers';
+import {isNull, isNullOrUndefined, isString} from 'intact-shared';
 import {hasDocumentAvailable} from '../utils/common';
 
 export enum AnimateType {

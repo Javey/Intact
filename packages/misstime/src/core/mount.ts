@@ -13,7 +13,7 @@ import {
     ComponentClass,
     TransitionElement
 } from '../utils/types';
-import {isNullOrUndefined, throwError, isFunction, isUndefined} from '../utils/helpers';
+import {isNullOrUndefined, throwError, isFunction, isUndefined} from 'intact-shared';
 import {directClone, normalizeRoot} from './vnode';
 import {mountProps} from '../utils/props';
 import {mountRef} from '../utils/ref';
