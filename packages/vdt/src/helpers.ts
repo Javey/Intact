@@ -53,3 +53,30 @@ export const textTags: Record<string, true> = {
     script: true,
     textarea: true
 }
+
+export const directivesMap: Record<string, true> = {
+    'v-if': true,
+    'v-else-if': true,
+    'v-else': true,
+    'v-for': true,
+    'v-for-value': true,
+    'v-for-key': true,
+    'v-raw': true
+};
+
+export function isJSIdentifierPart(ch: number) {
+    return (ch === 95) || ch === 36 ||  // _ (underscore) $
+        (ch >= 65 && ch <= 90) ||         // A..Z
+        (ch >= 97 && ch <= 122) ||        // a..z
+        (ch >= 48 && ch <= 57);         // 0..9
+}
+
+export function isJSXIdentifierPart(ch: number) {
+    return (ch === 58) || (ch === 45) || ch === 46 || isJSIdentifierPart(ch);  // : - .
+}
+
+export function isWhiteSpaceExceptLinebreak(charCode: number) {
+    return charCode !== 10 && // \n
+        charCode !== 13 && // \r
+        isWhiteSpace(charCode);
+}
