@@ -36,6 +36,7 @@ module.exports = function(config) {
                 extensions: ['.ts', '.js'],
                 alias: {
                     'intact-shared': path.resolve(__dirname, '../packages/shared/src/index.ts'),
+                    'misstime': path.resolve(__dirname, '../packages/misstime/src/index.ts'),
                 }
             },
             devtool: 'inline-source-map',

@@ -10,7 +10,6 @@ export const enum Types {
     JSXVdt = 64, // 1 << 6,
     JSXBlock = 128, // 1 << 7,
     JSXComment = 256, // 1 << 8,
-    JSXTemplate = 4096, // 1 << 12,
 
     JSXExpression = 512, // 1 << 9,
     // JSXEmptyExpression = 1 << 11,
@@ -23,6 +22,7 @@ export const enum Types {
     // special flag
     Skip = 16384, // 1 << 14,
     HasVRaw = 32768, // 1 << 15 
+    HasKey = 65536, // 1 << 16
 
     // Tag = JSXElement | JSXComponent | JSXVdt | JSXBlock,
     // String = JS | JSImport | JSXText | JSXComment,
@@ -31,7 +31,7 @@ export const enum Types {
     // AttributeValue = JSXString | JSXExpression
 }
 
-export type TypeTag = Types.JSXElement | Types.JSXComponent | Types.JSXVdt | Types.JSXBlock | Types.JSXTemplate;
+export type TypeTag = Types.JSXElement | Types.JSXComponent | Types.JSXVdt | Types.JSXBlock;
 export type TypeString = Types.JS | Types.JSImport | Types.JSXText | Types.JSXComment;
 export type TypeExpression = Types.JSXUnescapeText | Types.JSXExpression;
 export type TypeChild = TypeString | TypeExpression | TypeTag;
@@ -72,6 +72,12 @@ export interface ASTExpression extends ASTChild {
 export interface ASTAttribute extends ASTNode {
     name: string
     value: ASTString | ASTExpression
+}
+
+export interface DirectiveFor {
+    data: ASTString | ASTExpression,
+    value?: ASTString,
+    key?: ASTString
 }
 
 export type Options = {

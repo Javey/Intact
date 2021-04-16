@@ -23,35 +23,34 @@ import {
     isWhiteSpaceExceptLinebreak,
     directivesMap,
 } from './helpers';
-import {defaultOptions} from './common';
+import {defaultOptions, tagTypes} from './common';
 
 type Braces = {count: number};
 
 const tagNameRegexp = /^<\w+:?\s*[\{\w\/>]/;
 const emptyRegexp = /^\s*$/;
-const TagTypes = Types.JSXElement | Types.JSXComponent | Types.JSXVdt | Types.JSXBlock | Types.JSXTemplate;
 
 export class Parser {
-    private source: string = '';
     private index: number = 0;
-    private length: number = 0;
     private line: number = 1;
     private column: number = 0;
+    private source: string;
+    private length: number;
     private options: Options = defaultOptions;
 
-    parse(source: string, options?: Options) {
+    public ast: ASTChild[];
+
+    constructor(source: string, options?: Options) {
         this.source = trimRight(source);
-        this.index = 0;
-        this.line = 1;
-        this.column = 0;
+        this.length = this.source.length;
         if (options) {
             this.options = {...defaultOptions, ...options};
         }
 
-        return this.parseTemplate(true);
+        this.ast = this.parse(true);
     }
 
-    private parseTemplate(isRoot: boolean): ASTChild[] {
+    private parse(isRoot: boolean): ASTChild[] {
         const nodes: ASTChild[] = [];
         const braces: Braces = {count: 0};
 
@@ -135,7 +134,7 @@ export class Parser {
                 } else if (braces.count > 0 && ch === '}') {
                     braces.count--;
                 } else if (this.isExpect(delimiters[1])) {
-                    // for parseTemplate break
+                    // for parse break
                     braces.count--;
                     break;
                 } else if (ch === '\n') {
@@ -269,13 +268,18 @@ export class Parser {
             }
 
             const attr = this.parseJSXAttributeName(node);
+            const name = attr.name;
 
-            if (attr.name === 'v-raw') {
+            if (name === 'v-raw') {
                 if (!(node.type & Types.JSXElement)) {
                     this.error(`Only html elememt supports v-raw, got: ${node.value}`);
                 }
                 node.type |= Types.HasVRaw;
                 continue;
+            }
+            if (name === 'key') {
+                // set HasKey flag
+                node.type |= Types.HasKey;
             }
             if (this.char() === '=') {
                 this.updateIndex();
@@ -340,7 +344,7 @@ export class Parser {
                     continue;
                 }
                 if (type & Types.JSXComment) continue; 
-                if (type & TagTypes) {
+                if (type & tagTypes) {
                     const prevDirectives = (prevNode as ASTTag).directives;
                     if (prevDirectives['v-if'] || prevDirectives['v-else-if']) {
                         prevNode.next = node;
@@ -546,13 +550,13 @@ export class Parser {
     private parseJSXUnescapeText() {
         this.expect('=');
         const node = this.node(Types.JSXUnescapeText);
-        node.value = this.parseTemplate(false);
+        node.value = this.parse(false);
 
         return node;
     }
 
     private parseExpression() {
-        return this.parseTemplate(false);
+        return this.parse(false);
     }
 
     private node(type: TypeString | Types.JSXString): ASTString;

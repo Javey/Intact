@@ -52,9 +52,6 @@ export class VNode<T extends VNodeTag = VNodeTag> implements IVNode<T> {
         key?: Key | null,
         ref?: VNodeRef<T> | null
     ) {
-        if (process.env.NODE_ENV !== 'production') {
-            this.isValidated = false;
-        }
         this.type = type;
         this.tag = tag;
         this.childrenType = childrenType;
@@ -69,6 +66,11 @@ export class VNode<T extends VNodeTag = VNodeTag> implements IVNode<T> {
         // FIXME: Is it necessary to initialize these properties to prevent V8 from de-optimization
         this.position = null;
         this.newPosition = null;
+
+        if (process.env.NODE_ENV !== 'production') {
+            this.isValidated = false;
+            Object.freeze(props);
+        }
     }
 }
 
@@ -82,26 +84,7 @@ export function createVNode<T extends VNodeTag>(
     switch (typeof tag) {
         case 'string':
             isElement = true;
-            switch (tag) {
-                case 'input':
-                    type = Types.InputElement;
-                    break;
-                case 'select':
-                    type = Types.SelectElement;
-                    break;
-                case 'textarea':
-                    type = Types.TextareaElement;
-                    break;
-                case 'svg':
-                    type = Types.SvgElement;
-                    break;
-                case Fragment:
-                    type = Types.Fragment;
-                    break;
-                default:
-                    type = Types.CommonElement;
-                    break;
-            }
+            type = getTypeForVNodeElement(tag);
             break;
         case 'function':
             if (tag.prototype && (tag.prototype as ComponentClass).$render) {
@@ -160,6 +143,23 @@ export function createVNode<T extends VNodeTag>(
     }
 
     return createComponentVNode(type!, tag as Component, newProps, key, ref as Ref<Element>) as VNode<T>;
+}
+
+export function getTypeForVNodeElement(tag: string): Types {
+    switch (tag) {
+        case 'input':
+            return Types.InputElement;
+        case 'select':
+            return Types.SelectElement;
+        case 'textarea':
+            return Types.TextareaElement;
+        case 'svg':
+            return Types.SvgElement;
+        case Fragment:
+            return Types.Fragment;
+        default:
+            return  Types.CommonElement;
+    }
 }
 
 export function createElementVNode(
@@ -262,15 +262,16 @@ export function directClone(vNode: VNode): VNode {
     const type = vNode.type & Types.ClearInUse;
     let props = vNode.props;
 
-    if (type & Types.Component) {
-        if (!isNullOrUndefined(props)) {
-            const propsToClone = props;
-            props = {};
-            for (const key in propsToClone) {
-                props[key] = propsToClone[key];
-            }
-        }
-    }
+    // FIXME: need clone props?
+    // if (type & Types.Component) {
+        // if (!isNullOrUndefined(props)) {
+            // const propsToClone = props;
+            // props = {};
+            // for (const key in propsToClone) {
+                // props[key] = propsToClone[key];
+            // }
+        // }
+    // }
 
     let newVNode: VNode;
     if ((type & Types.Fragment) === 0) {
