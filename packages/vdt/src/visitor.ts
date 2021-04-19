@@ -254,6 +254,7 @@ export class Visitor {
         this.append(' : ');
 
         for (let next: ASTChild | undefined = children[++index]; next; next = children[++index]) {
+            if (next.type === Types.JSXComment) continue;
             if (!isElementNode(next)) break;
 
             const nextDirectives = next.directives;
