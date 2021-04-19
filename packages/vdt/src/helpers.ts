@@ -1,4 +1,4 @@
-import {Directives, Types, SourceLocation, ASTChild, ASTNode, ASTElement} from './types';
+import {Directives, Types, SourceLocation, ASTChild, ASTNode, ASTElement, ASTAttribute} from './types';
 
 export function trimRight(str: string) {
     var index = str.length;
@@ -123,6 +123,20 @@ export function validateDirectiveIF(children: ASTChild[], loc: SourceLocation, s
     });
 }
 
+export function validateDirectiveModel(tag: string, type: Types, attributes: ASTElement['attributes'], loc: SourceLocation, source: string) {
+    if (type === Types.JSXCommonElement && tag !== 'input' && tag !== 'textarea' && tag !== 'select') {
+        throwError(`Only form element and component support 'v-model'`, loc, source);
+    }
+    if (tag === 'input') {
+        const typeAttr = attributes.find(attr => {
+            return attr.type === Types.JSXAttribute && attr.name === 'type';
+        }) as ASTAttribute;
+        if (typeAttr && typeAttr.value.type !== Types.JSXString) {
+            throwError(`If use 'v-model' on 'input' element, the 'type' property of element cannot be dynamic value.`, loc, source);
+        }
+    }
+}
+
 export function isElementNode(node: ASTNode): node is ASTElement {
     const type = node.type;
     return type === Types.JSXCommonElement || 
@@ -142,4 +156,12 @@ export function throwError(msg: string, loc: SourceLocation, source: string): ne
     );
 
     throw error;
+}
+
+const attrMaps: Record<string, string> = {
+    'class': 'className',
+    'for': 'htmlFor'
+};
+export const getAttrName = (name: string) => {
+    return attrMaps[name] || name;
 }

@@ -16,6 +16,7 @@ import {
     ASTString,
     ASTRootChild,
     SourceLocation,
+    ASTElementChild,
     ASTElement,
     ASTExpressionChild,
     Directives,
@@ -32,6 +33,7 @@ import {
     directivesMap,
     validateDirectiveValue,
     validateDirectiveIF,
+    validateDirectiveModel,
     throwError,
 } from './helpers';
 import {defaultOptions, tagTypes} from './common';
@@ -242,6 +244,10 @@ export class Parser {
 
         if (process.env.NODE_ENV !== 'production') {
             validateDirectiveIF(children, loc, this.source);
+            const model = directives[Directives.Model];
+            if (model) {
+                validateDirectiveModel(value, type, attributes, model.loc, this.source);
+            }
         }
 
         return {type, value, attributes, directives, children, keyed, loc} as ASTElement;
@@ -439,8 +445,8 @@ export class Parser {
         return children;
     }
 
-    private parseJSXChildrenValue(tag: string, type: Types, hasVRaw: boolean, isTextTag: boolean, loc: SourceLocation): ASTChild[] {
-        const children: ASTChild[] = [];
+    private parseJSXChildrenValue(tag: string, type: Types, hasVRaw: boolean, isTextTag: boolean, loc: SourceLocation): ASTElementChild[] {
+        const children: ASTElementChild[] = [];
         let endTag = tag + '>';
 
         if (type & Types.JSXBlock) {
@@ -472,7 +478,7 @@ export class Parser {
         return children;
     }
 
-    private parseJSXChild(endTag: string, isTextTag: boolean): ASTChild {
+    private parseJSXChild(endTag: string, isTextTag: boolean): ASTElementChild {
         const delimiters = this.options.delimiters;
         let child: ASTChild;
 

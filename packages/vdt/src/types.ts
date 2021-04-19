@@ -128,7 +128,8 @@ export interface ASTString extends ASTNode {
 export type ASTElement = ASTCommonElement | ASTComponent | ASTVdt | ASTBlock
 export type ASTRootChild = ASTHoist | ASTJS | ASTElement | ASTComment
 export type ASTExpressionChild = ASTJS | ASTElement | ASTComment | ASTText
-export type ASTChild = ASTElement | ASTComment | ASTText | ASTExpression
+export type ASTElementChild = ASTElement | ASTComment | ASTText | ASTExpression
+export type ASTChild = ASTRootChild | ASTExpressionChild | ASTElementChild
 
 export const enum Directives {
     If = 'v-if',
