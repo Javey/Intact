@@ -1,3 +1,5 @@
+import {Directives, Types, SourceLocation, ASTChild, ASTNode, ASTElement} from './types';
+
 export function trimRight(str: string) {
     var index = str.length;
 
@@ -54,14 +56,15 @@ export const textTags: Record<string, true> = {
     textarea: true
 }
 
-export const directivesMap: Record<string, true> = {
-    'v-if': true,
-    'v-else-if': true,
-    'v-else': true,
-    'v-for': true,
-    'v-for-value': true,
-    'v-for-key': true,
-    'v-raw': true
+export const directivesMap: Record<Directives, true> = {
+    [Directives.If]: true,
+    [Directives.ElseIf]: true,
+    [Directives.Else]: true,
+    [Directives.For]: true,
+    [Directives.ForValue]: true,
+    [Directives.ForKey]: true,
+    [Directives.Model]: true,
+    [Directives.Raw]: true,
 };
 
 export function isJSIdentifierPart(ch: number) {
@@ -79,4 +82,64 @@ export function isWhiteSpaceExceptLinebreak(charCode: number) {
     return charCode !== 10 && // \n
         charCode !== 13 && // \r
         isWhiteSpace(charCode);
+}
+
+export function validateDirectiveValue(name: string, valueType: Types, tag: string, tagType: Types, source: string, loc: SourceLocation) {
+    if (name === Directives.Raw) {
+        if (tagType !== Types.JSXCommonElement) {
+            throwError(`Only html elememt supports v-raw, but got: ${tag}`, loc, source);
+        }
+    } else if (name === Directives.ForKey || name === Directives.ForValue) {
+        if (valueType !== Types.JSXString) {
+            throwError(`'${name}' must be a literal string.`, loc, source);
+        }
+    } else if (name === Directives.For || name === Directives.If || name === Directives.ElseIf || name === Directives.Else) {
+        if (valueType !== Types.JSXExpression) {
+            throwError(`'${name}' must be a expression.`, loc, source);
+        }
+    }
+}
+
+export function validateDirectiveIF(children: ASTChild[], loc: SourceLocation, source: string) {
+    let inIf = false;
+    children.forEach(child => {
+        // ignore comment
+        if (child.type === Types.JSXComment) return;
+
+        if (isElementNode(child)) {
+            const directives = child.directives;
+            if (directives[Directives.Else] || directives[Directives.ElseIf]) {
+                if (!inIf) {
+                    throwError(`'${Directives.Else || Directives.ElseIf}' must be lea with 'v-if' or 'v-else-if'`, loc, source); 
+                }
+            } else if (directives[Directives.If]) {
+                inIf = true;
+            } else {
+                inIf = false;
+            }
+        } else {
+            inIf = false;
+        }
+    });
+}
+
+export function isElementNode(node: ASTNode): node is ASTElement {
+    const type = node.type;
+    return type === Types.JSXCommonElement || 
+        type === Types.JSXComponent ||
+        type === Types.JSXVdt ||
+        type === Types.JSXBlock;
+}
+
+export function throwError(msg: string, loc: SourceLocation, source: string): never {
+    const lines = source.split('\n');
+    let {line, column} = loc;
+    column++;
+    const error = new Error(
+        `${msg} (${line}:${column})\n` +
+        `> ${line} | ${lines[line - 1]}\n` +
+        `  ${new Array(String(line).length + 1).join(' ')} | ${new Array(column).join(' ')}^`
+    );
+
+    throw error;
 }
