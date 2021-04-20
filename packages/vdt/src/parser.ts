@@ -35,8 +35,8 @@ import {
     validateDirectiveIF,
     validateDirectiveModel,
     throwError,
+    defaultOptions,
 } from './helpers';
-import {defaultOptions, tagTypes} from './common';
 
 type Braces = {count: number};
 
@@ -449,12 +449,16 @@ export class Parser {
         const children: ASTElementChild[] = [];
         let endTag = tag + '>';
 
-        if (type & Types.JSXBlock) {
-            endTag = '</b:' + endTag;
-        } else if (type & Types.JSXVdt) {
-            endTag = '</t:' + endTag;
-        } else {
-            endTag = '</' + endTag;
+        switch (type) {
+            case Types.JSXBlock:
+                endTag = '</b:' + endTag;
+                break;
+            case Types.JSXVdt:
+                endTag = '</t:' + endTag;
+                break;
+            default:
+                endTag = '</' + endTag;
+                break;
         }
 
         if (hasVRaw) {

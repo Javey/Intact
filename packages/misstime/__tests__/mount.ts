@@ -32,7 +32,7 @@ describe('Mount', () => {
             {id: 1}
         );
         render(vNode, container);
-        expect(container.innerHTML).toBe('<div class="class-name" id="1"><div></div></div>');
+        expect(container.innerHTML).to.equal('<div class="class-name" id="1"><div></div></div>');
     });
 
     it('should mount text children of vNode', () => {
@@ -43,13 +43,13 @@ describe('Mount', () => {
             ChildrenTypes.UnknownChildren,
         );
         render(vNode, container);
-        expect(container.innerHTML).toBe('<div>test</div>');
+        expect(container.innerHTML).to.equal('<div>test</div>');
     });
 
     it('should mount text vNode', () => {
         const vNode = createTextVNode('test');
         render(vNode, container);
-        expect(container.innerHTML).toBe('test');
+        expect(container.innerHTML).to.equal('test');
     });
 
     it('should mount array children of vNode', () => {
@@ -61,7 +61,7 @@ describe('Mount', () => {
             ChildrenTypes.UnknownChildren,
         );
         render(vNode, container);
-        expect(container.innerHTML).toBe('<div><div></div><div></div></div>');
+        expect(container.innerHTML).to.equal('<div><div></div><div></div></div>');
     });
 
     it('should mount non-keyed children', () => {
@@ -73,7 +73,7 @@ describe('Mount', () => {
             ChildrenTypes.HasNonKeyedChildren,
         );
         render(vNode, container);
-        expect(container.innerHTML).toBe('<div><div></div><div></div></div>');
+        expect(container.innerHTML).to.equal('<div><div></div><div></div></div>');
     });
 
     it('should mount used child', () => {
@@ -87,7 +87,7 @@ describe('Mount', () => {
             ChildrenTypes.HasNonKeyedChildren,
         );
         render(vNode, container);
-        expect(container.innerHTML).toBe('<div><div><i></i></div><div><i></i></div></div>')
+        expect(container.innerHTML).to.equal('<div><div><i></i></div><div><i></i></div></div>')
     });
 
     it('should mount svg element', () => {
@@ -100,13 +100,13 @@ describe('Mount', () => {
         );
         render(vNode, container);
 
-        expect(container.firstChild!.namespaceURI).toBe('http://www.w3.org/2000/svg');
-        expect(container.firstChild!.firstChild!.namespaceURI).toBe('http://www.w3.org/2000/svg');
+        expect(container.firstChild!.namespaceURI).to.equal('http://www.w3.org/2000/svg');
+        expect(container.firstChild!.firstChild!.namespaceURI).to.equal('http://www.w3.org/2000/svg');
     });
 
     it('should throw error if we mount invalid vNode', () => {
-        expect(() => mount([] as any, container, null, false, null, [])).toThrowError();
-        expect(() => mount((() => {}) as any, container, null, false, null, [])).toThrowError();
+        expect(() => mount([] as any, container, null, false, null, [])).to.throw();
+        expect(() => mount((() => {}) as any, container, null, false, null, [])).to.throw();
     });
 
     it('should mount ref that is RefObject', () => {
@@ -123,7 +123,7 @@ describe('Mount', () => {
         );
         render(vNode, container);
 
-        expect(ref.value!.outerHTML).toBe('<span></span>');
+        expect(ref.value!.outerHTML).to.equal('<span></span>');
     });
 
     it('should mount ref that is function', () => {
@@ -140,14 +140,14 @@ describe('Mount', () => {
         );
         render(vNode, container);
 
-        expect(ref!.outerHTML).toBe('<span></span>');
+        expect(ref!.outerHTML).to.equal('<span></span>');
     });
 
     // it('should mount component', () => {
         // const vNode = createComponentVNode(Types.ComponentClass, Component);
         // render(vNode, container);
 
-        // expect(container.innerHTML).toBe('<div></div>');
+        // expect(container.innerHTML).to.equal('<div></div>');
     // });
 
     // it('should call mounted method when mounted', () => {
@@ -165,7 +165,7 @@ describe('Mount', () => {
         const vNode = createCommentVNode('comment');
         render(vNode, container);        
 
-        expect(container.innerHTML).toBe('<!--comment-->');
+        expect(container.innerHTML).to.equal('<!--comment-->');
     });
 
     describe('Fragment', () => {
@@ -175,7 +175,7 @@ describe('Mount', () => {
                 ChildrenTypes.UnknownChildren
             ), container);
 
-            expect(container.innerHTML).toBe('<div></div>');
+            expect(container.innerHTML).to.equal('<div></div>');
         });
 
         it('should mount Fragment that child is text', () => {
@@ -184,7 +184,7 @@ describe('Mount', () => {
                 ChildrenTypes.UnknownChildren
             ), container);
 
-            expect(container.innerHTML).toBe('text');
+            expect(container.innerHTML).to.equal('text');
         });
 
         it('should mount Fragment that child is invalid', () => {
@@ -193,7 +193,7 @@ describe('Mount', () => {
                 ChildrenTypes.UnknownChildren
             ), container);
 
-            expect(container.innerHTML).toBe('');
+            expect(container.innerHTML).to.equal('');
         });
 
         it('should mount Fragment that children is vNode[]', () => {
@@ -210,7 +210,7 @@ describe('Mount', () => {
                 ChildrenTypes.UnknownChildren
             ), container);
 
-            expect(container.innerHTML).toBe('<div></div>text<span></span>');
+            expect(container.innerHTML).to.equal('<div></div>text<span></span>');
         });
 
         it('should mount used Fragment', () => {
@@ -225,8 +225,8 @@ describe('Mount', () => {
             );
             render(vNode, container);
 
-            expect(container.innerHTML).toBe('<div><div><i></i></div><div><i></i></div></div>')
-            expect((child.children as VNode).dom).toBe(container.firstElementChild!.firstElementChild!.firstElementChild);
+            expect(container.innerHTML).to.equal('<div><div><i></i></div><div><i></i></div></div>')
+            expect((child.children as VNode).dom).to.equal(container.firstElementChild!.firstElementChild!.firstElementChild);
         });
 
         it('should mount used Fragment which children is text', () => {
@@ -236,8 +236,8 @@ describe('Mount', () => {
                 fragment
             ]), container);
 
-            expect(container.innerHTML).toBe('<div>texttext</div>');
-            expect((fragment.children as VNode[])[0].dom).toBe(container.firstElementChild!.firstChild as Text);
+            expect(container.innerHTML).to.equal('<div>texttext</div>');
+            expect((fragment.children as VNode[])[0].dom).to.equal(container.firstElementChild!.firstChild as Text);
         });
     });
 });

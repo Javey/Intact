@@ -21,7 +21,7 @@ describe('Component', () => {
         render(vNode1, container);
         render(vNode2, container);
         if (html !== undefined) {
-            expect(container.innerHTML).toBe(html);
+            expect(container.innerHTML).to.equal(html);
         }
         return vNode2;
     }
@@ -35,7 +35,7 @@ describe('Component', () => {
             }
 
             render(h(Test), container);
-            expect(container.innerHTML).toBe('<div>test</div>');
+            expect(container.innerHTML).to.equal('<div>test</div>');
         });
 
         it('should mount component which return Fragment vNode', () => {
@@ -49,7 +49,7 @@ describe('Component', () => {
             }
 
             render(h(Test), container);
-            expect(container.innerHTML).toBe('<i>a</i><i>b</i>');
+            expect(container.innerHTML).to.equal('<i>a</i><i>b</i>');
         });
 
         it('should mount component which return null', () => {
@@ -60,7 +60,7 @@ describe('Component', () => {
             }
 
             render(h(Test), container);
-            expect(container.innerHTML).toBe('');
+            expect(container.innerHTML).to.equal('');
         });
 
         it('should get parent component correctly', () => {
@@ -72,10 +72,10 @@ describe('Component', () => {
 
             let component: Test | null;
             render(h('div', null, h(Test, {ref: i => component = i})), container);
-            expect(component!.$parent).toBeNull();
+            expect(component!.$parent).to.be.null;
 
             render(h(Test, null, h(Test, {ref: i => component = i})), container);
-            expect(component!.$parent).toBeInstanceOf(Test);
+            expect(component!.$parent).to.be.instanceof(Test);
         });
     });
 
@@ -125,8 +125,8 @@ describe('Component', () => {
             render(h(Test), container);
             const dom = container.firstElementChild;
             render(h(Test2), container);
-            expect(container.firstElementChild).toBe(dom);
-            expect(container.innerHTML).toBe('<i>3</i>');
+            expect(container.firstElementChild).to.equal(dom);
+            expect(container.innerHTML).to.equal('<i>3</i>');
         });
     });
 
@@ -140,7 +140,7 @@ describe('Component', () => {
 
             render(h(Test, {name: 1}), container);
             render(h(Test, {name: 2}), container);
-            expect(container.innerHTML).toBe('<div>2</div>');
+            expect(container.innerHTML).to.equal('<div>2</div>');
         });
 
         it('should replace dom', () => {
@@ -156,7 +156,7 @@ describe('Component', () => {
 
             render(h(Test, {name: 1}), container);
             render(h(Test, {name: 2}), container);
-            expect(container.innerHTML).toBe('<span></span><span></span>');
+            expect(container.innerHTML).to.equal('<span></span><span></span>');
         });
     });
 });

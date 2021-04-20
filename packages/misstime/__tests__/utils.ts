@@ -25,7 +25,7 @@ export function patchTest(container: Element, vNode1: VNode, vNode2: VNode, html
     render(vNode1, container);
     render(vNode2, container);
     if (html !== undefined) {
-        expect(container.innerHTML).toBe(html);
+        expect(container.innerHTML).to.equal(html);
     }
     return vNode2;
 }
@@ -47,11 +47,11 @@ export function nextFrame() {
 }
 
 export async function testTransition(dom: Element, type: string) {
-    expect(dom.className).toBe(`transition-${type}-from transition-${type}-active`);
+    expect(dom.className).to.equal(`transition-${type}-from transition-${type}-active`);
 
     await nextFrame();
-    expect(dom.className).toBe(`transition-${type}-active transition-${type}-to`);
+    expect(dom.className).to.equal(`transition-${type}-active transition-${type}-to`);
 
     await wait(2100);
-    expect(dom.className).toBe('');
+    expect(dom.className).to.equal('');
 }

@@ -1,18 +1,3 @@
-// import {
-    // Types,
-    // TypeTag,
-    // TypeString,
-    // TypeExpression,
-    // TypeChild,
-    // TypeAttributeValue,
-    // ASTNode,
-    // ASTChild,
-    // ASTTag,
-    // ASTString,
-    // ASTExpression,
-    // ASTAttribute,
-    // DirectiveFor,
-// } from './types';
 import {
     Types,
     ASTNode,
@@ -38,7 +23,6 @@ import {
     DirectiveFor,
     Options,
 } from './types';
-
 import {getTypeForVNodeElement, ChildrenTypes} from 'misstime';
 import {isElementNode, getAttrName} from './helpers';
 
@@ -54,9 +38,20 @@ export class Visitor {
     private queue: string[] = [];
     private pendingQueue: string[] = [];
     private current: string[] = this.queue;
+    private line = 1;
+    private column = 0;
+    private indentLevel = 0;
 
     constructor(nodes: ASTRootChild[]) {
+        this.append(`function($props, $blocks) {`);
+        this.indent();
         this.visit(nodes, true);
+        this.dedent();
+        this.append('}');
+    }
+
+    getCode() {
+        return this.queue.join('');
     }
 
     private visit(nodes: ASTRootChild[], isRoot: true): void;
@@ -102,33 +97,35 @@ export class Visitor {
                 return this.visitJSXCommonElement(node as ASTCommonElement, children, index);
             case Types.JSXComponent:
                 return this.visitJSXComponent(node as ASTComponent);
+            case Types.JSXText:
+                return this.visitJSXText(node as ASTText);
         }
 
-        if (type & Types.JSXElement) {
-            this.visitJSXElement(node as ASTTag);
-        } else if (type & Types.JSXComponent) {
-            this.visitJSXComponent(node as ASTTag);
-        } else if (type & Types.JSXExpression) {
-            this.visitJSXExpression(node as ASTExpression);
-        } else if (type & Types.JSXText) {
-            this.visitJSXText(node as ASTTag, false);
-        } else if (type & Types.JSXBlock) {
-            this.visitJSXBlock(node as ASTTag);
-        } else if (type & Types.JSXString) {
-            this.visitJSXString(node as ASTString);
-        } else if (type & Types.JS) {
-            this.visitJS(node as ASTString);
-        } else if (type & Types.JSImport) {
-            this.visitJSImport(node as ASTString);
-        } else if (type & Types.JSXUnescapeText) {
-            this.visitJSXUnescapeText(node as ASTExpression);
-        } else if (type & Types.JSXVdt) {
-            this.visitJSXVdt(node as ASTTag);
-        } else if (type & Types.JSXComment) {
-            this.visitJSXComment(node as ASTString);
-        } else {
-            this.append('null');
-        }
+        // if (type & Types.JSXElement) {
+            // this.visitJSXElement(node as ASTTag);
+        // } else if (type & Types.JSXComponent) {
+            // this.visitJSXComponent(node as ASTTag);
+        // } else if (type & Types.JSXExpression) {
+            // this.visitJSXExpression(node as ASTExpression);
+        // } else if (type & Types.JSXText) {
+            // this.visitJSXText(node as ASTTag, false);
+        // } else if (type & Types.JSXBlock) {
+            // this.visitJSXBlock(node as ASTTag);
+        // } else if (type & Types.JSXString) {
+            // this.visitJSXString(node as ASTString);
+        // } else if (type & Types.JS) {
+            // this.visitJS(node as ASTString);
+        // } else if (type & Types.JSImport) {
+            // this.visitJSImport(node as ASTString);
+        // } else if (type & Types.JSXUnescapeText) {
+            // this.visitJSXUnescapeText(node as ASTExpression);
+        // } else if (type & Types.JSXVdt) {
+            // this.visitJSXVdt(node as ASTTag);
+        // } else if (type & Types.JSXComment) {
+            // this.visitJSXComment(node as ASTString);
+        // } else {
+            // this.append('null');
+        // }
     }
 
     private visitJS(node: ASTString) {
@@ -152,8 +149,12 @@ export class Visitor {
         }
     }
 
-    private visitJSXText(node: ASTString, noQuotes: boolean) {
+    private visitJSXComponent(node: ASTComponent) {
 
+    }
+
+    private visitJSXText(node: ASTText) {
+        this.visitString(node, false);
     }
 
     private visitJSXUnescapeText(node: ASTExpression) {
@@ -164,28 +165,32 @@ export class Visitor {
 
     }
 
-    private visitJSXComponent(node: ASTComponent) {
+    private visitJSXBlock(node: ASTBlock) {
 
     }
 
-    private visitJSXBlock(node: ASTTag) {
+    private visitJSXVdt(node: ASTVdt) {
 
     }
 
-    private visitJSXVdt(node: ASTTag) {
+    private visitJSXComment(node: ASTComment) {
 
     }
 
-    private visitJSXComment(node: ASTString) {
-
-    }
-
-    private visitJSXTemplate(node: ASTTag) {
+    private visitJSXTemplate(node: ASTCommonElement) {
 
     }
 
     private visitJSXString(node: ASTString) {
+        this.visitString(node, true);
+    }
 
+    private visitString(node: ASTText | ASTString, noQuotes: boolean) {
+        let value = node.value.replace(/([\'\"\\])/g, '\\$1').replace(/[\r\n]/g, '\\n');
+        if (!noQuotes) {
+            value = `'${value}'`;
+        }
+        this.append(value);
     }
 
     private visitJSXDirective(node: ASTElement, children: ASTChild[], index: number, body: () => void) {
@@ -235,13 +240,13 @@ export class Visitor {
         this.visitJSXAttributeValue(directive.data);
         this.append(', function(');
         if (directive.value) {
-            this.visitJSXText(directive.value, true);
+            this.visitJSXString(directive.value);
         } else {
             this.append('value');
         }
         this.append(', ');
         if (directive.key) {
-            this.visitJSXText(directive.key, true);
+            this.visitJSXString(directive.key);
         } else {
             this.append('key');
         }
@@ -334,7 +339,7 @@ export class Visitor {
     private visitJSXElementWithoutDirective(node: ASTCommonElement) {
         // TODO: createElementVNode methods
         const tag = node.value;
-        this.append(`createElementVNode('${getTypeForVNodeElement(tag)}', ${tag}, `);
+        this.append(`createElementVNode(${getTypeForVNodeElement(tag)}, '${tag}', `);
 
         const childrenType = this.visitJSXChildren(node.children);
         this.append(`, ${childrenType}, `);
@@ -469,6 +474,10 @@ export class Visitor {
 
     private append(code: string) {
         this.current.push(code);
+
+        if (true /* sourceMap */) {
+            // TODO 
+        }
     }
 
     private usePending() {
@@ -485,5 +494,19 @@ export class Visitor {
         while (code = this.pendingQueue.shift()) {
             this.append(code);
         }
+    }
+
+    private indent() {
+        this.indentLevel++;
+        this.newline();
+    }
+
+    private dedent() {
+        this.indentLevel--;
+        this.newline();
+    }
+
+    private newline() {
+        this.append('\n' + `    `.repeat(this.indentLevel));
     }
 }

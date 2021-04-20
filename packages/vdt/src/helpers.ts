@@ -1,4 +1,13 @@
-import {Directives, Types, SourceLocation, ASTChild, ASTNode, ASTElement, ASTAttribute} from './types';
+import {
+    Directives,
+    Types,
+    SourceLocation,
+    ASTChild,
+    ASTNode,
+    ASTElement,
+    ASTAttribute,
+    Options,
+} from './types';
 
 export function trimRight(str: string) {
     var index = str.length;
@@ -165,3 +174,8 @@ const attrMaps: Record<string, string> = {
 export const getAttrName = (name: string) => {
     return attrMaps[name] || name;
 }
+
+export const defaultOptions: Options = {
+    delimiters: ['{', '}'],
+};
+

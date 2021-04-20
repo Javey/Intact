@@ -20,7 +20,7 @@ describe('Component', () => {
 
     class Test extends Component<{name?: number}> {
         static template(this: Test) {
-            expect(this.get('name')).toBeTruthy();
+            expect(this.get('name')).to.exist;
             return h('div', null, this.get('name'));
         }
 
@@ -37,16 +37,16 @@ describe('Component', () => {
         describe('Mount', () => {
             it('should mount async component', async () => {
                 render(h(Test), container);
-                expect(container.innerHTML).toBe('<!--async-->');
+                expect(container.innerHTML).to.equal('<!--async-->');
 
                 await wait(200);
-                expect(container.innerHTML).toBe('<div>1</div>');
+                expect(container.innerHTML).to.equal('<div>1</div>');
             });
 
             it('should trigger event correctly', async () => {
-                const onChangeName = jasmine.createSpy();
-                const onChangedName = jasmine.createSpy().and.callFake(() => {
-                    expect(container.innerHTML).toBe('<div>1</div>');
+                const onChangeName = sinon.spy();
+                const onChangedName = sinon.spy(() => {
+                    expect(container.innerHTML).to.equal('<div>1</div>');
                 });
                 class MyTest extends Test {
                     init() {
@@ -58,13 +58,13 @@ describe('Component', () => {
 
                 render(h(MyTest), container);
                 await wait(200);
-                expect(onChangeName).toHaveBeenCalledOnceWith(1, undefined);
-                expect(onChangedName).toHaveBeenCalledOnceWith(1, undefined);
+                expect(onChangeName).to.have.been.calledOnceWith(1, undefined);
+                expect(onChangedName).to.have.been.calledOnceWith(1, undefined);
             });
 
             it('should call beforeMount and mounted correctly', async () => {
-                const beforeMount = jasmine.createSpy();
-                const mounted = jasmine.createSpy();
+                const beforeMount = sinon.spy();
+                const mounted = sinon.spy();
 
                 class MyTest extends Test {
                     beforeMount() {
@@ -77,12 +77,12 @@ describe('Component', () => {
                 }
 
                 render(h(MyTest), container);
-                expect(beforeMount).toHaveBeenCalledTimes(0);
-                expect(mounted).toHaveBeenCalledTimes(0);
+                expect(beforeMount).to.have.callCount(0);
+                expect(mounted).to.have.callCount(0);
 
                 await wait(200);
-                expect(beforeMount).toHaveBeenCalledTimes(1);
-                expect(mounted).toHaveBeenCalledTimes(1);
+                expect(beforeMount).to.have.callCount(1);
+                expect(mounted).to.have.callCount(1);
             });
 
             it('should mount even if it has thrown error', async () => {
@@ -98,7 +98,7 @@ describe('Component', () => {
 
                 render(h(ErrorComponent), container);
                 await wait(0)
-                expect(container.innerHTML).toBe('<div></div>');
+                expect(container.innerHTML).to.equal('<div></div>');
             });
         });
 
@@ -107,15 +107,15 @@ describe('Component', () => {
                 render(h(Test), container);
                 render(h(Test, {name: 2}), container);
 
-                expect(container.innerHTML).toBe('<!--async-->');
+                expect(container.innerHTML).to.equal('<!--async-->');
 
                 await wait(200);
-                expect(container.innerHTML).toBe('<div>2</div>');
+                expect(container.innerHTML).to.equal('<div>2</div>');
             });
 
             it('should trigger events correctly', async () => {
-                const onReceiveName = jasmine.createSpy().and.callFake(() => {
-                    expect(container.innerHTML).toBe('<div>1</div>');
+                const onReceiveName = sinon.spy(() => {
+                    expect(container.innerHTML).to.equal('<div>1</div>');
                 });
                 class MyTest extends Test {
                     init() {
@@ -128,12 +128,12 @@ describe('Component', () => {
                 render(h(MyTest, {name: 2}), container);
 
                 await wait(200);
-                expect(onReceiveName).toHaveBeenCalledOnceWith(2, undefined);
+                expect(onReceiveName).to.have.been.calledOnceWith(2, undefined);
             });
 
             it('should call beforeUpdate and updated correctly', async () => {
-                const beforeUpdate = jasmine.createSpy();
-                const updated = jasmine.createSpy();
+                const beforeUpdate = sinon.spy();
+                const updated = sinon.spy();
 
                 class MyTest extends Test {
                     beforeUpdate() {
@@ -147,12 +147,12 @@ describe('Component', () => {
 
                 render(h(MyTest), container);
                 render(h(MyTest), container);
-                expect(beforeUpdate).toHaveBeenCalledTimes(0);
-                expect(updated).toHaveBeenCalledTimes(0);
+                expect(beforeUpdate).to.have.callCount(0);
+                expect(updated).to.have.callCount(0);
 
                 await wait(200);
-                expect(beforeUpdate).toHaveBeenCalledTimes(1);
-                expect(updated).toHaveBeenCalledTimes(1);
+                expect(beforeUpdate).to.have.callCount(1);
+                expect(updated).to.have.callCount(1);
             });
         });
     });

@@ -19,8 +19,8 @@ describe('Component', () => {
 
     describe('Lifecycle', () => {
         it('should call beforeMount & mounted', () => {
-            const beforeMount = jasmine.createSpy();
-            const mounted = jasmine.createSpy();
+            const beforeMount = sinon.spy();
+            const mounted = sinon.spy();
 
             class Test extends Component {
                 static template = function(this: Test) {
@@ -29,27 +29,27 @@ describe('Component', () => {
                 beforeMount() {
                     // const dom = findDomFromVNode(this.$lastInput!, true); 
                     // dom!.textContent = 'a'; 
-                    expect(this.$mounted).toBeFalse();
-                    expect(this.$lastInput).toBeNull();
+                    expect(this.$mounted).to.be.false;
+                    expect(this.$lastInput).to.be.null;
                     beforeMount();
                 }
                 mounted() {
                     const dom = findDomFromVNode(this.$lastInput!, true); 
-                    expect(this.$mounted).toBeTrue();
-                    expect(dom!.parentElement).toBeTruthy();
+                    expect(this.$mounted).to.be.true;
+                    expect(dom!.parentElement).to.be.exist;
                     mounted();
                 }
             }
 
             render(h(Test), container);
-            // expect(container.innerHTML).toBe('<div>a</div>');
-            expect(beforeMount).toHaveBeenCalledTimes(1);
-            expect(mounted).toHaveBeenCalledTimes(1);
+            // expect(container.innerHTML).to.equal('<div>a</div>');
+            expect(beforeMount).to.have.callCount(1);
+            expect(mounted).to.have.callCount(1);
         });
 
         it('should call beforeUpdate & updated', () => {
-            const beforeUpdate = jasmine.createSpy();
-            const updated = jasmine.createSpy();
+            const beforeUpdate = sinon.spy();
+            const updated = sinon.spy();
 
             class Test extends Component<{name: string}> {
                 static template(this: Test) {
@@ -57,44 +57,44 @@ describe('Component', () => {
                 }
                 beforeUpdate() {
                     const dom = findDomFromVNode(this.$lastInput!, true);
-                    expect((dom as Element).innerHTML).toBe('a');
+                    expect((dom as Element).innerHTML).to.equal('a');
                     beforeUpdate();
                 }
                 updated() {
                     const dom = findDomFromVNode(this.$lastInput!, true);
-                    expect((dom as Element).innerHTML).toBe('b');
+                    expect((dom as Element).innerHTML).to.equal('b');
                     updated();
                 }
             }
 
             render(h(Test, {name: 'a'}), container);
             render(h(Test, {name: 'b'}), container);
-            expect(beforeUpdate).toHaveBeenCalledTimes(1);
-            expect(updated).toHaveBeenCalledTimes(1);
+            expect(beforeUpdate).to.have.callCount(1);
+            expect(updated).to.have.callCount(1);
         });
 
         it('should call beforeUnmount & unmounted', () => {
-            const beforeUnmount = jasmine.createSpy();
-            const unmounted = jasmine.createSpy();
+            const beforeUnmount = sinon.spy();
+            const unmounted = sinon.spy();
 
             class Test extends Component<{name: string}> {
                 static template(this: Test) {
                     return h('div', null, this.props.name);
                 }
                 beforeUnmount() {
-                    expect(this.$unmounted).toBeFalse();
+                    expect(this.$unmounted).to.be.false;
                     beforeUnmount();
                 }
                 unmounted() {
-                    expect(this.$unmounted).toBeTrue();
+                    expect(this.$unmounted).to.be.true;
                     unmounted();
                 }
             }
 
             render(h(Test, {name: 'a'}), container);
             render(null, container);
-            expect(beforeUnmount).toHaveBeenCalledTimes(1);
-            expect(unmounted).toHaveBeenCalledTimes(1);
+            expect(beforeUnmount).to.have.callCount(1);
+            expect(unmounted).to.have.callCount(1);
         });
     });
 });

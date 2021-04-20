@@ -29,7 +29,7 @@ describe('Functional component', () => {
             }
             const vNode = h(Test);
             render(vNode, container);
-            expect(container.innerHTML).toBe('<div>test</div>');
+            expect(container.innerHTML).to.equal('<div>test</div>');
         });
 
         it('should mount functional component which return Fragment', () => {
@@ -39,12 +39,12 @@ describe('Functional component', () => {
                     h('i', null, 'b')
                 ])
             }), container);
-            expect(container.innerHTML).toBe('<i>a</i><i>b</i>');
+            expect(container.innerHTML).to.equal('<i>a</i><i>b</i>');
         });
 
         it('should mount functional component which return null', () => {
             render(h(() => null), container);
-            expect(container.innerHTML).toBe('');
+            expect(container.innerHTML).to.equal('');
         });
     });
 
@@ -90,7 +90,7 @@ describe('Functional component', () => {
                 h('div', null, b),
                 '<div><i>i</i></div>'
             );
-            expect(test!.$unmounted).toBe(true);
+            expect(test!.$unmounted).to.equal(true);
         });
     });
 });

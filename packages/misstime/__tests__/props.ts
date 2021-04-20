@@ -35,7 +35,7 @@ describe('Props', () => {
             },
         );
         render(vNode);
-        expect(container.innerHTML).toBe('<div class="class-name"></div>');
+        expect(container.innerHTML).to.equal('<div class="class-name"></div>');
     });
 
     it('should set boolean props', () => {
@@ -50,7 +50,7 @@ describe('Props', () => {
             },
         );
         render(vNode);
-        expect(container.innerHTML).toBe('<input autofocus="">');
+        expect(container.innerHTML).to.equal('<input autofocus="">');
     });
 
     it('should set defaultChecked', () => {
@@ -67,8 +67,8 @@ describe('Props', () => {
         );
         render(vNode);
 
-        expect((container.firstChild as HTMLInputElement).value).toBe('on');
-        expect(container.innerHTML).toBe('<input checked="" type="checkbox">');
+        expect((container.firstChild as HTMLInputElement).value).to.equal('on');
+        expect(container.innerHTML).to.equal('<input checked="" type="checkbox">');
     });
 
     it('should do nothing if value is null', () => {
@@ -84,7 +84,7 @@ describe('Props', () => {
         );
         render(vNode);
 
-        expect((container.firstChild as HTMLInputElement).value).toBe('');
+        expect((container.firstChild as HTMLInputElement).value).to.equal('');
     });
 
     it('should set scrollLeft', () => {
@@ -115,15 +115,15 @@ describe('Props', () => {
         // render(h('div', null, vNode));
         render(vNode);
 
-        expect((container.firstChild as HTMLElement).scrollLeft).toBe(10);
+        expect((container.firstChild as HTMLElement).scrollLeft).to.equal(10);
     });
 
     describe('Event', () => {
         it('should mount delegated events', () => {
-            const click = jasmine.createSpy('click', () => {
+            const click = sinon.spy(() => {
                 console.log('click');
             });
-            const dblclick = jasmine.createSpy('dblclick', (data) => {
+            const dblclick = sinon.spy((data: any) => {
                 console.log(data);
             });
             const vNode = createElementVNode(
@@ -133,8 +133,8 @@ describe('Props', () => {
                 null,
                 null,
                 {
-                    'ev-click': click.and.callThrough(),
-                    'ev-dblclick': linkEvent('data', dblclick.and.callThrough()),
+                    'ev-click': click,
+                    'ev-dblclick': linkEvent('data', dblclick),
                     'ev-focusin': linkEvent('data', 'noop' as any),
                     style: {
                         height: '100px',
@@ -146,16 +146,16 @@ describe('Props', () => {
             dispatchEvent(vNode.dom as Element, 'click');
             dispatchEvent(vNode.dom as Element, 'dblclick');
             dispatchEvent(vNode.dom as Element, 'focusin'); // do nothing
-            expect(click).toHaveBeenCalledTimes(1);
-            expect(dblclick).toHaveBeenCalledTimes(1);
-            expect(dblclick.calls.first().args[0]).toBe('data');
+            expect(click).to.have.callCount(1);
+            expect(dblclick).to.have.callCount(1);
+            expect(dblclick).to.have.calledWith('data');
         });
 
         it('should mount undelegated events', () => {
-            const enter = jasmine.createSpy('enter', () => {
+            const enter = sinon.spy(() => {
                 console.log('enter');
             });
-            const leave = jasmine.createSpy('leave', (data) => {
+            const leave = sinon.spy((data: any) => {
                 console.log(data);
             });
             const vNode = createElementVNode(
@@ -165,8 +165,8 @@ describe('Props', () => {
                 null,
                 null,
                 {
-                    'ev-mouseenter': enter.and.callThrough(),
-                    'ev-mouseleave': linkEvent('data', leave.and.callThrough()),
+                    'ev-mouseenter': enter,
+                    'ev-mouseleave': linkEvent('data', leave),
                     style: {
                         height: '100px',
                     }
@@ -176,13 +176,13 @@ describe('Props', () => {
 
             dispatchEvent(vNode.dom as Element, 'mouseenter');
             dispatchEvent(vNode.dom as Element, 'mouseleave');
-            expect(enter).toHaveBeenCalledTimes(1);
-            expect(leave).toHaveBeenCalledTimes(1);
-            expect(leave.calls.first().args[0]).toBe('data');
+            expect(enter).to.have.callCount(1);
+            expect(leave).to.have.callCount(1);
+            expect(leave).to.have.calledWith('data');
         });
 
         it('should not trigger click event if button is disabled', () => {
-            const click = jasmine.createSpy();
+            const click = sinon.spy();
             const vNode = createElementVNode(
                 Types.CommonElement,
                 'button',
@@ -191,21 +191,21 @@ describe('Props', () => {
                 null,
                 {
                     disabled: true,
-                    'ev-click': click.and.callThrough(),
+                    'ev-click': click,
                 }
             );
             render(vNode);
 
             dispatchEvent(vNode.dom as Element, 'click');
-            expect(click).toHaveBeenCalledTimes(0);
+            expect(click).to.have.callCount(0);
         });
 
         it('should bubble', () => {
-            const click1 = jasmine.createSpy('click1', (e: Event) => {
-                expect((e.currentTarget as Element).tagName).toBe('SPAN');
+            const click1 = sinon.spy((e: Event) => {
+                expect((e.currentTarget as Element).tagName).to.equal('SPAN');
             });
-            const click2 = jasmine.createSpy('click2', (e: Event) => {
-                expect((e.currentTarget as Element).tagName).toBe('DIV');
+            const click2 = sinon.spy((e: Event) => {
+                expect((e.currentTarget as Element).tagName).to.equal('DIV');
             });
             const vNode = createElementVNode(
                 Types.CommonElement,
@@ -217,23 +217,23 @@ describe('Props', () => {
                     null,
                     null,
                     {
-                        'ev-click': click1.and.callThrough(),
+                        'ev-click': click1,
                     }
                 ),
                 ChildrenTypes.HasVNodeChildren,
                 null,
                 {
-                    'ev-click': click2.and.callThrough()
+                    'ev-click': click2,
                 }
             );
             render(vNode);
             dispatchEvent((vNode.dom as Element).firstElementChild!, 'click');
-            expect(click1).toHaveBeenCalledTimes(1);
-            expect(click2).toHaveBeenCalledTimes(1);
+            expect(click1).to.have.callCount(1);
+            expect(click2).to.have.callCount(1);
         });
 
         it('should not bubble if canceled', () => {
-            const click = jasmine.createSpy();
+            const click = sinon.spy();
             const vNode = createElementVNode(
                 Types.CommonElement,
                 'div',
@@ -250,12 +250,12 @@ describe('Props', () => {
                 ChildrenTypes.HasVNodeChildren,
                 null,
                 {
-                    'ev-click': click.and.callThrough()
+                    'ev-click': click,
                 }
             );
             render(vNode);
             dispatchEvent((vNode.dom as Element).firstElementChild!, 'click');
-            expect(click).toHaveBeenCalledTimes(0);
+            expect(click).to.have.callCount(0);
         });
     });
 
@@ -265,33 +265,33 @@ describe('Props', () => {
                 const vNode = h('input', { value: 1 });
                 render(vNode);
 
-                expect((vNode.dom as HTMLInputElement).value).toBe('1');
+                expect((vNode.dom as HTMLInputElement).value).to.equal('1');
             });
 
             it('should render defaultValue correctly', () => {
                 const vNode = h('input', {defaultValue: 1});
                 render(vNode);
 
-                expect((vNode.dom as HTMLInputElement).value).toBe('1');
-                expect((vNode.dom as HTMLInputElement).defaultValue).toBe('1');
+                expect((vNode.dom as HTMLInputElement).value).to.equal('1');
+                expect((vNode.dom as HTMLInputElement).defaultValue).to.equal('1');
             });
 
             it('should render checked correctly', () => {
                 const vNode = h('input', {type: 'checkbox', checked: true, value: 1});
                 render(vNode);
-                expect((vNode.dom as HTMLInputElement).checked).toBeTrue;
-                expect((vNode.dom as HTMLInputElement).value).toBe('1');
+                expect((vNode.dom as HTMLInputElement).checked).to.be.true;
+                expect((vNode.dom as HTMLInputElement).value).to.equal('1');
 
                 const vNode2 = h('input', {checked: true});
                 render(vNode2);
-                expect((vNode2.dom as HTMLInputElement).checked).toBe(true);
+                expect((vNode2.dom as HTMLInputElement).checked).to.equal(true);
             });
 
             it('should render multiple correctly', () => {
                 const vNode =h('input', {multiple: true, type: 'file'});
                 render(vNode);
 
-                expect((vNode.dom as HTMLInputElement).multiple).toBe(true);
+                expect((vNode.dom as HTMLInputElement).multiple).to.equal(true);
             });
         });
 
@@ -303,8 +303,8 @@ describe('Props', () => {
                 ]);
                 render(vNode);
 
-                expect((vNode.dom as HTMLSelectElement).value).toBe('2');
-                expect((vNode.dom as HTMLSelectElement).selectedIndex).toBe(1);
+                expect((vNode.dom as HTMLSelectElement).value).to.equal('2');
+                expect((vNode.dom as HTMLSelectElement).selectedIndex).to.equal(1);
             });
 
             it('should render defaultValue correctly', () => {
@@ -314,30 +314,30 @@ describe('Props', () => {
                 ]);
                 render(vNode);
 
-                expect((vNode.dom as HTMLSelectElement).value).toBe('2');
-                expect((vNode.dom as HTMLSelectElement).selectedIndex).toBe(1);
+                expect((vNode.dom as HTMLSelectElement).value).to.equal('2');
+                expect((vNode.dom as HTMLSelectElement).selectedIndex).to.equal(1);
             });
 
             it('should set value to emtpy if value does not exist in options', () => {
                 const vNode = h('select', {value: '1'}, h('option', {value: '2'}, '2'));
                 render(vNode);
-                expect((vNode.dom as HTMLSelectElement).value).toBe('');
+                expect((vNode.dom as HTMLSelectElement).value).to.equal('');
 
                 const vNode2 = h('select', {value: null}, h('option', {value: '2'}, '2'));
                 render(vNode2);
-                expect((vNode2.dom as HTMLSelectElement).value).toBe('');
+                expect((vNode2.dom as HTMLSelectElement).value).to.equal('');
 
                 const vNode3 = h('select', {value: undefined}, h('option', {value: '2'}, '2'));
                 render(vNode3);
-                expect((vNode3.dom as HTMLSelectElement).value).toBe('');
+                expect((vNode3.dom as HTMLSelectElement).value).to.equal('');
 
                 const vNode4 = h('select', null, h('option', {value: '2'}, '2'));
                 render(vNode4);
-                expect((vNode4.dom as HTMLSelectElement).value).toBe('2');
+                expect((vNode4.dom as HTMLSelectElement).value).to.equal('2');
 
                 const vNode5 = h('select', {id: 'test'}, h('option', {value: '2'}, '2'));
                 render(vNode5);
-                expect((vNode5.dom as HTMLSelectElement).value).toBe('2');
+                expect((vNode5.dom as HTMLSelectElement).value).to.equal('2');
             });
 
             it('should render selectedIndex correctly', () => {
@@ -346,14 +346,14 @@ describe('Props', () => {
                     h('option', {value: '2'}, 2),
                 ]);
                 render(vNode);
-                expect((vNode.dom as HTMLSelectElement).value).toBe('2');
+                expect((vNode.dom as HTMLSelectElement).value).to.equal('2');
 
                 const vNode1 = h('select', {selectedIndex: -1}, [
                     h('option', {value: '1'}, 1),
                     h('option', {value: '2'}, 2),
                 ]);
                 render(vNode1);
-                expect((vNode1.dom as HTMLSelectElement).value).toBe('');
+                expect((vNode1.dom as HTMLSelectElement).value).to.equal('');
 
             });
 
@@ -365,9 +365,9 @@ describe('Props', () => {
                 ]);
                 render(vNode);
                 const select = vNode.dom as HTMLSelectElement;
-                expect((select.children[0] as HTMLOptionElement).selected).toBeTrue();
-                expect((select.children[1] as HTMLOptionElement).selected).toBeTrue();
-                expect((select.children[2] as HTMLOptionElement).selected).toBeFalse();
+                expect((select.children[0] as HTMLOptionElement).selected).to.be.true;
+                expect((select.children[1] as HTMLOptionElement).selected).to.be.true;
+                expect((select.children[2] as HTMLOptionElement).selected).to.be.false;
 
                 const vNode2 = h('select', {value: '3', multiple: true}, [
                     h('option', {value: '1'}, 1),
@@ -376,9 +376,9 @@ describe('Props', () => {
                 ]);
                 render(vNode2);
                 const select2 = vNode2.dom as HTMLSelectElement;
-                expect((select2.children[0] as HTMLOptionElement).selected).toBeFalse();
-                expect((select2.children[1] as HTMLOptionElement).selected).toBeFalse();
-                expect((select2.children[2] as HTMLOptionElement).selected).toBeTrue();
+                expect((select2.children[0] as HTMLOptionElement).selected).to.be.false;
+                expect((select2.children[1] as HTMLOptionElement).selected).to.be.false;
+                expect((select2.children[2] as HTMLOptionElement).selected).to.be.true;
 
                 const vNode3 = h('select', {multiple: true}, [
                     h('option', {value: '1'}, 1),
@@ -387,9 +387,9 @@ describe('Props', () => {
                 ]);
                 render(vNode3);
                 const select3 = vNode3.dom as HTMLSelectElement;
-                expect((select3.children[0] as HTMLOptionElement).selected).toBeFalse();
-                expect((select3.children[1] as HTMLOptionElement).selected).toBeFalse();
-                expect((select3.children[2] as HTMLOptionElement).selected).toBeFalse();
+                expect((select3.children[0] as HTMLOptionElement).selected).to.be.false;
+                expect((select3.children[1] as HTMLOptionElement).selected).to.be.false;
+                expect((select3.children[2] as HTMLOptionElement).selected).to.be.false;
 
                 const vNode4 = h('select', {multiple: true}, [
                     h('option', {value: '1'}, 1),
@@ -398,9 +398,9 @@ describe('Props', () => {
                 ]);
                 render(vNode4);
                 const select4 = vNode4.dom as HTMLSelectElement;
-                expect((select4.children[0] as HTMLOptionElement).selected).toBeFalse();
-                expect((select4.children[1] as HTMLOptionElement).selected).toBeTrue();
-                expect((select4.children[2] as HTMLOptionElement).selected).toBeFalse();
+                expect((select4.children[0] as HTMLOptionElement).selected).to.be.false;
+                expect((select4.children[1] as HTMLOptionElement).selected).to.be.true;
+                expect((select4.children[2] as HTMLOptionElement).selected).to.be.false;
             });
 
             it('should render selected correctly', () => {
@@ -409,28 +409,28 @@ describe('Props', () => {
                     h('option', {value: '2', selected: true}, 2),
                 ]);
                 render(vNode);
-                expect((vNode.dom as HTMLSelectElement).value).toBe('');
+                expect((vNode.dom as HTMLSelectElement).value).to.equal('');
 
                 const vNode2 = h('select', {value: '1'}, [
                     h('option', {value: '1'}, 1),
                     h('option', {value: '2', selected: true}, 2),
                 ]);
                 render(vNode2);
-                expect((vNode2.dom as HTMLSelectElement).value).toBe('1');
+                expect((vNode2.dom as HTMLSelectElement).value).to.equal('1');
 
                 const vNode3 = h('select', {value: '2'}, [
                     h('option', {value: '1', selected: true}, 1),
                     h('option', {value: '2'}, 2),
                 ]);
                 render(vNode3);
-                expect((vNode3.dom as HTMLSelectElement).value).toBe('2');
+                expect((vNode3.dom as HTMLSelectElement).value).to.equal('2');
 
                 const vNode4 = h('select', {id: 'test'}, [
                     h('option', {value: '1'}, 1),
                     h('option', {value: '2', selected: true}, 2),
                 ]);
                 render(vNode4);
-                expect((vNode4.dom as HTMLSelectElement).value).toBe('2');
+                expect((vNode4.dom as HTMLSelectElement).value).to.equal('2');
             });
         });
 
@@ -439,14 +439,14 @@ describe('Props', () => {
                 const vNode = h('textarea', {value: 'test'});
                 render(vNode);
 
-                expect((vNode.dom as HTMLTextAreaElement).value).toBe('test');
+                expect((vNode.dom as HTMLTextAreaElement).value).to.equal('test');
             });
 
             it('should render defaultValue correctly', () => {
                 const vNode = h('textarea', {defaultValue: 'test'});
                 render(vNode);
 
-                expect((vNode.dom as HTMLTextAreaElement).value).toBe('test');
+                expect((vNode.dom as HTMLTextAreaElement).value).to.equal('test');
             });
         });
     });

@@ -9,16 +9,16 @@ describe('Component', () => {
             const props = {a: 1};
             const changeTraces = set(props, 'a', 2);
 
-            expect(props).toEqual({a: 2});
-            expect(changeTraces).toEqual([{path: 'a', newValue: 2, oldValue: 1}]);
+            expect(props).to.eql({a: 2});
+            expect(changeTraces).to.eql([{path: 'a', newValue: 2, oldValue: 1}]);
         });
 
         it('should set by path', () => {
             const props = {a: {b: 1}};
             const changeTraces = set(props, 'a.b', 2);
 
-            expect(props).toEqual({a: {b: 2}});
-            expect(changeTraces).toEqual([
+            expect(props).to.eql({a: {b: 2}});
+            expect(changeTraces).to.eql([
                 {path: 'a', newValue: {b: 2}, oldValue: {b: 1}},
                 {path: 'a.b', newValue: 2, oldValue: 1},
             ]);
@@ -28,8 +28,8 @@ describe('Component', () => {
             const props = {a: {b: 1}};
             const changeTraces = set(props, 'a.c.d', 2);
 
-            expect(props).toEqual({a: {b: 1, c: {d: 2}}} as any);
-            expect(changeTraces).toEqual([
+            expect(props).to.eql({a: {b: 1, c: {d: 2}}} as any);
+            expect(changeTraces).to.eql([
                 {path: 'a', newValue: {b: 1, c: {d: 2}}, oldValue: {b: 1}},
                 {path: 'a.c', newValue: {d: 2}, oldValue: undefined},
                 {path: 'a.c.d', newValue: 2, oldValue: undefined},
@@ -85,9 +85,9 @@ describe('Component', () => {
         it('should warn when pass invalid props', () => {
             function test(props: any, msg?: string) {
                 if (msg) {
-                    expect(() => render(h(A, props), container)).toThrowError(new RegExp(msg));
+                    expect(() => render(h(A, props), container)).to.throw(new RegExp(msg));
                 } else {
-                    expect(() => render(h(A, props), container)).not.toThrow();
+                    expect(() => render(h(A, props), container)).to.not.throw();
                 }
             }
 
@@ -136,9 +136,9 @@ describe('Component', () => {
 
             function test(props: any, msg?: string) {
                 if (msg) {
-                    expect(() => render(h(Test, props), container)).toThrowError(new RegExp(msg));
+                    expect(() => render(h(Test, props), container)).to.throw(new RegExp(msg));
                 } else {
-                    expect(() => render(h(Test, props), container)).not.toThrow();
+                    expect(() => render(h(Test, props), container)).to.not.throw();
                 }
             }
 

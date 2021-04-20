@@ -8,6 +8,7 @@ module.exports = function(config) {
         ],
         preprocessors: {
             [path.resolve(__dirname, 'test.index.js')]: ['webpack'],
+            '**/__snapshots__/**/*.md': ['snapshot'],
         },
         webpack: {
             mode: 'development',
@@ -19,7 +20,8 @@ module.exports = function(config) {
                     },
                     {
                         test: /\.ts$/,
-                        include: /packages\/\w+\/src\/.*\.ts$/,
+                        // include: /packages\/\w+\/src\/.*\.ts$/,
+                        include: /packages\/vdt\/src\/.*\.ts$/,
                         enforce: 'post',
                         use: {
                             loader: 'istanbul-instrumenter-loader',
@@ -42,9 +44,23 @@ module.exports = function(config) {
             devtool: 'inline-source-map',
         },
         frameworks: [
-            'jasmine',
+            // 'jasmine',
+            'mocha',
+            'sinon-chai',
+            'snapshot',
+            'mocha-snapshot',
         ],
-        reporters: ['kjhtml', 'coverage-istanbul'],
+        // reporters: ['kjhtml', 'coverage-istanbul'],
+        reporters: ['mocha', 'coverage-istanbul'],
+        mochaReporter: {
+            showDiff: true,
+        },
+        client: {
+            mocha: {
+                reporter: 'html',
+                ui: 'bdd',
+            }
+        },
         coverageIstanbulReporter: {
             reports: ['html', 'text-summary', 'lcovonly'],
             dir: path.resolve('./coverage/'),

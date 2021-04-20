@@ -30,32 +30,32 @@ describe('Component', () => {
 
     describe('Events', () => {
         it('should mount event', () => {
-            const click = jasmine.createSpy();
+            const click = sinon.spy();
             render(h(Test, {'ev-click': click}), container);
             dispatchEvent(container.firstElementChild!, 'click');
 
-            expect(click).toHaveBeenCalledTimes(1);
+            expect(click).to.have.callCount(1);
         });
 
         it('should update event', () => {
-            const click1 = jasmine.createSpy();
-            const click2 = jasmine.createSpy();
+            const click1 = sinon.spy();
+            const click2 = sinon.spy();
 
             render(h(Test, {'ev-click': click1}), container);
             render(h(Test, {'ev-click': click2}), container);
             dispatchEvent(container.firstElementChild!, 'click');
 
-            expect(click1).toHaveBeenCalledTimes(0);
-            expect(click2).toHaveBeenCalledTimes(1);
+            expect(click1).to.have.callCount(0);
+            expect(click2).to.have.callCount(1);
         });
 
         it('should unmount event', () => {
-            const click = jasmine.createSpy();
+            const click = sinon.spy();
             render(h(Test, {'ev-click': click}), container);
             render(h(Test, {}), container);
             dispatchEvent(container.firstElementChild!, 'click');
             
-            expect(click).toHaveBeenCalledTimes(0);
+            expect(click).to.have.callCount(0);
         });
 
         it('should not add event listener on beforeUpdate lifecycle', () => {
@@ -70,7 +70,7 @@ describe('Component', () => {
             }
 
             render(h(Test), container);
-            expect(() => render(h(Test), container)).toThrowError();
+            expect(() => render(h(Test), container)).to.throw();
         });
 
         it('should not add event listener on updated lifecycle', () => {
@@ -85,7 +85,7 @@ describe('Component', () => {
             }
 
             render(h(Test), container);
-            expect(() => render(h(Test), container)).toThrowError();
+            expect(() => render(h(Test), container)).to.throw();
         });
 
         it('should throw error if callback is not a function', () => {
@@ -99,13 +99,13 @@ describe('Component', () => {
                 }
             }
 
-            expect(() => render(h(Test), container)).toThrowError();
+            expect(() => render(h(Test), container)).to.throw();
         });
 
         it('should off event correctly', () => {
-            const click = jasmine.createSpy();
-            const move1 = jasmine.createSpy();
-            const move2 = jasmine.createSpy();
+            const click = sinon.spy();
+            const move1 = sinon.spy();
+            const move2 = sinon.spy();
             let component: Test;
             class Test extends Component {
                 static template(this: Test) {
@@ -123,26 +123,26 @@ describe('Component', () => {
             render(h(Test), container);
 
             component!.trigger('move');
-            expect(move1).toHaveBeenCalledTimes(1);
-            expect(move2).toHaveBeenCalledTimes(1);
+            expect(move1).to.have.callCount(1);
+            expect(move2).to.have.callCount(1);
 
             component!.off('move', move1);
             component!.trigger('move');
-            expect(move1).toHaveBeenCalledTimes(1);
-            expect(move2).toHaveBeenCalledTimes(2);
+            expect(move1).to.have.callCount(1);
+            expect(move2).to.have.callCount(2);
 
             component!.off('move');
             component!.trigger('move');
-            expect(move1).toHaveBeenCalledTimes(1);
-            expect(move2).toHaveBeenCalledTimes(2);
+            expect(move1).to.have.callCount(1);
+            expect(move2).to.have.callCount(2);
 
             component!.off('noop');
             component!.trigger('click');
-            expect(click).toHaveBeenCalledTimes(1);
+            expect(click).to.have.callCount(1);
 
             render(null, container);
             component!.trigger('click');
-            expect(click).toHaveBeenCalledTimes(1);
+            expect(click).to.have.callCount(1);
         });
     });
 });

@@ -22,7 +22,7 @@ describe('Component', () => {
         render(vNode1, container);
         render(vNode2, container);
         if (html !== undefined) {
-            expect(container.innerHTML).toBe(html);
+            expect(container.innerHTML).to.equal(html);
         }
         return vNode2;
     }
@@ -47,12 +47,12 @@ describe('Component', () => {
             it('should set value to default when render undefined prop', () => {
                 render(h(Test, {name: undefined}), container);
 
-                expect(component!.props).toEqual({name: 1});
+                expect(component!.props).to.eql({name: 1});
             });
 
             it('should update prop and trigger $receive event', () => {
-                const onReceiveName = jasmine.createSpy();
-                const onReceiveAge = jasmine.createSpy();
+                const onReceiveName = sinon.spy();
+                const onReceiveAge = sinon.spy();
                 interface MyTestProps extends TestProps {
                     age: number
                 }
@@ -65,13 +65,13 @@ describe('Component', () => {
 
                 render(h(MyTest, {name: 2, age: 1}), container);
 
-                expect((component as MyTest).props).toEqual({name: 2, age: 1});
-                expect(onReceiveName).toHaveBeenCalledOnceWith(2, 1);
-                expect(onReceiveAge).toHaveBeenCalledOnceWith(1, undefined);
+                expect((component as MyTest).props).to.eql({name: 2, age: 1});
+                expect(onReceiveName).to.have.been.calledOnceWith(2, 1);
+                expect(onReceiveAge).to.have.been.calledOnceWith(1, undefined);
             });
 
             it('should not trigger $receive event if values are equal', () => {
-                const onReceiveName = jasmine.createSpy();
+                const onReceiveName = sinon.spy();
                 class MyTest extends Test {
                     init() {
                         this.on('$receive:name', onReceiveName);
@@ -80,8 +80,8 @@ describe('Component', () => {
 
                 render(h(MyTest, {name: 1}), container);
 
-                expect(component!.props).toEqual({name: 1});
-                expect(onReceiveName).toHaveBeenCalledTimes(0);
+                expect(component!.props).to.eql({name: 1});
+                expect(onReceiveName).to.have.callCount(0);
             });
         })
 
@@ -90,28 +90,28 @@ describe('Component', () => {
                 render(h(Test), container);
                 render(h(Test), container);
 
-                expect(component!.props).toEqual({name: 1});
+                expect(component!.props).to.eql({name: 1});
             });
 
             it('should set prop to default value if next value is undefined', () => {
                 render(h(Test, {name: 2}), container);
                 render(h(Test, {name: undefined}), container);
 
-                expect(component!.props).toEqual({name: 1});
+                expect(component!.props).to.eql({name: 1});
             });
 
             it('should set prop to default value if next value does not exist', () => {
                 render(h(Test, {name: 2}), container);
                 render(h(Test), container);
 
-                expect(component!.props).toEqual({name: 1});
+                expect(component!.props).to.eql({name: 1});
             });
 
             it('should do nothing if next value does not exist but last value is undefined', () => {
                 render(h(Test, {name: undefined}), container);
                 render(h(Test), container);
 
-                expect(component!.props).toEqual({name: 1});
+                expect(component!.props).to.eql({name: 1});
             });
         });
 
@@ -119,46 +119,46 @@ describe('Component', () => {
             it('should set props and trigger events', async () => {
                 render(h(Test), container);
 
-                const onReceiveName = jasmine.createSpy();
-                const onChangeName = jasmine.createSpy();
-                const onChangedName = jasmine.createSpy();
+                const onReceiveName = sinon.spy();
+                const onChangeName = sinon.spy();
+                const onChangedName = sinon.spy();
                 component!.on('$receive:name', onReceiveName);
                 component!.on('$change:name', onChangeName);
                 component!.on('$changed:name', onChangedName);
 
                 component!.set('name', 2);
-                expect(onReceiveName).toHaveBeenCalledTimes(0);
-                expect(onChangeName).toHaveBeenCalledOnceWith(2, 1);
-                expect(onChangedName).toHaveBeenCalledTimes(0);
+                expect(onReceiveName).to.have.callCount(0);
+                expect(onChangeName).to.have.been.calledOnceWith(2, 1);
+                expect(onChangedName).to.have.callCount(0);
 
                 await nextTick();
 
-                expect(onChangedName).toHaveBeenCalledOnceWith(2, 1);
-                expect(container.innerHTML).toBe('<div>2</div>');
+                expect(onChangedName).to.have.been.calledOnceWith(2, 1);
+                expect(container.innerHTML).to.equal('<div>2</div>');
             });
 
             it('should set props silent', async () => {
                 render(h(Test), container);
 
-                const onChangeName = jasmine.createSpy();
-                const onChangedName = jasmine.createSpy();
+                const onChangeName = sinon.spy();
+                const onChangedName = sinon.spy();
                 component!.on('$change:name', onChangeName);
                 component!.on('$changed:name', onChangedName);
 
                 component!.set({name: 2}, {silent: true});
-                expect(onChangeName).toHaveBeenCalledTimes(0);
-                expect(onChangedName).toHaveBeenCalledTimes(0);
-                expect(component!.get()).toEqual({name: 2});
+                expect(onChangeName).to.have.callCount(0);
+                expect(onChangedName).to.have.callCount(0);
+                expect(component!.get()).to.eql({name: 2});
 
                 component!.forceUpdate();
                 await nextTick();
-                expect(container.innerHTML).toBe('<div>2</div>');
+                expect(container.innerHTML).to.equal('<div>2</div>');
             });
 
             it('set prop on init', () => {
-                const onRender = jasmine.createSpy();
-                const onChangeName = jasmine.createSpy();
-                const onChangedName = jasmine.createSpy();
+                const onRender = sinon.spy();
+                const onChangeName = sinon.spy();
+                const onChangedName = sinon.spy();
                 class Test extends Component {
                     static template(this: Test) {
                         onRender();
@@ -173,16 +173,16 @@ describe('Component', () => {
                 }
 
                 render(h(Test), container);
-                expect(onChangeName).toHaveBeenCalledOnceWith(1, undefined);
-                expect(onChangedName).toHaveBeenCalledOnceWith(1, undefined);
-                expect(onRender).toHaveBeenCalledTimes(1);
-                expect(container.innerHTML).toBe('<div>1</div>');
+                expect(onChangeName).to.have.been.calledOnceWith(1, undefined);
+                expect(onChangedName).to.have.been.calledOnceWith(1, undefined);
+                expect(onRender).to.have.callCount(1);
+                expect(container.innerHTML).to.equal('<div>1</div>');
             });
 
             it('set prop on beforeMount', () => {
-                const onRender = jasmine.createSpy();
-                const onChangeName = jasmine.createSpy();
-                const onChangedName = jasmine.createSpy();
+                const onRender = sinon.spy();
+                const onChangeName = sinon.spy();
+                const onChangedName = sinon.spy();
                 class Test extends Component {
                     static template(this: Test) {
                         onRender();
@@ -197,16 +197,16 @@ describe('Component', () => {
                 }
 
                 render(h(Test), container);
-                expect(onChangeName).toHaveBeenCalledOnceWith(1, undefined);
-                expect(onChangedName).toHaveBeenCalledOnceWith(1, undefined);
-                expect(onRender).toHaveBeenCalledTimes(1);
-                expect(container.innerHTML).toBe('<div>1</div>');
+                expect(onChangeName).to.have.been.calledOnceWith(1, undefined);
+                expect(onChangedName).to.have.been.calledOnceWith(1, undefined);
+                expect(onRender).to.have.callCount(1);
+                expect(container.innerHTML).to.equal('<div>1</div>');
             });
 
             it('set prop on beforeUpdate', () => {
-                const onRender = jasmine.createSpy();
-                const onChangeName = jasmine.createSpy();
-                const onChangedName = jasmine.createSpy();
+                const onRender = sinon.spy();
+                const onChangeName = sinon.spy();
+                const onChangedName = sinon.spy();
                 class Test extends Component {
                     static template(this: Test) {
                         onRender();
@@ -225,16 +225,16 @@ describe('Component', () => {
 
                 render(h(Test), container);
                 render(h(Test), container);
-                expect(onChangeName).toHaveBeenCalledOnceWith(1, undefined);
-                expect(onChangedName).toHaveBeenCalledOnceWith(1, undefined);
-                expect(onRender).toHaveBeenCalledTimes(2);
-                expect(container.innerHTML).toBe('<div>1</div>');
+                expect(onChangeName).to.have.been.calledOnceWith(1, undefined);
+                expect(onChangedName).to.have.been.calledOnceWith(1, undefined);
+                expect(onRender).to.have.callCount(2);
+                expect(container.innerHTML).to.equal('<div>1</div>');
             });
 
             it('set prop on template', async () => {
-                const onRender = jasmine.createSpy();
-                const onChangeName = jasmine.createSpy();
-                const onChangedName = jasmine.createSpy();
+                const onRender = sinon.spy();
+                const onChangeName = sinon.spy();
+                const onChangedName = sinon.spy();
                 class Test extends Component {
                     static template(this: Test) {
                         onRender();
@@ -251,20 +251,20 @@ describe('Component', () => {
                 render(h(Test), container);
                 await nextTick();
 
-                expect(onChangeName).toHaveBeenCalledOnceWith(1, undefined);
-                expect(onChangedName).toHaveBeenCalledOnceWith(1, undefined);
-                expect(onRender).toHaveBeenCalledTimes(2);
-                expect(container.innerHTML).toBe('<div>1</div>');
+                expect(onChangeName).to.have.been.calledOnceWith(1, undefined);
+                expect(onChangedName).to.have.been.calledOnceWith(1, undefined);
+                expect(onRender).to.have.callCount(2);
+                expect(container.innerHTML).to.equal('<div>1</div>');
             });
 
             it('set prop multiple times', async () => {
-                const onRender = jasmine.createSpy().and.callFake(() => {
+                const onRender = sinon.spy(() => {
                     console.log('render');
                 });
-                const onChangeName = jasmine.createSpy().and.callFake((...args) => {
+                const onChangeName = sinon.spy((...args: any[]) => {
                     console.log('change', ...args);
                 });
-                const onChangedName = jasmine.createSpy().and.callFake((...args) => {
+                const onChangedName = sinon.spy((...args: any[]) => {
                     console.log('changed', ...args);
                 });
                 class Test extends Component {
@@ -287,21 +287,21 @@ describe('Component', () => {
 
                 render(h(Test), container);
 
-                expect(onChangeName).toHaveBeenCalledTimes(3);
-                expect(onChangedName).toHaveBeenCalledTimes(3);
-                expect(onRender).toHaveBeenCalledTimes(1);
-                expect(container.innerHTML).toBe('<div>3</div>');
+                expect(onChangeName).to.have.callCount(3);
+                expect(onChangedName).to.have.callCount(3);
+                expect(onRender).to.have.callCount(1);
+                expect(container.innerHTML).to.equal('<div>3</div>');
 
                 await nextTick();
 
-                expect(onChangeName).toHaveBeenCalledTimes(3);
-                expect(onChangedName).toHaveBeenCalledTimes(3);
-                expect(onRender).toHaveBeenCalledTimes(2);
-                expect(container.innerHTML).toBe('<div>3</div>');
+                expect(onChangeName).to.have.callCount(3);
+                expect(onChangedName).to.have.callCount(3);
+                expect(onRender).to.have.callCount(2);
+                expect(container.innerHTML).to.equal('<div>3</div>');
             });
 
             it('should only update one time when we set prop multiple times in template', async () => {
-                const onRender = jasmine.createSpy();
+                const onRender = sinon.spy();
                 class Test extends Component {
                     static template(this: Test) {
                         onRender();
@@ -314,7 +314,7 @@ describe('Component', () => {
                 render(h(Test), container);
 
                 await nextTick();
-                expect(onRender).toHaveBeenCalledTimes(2);
+                expect(onRender).to.have.callCount(2);
             });
 
             it('should not update when component has been unmounted', async () => {
@@ -324,7 +324,7 @@ describe('Component', () => {
                 component!.set('name', 2);
 
                 await nextTick();
-                expect(dom.innerHTML).toBe('1');
+                expect(dom.innerHTML).to.equal('1');
             });
         });
     });

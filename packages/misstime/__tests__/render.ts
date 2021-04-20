@@ -23,29 +23,29 @@ describe('Render', () => {
         const vNode = h('div');
         render(vNode, container);
         render(null, container);
-        expect(container.innerHTML).toBe('');
+        expect(container.innerHTML).to.equal('');
     });
 
     it('should update vNode if render new vNode to container', () => {
         render(h('div'), container);
         render(h('span'), container);
-        expect(container.innerHTML).toBe('<span></span>');
+        expect(container.innerHTML).to.equal('<span></span>');
     });
 
     it('should clone vNode if render an in use vNode', () => {
         const vNode = h('div');
         render(vNode, container);
         render(vNode, container);
-        expect(container.innerHTML).toBe('<div></div>');
+        expect(container.innerHTML).to.equal('<div></div>');
 
         render(null, container);
         render(vNode, container);
-        expect(container.innerHTML).toBe('<div></div>');
+        expect(container.innerHTML).to.equal('<div></div>');
     });
 
     it('should throw error if container is invalid', () => {
-        expect(() => render(h('div'), document.body)).toThrowError();
-        expect(() => render(h('div'), null as any)).toThrowError();
-        expect(() => render(h('div'), true as any)).toThrowError();
+        expect(() => render(h('div'), document.body)).to.throw();
+        expect(() => render(h('div'), null as any)).to.throw();
+        expect(() => render(h('div'), true as any)).to.throw();
     });
 });

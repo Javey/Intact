@@ -32,7 +32,7 @@ describe('Patch', () => {
         render(vNode1);
         render(vNode2);
         if (html !== undefined) {
-            expect(container.innerHTML).toBe(html);
+            expect(container.innerHTML).to.equal(html);
         }
         return vNode2;
     }
@@ -50,7 +50,7 @@ describe('Patch', () => {
         const vNode2 = h('div', {key: 2});
         render(vNode1);
         render(vNode2);
-        expect(vNode1.dom === vNode2.dom).toBeFalse();
+        expect(vNode1.dom === vNode2.dom).to.be.false;
     });
 
     describe('Patch the same type', () => {
@@ -411,8 +411,8 @@ describe('Patch', () => {
             h('div', {ref: i => dom2 = i}),
         );
 
-        expect(dom1!).toBeNull();
-        expect(dom2!.tagName).toBe('DIV');
+        expect(dom1!).to.be.null;
+        expect(dom2!.tagName).to.equal('DIV');
     });
 
     describe('Props', () => {
@@ -470,45 +470,45 @@ describe('Patch', () => {
         describe('Event', () => {
             describe('Undelegated', () => {
                 it('should do nothing if is the same LinkEvent', () => {
-                    const enter = jasmine.createSpy();
+                    const enter = sinon.spy();
                     patchTest(
                         h('div', {'ev-mouseenter': linkEvent('data', enter)}),
                         h('div', {'ev-mouseenter': linkEvent('data', enter)}),
                     );
 
                     dispatchEvent(container.firstElementChild!, 'mouseenter');
-                    expect(enter).toHaveBeenCalledTimes(1);
+                    expect(enter).to.have.been.calledOnce;
                 });
 
                 it('should detach event', () => {
-                    const enter = jasmine.createSpy();
+                    const enter = sinon.spy();
                     patchTest(
                         h('div', {'ev-mouseenter': enter}),
                         h('div', {'ev-mouseenter': null}),
                     );
 
                     dispatchEvent(container.firstElementChild!, 'mouseenter');
-                    expect(enter).toHaveBeenCalledTimes(0);
+                    expect(enter).to.have.callCount(0);
                 });
 
                 it('should change event handler', () => {
-                    const enter1 = jasmine.createSpy();
-                    const enter2 = jasmine.createSpy();
+                    const enter1 = sinon.spy();
+                    const enter2 = sinon.spy();
                     patchTest(
                         h('div', {'ev-mouseenter': enter1}),
                         h('div', {'ev-mouseenter': enter2}),
                     );
 
                     dispatchEvent(container.firstElementChild!, 'mouseenter');
-                    expect(enter1).toHaveBeenCalledTimes(0);
-                    expect(enter2).toHaveBeenCalledTimes(1);
+                    expect(enter1).to.have.callCount(0);
+                    expect(enter2).to.have.callCount(1);
                 });
             });
 
             describe('Delegated', () => {
                 it('should do nothing if is the same LinkEvent', () => {
-                    const click = jasmine.createSpy();
-                    const childClick = jasmine.createSpy();
+                    const click = sinon.spy();
+                    const childClick = sinon.spy();
                     const vNode = patchTest(
                         h('div', {'ev-click': linkEvent('data', click)}),
                         h('div', {'ev-click': linkEvent('data', click)},
@@ -520,7 +520,7 @@ describe('Patch', () => {
                     );
 
                     dispatchEvent(container.firstElementChild!, 'click');
-                    expect(click).toHaveBeenCalledTimes(1);
+                    expect(click).to.have.callCount(1);
 
                     const vNode2 = update(
                         h('div', {'ev-click': linkEvent('data', click)},
@@ -530,35 +530,35 @@ describe('Patch', () => {
                         )
                     );
                     dispatchEvent(container.firstElementChild!.firstElementChild!.firstElementChild!, 'click');
-                    expect(click).toHaveBeenCalledTimes(2);
-                    expect(childClick).toHaveBeenCalledTimes(1);
+                    expect(click).to.have.callCount(2);
+                    expect(childClick).to.have.callCount(1);
 
                     unmount(vNode2);
                 });
 
                 it('should detach event', () => {
-                    const click = jasmine.createSpy();
+                    const click = sinon.spy();
                     const vNode = patchTest(
                         h('div', {'ev-click': click}),
                         h('div', {'ev-click': null}),
                     );
 
                     dispatchEvent(container.firstElementChild!, 'mouseenter');
-                    expect(click).toHaveBeenCalledTimes(0);
+                    expect(click).to.have.callCount(0);
                     unmount(vNode);
                 });
 
                 it('should change event handler', () => {
-                    const click1 = jasmine.createSpy();
-                    const click2 = jasmine.createSpy();
+                    const click1 = sinon.spy();
+                    const click2 = sinon.spy();
                     const vNode = patchTest(
                         h('div', {'ev-click': click1}),
                         h('div', {'ev-click': click2}),
                     );
 
                     dispatchEvent(container.firstElementChild!, 'click');
-                    expect(click1).toHaveBeenCalledTimes(0);
-                    expect(click2).toHaveBeenCalledTimes(1);
+                    expect(click1).to.have.callCount(0);
+                    expect(click2).to.have.callCount(1);
                     unmount(vNode);
                 });
             });
@@ -577,7 +577,7 @@ describe('Patch', () => {
                     h('option', {value: '2'}, '2'),
                 ])
             );
-            expect((container.firstElementChild as HTMLSelectElement).value).toBe('');
+            expect((container.firstElementChild as HTMLSelectElement).value).to.equal('');
             
             patchTest(
                 h('select', {value: '1'}, [
@@ -589,7 +589,7 @@ describe('Patch', () => {
                     h('option', {value: 2}, '2')
                 ]),
             );
-            expect((container.firstElementChild as HTMLSelectElement).value).toBe('');
+            expect((container.firstElementChild as HTMLSelectElement).value).to.equal('');
 
             patchTest(
                 h('select', {defaultValue: 2}, [
@@ -601,7 +601,7 @@ describe('Patch', () => {
                     h('option', {value: 2}, '2')
                 ]),
             );
-            expect((container.firstElementChild as HTMLSelectElement).value).toBe('1');
+            expect((container.firstElementChild as HTMLSelectElement).value).to.equal('1');
         });
 
         it('should patch select which multiple is true correctly', () => {
@@ -616,8 +616,8 @@ describe('Patch', () => {
                 ])
             );
             const select = container.firstElementChild as HTMLSelectElement;
-            expect(select.options[0].selected).toBeTrue();
-            expect(select.options[1].selected).toBeFalse();
+            expect(select.options[0].selected).to.be.true;
+            expect(select.options[1].selected).to.be.false;
         });
     });
 });

@@ -7,7 +7,9 @@ import {TransitionGroup} from '../../src/components/transitionGroup';
 import {wait, nextFrame, testTransition} from '../utils';
 import './transition.css';
 
-describe('Component', () => {
+describe('Component', function() {
+    this.timeout(0);
+
     let container: Element;
 
     beforeEach(() => {
@@ -53,7 +55,7 @@ describe('Component', () => {
                 testTransition(container.children[1]!, 'leave'),
             ]);
 
-            expect(container.innerHTML).toBe('');
+            expect(container.innerHTML).to.equal('');
         });
 
         it('should move with transition', async () => {
@@ -75,8 +77,8 @@ describe('Component', () => {
 });
 
 async function testMoveTransition(dom: Element) {
-    expect(dom.className).toBe(`transition-move`);
+    expect(dom.className).to.equal(`transition-move`);
 
     await wait(2100);
-    expect(dom.className).toBe('');
+    expect(dom.className).to.equal('');
 }
