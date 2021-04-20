@@ -8,7 +8,7 @@ module.exports = function(config) {
             path.resolve(__dirname, 'test.index.js'),
         ],
         preprocessors: {
-            [path.resolve(__dirname, 'test.index.js')]: ['webpack'],
+            [path.resolve(__dirname, 'test.index.js')]: ['webpack', 'sourcemap'],
             '**/__snapshots__/**/*.md': ['snapshot'],
         },
         webpack: {

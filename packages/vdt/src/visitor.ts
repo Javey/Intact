@@ -36,7 +36,7 @@ export class Visitor {
     private enterStringExpression: boolean = false;
     private hoist: string[] = [];
     private queue: string[] = [];
-    private pendingQueue: string[] = [];
+    private queueStack: string[][] = [this.queue];
     private current: string[] = this.queue;
     private line = 1;
     private column = 0;
@@ -99,6 +99,8 @@ export class Visitor {
                 return this.visitJSXComponent(node as ASTComponent);
             case Types.JSXText:
                 return this.visitJSXText(node as ASTText);
+            case Types.JS:
+                return this.visitJS(node as ASTJS);
         }
 
         // if (type & Types.JSXElement) {
@@ -128,8 +130,9 @@ export class Visitor {
         // }
     }
 
-    private visitJS(node: ASTString) {
-        this.append(this.enterStringExpression ? `(${node.value})` : node.value);
+    private visitJS(node: ASTJS) {
+        // this.append(this.enterStringExpression ? `(${node.value})` : node.value);
+        this.append(node.value);
     }
 
     private visitJSImport(node: ASTString) {
@@ -144,7 +147,7 @@ export class Visitor {
             });
         } else {
             this.visitJSXDirective(node, children, index, () => {
-                this.visitJSXElementWithoutDirective(node);
+                this.visitJSXElementAttribute(node);
             });
         }
     }
@@ -336,44 +339,70 @@ export class Visitor {
         return childrenType;
     }
 
-    private visitJSXElementWithoutDirective(node: ASTCommonElement) {
+    private visitJSXElementAttribute(node: ASTCommonElement) {
         // TODO: createElementVNode methods
         const tag = node.value;
-        this.append(`createElementVNode(${getTypeForVNodeElement(tag)}, '${tag}', `);
+        this.append(`createElementVNode(${getTypeForVNodeElement(tag)}, '${tag}'`);
 
+        this.pushQueue();
+        this.append(', ');
         const childrenType = this.visitJSXChildren(node.children);
-        this.append(`, ${childrenType}, `);
+        this.append(`, ${childrenType}`);
+        if (childrenType !== ChildrenTypes.HasInvalidChildren) {
+            this.flush(this.popQueue());
+            this.pushQueue();
+        }
 
-        this.usePending();
-        const {className, key, ref} = this.visitJSXAttribute(node);
-        this.useAppend();
+        const propsQueue = this.pushQueue();
+        this.append(', ');
+        const {className, key, ref, hasProps} = this.visitJSXAttribute(node);
+        this.popQueue();
 
+        this.append(', ');
         if (className) {
-            this.visitJSXAttributeClassName(className!);
+            this.flush(this.popQueue());
+            this.visitJSXAttributeClassName(className);
+            this.pushQueue();
         } else {
             this.append('null')
         }
-        this.append(', ');
-        this.flush();
 
+        this.flush(propsQueue);
+        if (hasProps) {
+            this.flush(this.popQueue());
+            this.pushQueue();
+        }
         this.append(', ');
+
         if (key) {
-            this.visitJSXAttributeValue(key!);
+            this.flush(this.popQueue());
+            this.visitJSXAttributeValue(key);
+            this.pushQueue();
         } else {
             this.append('null');
         }
 
         this.append(', ');
         if (ref) {
-            this.visitJSXAttributeRef(ref!);
+            this.flush(this.popQueue());
+            this.visitJSXAttributeRef(ref);
+            this.pushQueue();
         } else {
             this.append('null');
         }
 
+        this.popQueue();
         this.append(')');
     }
 
-    private visitJSXAttribute(node: ASTElement) {
+    private visitJSXAttribute(node: ASTElement): 
+        {
+            className: ASTString | ASTExpression | null,
+            key: ASTString | ASTExpression | null,
+            ref: ASTString | ASTExpression | null,
+            hasProps: boolean,
+        }
+    {
         const attributes = node.attributes;
         let className: ASTString | ASTExpression | null = null;
         let key: ASTString | ASTExpression | null = null;
@@ -381,7 +410,7 @@ export class Visitor {
 
         if (!attributes.length) {
             this.append('null');
-            return {className, key, ref};
+            return {className, key, ref, hasProps: false};
         }
         
         let isFirstAttr: boolean = true;
@@ -436,14 +465,24 @@ export class Visitor {
                     this.visitJSXAttributeValue(attr.value);
                     addition.type = attr.value as ASTString;
                     break;
+                default:
+                    addAttribute(name);
+                    this.visitJSXAttributeValue(attr.value);
+                    break;
             } 
         });
 
-        return {className, key, ref};
+        if (!isFirstAttr) {
+            this.append('}');
+        } else {
+            this.append('null');
+        }
+
+        return {className, key, ref, hasProps: !isFirstAttr};
     }
 
     private visitJSXAttributeClassName(value: ASTString | ASTExpression) {
-        if (value.type & Types.JSXExpression) {
+        if (value.type === Types.JSXExpression) {
             // TODO: $className
             this.append('$className(');
             this.visitJSXAttributeValue(value);
@@ -480,19 +519,23 @@ export class Visitor {
         }
     }
 
-    private usePending() {
-        this.current = this.pendingQueue;
+    private pushQueue() {
+        this.current = [];
+        this.queueStack.push(this.current);
+
+        return this.current;
     }
 
-    private useAppend() {
-        this.current = this.queue;
+    private popQueue() {
+        const queue = this.queueStack.pop()!;
+        this.current = this.queueStack[this.queueStack.length - 1];
+
+        return queue;
     }
 
-    private flush() {
-        let code;
-        this.useAppend();
-        while (code = this.pendingQueue.shift()) {
-            this.append(code);
+    private flush(queue: string[]) {
+        for (let i = 0; i < queue.length; i++) {
+            this.append(queue[i]);
         }
     }
 

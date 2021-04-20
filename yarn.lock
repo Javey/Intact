@@ -1522,6 +1522,13 @@ karma-snapshot@^0.6.0:
     remark-parse "^4.0.0"
     unified "^6.1.5"
 
+karma-sourcemap-loader@^0.3.8:
+  version "0.3.8"
+  resolved "https://registry.npm.taobao.org/karma-sourcemap-loader/download/karma-sourcemap-loader-0.3.8.tgz#d4bae72fb7a8397328a62b75013d2df937bdcf9c"
+  integrity sha1-1LrnL7eoOXMopit1AT0t+Te9z5w=
+  dependencies:
+    graceful-fs "^4.1.2"
+
 karma-webpack@^5.0.0:
   version "5.0.0"
   resolved "https://registry.npm.taobao.org/karma-webpack/download/karma-webpack-5.0.0.tgz#2a2c7b80163fe7ffd1010f83f5507f95ef39f840"
