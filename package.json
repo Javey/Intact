@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "benchmark": "karma start fixtures/karma.benchmark.js",
-    "test": "karma start fixtures/karma.conf.js"
+    "test": "karma start fixtures/karma.conf.js",
+    "snapshot": "UPDATE=1 npm run test"
   },
   "repository": {
     "type": "git",
@@ -20,6 +21,7 @@
   "devDependencies": {
     "@types/benchmark": "^2.1.0",
     "@types/chai": "^4.2.16",
+    "@types/karma-snapshot": "^0.6.0",
     "@types/mocha": "^8.2.2",
     "@types/sinon": "^10.0.0",
     "@types/sinon-chai": "^3.2.5",

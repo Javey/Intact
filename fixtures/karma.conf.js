@@ -3,6 +3,7 @@ const path = require('path');
 
 module.exports = function(config) {
     config.set({
+        browsers: process.env.UPDATE || process.env.CI || process.env.PRUNE ? ['ChromeHeadless'] : undefined,
         files: [
             path.resolve(__dirname, 'test.index.js'),
         ],
@@ -52,6 +53,10 @@ module.exports = function(config) {
         ],
         // reporters: ['kjhtml', 'coverage-istanbul'],
         reporters: ['mocha', 'coverage-istanbul'],
+        snapshot: {
+            update: !!process.env.UPDATE,
+            prune: !!process.env.PRUNE,
+        },
         mochaReporter: {
             showDiff: true,
         },

@@ -88,6 +88,21 @@
   resolved "https://registry.npm.taobao.org/@types/json-schema/download/@types/json-schema-7.0.7.tgz?cache=0&sync_timestamp=1613379017372&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2F%40types%2Fjson-schema%2Fdownload%2F%40types%2Fjson-schema-7.0.7.tgz#98a993516c859eb0d5c4c8f098317a9ea68db9ad"
   integrity sha1-mKmTUWyFnrDVxMjwmDF6nqaNua0=
 
+"@types/karma-snapshot@^0.6.0":
+  version "0.6.0"
+  resolved "https://registry.nlark.com/@types/karma-snapshot/download/@types/karma-snapshot-0.6.0.tgz#0b7736090c23dbe0ae70d02a5b7a168ecf4e497b"
+  integrity sha1-C3c2CQwj2+CucNAqW3oWjs9OSXs=
+  dependencies:
+    "@types/karma" "*"
+
+"@types/karma@*":
+  version "6.3.0"
+  resolved "https://registry.npm.taobao.org/@types/karma/download/@types/karma-6.3.0.tgz#535928aeee6e957464acf17d0a9e928b3aa0c27f"
+  integrity sha1-U1koru5ulXRkrPF9Cp6Sizqgwn8=
+  dependencies:
+    "@types/node" "*"
+    log4js "^6.2.1"
+
 "@types/mocha@^8.2.2":
   version "8.2.2"
   resolved "https://registry.npm.taobao.org/@types/mocha/download/@types/mocha-8.2.2.tgz?cache=0&sync_timestamp=1616204300394&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2F%40types%2Fmocha%2Fdownload%2F%40types%2Fmocha-8.2.2.tgz#91daa226eb8c2ff261e6a8cbf8c7304641e095e0"
