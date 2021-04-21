@@ -585,7 +585,8 @@ export class Parser {
 
         this.expect(delimiters[0]);
         this.skipWhitespaceAndJSComment();
-        
+
+        const spaceColumn = this.getFirstSpaceColumn();
         let unescaped = false;
         let value: ASTExpression['value'];
 
@@ -599,7 +600,7 @@ export class Parser {
         if (this.isExpect(delimiters[1])) {
             value = [];
         } else {
-            value = this.parse(false, loc.column - 1);
+            value = this.parse(false, spaceColumn);
         }
 
         this.expect(delimiters[1], `Unclosed delimiter`, loc);
@@ -720,7 +721,31 @@ export class Parser {
         } while (start !== _start);
 
         return this.charCode(start);
+    }
 
+    private getFirstSpaceColumn(): number {
+        let start = this.index - 1;
+        let hasSet = false;
+        let _start: number;
+
+        do {
+            const ch = this.char(start);
+            if (ch === '\n' || start === 0) {
+                if (!hasSet) _start = start;
+                break;
+            }
+            if (ch === ' ') {
+                if (!hasSet) {
+                    _start = start;
+                    hasSet = true;
+                }
+            } else {
+                hasSet = false;
+            }
+            start--;
+        } while (true);
+
+        return this.column - (this.index - _start!);
     }
 
     private isTagStart(index = this.index): boolean {
