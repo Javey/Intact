@@ -6,6 +6,9 @@
 
 ```
 "function($props, $blocks) {
+    $blocks || $blocks = {};
+    $props || $props = {};
+
     return createElementVNode(2, 'div')
 }"
 ```
@@ -14,6 +17,9 @@
 
 ```
 "function($props, $blocks) {
+    $blocks || $blocks = {};
+    $props || $props = {};
+
     return createElementVNode(2, 'div', 'test', 16)
 }"
 ```
@@ -22,6 +28,9 @@
 
 ```
 "function($props, $blocks) {
+    $blocks || $blocks = {};
+    $props || $props = {};
+
     return createElementVNode(2, 'div', 'test', 16, null, {'id': \"1\"})
 }"
 ```
@@ -30,6 +39,9 @@
 
 ```
 "function($props, $blocks) {
+    $blocks || $blocks = {};
+    $props || $props = {};
+
     return createElementVNode(2, 'div', 'test', 16, \"a\")
 }"
 ```
@@ -38,6 +50,9 @@
 
 ```
 "function($props, $blocks) {
+    $blocks || $blocks = {};
+    $props || $props = {};
+
     return createElementVNode(2, 'div', 'test', 16, $className(a))
 }"
 ```
@@ -46,6 +61,9 @@
 
 ```
 "function($props, $blocks) {
+    $blocks || $blocks = {};
+    $props || $props = {};
+
     return createElementVNode(2, 'div', 'test', 16, null, null, \"a\")
 }"
 ```
@@ -54,6 +72,9 @@
 
 ```
 "function($props, $blocks) {
+    $blocks || $blocks = {};
+    $props || $props = {};
+
     return createElementVNode(2, 'div', 'test', 16, null, null, \"a\")
 }"
 ```
@@ -62,6 +83,9 @@
 
 ```
 "function($props, $blocks) {
+    $blocks || $blocks = {};
+    $props || $props = {};
+
     return createElementVNode(2, 'div', 'test', 16, null, null, null, function(i) {$refs[\"b\"] = i})
 }"
 ```
@@ -70,6 +94,9 @@
 
 ```
 "function($props, $blocks) {
+    $blocks || $blocks = {};
+    $props || $props = {};
+
     return createElementVNode(2, 'div', 'test', 16, null, null, null, b)
 }"
 ```
@@ -78,6 +105,9 @@
 
 ```
 "function($props, $blocks) {
+    $blocks || $blocks = {};
+    $props || $props = {};
+
     return createElementVNode(2, 'div', 
         createElementVNode(2, 'div', null, 1, \"a\")
     , 2)
@@ -88,6 +118,9 @@
 
 ```
 "function($props, $blocks) {
+    $blocks || $blocks = {};
+    $props || $props = {};
+
     return createElementVNode(2, 'div', [
         createElementVNode(2, 'div', null, 1, \"a\"),
         createElementVNode(2, 'div')
@@ -99,6 +132,9 @@
 
 ```
 "function($props, $blocks) {
+    $blocks || $blocks = {};
+    $props || $props = {};
+
     return createElementVNode(2, 'div', a, 0)
 }"
 ```
@@ -109,6 +145,9 @@
 
 ```
 "function($props, $blocks) {
+    $blocks || $blocks = {};
+    $props || $props = {};
+
     const a = 1;
     const b = 2;
     return createElementVNode(2, 'div', a, 0)
@@ -119,16 +158,39 @@
 
 ```
 "function($props, $blocks) {
+    $blocks || $blocks = {};
+    $props || $props = {};
+
     const a = 1;
     const b = 2;
-    return createElementVNode(2, 'div', () => {
-            return createElementVNode(2, 'span', [
-        '\\n            test\\n            ',
+    return createElementVNode(2, 'div', [
         () => {
-                        return 'a'
+            return (
+                createElementVNode(2, 'span', [
+                    '\\n                test\\n                ',
+                    () => {
+                        return createElementVNode(2, 'i', () => {
+                            return 'a'
+                        }, 0)
                     }
+                ], 0, $className({
+                    a: true,
+                    b: () => {
+                        return 'c'
+                    }
+                }
+                ))
+            )
+        },
+        '\\n    ',
+        createElementVNode(2, 'div', 'test', 16),
+        createElementVNode(2, 'div'),
+        () => {
+            return a;
+        } 
+        ,
+        createElementVNode(32, 'input')
     ], 0)
-        }, 0)
 }"
 ```
 

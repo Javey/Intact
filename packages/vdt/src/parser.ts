@@ -123,14 +123,6 @@ export class Parser {
         let newLine = true;
         let leadSpaces = 0;
 
-        const push = () => {
-            let code = this.getValue(start);
-            // if (spaces) {
-                // code = code.replace(replaceRegExp, '');
-            // }
-            value.push(code);
-        }
-
         while (this.index < this.length) {
             // this.skipJSComment(value, ignoreWhitespaces);
             this.skipJSComment();
@@ -159,7 +151,7 @@ export class Parser {
             } else if (isRoot && this.isJSImport()) {
                 break;
             } else if (ch === '\n') {
-                push();
+                value.push(this.getValue(start));
                 start = this.index + 1;
                 spacesRemain = spaces;
                 newLine = true;
@@ -187,7 +179,7 @@ export class Parser {
             this.updateIndex();
         }
 
-        push();
+        value.push(this.getValue(start));
 
         return {type: Types.JS, value, spaces: leadSpaces, loc};
     }
