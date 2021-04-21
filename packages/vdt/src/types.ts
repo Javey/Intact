@@ -65,7 +65,8 @@ export interface ASTNode {
 
 export interface ASTJS extends ASTNode {
     type: Types.JS
-    value: string
+    value: string[]
+    spaces: number
 }
 
 export interface ASTHoist extends ASTNode {

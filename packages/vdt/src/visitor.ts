@@ -41,11 +41,20 @@ export class Visitor {
     private line = 1;
     private column = 0;
     private indentLevel = 0;
+    // private spaces = '';
+    private spacesStatck: number[] = [];
 
     constructor(nodes: ASTRootChild[]) {
         this.append(`function($props, $blocks) {`);
         this.indent();
+        this.append(`$blocks || $blocks = {};`);
+        this.newline();
+        this.append(`$props || $props = {};`);
+        this.append('\n');
+        this.newline();
+
         this.visit(nodes, true);
+
         this.dedent();
         this.append('}');
     }
@@ -76,6 +85,7 @@ export class Visitor {
             // addWrapper = true;
         // }
 
+        const oldLength = this.spacesStatck.length;
         nodes.forEach((node, i) => {
             // if is root, add `return` keyword
             if (isRoot && i === lastIndex) {
@@ -84,6 +94,11 @@ export class Visitor {
 
             this.visitChild(node, nodes, i);
         });
+        let newLength = this.spacesStatck.length;
+        while (newLength > oldLength) {
+            this.popSpaces();
+            newLength--;
+        }
 
         // if (addWrapper) {
             // this.append(') } catch (e) { error(e) } }.call(this)');
@@ -101,22 +116,17 @@ export class Visitor {
                 return this.visitJSXText(node as ASTText);
             case Types.JS:
                 return this.visitJS(node as ASTJS);
+            case Types.JSXExpression:
+                // this.pushSpaces();
+                this.visit((node as ASTExpression).value, false);
+                // this.popSpaces();
+                return;
         }
 
-        // if (type & Types.JSXElement) {
-            // this.visitJSXElement(node as ASTTag);
-        // } else if (type & Types.JSXComponent) {
-            // this.visitJSXComponent(node as ASTTag);
-        // } else if (type & Types.JSXExpression) {
-            // this.visitJSXExpression(node as ASTExpression);
-        // } else if (type & Types.JSXText) {
-            // this.visitJSXText(node as ASTTag, false);
         // } else if (type & Types.JSXBlock) {
             // this.visitJSXBlock(node as ASTTag);
         // } else if (type & Types.JSXString) {
             // this.visitJSXString(node as ASTString);
-        // } else if (type & Types.JS) {
-            // this.visitJS(node as ASTString);
         // } else if (type & Types.JSImport) {
             // this.visitJSImport(node as ASTString);
         // } else if (type & Types.JSXUnescapeText) {
@@ -130,9 +140,24 @@ export class Visitor {
         // }
     }
 
-    private visitJS(node: ASTJS) {
+    private visitJS(node: ASTJS): number {
         // this.append(this.enterStringExpression ? `(${node.value})` : node.value);
-        this.append(node.value);
+        // this.spaces = '';
+        const lines = node.value;
+        const length = lines.length;
+        for (let i = 0; i < length; i++) {
+            const code = lines[i];
+            this.append(code);
+            if (i !== length - 1) {
+                this.newline();
+            }
+        }
+
+        this.pushSpaces(node.spaces);
+        // this.spaces += ' '.repeat(node.spaces);
+        // this.pushSpaces();
+
+        return node.spaces;
     }
 
     private visitJSImport(node: ASTString) {
@@ -147,7 +172,7 @@ export class Visitor {
             });
         } else {
             this.visitJSXDirective(node, children, index, () => {
-                this.visitJSXElementAttribute(node);
+                this.visitJSXCommonElementNode(node);
             });
         }
     }
@@ -311,11 +336,18 @@ export class Visitor {
                 childrenType = ChildrenTypes.HasTextChildren;
             } else {
                 childrenType = ChildrenTypes.HasVNodeChildren;
+                this.indent();
             }
             this.visitChild(child, nodes, 0);
+            if (childrenType === ChildrenTypes.HasVNodeChildren) {
+                this.dedent();
+            }
         } else {
             this.append('[');
+            this.indent();
+
             childrenType = ChildrenTypes.HasKeyedChildren;
+            const lastIndex = nodes.length - 1;
             nodes.forEach((child, index) => {
                 const type = child.type;
                 // FIXME: should detect JSXVdt & JSXBlock?
@@ -330,16 +362,20 @@ export class Visitor {
                 }
 
                 this.visitChild(child, nodes, index);
-                this.append(',');
+                if (index !== lastIndex) {
+                    this.append(',');
+                    this.newline();
+                }
             });
 
+            this.dedent();
             this.append(']');
         }
 
         return childrenType;
     }
 
-    private visitJSXElementAttribute(node: ASTCommonElement) {
+    private visitJSXCommonElementNode(node: ASTCommonElement) {
         // TODO: createElementVNode methods
         const tag = node.value;
         this.append(`createElementVNode(${getTypeForVNodeElement(tag)}, '${tag}'`);
@@ -393,6 +429,7 @@ export class Visitor {
 
         this.popQueue();
         this.append(')');
+        this.popSpaces();
     }
 
     private visitJSXAttribute(node: ASTElement): 
@@ -550,6 +587,16 @@ export class Visitor {
     }
 
     private newline() {
-        this.append('\n' + `    `.repeat(this.indentLevel));
+        const spaces = this.spacesStatck[this.spacesStatck.length - 1] || 0;
+        this.append('\n' + `    `.repeat(this.indentLevel) + ' '.repeat(spaces));
+    }
+
+    private pushSpaces(spaces: number) {
+        const lastSpaces = this.spacesStatck[this.spacesStatck.length - 1] || 0;
+        this.spacesStatck.push(spaces + lastSpaces);
+    }
+
+    private popSpaces() {
+        this.spacesStatck.pop()!;
     }
 }

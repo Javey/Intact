@@ -21,6 +21,7 @@
   "devDependencies": {
     "@types/benchmark": "^2.1.0",
     "@types/chai": "^4.2.16",
+    "@types/common-tags": "^1.8.0",
     "@types/karma-snapshot": "^0.6.0",
     "@types/mocha": "^8.2.2",
     "@types/sinon": "^10.0.0",
@@ -28,6 +29,7 @@
     "benchmark": "^2.1.4",
     "chai": "^4.3.4",
     "chai-karma-snapshot": "^0.8.0",
+    "common-tags": "^1.8.0",
     "css-loader": "^5.2.1",
     "istanbul-instrumenter-loader": "^3.0.1",
     "karma": "^6.1.1",

@@ -60,29 +60,30 @@ export class Parser {
             this.options = {...defaultOptions, ...options};
         }
 
-        this.ast = this.parse(true);
+        this.ast = this.parse(true, 0);
     }
 
-    private parse(isRoot: true): ASTRootChild[];
-    private parse(isRoot: false): ASTExpressionChild[];
-    private parse(isRoot: boolean): ASTRootChild[] | ASTExpressionChild[] {
+    private parse(isRoot: true, spaces: number): ASTRootChild[];
+    private parse(isRoot: false, spaces: number): ASTExpressionChild[];
+    private parse(isRoot: boolean, spaces: number): ASTRootChild[] | ASTExpressionChild[] {
         const nodes: ASTRootChild[] = [];
         const braces: Braces = {count: 0};
+        // const ignoreWhitespacesRegExp = new RegExp(`^\\s{${this.column}}`);
 
         while (this.index < this.length && braces.count >= 0) {
-            nodes.push(this.advance(braces, isRoot));
+            nodes.push(this.advance(braces, isRoot, spaces));
         }
 
         return nodes;
     }
 
-    private advance(braces: Braces, isRoot: boolean): ASTRootChild {
+    private advance(braces: Braces, isRoot: boolean, spaces: number): ASTRootChild {
         const ch = this.char();
         if (isRoot && this.isJSImport()) {
             return this.scanJSImport();
         } 
         if (ch !== '<') {
-            return this.scanJS(braces, isRoot);
+            return this.scanJS(braces, isRoot, spaces);
         } 
         return this.scanJSX();
     }
@@ -113,12 +114,25 @@ export class Parser {
         return {type: Types.JSHoist, value: this.getValue(start), loc};
     }
 
-    private scanJS(braces: Braces, isRoot: boolean): ASTJS {
-        const start = this.index;
+    private scanJS(braces: Braces, isRoot: boolean, spaces: number): ASTJS {
         const delimiters = this.options.delimiters;
         const loc = this.getLocation();
+        const value: string[] = [];
+        let start = this.index;
+        let spacesRemain = spaces;
+        let newLine = true;
+        let leadSpaces = 0;
+
+        const push = () => {
+            let code = this.getValue(start);
+            // if (spaces) {
+                // code = code.replace(replaceRegExp, '');
+            // }
+            value.push(code);
+        }
 
         while (this.index < this.length) {
+            // this.skipJSComment(value, ignoreWhitespaces);
             this.skipJSComment();
             const ch = this.char();
             let tmp;
@@ -139,10 +153,25 @@ export class Parser {
             ) {
                 // skip tag(<div>) in quotes
                 this.scanString();
+                continue;
             } else if (this.isTagStart()) {
                 break;
             } else if (isRoot && this.isJSImport()) {
                 break;
+            } else if (ch === '\n') {
+                push();
+                start = this.index + 1;
+                spacesRemain = spaces;
+                newLine = true;
+                leadSpaces = 0;
+                this.updateLine();
+            } else if (newLine && ch === ' ') {
+                if (spacesRemain) {
+                    spacesRemain--;
+                    start++;
+                } else {
+                    leadSpaces++;
+                }
             } else {
                 if (ch === '{') {
                     braces.count++;
@@ -152,14 +181,15 @@ export class Parser {
                     // for parse break
                     braces.count--;
                     break;
-                } else if (ch === '\n') {
-                    this.updateLine();
                 }
-                this.updateIndex();
+                newLine = false;
             }
+            this.updateIndex();
         }
 
-        return {type: Types.JS, value: this.getValue(start), loc};
+        push();
+
+        return {type: Types.JS, value, spaces: leadSpaces, loc};
     }
 
     private scanJSX(): ASTElement | ASTComment {
@@ -311,7 +341,7 @@ export class Parser {
                     type: Types.JSXExpression,
                     value: [{
                         type: Types.JS,
-                        value: 'true',
+                        value: ['true'],
                     }],
                     unescaped: false,
                     loc: this.getLocation(),
@@ -492,7 +522,7 @@ export class Parser {
         } else if (isTextTag) {
             child = this.scanJSXText([endTag, delimiters[0]]);
         } else if (this.isTagStart()) {
-            child = this.parseJSXElement();
+            child = this.scanJSX();
             this.skipWhitespaceBetweenTags(endTag);
         } else {
             child = this.scanJSXText([() => {
@@ -551,10 +581,10 @@ export class Parser {
     private parseJSXExpression(): ASTExpression {
         const delimiters = this.options.delimiters;
 
+        const loc = this.getLocation();
+
         this.expect(delimiters[0]);
         this.skipWhitespaceAndJSComment();
-
-        const loc = this.getLocation();
         
         let unescaped = false;
         let value: ASTExpression['value'];
@@ -569,7 +599,7 @@ export class Parser {
         if (this.isExpect(delimiters[1])) {
             value = [];
         } else {
-            value = this.parse(false);
+            value = this.parse(false, loc.column - 1);
         }
 
         this.expect(delimiters[1], `Unclosed delimiter`, loc);
@@ -581,8 +611,8 @@ export class Parser {
         return {line: this.line, column: this.column};
     }
 
-    private getValue(start: number): string {
-        return this.source.slice(start, this.index);
+    private getValue(start: number, index = this.index): string {
+        return this.source.slice(start, index);
     }
 
     private char(index = this.index) {

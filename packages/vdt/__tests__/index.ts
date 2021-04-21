@@ -1,5 +1,6 @@
 import {Parser} from '../src/parser';
 import {Visitor} from '../src/visitor';
+import {stripIndent} from 'common-tags';
 
 function generate(template: string) {
     const parser = new Parser(template);
@@ -15,6 +16,12 @@ function test(template: string) {
 }
 
 describe('Generate', () => {
+    afterEach(function() {
+        if (this.currentTest!.err) {
+            console.error(this.currentTest!.err);
+        }
+    });
+
     describe('Common Element', () => {
         it('should generate common element without children', () => {
             test(`<div></div>`);
@@ -51,5 +58,67 @@ describe('Generate', () => {
         it('should generate common elememt with expression ref', () => {
             test(`<div ref={b}>test</div>`);
         });
+
+        it('should generate common element with element children', () => {
+            test(`<div><div class="a"></div></div>`);
+        });
+
+        it('should generate common element with multiple element children', () => {
+            test(`<div><div class="a"></div><div></div></div>`);
+        });
+
+        it('should generate common element with expression children', () => {
+            test(`<div>{a}</div>`);
+        });
+    });
+
+    describe('JS', () => {
+        it('should generate js code', () => {
+            test(stripIndent`
+                const a = 1;
+                const b = 2;
+                <div>{a}</div>
+            `);
+        });
+
+        it('should generate js expression code', () => {
+            test(stripIndent`
+                const a = 1;
+                const b = 2;
+                <div>
+                    {() => {
+                        return (
+                            <span 
+                                class={
+                                    {
+                                        a: true,
+                                        b: () => {
+                                            return 'c'
+                                        }
+                                    }
+                                }
+                            >
+                                test
+                                {() => {
+                                    return <i>
+                                        {() => {
+                                            return 'a'
+                                        }}
+                                    </i>
+                                }}
+                            </span>
+                        )
+                    }}
+                    {<div>test</div>}
+                    <div></div>
+                    {
+                        () => {
+                            return a;
+                        } 
+                    }
+                    <input />
+                </div>
+            `);
+        })
     });
 });
