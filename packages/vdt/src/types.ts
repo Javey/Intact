@@ -9,6 +9,7 @@ export const enum Types {
     JSXVdt,
     JSXBlock,
     JSXExpression,
+    JSXDirectiveIf,
 
     JSXAttribute,
     JSXString,
@@ -43,10 +44,9 @@ export interface ASTText extends ASTNode {
 export interface ASTBaseElement extends ASTNode {
     value: string
     attributes: (ASTAttribute | ASTExpression)[]
-    directives: Record<string, ASTAttribute>, 
+    directives: {[key in DirectiveCommon]?: ASTAttribute} & {[key in DirectiveIf]?: ASTDirectiveIf}, 
     children: ASTElementChild[]
     keyed: boolean
-    // skip?: boolean
 }
 
 export interface ASTCommonElement extends ASTBaseElement {
@@ -83,6 +83,13 @@ export interface ASTAttribute extends ASTNode {
     value: ASTAttributeValue
 }
 
+export interface ASTDirectiveIf extends ASTNode {
+    type: Types.JSXDirectiveIf,
+    name: string,
+    value: ASTAttributeTemplateValue,
+    next: ASTElement | null,
+}
+
 export interface ASTString extends ASTNode {
     type: Types.JSXString
     value: string
@@ -106,6 +113,9 @@ export const enum Directives {
     Model = 'v-model',
     Raw = 'v-raw',
 }
+
+export type DirectiveIf = Directives.If | Directives.ElseIf | Directives.Else
+export type DirectiveCommon = Exclude<Directives, DirectiveIf>
 
 export interface DirectiveFor {
     data: ASTExpression,

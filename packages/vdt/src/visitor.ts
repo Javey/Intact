@@ -21,6 +21,7 @@ import {
     ASTExpressionChild,
     ASTAttributeTemplateValue,
     ASTAttributeValue,
+    ASTDirectiveIf,
     Directives,
     DirectiveFor,
     Options,
@@ -99,7 +100,7 @@ export class Visitor {
                 this.append('return ');
             }
 
-            this.visitNode(node, nodes, i);
+            this.visitNode(node);
         });
         let newLength = this.spacesStatck.length;
         this.expressionSpacesStack.pop();
@@ -113,13 +114,13 @@ export class Visitor {
         // }
     }
 
-    private visitNode(node: ASTNode, children: ASTChild[], index: number) {
+    private visitNode(node: ASTNode) {
         const type = node.type;
         switch (type) {
             case Types.JSXCommonElement:
-                return this.visitJSXCommonElement(node as ASTCommonElement, children, index);
+                return this.visitJSXCommonElement(node as ASTCommonElement);
             case Types.JSXComponent:
-                return this.visitJSXComponent(node as ASTComponent, children, index);
+                return this.visitJSXComponent(node as ASTComponent);
             // TODO: merge text and string
             case Types.JSXText:
                 return this.visitJSXText(node as ASTText);
@@ -174,21 +175,21 @@ export class Visitor {
         this.hoist.push(node.value);
     }
 
-    private visitJSXCommonElement(node: ASTCommonElement, children: ASTChild[], index: number) {
+    private visitJSXCommonElement(node: ASTCommonElement) {
         if (node.value === 'template') {
             // <template> is a fake tag, we only need handle its children and directives
-            this.visitJSXDirective(node, children, index, () => {
+            this.visitJSXDirective(node, () => {
                 this.visitJSXChildren(node.children);
             });
         } else {
-            this.visitJSXDirective(node, children, index, () => {
+            this.visitJSXDirective(node, () => {
                 this.visitJSXCommonElementNode(node);
             });
         }
     }
 
-    private visitJSXComponent(node: ASTComponent, children: ASTChild[], index: number) {
-        this.visitJSXDirective(node, children, index, () => {
+    private visitJSXComponent(node: ASTComponent) {
+        this.visitJSXDirective(node, () => {
             const {blocks, children} = this.getJSXBlocks(node);
             if (children.length) {
                 node.attributes.push({
@@ -256,24 +257,23 @@ export class Visitor {
     }
 
     private visitString(node: ASTText | ASTString, noQuotes: boolean) {
-        // let value = node.value.replace(/([\'\"\\])/g, '\\$1').replace(/[\r\n]/g, '\\n');
-        let value = node.value;
+        let value = node.value.replace(/([\'\"\\])/g, '\\$1').replace(/[\r\n]/g, '\\n');
         if (!noQuotes) {
             value = `'${value}'`;
         }
         this.append(value);
     }
 
-    private visitJSXDirective(node: ASTElement, children: ASTChild[], index: number, body: () => void) {
+    private visitJSXDirective(node: ASTElement, body: () => void) {
         const directiveFor: DirectiveFor = {} as DirectiveFor;
-        let directiveIf: ASTAttribute | null = null;
+        let directiveIf: ASTDirectiveIf | null = null;
 
         const directives = node.directives;
-        for (let key in directives) {
-            const directive = directives[key];
-            switch (directive.name) {
+        for (const key in directives) {
+            const directive = directives[key as Directives]!;
+            switch (key) {
                 case Directives.If:
-                    directiveIf = directive;
+                    directiveIf = directive as ASTDirectiveIf;
                     break;
                 case Directives.For:
                     directiveFor.data = directive.value as ASTExpression;
@@ -293,13 +293,13 @@ export class Visitor {
         if (directiveFor.data) {
             if (directiveIf) {
                 this.visitJSXDirectiveFor(directiveFor, () => {
-                    this.visitJSXDirectiveIf(directiveIf!, node, children, index, body);
+                    this.visitJSXDirectiveIf(directiveIf!, body);
                 });
             } else {
                 this.visitJSXDirectiveFor(directiveFor, body);
             }
         } else if (directiveIf) {
-            this.visitJSXDirectiveIf(directiveIf, node, children, index, body);
+            this.visitJSXDirectiveIf(directiveIf, body);
         } else {
             body();
         }
@@ -330,7 +330,7 @@ export class Visitor {
         this.append('}, $this)');
     }
 
-    private visitJSXDirectiveIf(directive: ASTAttribute, node: ASTElement, children: ASTChild[], index: number, body: () => void) {
+    private visitJSXDirectiveIf(directive: ASTDirectiveIf, body: () => void) {
         const indentLevel = this.indentLevel;
         let hasElse = false;
 
@@ -341,37 +341,28 @@ export class Visitor {
         this.append(' :');
         this.newline();
 
-        for (let next: ASTChild | undefined = children[++index]; next; next = children[++index]) {
-            if (next.type === Types.JSXComment) continue;
-            if (!isElementNode(next)) break;
-
+        let next: ASTElement | null = directive.next;
+        while (next) {
             const nextDirectives = next.directives;
             const elseIfDir = nextDirectives[Directives.ElseIf];
-            const elseDir = nextDirectives[Directives.Else];
+            if (elseIfDir) {
+                this.visitJSXAttributeValue(elseIfDir.value);
+                this.append(' ?');
+                this.indent();
+                this.visitNode(next);
+                this.append(' :');
+                this.newline();
+                next = elseIfDir.next;
+                continue;
+            } 
 
-            if (elseIfDir || elseDir) {
-                // remove this node
-                children.splice(index, 1);
-                index--;
-
-                if (elseIfDir) {
-                    this.visitJSXAttributeValue(elseIfDir.value);
-                    this.append(' ?');
-                    this.indent();
-                    this.visitNode(next, children, index);
-                    this.append(' :');
-                    this.newline();
-                    continue;
-                } 
-                if (elseDir) {
-                    this.visitNode(next, children, index);
-                    hasElse = true;
-                }
+            if (nextDirectives[Directives.Else]) {
+                this.visitNode(next);
+                hasElse = true;
             }
-
             break;
         }
-        
+
         if (!hasElse) {
             this.append('undefined');
         }
@@ -401,7 +392,7 @@ export class Visitor {
                 this.append('(');
                 this.indent();
             }
-            this.visitNode(child, nodes, 0);
+            this.visitNode(child);
             if (childrenType === ChildrenTypes.HasVNodeChildren) {
                 this.dedent();
                 this.append(')');
@@ -411,7 +402,7 @@ export class Visitor {
             this.indent();
 
             childrenType = ChildrenTypes.HasKeyedChildren;
-            // const lastIndex = nodes.length - 1;
+            const lastIndex = nodes.length - 1;
             nodes.forEach((child, index) => {
                 const type = child.type;
                 // FIXME: should detect JSXVdt & JSXBlock?
@@ -425,10 +416,8 @@ export class Visitor {
                     }
                 }
 
-                this.visitNode(child, nodes, index);
-                // maybe node has 'if' directive, and 'else-if / else' node will been removed,
-                // so we get length at here
-                if (index !== nodes.length - 1) {
+                this.visitNode(child);
+                if (index !== lastIndex) {
                     this.append(',');
                     this.newline();
                 }
@@ -581,10 +570,8 @@ export class Visitor {
     private visitJSXAttributeValue(value: ASTAttributeValue) {
         if (isArray(value)) {
             this.visitJSXChildren(value);
-        // } else if (value.type === Types.JSXString) {
-            // this.append(value.value);
         } else {
-            this.visitNode(value, [], 0);
+            this.visitNode(value);
         }
     }
 

@@ -120,7 +120,7 @@ export function validateDirectiveIF(children: ASTChild[], loc: SourceLocation, s
             const directives = child.directives;
             if (directives[Directives.Else] || directives[Directives.ElseIf]) {
                 if (!inIf) {
-                    throwError(`'${Directives.Else || Directives.ElseIf}' must be lea with 'v-if' or 'v-else-if'`, loc, source); 
+                    throwError(`'${Directives.Else || Directives.ElseIf}' must be lead with 'v-if' or 'v-else-if'`, loc, source); 
                 }
             } else if (directives[Directives.If]) {
                 inIf = true;

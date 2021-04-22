@@ -19,7 +19,10 @@ import {
     ASTElementChild,
     ASTElement,
     ASTExpressionChild,
+    ASTDirectiveIf,
     Directives,
+    DirectiveIf,
+    DirectiveCommon,
     Options,
 } from './types';
 import {
@@ -32,10 +35,10 @@ import {
     isWhiteSpaceExceptLinebreak,
     directivesMap,
     validateDirectiveValue,
-    validateDirectiveIF,
     validateDirectiveModel,
     throwError,
     defaultOptions,
+    isElementNode,
 } from './helpers';
 
 type Braces = {count: number};
@@ -272,7 +275,6 @@ export class Parser {
         const children = this.parseJSXChildren(value, type, attributes, hasVRaw, loc);
 
         if (process.env.NODE_ENV !== 'production') {
-            validateDirectiveIF(children, loc, this.source);
             const model = directives[Directives.Model];
             if (model) {
                 validateDirectiveModel(value, type, attributes, model.loc, this.source);
@@ -303,7 +305,12 @@ export class Parser {
     }
 
     private parseJSXAttribute(tag: string, type: Types): 
-        {attributes: ASTElement['attributes'], directives: ASTElement['directives'], keyed: boolean, hasVRaw: boolean} 
+        {
+            attributes: ASTElement['attributes'],
+            directives: ASTElement['directives'],
+            keyed: boolean,
+            hasVRaw: boolean
+        } 
     {
         const attributes: ASTElement['attributes'] = [];
         const directives: ASTElement['directives'] = {};
@@ -347,18 +354,31 @@ export class Parser {
                 } as ASTExpression;
             }
 
-            const attr = {type: Types.JSXAttribute, name, value, loc} as ASTAttribute;
-            if (directivesMap[name as Directives]) {
-                if (process.env.NODE_ENV !== 'produdction') {
+            if (process.env.NODE_ENV !== 'produdction') {
+                if (directivesMap[name as Directives]) {
                     validateDirectiveValue(name, value.type, tag, type, this.source, value.loc);
                 }
-                if (name === Directives.Raw) {
-                    hasVRaw = true;
-                }
+            }
 
-                directives[name as Directives] = attr;
+            if (name === Directives.If || name === Directives.ElseIf || name === Directives.Else) {
+                directives[name] = {
+                    type: Types.JSXDirectiveIf,
+                    name,
+                    value,
+                    next: null,
+                    loc,
+                };
             } else {
-                attributes.push(attr);
+                const attr = {type: Types.JSXAttribute, name, value, loc} as ASTAttribute;
+                if (directivesMap[name as Directives]) {
+                    if (name === Directives.Raw) {
+                        hasVRaw = true;
+                    }
+
+                    directives[name as DirectiveCommon] = attr;
+                } else {
+                    attributes.push(attr);
+                }
             }
         }
 
@@ -499,11 +519,34 @@ export class Parser {
             }
         } else {
             this.skipWhitespaceBetweenTags(endTag);
+            let directiveIf: ASTDirectiveIf | null = null;
             while (this.index < this.length) {
                 if (this.isExpect(endTag)) {
                     break;
                 }
-                children.push(this.parseJSXChild(endTag, isTextTag));
+                const child = this.parseJSXChild(endTag, isTextTag);
+                if (isElementNode(child)) {
+                    const directives = child.directives;
+                    let tmp: ASTDirectiveIf | undefined;
+                    let isElse = false;
+
+                    if (tmp = directives[Directives.If]) {
+                        directiveIf = tmp;
+                    } else if (
+                        (tmp = directives[Directives.ElseIf]) ||
+                        (tmp = directives[Directives.Else]) && (isElse = true)
+                    ) {
+                        if (process.env.NODE_ENV !== 'production') {
+                            if (!directiveIf) {
+                                throwError(`'${tmp.name}' must be lead with 'v-if' or 'v-else-if'`, child.loc, this.source); 
+                            }
+                        }
+                        directiveIf!.next = child;
+                        directiveIf = isElse ? null : tmp;
+                        continue;
+                    }
+                }
+                children.push(child);
             }
         }
         this.parseJSXClosingTag(endTag, loc);
