@@ -23,57 +23,146 @@ describe('Generate', () => {
     });
 
     describe('Common Element', () => {
-        it('should generate common element without children', () => {
+        it('without children', () => {
             test(`<div></div>`);
         });
 
-        it('should generate common element with string children', () => {
+        it('string children', () => {
             test(`<div>test</div>`);
         });
 
-        it('should generate common element with props', () => {
+        it('props', () => {
             test(`<div id="1">test</div>`);
         });
 
-        it('should generate common elememt with string className', () => {
+        it('string className', () => {
             test(`<div class="a">test</div>`);
         });
 
-        it('should generate common element with expression className', () => {
+        it('expression className', () => {
             test(`<div class={a}>test</div>`);
         });
 
-        it('should generate common element with string key', () => {
+        it('string key', () => {
             test(`<div key="a">test</div>`);
         });
 
-        it('should generate common element with expression key', () => {
-            test(`<div key="a">test</div>`);
+        it('expression key', () => {
+            test(`<div key={a}>test</div>`);
         });
 
-        it('should generate common element with string ref', () => {
+        it('string ref', () => {
             test(`<div ref="b">test</div>`);
         });
 
-        it('should generate common elememt with expression ref', () => {
+        it('expression ref', () => {
             test(`<div ref={b}>test</div>`);
         });
 
-        it('should generate common element with element children', () => {
+        it('element children', () => {
             test(`<div><div class="a"></div></div>`);
         });
 
-        it('should generate common element with multiple element children', () => {
+        it('multiple element children', () => {
             test(`<div><div class="a"></div><div></div></div>`);
         });
 
-        it('should generate common element with expression children', () => {
+        it('expression children', () => {
             test(`<div>{a}</div>`);
         });
     });
 
+    describe('Component', () => {
+        it('without children', () => {
+            test(`<Div></Div>`);
+        });
+
+        it('string children', () => {
+            test(`<Div>test</Div>`);
+        });
+
+        it('props', () => {
+            test(`<Div id="1">test</Div>`);
+        });
+
+        it('string className', () => {
+            test(`<Div class="a">test</Div>`);
+        });
+
+        it('expression className', () => {
+            test(`<Div class={a}>test</Div>`);
+        });
+
+        it('string key', () => {
+            test(`<Div key="a">test</Div>`);
+        });
+
+        it('expression key', () => {
+            test(`<Div key={a}>test</Div>`);
+        });
+
+        it('string ref', () => {
+            test(`<Div ref="b">test</Div>`);
+        });
+
+        it('expression ref', () => {
+            test(`<Div ref={b}>test</Div>`);
+        });
+
+        it('element children', () => {
+            test(`<Div><div class="a"></div></Div>`);
+        });
+
+        it('multiple element children', () => {
+            test(`<Div><div class="a"></div><div></div></Div>`);
+        });
+
+        it('expression children', () => {
+            test(`<Div>{a}</Div>`);
+        });
+
+        it('component children', () => {
+            test(`<Div><Span /></Div>`);
+        });
+
+        it('block children', () => {
+            test(stripIndent`
+                <Div>
+                    <b:test>
+                        <A>test</A>
+                    </b:test>
+                </Div>
+            `)
+        });
+    });
+
+    describe('Diretives', () => {
+        it('v-if', () => {
+            test(stripIndent`
+                <div>
+                    <div v-if={a}>a</div>
+                    <div v-else-if={b}>b</div>
+                    <div v-else-if={c}>c</div>
+                    <div v-else>d</div>
+                </div>
+            `);
+        });
+
+        it('v-for', () => {
+            test(`<div><div v-for={a}></div></div>`);
+        });
+
+        it('v-for-key v-for-value', () => {
+            test(`<div><div v-for={a} v-for-key="a" v-for-value="b"></div></div>`);
+        });
+
+        it('should genreate v-if and v-for', () => {
+            test(`<div><div v-for={a} v-if={value}></div></div>`);
+        });
+    });
+
     describe('JS', () => {
-        it('should generate js code', () => {
+        it('js code', () => {
             test(stripIndent`
                 const a = 1;
                 const b = 2;
@@ -83,7 +172,7 @@ describe('Generate', () => {
     });
 
     describe('Beautify', () => {
-        it('should beautify expression', () => {
+        it('expression', () => {
             test(stripIndent`
                 <div>
                     {() => {
@@ -93,7 +182,7 @@ describe('Generate', () => {
             `);
         });
 
-        it('should beautify expression that has element sibling', () => {
+        it('expression that has element sibling', () => {
             test(stripIndent`
                 <div>
                     {() => {
@@ -104,7 +193,7 @@ describe('Generate', () => {
             `);
         });
 
-        it('should beautify expression that return element', () => {
+        it('expression that return element', () => {
             test(stripIndent`
                 <div>
                     {() => {
@@ -114,7 +203,7 @@ describe('Generate', () => {
             `);
         });
 
-        it('should beautify js expression code', () => {
+        it('js expression code', () => {
             test(stripIndent`
                 const a = 1;
                 const b = 2;

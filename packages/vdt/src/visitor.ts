@@ -19,18 +19,22 @@ import {
     ASTElement,
     ASTElementChild,
     ASTExpressionChild,
+    ASTAttributeTemplateValue,
+    ASTAttributeValue,
     Directives,
     DirectiveFor,
     Options,
 } from './types';
-import {getTypeForVNodeElement, ChildrenTypes} from 'misstime';
+import {getTypeForVNodeElement, ChildrenTypes, Types as VNodeTypes} from 'misstime';
 import {isElementNode, getAttrName} from './helpers';
+import {isArray} from 'intact-shared';
 
 const FUNCTION_HEAD = `
 function($props, $blocks) {
     $blocks || ($blocks = {});
     $props || ($props = {});
 `;
+const fakeLoc: SourceLocation = {line: 0, column: 0};
 
 export class Visitor {
     private enterStringExpression: boolean = false;
@@ -56,6 +60,7 @@ export class Visitor {
 
         this.visit(nodes, true);
 
+        this.append(';');
         this.dedent();
         this.append('}');
     }
@@ -94,7 +99,7 @@ export class Visitor {
                 this.append('return ');
             }
 
-            this.visitChild(node, nodes, i);
+            this.visitNode(node, nodes, i);
         });
         let newLength = this.spacesStatck.length;
         this.expressionSpacesStack.pop();
@@ -108,25 +113,28 @@ export class Visitor {
         // }
     }
 
-    private visitChild(node: ASTChild, children: ASTChild[], index: number) {
+    private visitNode(node: ASTNode, children: ASTChild[], index: number) {
         const type = node.type;
         switch (type) {
             case Types.JSXCommonElement:
                 return this.visitJSXCommonElement(node as ASTCommonElement, children, index);
             case Types.JSXComponent:
-                return this.visitJSXComponent(node as ASTComponent);
+                return this.visitJSXComponent(node as ASTComponent, children, index);
+            // TODO: merge text and string
             case Types.JSXText:
                 return this.visitJSXText(node as ASTText);
             case Types.JS:
                 return this.visitJS(node as ASTJS);
             case Types.JSXExpression:
                 return this.visit((node as ASTExpression).value, false);
+            case Types.JSXString:
+                return this.visitJSXString(node as ASTString);
+            case Types.JSXBlock:
+                return this.visitJSXBlock(node as ASTBlock);
         }
 
         // } else if (type & Types.JSXBlock) {
             // this.visitJSXBlock(node as ASTTag);
-        // } else if (type & Types.JSXString) {
-            // this.visitJSXString(node as ASTString);
         // } else if (type & Types.JSImport) {
             // this.visitJSImport(node as ASTString);
         // } else if (type & Types.JSXUnescapeText) {
@@ -179,8 +187,40 @@ export class Visitor {
         }
     }
 
-    private visitJSXComponent(node: ASTComponent) {
+    private visitJSXComponent(node: ASTComponent, children: ASTChild[], index: number) {
+        this.visitJSXDirective(node, children, index, () => {
+            const {blocks, children} = this.getJSXBlocks(node);
+            if (children.length) {
+                node.attributes.push({
+                    type: Types.JSXAttribute,
+                    name: 'children',
+                    value: children,
+                    loc: fakeLoc,
+                });
+            }
+            if (blocks.length) {
+                node.attributes.push({
+                    type: Types.JSXAttribute,
+                    name: '_blocks',
+                    value: blocks,
+                    loc: fakeLoc,
+                });
+            }
 
+            // TODO: createComponentVNode
+            this.append(`$ccv(${node.value}`);
+
+            this.pushQueue();
+            this.append(', ');
+            const {className, key, ref, hasProps} = this.visitJSXAttribute(node);
+
+            if (hasProps) {
+                this.flush(this.popQueue());
+                this.pushQueue();
+            }
+
+            this.visitKeyAndRef(key, ref);
+        });
     }
 
     private visitJSXText(node: ASTText) {
@@ -212,11 +252,12 @@ export class Visitor {
     }
 
     private visitJSXString(node: ASTString) {
-        this.visitString(node, true);
+        this.visitString(node, false);
     }
 
     private visitString(node: ASTText | ASTString, noQuotes: boolean) {
-        let value = node.value.replace(/([\'\"\\])/g, '\\$1').replace(/[\r\n]/g, '\\n');
+        // let value = node.value.replace(/([\'\"\\])/g, '\\$1').replace(/[\r\n]/g, '\\n');
+        let value = node.value;
         if (!noQuotes) {
             value = `'${value}'`;
         }
@@ -265,7 +306,7 @@ export class Visitor {
     }
 
     private visitJSXDirectiveFor(directive: DirectiveFor, body: () => void) {
-        // TODO: $map method
+        // TODO: $map $this
         this.append('$map(');
         this.visitJSXAttributeValue(directive.data);
         this.append(', function(');
@@ -280,44 +321,62 @@ export class Visitor {
         } else {
             this.append('key');
         }
-        this.append(') { return');
+        this.append(') {'); 
+        this.indent();
+        this.append('return ');
         body();
-        this.append('; }, this)');
+        this.append(';');
+        this.dedent();
+        this.append('}, $this)');
     }
 
     private visitJSXDirectiveIf(directive: ASTAttribute, node: ASTElement, children: ASTChild[], index: number, body: () => void) {
+        const indentLevel = this.indentLevel;
         let hasElse = false;
 
         this.visitJSXAttributeValue(directive.value);
-        this.append(' ? ');
+        this.append(' ?');
+        this.indent();
         body();
-        this.append(' : ');
+        this.append(' :');
+        this.newline();
 
         for (let next: ASTChild | undefined = children[++index]; next; next = children[++index]) {
             if (next.type === Types.JSXComment) continue;
             if (!isElementNode(next)) break;
 
             const nextDirectives = next.directives;
-            const elseIf = nextDirectives[Directives.ElseIf];
+            const elseIfDir = nextDirectives[Directives.ElseIf];
+            const elseDir = nextDirectives[Directives.Else];
 
-            if (elseIf) {
-                this.visitJSXAttributeValue(elseIf.value);
-                this.append(' ? ');
-                this.visitChild(next, children, index);
-                this.append(' : ');
-            } else if (nextDirectives[Directives.Else]) {
-                this.visitChild(next, children, index);
-                hasElse = true;
+            if (elseIfDir || elseDir) {
+                // remove this node
+                children.splice(index, 1);
+                index--;
+
+                if (elseIfDir) {
+                    this.visitJSXAttributeValue(elseIfDir.value);
+                    this.append(' ?');
+                    this.indent();
+                    this.visitNode(next, children, index);
+                    this.append(' :');
+                    this.newline();
+                    continue;
+                } 
+                if (elseDir) {
+                    this.visitNode(next, children, index);
+                    hasElse = true;
+                }
             }
-
-            // remove this node
-            children.splice(index, 1);
-            index--;
 
             break;
         }
         
-        if (!hasElse) this.append('undefined');
+        if (!hasElse) {
+            this.append('undefined');
+        }
+
+        this.indentLevel = indentLevel;
     }
 
     private visitJSXChildren(nodes: ASTChild[]): ChildrenTypes {
@@ -331,6 +390,7 @@ export class Visitor {
         if (length === 1) {
             const child = nodes[0];
             const type = child.type;
+            // TODO: v-if v-for
             if (type === Types.JSXExpression) {
                 // if has expression, then we can not detect children's type
                 childrenType = ChildrenTypes.UnknownChildren;
@@ -338,18 +398,20 @@ export class Visitor {
                 childrenType = ChildrenTypes.HasTextChildren;
             } else {
                 childrenType = ChildrenTypes.HasVNodeChildren;
+                this.append('(');
                 this.indent();
             }
-            this.visitChild(child, nodes, 0);
+            this.visitNode(child, nodes, 0);
             if (childrenType === ChildrenTypes.HasVNodeChildren) {
                 this.dedent();
+                this.append(')');
             }
         } else {
             this.append('[');
             this.indent();
 
             childrenType = ChildrenTypes.HasKeyedChildren;
-            const lastIndex = nodes.length - 1;
+            // const lastIndex = nodes.length - 1;
             nodes.forEach((child, index) => {
                 const type = child.type;
                 // FIXME: should detect JSXVdt & JSXBlock?
@@ -363,8 +425,10 @@ export class Visitor {
                     }
                 }
 
-                this.visitChild(child, nodes, index);
-                if (index !== lastIndex) {
+                this.visitNode(child, nodes, index);
+                // maybe node has 'if' directive, and 'else-if / else' node will been removed,
+                // so we get length at here
+                if (index !== nodes.length - 1) {
                     this.append(',');
                     this.newline();
                 }
@@ -380,7 +444,7 @@ export class Visitor {
     private visitJSXCommonElementNode(node: ASTCommonElement) {
         // TODO: createElementVNode methods
         const tag = node.value;
-        this.append(`createElementVNode(${getTypeForVNodeElement(tag)}, '${tag}'`);
+        this.append(`$cev(${getTypeForVNodeElement(tag)}, '${tag}'`);
 
         this.pushQueue();
         this.append(', ');
@@ -410,41 +474,22 @@ export class Visitor {
             this.flush(this.popQueue());
             this.pushQueue();
         }
-        this.append(', ');
 
-        if (key) {
-            this.flush(this.popQueue());
-            this.visitJSXAttributeValue(key);
-            this.pushQueue();
-        } else {
-            this.append('null');
-        }
-
-        this.append(', ');
-        if (ref) {
-            this.flush(this.popQueue());
-            this.visitJSXAttributeRef(ref);
-            this.pushQueue();
-        } else {
-            this.append('null');
-        }
-
-        this.popQueue();
-        this.append(')');
+        this.visitKeyAndRef(key, ref);
     }
 
     private visitJSXAttribute(node: ASTElement): 
         {
-            className: ASTString | ASTExpression | null,
-            key: ASTString | ASTExpression | null,
-            ref: ASTString | ASTExpression | null,
+            className: ASTAttributeTemplateValue | null,
+            key: ASTAttributeTemplateValue | null,
+            ref: ASTAttributeTemplateValue | null,
             hasProps: boolean,
         }
     {
         const attributes = node.attributes;
-        let className: ASTString | ASTExpression | null = null;
-        let key: ASTString | ASTExpression | null = null;
-        let ref: ASTString | ASTExpression | null = null;
+        let className: ASTAttributeTemplateValue | null = null;
+        let key: ASTAttributeTemplateValue | null = null;
+        let ref: ASTAttributeTemplateValue | null = null;
 
         if (!attributes.length) {
             this.append('null');
@@ -455,9 +500,11 @@ export class Visitor {
         const addAttribute = (name?: string) => {
             if (isFirstAttr) {
                 this.append('{');
+                this.indent();
                 isFirstAttr = false;
             } else {
                 this.append(', ');
+                this.newline();
             }
             if (name) {
                 this.append(`'${name}': `);
@@ -479,23 +526,23 @@ export class Visitor {
                 case 'className':
                     if (!isCommonElement) {
                         addAttribute(name);
-                        this.visitJSXAttributeClassName(attr.value);
+                        this.visitJSXAttributeClassName(attr.value as ASTAttributeTemplateValue);
                     }
-                    className = attr.value;
+                    className = attr.value as ASTAttributeTemplateValue;
                     break;
                 case 'key':
                     if (!isCommonElement) {
                         addAttribute(name);
-                        this.visitJSXAttributeValue(attr.value);
+                        this.visitJSXAttributeValue(attr.value as ASTAttributeTemplateValue);
                     }
-                    key = attr.value;
+                    key = attr.value as ASTAttributeTemplateValue;
                     break;
                 case 'ref':
                     if (!isCommonElement) {
                         addAttribute(name);
-                        this.visitJSXAttributeRef(attr.value);
+                        this.visitJSXAttributeRef(attr.value as ASTAttributeTemplateValue);
                     }
-                    ref = attr.value;
+                    ref = attr.value as ASTAttributeTemplateValue;
                     break;
                 case 'type':
                     // save the type for v-model of input element
@@ -511,6 +558,7 @@ export class Visitor {
         });
 
         if (!isFirstAttr) {
+            this.dedent();
             this.append('}');
         } else {
             this.append('null');
@@ -519,7 +567,7 @@ export class Visitor {
         return {className, key, ref, hasProps: !isFirstAttr};
     }
 
-    private visitJSXAttributeClassName(value: ASTString | ASTExpression) {
+    private visitJSXAttributeClassName(value: ASTAttributeTemplateValue) {
         if (value.type === Types.JSXExpression) {
             // TODO: $className
             this.append('$className(');
@@ -530,23 +578,62 @@ export class Visitor {
         }
     }
 
-    private visitJSXAttributeValue(value: ASTString | ASTExpression) {
-        if (value.type === Types.JSXString) {
-            this.append(value.value);
+    private visitJSXAttributeValue(value: ASTAttributeValue) {
+        if (isArray(value)) {
+            this.visitJSXChildren(value);
+        // } else if (value.type === Types.JSXString) {
+            // this.append(value.value);
         } else {
-            this.visit(value.value, false);
+            this.visitNode(value, [], 0);
         }
     }
 
-    private visitJSXAttributeRef(value: ASTString | ASTExpression) {
+    private visitJSXAttributeRef(value: ASTAttributeTemplateValue) {
         if (value.type === Types.JSXString) {
-            // TODO: $refs
+            // TODO: $refs and extract ref
             this.append(`function(i) {$refs[`);
             this.visitJSXAttributeValue(value);
             this.append(`] = i}`);
         } else {
             this.visit(value.value, false);
         }
+    }
+
+    private getJSXBlocks(node: ASTComponent) {
+        const blocks: ASTBlock[] = [];
+        const children: ASTElementChild[] = [];
+        node.children.forEach(child => {
+            if (child.type === Types.JSXBlock) {
+                blocks.push(child);
+            } else {
+                children.push(child);
+            }
+        });
+
+        return {blocks, children};
+    }
+
+    private visitKeyAndRef(key: ASTAttributeTemplateValue | null, ref: ASTAttributeTemplateValue | null) {
+        this.append(', ');
+        if (key) {
+            this.flush(this.popQueue());
+            this.visitJSXAttributeValue(key);
+            this.pushQueue();
+        } else {
+            this.append('null');
+        }
+
+        this.append(', ');
+        if (ref) {
+            this.flush(this.popQueue());
+            this.visitJSXAttributeRef(ref);
+            this.pushQueue();
+        } else {
+            this.append('null');
+        }
+
+        this.popQueue();
+        this.append(')');
     }
 
     private append(code: string) {

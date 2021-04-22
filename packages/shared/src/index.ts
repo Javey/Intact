@@ -40,7 +40,7 @@ export function isObject(o: any): o is object {
 }
 
 export const ERROR_MSG = 'a runtime error occured! Use Intact in development environment to find the error.';
-export function throwError(message?: string) {
+export function throwError(message?: string): never {
     if (!message) {
         message = ERROR_MSG;
     }

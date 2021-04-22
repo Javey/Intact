@@ -87,11 +87,7 @@ export function createVNode<T extends VNodeTag>(
             type = getTypeForVNodeElement(tag);
             break;
         case 'function':
-            if (tag.prototype && (tag.prototype as ComponentClass).$render) {
-                type = Types.ComponentClass;
-            } else {
-                type = Types.ComponentFunction;
-            }
+            type = Types.ComponentUnknown;
             break;
         default:
             throwError(`createVNode expects to get a string or function, but get a type: "${JSON.stringify(tag)}"`);
@@ -120,11 +116,11 @@ export function createVNode<T extends VNodeTag>(
     }
 
     if (isElement) {
-        if (type! & Types.Fragment) {
+        if (type & Types.Fragment) {
             return createFragment(children, ChildrenTypes.UnknownChildren, key) as VNode<T>;
         }
         return createElementVNode(
-            type!,
+            type,
             tag as string,
             children,
             ChildrenTypes.UnknownChildren,
@@ -142,7 +138,7 @@ export function createVNode<T extends VNodeTag>(
         if (ref) newProps!.ref = ref;
     }
 
-    return createComponentVNode(type!, tag as Component, newProps, key, ref as Ref<Element>) as VNode<T>;
+    return createComponentVNode(type, tag as Component, newProps, key, ref as Ref<Element>) as VNode<T>;
 }
 
 export function getTypeForVNodeElement(tag: string): Types {
@@ -226,6 +222,14 @@ export function createComponentVNode<T extends ComponentFunction | ComponentCons
             throwError('Creating element vNodes using createComponentVNode is not allowed. Use createElementVNode method.');
         }
     }
+
+    if ((type & Types.ComponentKnown) === 0) {
+        if (tag.prototype && (tag.prototype as ComponentClass).$render) {
+            type = Types.ComponentClass;
+        } else {
+            type = Types.ComponentFunction;
+        }
+    }
    
     return new VNode(
         type,
@@ -237,6 +241,15 @@ export function createComponentVNode<T extends ComponentFunction | ComponentCons
         key,
         ref as any
     );
+}
+
+export function createUnkownComponentVNode<T extends ComponentFunction | ComponentConstructor>(
+    tag: T,
+    props: VNodeProps<T> | null,
+    key?: Key | null,
+    ref?: VNodeRef<T> | null
+): VNode<T> { 
+    return createComponentVNode(Types.ComponentUnknown, tag, props, key, ref);
 }
 
 export function createFragment(children: Children, childrenType: ChildrenTypes, key?: Key | null): VNodeElement {

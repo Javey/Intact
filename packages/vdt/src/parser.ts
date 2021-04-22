@@ -200,12 +200,13 @@ export class Parser {
     }
 
     private scanString(): ASTString {
-        const start = this.index;
         const loc = this.getLocation();
         let str = '';
         let quote = this.char();
 
         this.updateIndex();
+        const start = this.index;
+
         while (this.index < this.length) {
             const ch = this.char();
             if (ch.charCodeAt(0) === 10) {
@@ -227,7 +228,7 @@ export class Parser {
             this.error('Unclosed quote');
         }
 
-        return {type: Types.JSXString, value: this.getValue(start), loc};
+        return {type: Types.JSXString, value: str, loc};
     }
 
     private parseJSXElement(): ASTElement {

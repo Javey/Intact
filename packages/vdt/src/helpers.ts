@@ -6,6 +6,7 @@ import {
     ASTNode,
     ASTElement,
     ASTAttribute,
+    ASTAttributeTemplateValue,
     Options,
 } from './types';
 
@@ -140,7 +141,7 @@ export function validateDirectiveModel(tag: string, type: Types, attributes: AST
         const typeAttr = attributes.find(attr => {
             return attr.type === Types.JSXAttribute && attr.name === 'type';
         }) as ASTAttribute;
-        if (typeAttr && typeAttr.value.type !== Types.JSXString) {
+        if (typeAttr && (typeAttr.value as ASTAttributeTemplateValue).type !== Types.JSXString) {
             throwError(`If use 'v-model' on 'input' element, the 'type' property of element cannot be dynamic value.`, loc, source);
         }
     }

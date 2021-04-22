@@ -44,8 +44,9 @@ export interface ASTBaseElement extends ASTNode {
     value: string
     attributes: (ASTAttribute | ASTExpression)[]
     directives: Record<string, ASTAttribute>, 
-    children: ASTChild[]
+    children: ASTElementChild[]
     keyed: boolean
+    // skip?: boolean
 }
 
 export interface ASTCommonElement extends ASTBaseElement {
@@ -79,7 +80,7 @@ export interface ASTExpression extends ASTNode {
 export interface ASTAttribute extends ASTNode {
     type: Types.JSXAttribute
     name: string
-    value: ASTString | ASTExpression
+    value: ASTAttributeValue
 }
 
 export interface ASTString extends ASTNode {
@@ -92,6 +93,8 @@ export type ASTRootChild = ASTHoist | ASTJS | ASTElement | ASTComment
 export type ASTExpressionChild = ASTJS | ASTElement | ASTComment | ASTText
 export type ASTElementChild = ASTElement | ASTComment | ASTText | ASTExpression
 export type ASTChild = ASTRootChild | ASTExpressionChild | ASTElementChild
+export type ASTAttributeTemplateValue = ASTString | ASTExpression
+export type ASTAttributeValue = ASTAttributeTemplateValue | ASTElementChild | ASTElementChild[]
 
 export const enum Directives {
     If = 'v-if',

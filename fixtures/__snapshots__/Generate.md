@@ -6,8 +6,8 @@
 
 ```
 "function($props, $blocks) {
-    $blocks || $blocks = {};
-    $props || $props = {};
+    $blocks || ($blocks = {});
+    $props || ($props = {});
 
     return createElementVNode(2, 'div')
 }"
@@ -17,8 +17,8 @@
 
 ```
 "function($props, $blocks) {
-    $blocks || $blocks = {};
-    $props || $props = {};
+    $blocks || ($blocks = {});
+    $props || ($props = {});
 
     return createElementVNode(2, 'div', 'test', 16)
 }"
@@ -28,10 +28,10 @@
 
 ```
 "function($props, $blocks) {
-    $blocks || $blocks = {};
-    $props || $props = {};
+    $blocks || ($blocks = {});
+    $props || ($props = {});
 
-    return createElementVNode(2, 'div', 'test', 16, null, {'id': \"1\"})
+    return createElementVNode(2, 'div', 'test', 16, null, {'id': 1})
 }"
 ```
 
@@ -39,10 +39,10 @@
 
 ```
 "function($props, $blocks) {
-    $blocks || $blocks = {};
-    $props || $props = {};
+    $blocks || ($blocks = {});
+    $props || ($props = {});
 
-    return createElementVNode(2, 'div', 'test', 16, \"a\")
+    return createElementVNode(2, 'div', 'test', 16, a)
 }"
 ```
 
@@ -50,8 +50,8 @@
 
 ```
 "function($props, $blocks) {
-    $blocks || $blocks = {};
-    $props || $props = {};
+    $blocks || ($blocks = {});
+    $props || ($props = {});
 
     return createElementVNode(2, 'div', 'test', 16, $className(a))
 }"
@@ -61,10 +61,10 @@
 
 ```
 "function($props, $blocks) {
-    $blocks || $blocks = {};
-    $props || $props = {};
+    $blocks || ($blocks = {});
+    $props || ($props = {});
 
-    return createElementVNode(2, 'div', 'test', 16, null, null, \"a\")
+    return createElementVNode(2, 'div', 'test', 16, null, null, a)
 }"
 ```
 
@@ -72,10 +72,10 @@
 
 ```
 "function($props, $blocks) {
-    $blocks || $blocks = {};
-    $props || $props = {};
+    $blocks || ($blocks = {});
+    $props || ($props = {});
 
-    return createElementVNode(2, 'div', 'test', 16, null, null, \"a\")
+    return createElementVNode(2, 'div', 'test', 16, null, null, a)
 }"
 ```
 
@@ -83,10 +83,10 @@
 
 ```
 "function($props, $blocks) {
-    $blocks || $blocks = {};
-    $props || $props = {};
+    $blocks || ($blocks = {});
+    $props || ($props = {});
 
-    return createElementVNode(2, 'div', 'test', 16, null, null, null, function(i) {$refs[\"b\"] = i})
+    return createElementVNode(2, 'div', 'test', 16, null, null, null, function(i) {$refs[b] = i})
 }"
 ```
 
@@ -94,8 +94,8 @@
 
 ```
 "function($props, $blocks) {
-    $blocks || $blocks = {};
-    $props || $props = {};
+    $blocks || ($blocks = {});
+    $props || ($props = {});
 
     return createElementVNode(2, 'div', 'test', 16, null, null, null, b)
 }"
@@ -105,11 +105,11 @@
 
 ```
 "function($props, $blocks) {
-    $blocks || $blocks = {};
-    $props || $props = {};
+    $blocks || ($blocks = {});
+    $props || ($props = {});
 
     return createElementVNode(2, 'div', 
-        createElementVNode(2, 'div', null, 1, \"a\")
+        createElementVNode(2, 'div', null, 1, a)
     , 2)
 }"
 ```
@@ -118,11 +118,11 @@
 
 ```
 "function($props, $blocks) {
-    $blocks || $blocks = {};
-    $props || $props = {};
+    $blocks || ($blocks = {});
+    $props || ($props = {});
 
     return createElementVNode(2, 'div', [
-        createElementVNode(2, 'div', null, 1, \"a\"),
+        createElementVNode(2, 'div', null, 1, a),
         createElementVNode(2, 'div')
     ], 4)
 }"
@@ -132,10 +132,78 @@
 
 ```
 "function($props, $blocks) {
-    $blocks || $blocks = {};
-    $props || $props = {};
+    $blocks || ($blocks = {});
+    $props || ($props = {});
 
     return createElementVNode(2, 'div', a, 0)
+}"
+```
+
+## `Diretives`
+
+####   `should generate v-if`
+
+```
+"function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+
+    return createElementVNode(2, 'div', [
+        a ?
+            createElementVNode(2, 'div', 'a', 16) :
+            b ?
+                createElementVNode(2, 'div', 'b', 16) :
+                c ?
+                    createElementVNode(2, 'div', 'c', 16) :
+                    createElementVNode(2, 'div', 'd', 16)
+    ], 4)
+}"
+```
+
+####   `should generate v-for`
+
+```
+"function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+
+    return createElementVNode(2, 'div', 
+        $map(a, function(value, key) {
+            return createElementVNode(2, 'div');
+        }, $this)
+    , 2)
+}"
+```
+
+####   `should generate v-for-key v-for-value`
+
+```
+"function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+
+    return createElementVNode(2, 'div', 
+        $map(a, function(b, a) {
+            return createElementVNode(2, 'div');
+        }, $this)
+    , 2)
+}"
+```
+
+####   `should genreate v-if and v-for`
+
+```
+"function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+
+    return createElementVNode(2, 'div', 
+        $map(a, function(value, key) {
+            return value ?
+                createElementVNode(2, 'div') :
+                undefined;
+        }, $this)
+    , 2)
 }"
 ```
 
@@ -145,8 +213,8 @@
 
 ```
 "function($props, $blocks) {
-    $blocks || $blocks = {};
-    $props || $props = {};
+    $blocks || ($blocks = {});
+    $props || ($props = {});
 
     const a = 1;
     const b = 2;
@@ -154,12 +222,56 @@
 }"
 ```
 
-####   `should generate js expression code`
+## `Beautify`
+
+####   `should beautify expression`
 
 ```
 "function($props, $blocks) {
-    $blocks || $blocks = {};
-    $props || $props = {};
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+
+    return createElementVNode(2, 'div', () => {
+        return 'a'
+    }, 0)
+}"
+```
+
+####   `should beautify expression that has element sibling`
+
+```
+"function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+
+    return createElementVNode(2, 'div', [
+        () => {
+            return 'a'
+        },
+        createElementVNode(2, 'div')
+    ], 0)
+}"
+```
+
+####   `should beautify expression that return element`
+
+```
+"function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+
+    return createElementVNode(2, 'div', () => {
+        return createElementVNode(2, 'div')
+    }, 0)
+}"
+```
+
+####   `should beautify js expression code`
+
+```
+"function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
 
     const a = 1;
     const b = 2;
@@ -167,7 +279,9 @@
         () => {
             return (
                 createElementVNode(2, 'span', [
-                    '\\n                test\\n                ',
+                    '
+                test
+                ',
                     () => {
                         return createElementVNode(2, 'i', () => {
                             return 'a'
@@ -178,17 +292,16 @@
                     b: () => {
                         return 'c'
                     }
-                }
-                ))
+                }))
             )
         },
-        '\\n    ',
+        '
+    ',
         createElementVNode(2, 'div', 'test', 16),
         createElementVNode(2, 'div'),
         () => {
             return a;
-        } 
-        ,
+        },
         createElementVNode(32, 'input')
     ], 0)
 }"
