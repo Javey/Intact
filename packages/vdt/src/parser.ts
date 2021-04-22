@@ -122,6 +122,7 @@ export class Parser {
         let spacesRemain = spaces;
         let newLine = true;
         let leadSpaces = 0;
+        let shouldTrimRight = false;
 
         const push = () => {
             let code = this.getValue(start);
@@ -180,6 +181,7 @@ export class Parser {
                 } else if (this.isExpect(delimiters[1])) {
                     // for parse break
                     braces.count--;
+                    shouldTrimRight = true;
                     break;
                 }
                 newLine = false;
@@ -188,6 +190,10 @@ export class Parser {
         }
 
         push();
+
+        if (shouldTrimRight) {
+            this.trimRightForValue(value);
+        }
 
         return {type: Types.JS, value, spaces: leadSpaces, loc};
     }
@@ -793,6 +799,31 @@ export class Parser {
                 this.skipWhitespace();
                 break;
             } else {
+                break;
+            }
+        }
+    }
+
+    private trimRightForValue(value: string[]) {
+        for (let i = value.length - 1; i >= 0; i--) {
+            const code = value[i];
+            const lastIndex = code.length - 1;
+            let j = lastIndex;
+            for (; j >= 0; j--) {
+                const charCode = code.charCodeAt(j);
+                if (!isWhiteSpace(charCode)) {
+                    break;
+                }
+            }
+
+            if (j === -1) {
+                // remove the whole line code
+                value.pop();
+            } else {
+                if (j !== lastIndex) {
+                    // trim right
+                    value[i] = code.slice(0, j + 1);
+                }
                 break;
             }
         }

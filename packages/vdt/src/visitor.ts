@@ -41,15 +41,16 @@ export class Visitor {
     private line = 1;
     private column = 0;
     private indentLevel = 0;
-    // private spaces = '';
-    private spacesStatck: number[] = [];
+    private spaces = '';
+    private spacesStatck: string[] = [''];
+    private expressionSpacesStack: string[] = [];
 
     constructor(nodes: ASTRootChild[]) {
         this.append(`function($props, $blocks) {`);
         this.indent();
-        this.append(`$blocks || $blocks = {};`);
+        this.append(`$blocks || ($blocks = {});`);
         this.newline();
-        this.append(`$props || $props = {};`);
+        this.append(`$props || ($props = {});`);
         this.append('\n');
         this.newline();
 
@@ -85,6 +86,7 @@ export class Visitor {
             // addWrapper = true;
         // }
 
+        this.expressionSpacesStack.push(this.spaces);
         const oldLength = this.spacesStatck.length;
         nodes.forEach((node, i) => {
             // if is root, add `return` keyword
@@ -95,6 +97,7 @@ export class Visitor {
             this.visitChild(node, nodes, i);
         });
         let newLength = this.spacesStatck.length;
+        this.expressionSpacesStack.pop();
         while (newLength > oldLength) {
             this.popSpaces();
             newLength--;
@@ -117,10 +120,7 @@ export class Visitor {
             case Types.JS:
                 return this.visitJS(node as ASTJS);
             case Types.JSXExpression:
-                // this.pushSpaces();
-                this.visit((node as ASTExpression).value, false);
-                // this.popSpaces();
-                return;
+                return this.visit((node as ASTExpression).value, false);
         }
 
         // } else if (type & Types.JSXBlock) {
@@ -142,7 +142,10 @@ export class Visitor {
 
     private visitJS(node: ASTJS): number {
         // this.append(this.enterStringExpression ? `(${node.value})` : node.value);
-        // this.spaces = '';
+        const spaces = this.spaces;
+        const stack = this.expressionSpacesStack;
+        this.spaces = stack[stack.length - 1];
+
         const lines = node.value;
         const length = lines.length;
         for (let i = 0; i < length; i++) {
@@ -153,9 +156,8 @@ export class Visitor {
             }
         }
 
+        this.spaces = spaces;
         this.pushSpaces(node.spaces);
-        // this.spaces += ' '.repeat(node.spaces);
-        // this.pushSpaces();
 
         return node.spaces;
     }
@@ -429,7 +431,6 @@ export class Visitor {
 
         this.popQueue();
         this.append(')');
-        this.popSpaces();
     }
 
     private visitJSXAttribute(node: ASTElement): 
@@ -564,8 +565,9 @@ export class Visitor {
     }
 
     private popQueue() {
-        const queue = this.queueStack.pop()!;
-        this.current = this.queueStack[this.queueStack.length - 1];
+        const stack = this.queueStack;
+        const queue = stack.pop()!;
+        this.current = stack[stack.length - 1];
 
         return queue;
     }
@@ -587,16 +589,19 @@ export class Visitor {
     }
 
     private newline() {
-        const spaces = this.spacesStatck[this.spacesStatck.length - 1] || 0;
-        this.append('\n' + `    `.repeat(this.indentLevel) + ' '.repeat(spaces));
+        this.append('\n' + `    `.repeat(this.indentLevel) + this.spaces);
     }
 
     private pushSpaces(spaces: number) {
-        const lastSpaces = this.spacesStatck[this.spacesStatck.length - 1] || 0;
-        this.spacesStatck.push(spaces + lastSpaces);
+        if (spaces) {
+            this.spaces += ' '.repeat(spaces); 
+        }
+        this.spacesStatck.push(this.spaces);
     }
 
     private popSpaces() {
-        this.spacesStatck.pop()!;
+        const stack = this.spacesStatck;
+        stack.pop()!;
+        this.spaces = stack[stack.length - 1];
     }
 }

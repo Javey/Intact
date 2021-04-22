@@ -80,8 +80,41 @@ describe('Generate', () => {
                 <div>{a}</div>
             `);
         });
+    });
 
-        it('should generate js expression code', () => {
+    describe('Beautify', () => {
+        it('should beautify expression', () => {
+            test(stripIndent`
+                <div>
+                    {() => {
+                        return 'a'
+                    }}
+                </div>
+            `);
+        });
+
+        it('should beautify expression that has element sibling', () => {
+            test(stripIndent`
+                <div>
+                    {() => {
+                        return 'a'
+                    }}
+                    <div></div>
+                </div>
+            `);
+        });
+
+        it('should beautify expression that return element', () => {
+            test(stripIndent`
+                <div>
+                    {() => {
+                        return <div></div>
+                    }}
+                </div>
+            `);
+        });
+
+        it('should beautify js expression code', () => {
             test(stripIndent`
                 const a = 1;
                 const b = 2;
