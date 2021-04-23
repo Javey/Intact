@@ -198,18 +198,6 @@ export function createElementVNode(
     return vNode;
 }
 
-export function createTextVNode(text: string | number, key?: Key | null): VNodeTextElement {
-    return new VNode(Types.Text, null, ChildrenTypes.HasInvalidChildren, text, null, null, key) as VNodeTextElement;
-}
-
-export function createVoidVNode() {
-    return createTextVNode('', null);
-}
-
-export function createCommentVNode(comment: string, key?: Key | null): VNodeTextElement {
-    return new VNode(Types.HtmlComment, null, ChildrenTypes.HasInvalidChildren, comment, null, null, key) as VNodeTextElement;
-}
-
 export function createComponentVNode<T extends ComponentFunction | ComponentConstructor>(
     type: Types,
     tag: T,
@@ -250,6 +238,22 @@ export function createUnkownComponentVNode<T extends ComponentFunction | Compone
     ref?: VNodeRef<T> | null
 ): VNode<T> { 
     return createComponentVNode(Types.ComponentUnknown, tag, props, key, ref);
+}
+
+export function createTextVNode(text: string | number, key?: Key | null): VNodeTextElement {
+    return new VNode(Types.Text, null, ChildrenTypes.HasInvalidChildren, text, null, null, key, null) as VNodeTextElement;
+}
+
+export function createVoidVNode() {
+    return createTextVNode('', null);
+}
+
+export function createUnescapeTextVNode(text: string | number) {
+    return new VNode(Types.UnescapeText, null, ChildrenTypes.HasInvalidChildren, text, null, null, null, null) as VNodeTextElement;
+}
+
+export function createCommentVNode(comment: string, key?: Key | null): VNodeTextElement {
+    return new VNode(Types.HtmlComment, null, ChildrenTypes.HasInvalidChildren, comment, null, null, key, null) as VNodeTextElement;
 }
 
 export function createFragment(children: Children, childrenType: ChildrenTypes, key?: Key | null): VNodeElement {

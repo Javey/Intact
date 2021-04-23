@@ -70,6 +70,14 @@ describe('Generate', () => {
         it('expression children', () => {
             test(`<div>{a}</div>`);
         });
+
+        it('comment children', () => {
+            test(`<div><!--test--></div>`);
+        });
+
+        it('unescape text children', () => {
+            test(`<div>{= test }</div>`);
+        })
     });
 
     describe('Component', () => {
@@ -134,6 +142,97 @@ describe('Generate', () => {
                 </Div>
             `)
         });
+
+        it('multiple block children', () => {
+            test(stripIndent`
+                <Div>
+                    <b:foo><A>test</A></b:foo>
+                    <b:bar>test</b:bar>
+                </Div>
+            `)
+        });
+    });
+
+    describe('Block', () => {
+        it('should throw if attribute is invalid', () => {
+            expect(() => test(`<b:block key="a" />`)).to.throw();
+            expect(() => test(`<b:block args={a} />`)).to.throw();
+            expect(() => test(`<b:block params='a' />`)).to.throw();
+        });
+
+        it('without args and params', () => {
+            test(stripIndent`
+                <div>
+                    <b:block>
+                        <div>test</div>
+                    </b:block>
+                </div>
+            `);
+        });
+
+        it('with args', () => {
+            test(stripIndent`
+                <div>
+                    <b:block args="a, b">
+                        <div>test</div>
+                    </b:block>
+                </div>
+            `);
+        });
+
+        it('with params', () => {
+            test(stripIndent`
+                <div>
+                    <b:block params={[a, b]}>
+                        <div>test</div>
+                    </b:block>
+                </div>
+            `);
+        });
+    });
+
+    describe('Vdt', () => {
+        it('without block children', () => {
+            test(`<t:template></t:template>`);
+        });
+
+        it('with block children', () => {
+            test(stripIndent`
+                <t:template>
+                    <b:block>test</b:block>
+                </t:template>
+            `);
+        });
+
+        it('with props', () => {
+            test(stripIndent`
+                <t:template class="a">
+                    <b:block>test</b:block>
+                </t:template>
+            `);
+        });
+
+        it('as children', () => {
+             test(stripIndent`
+                <div>
+                    <t:template class="a">
+                        <b:block>test</b:block>
+                    </t:template>
+                </div>
+            `);
+        });
+
+        it('as children and define block', () => {
+             test(stripIndent`
+                <div>
+                    <t:template class="a">
+                        <div>
+                            <b:block>test</b:block>
+                        </div>
+                    </t:template>
+                </div>
+            `);
+        });
     });
 
     describe('Diretives', () => {
@@ -156,7 +255,7 @@ describe('Generate', () => {
             test(`<div><div v-for={a} v-for-key="a" v-for-value="b"></div></div>`);
         });
 
-        it('should genreate v-if and v-for', () => {
+        it('v-if and v-for', () => {
             test(`<div><div v-for={a} v-if={value}></div></div>`);
         });
     });
@@ -169,6 +268,18 @@ describe('Generate', () => {
                 <div>{a}</div>
             `);
         });
+    });
+
+    describe('Hoist', () => {
+        it('import', () => {
+            test(stripIndent`
+                import {name} from 'xxxx';
+                import a from 'xxxx'
+
+                const b = a;
+                <div>{b}</div>
+            `);
+        })
     });
 
     describe('Beautify', () => {

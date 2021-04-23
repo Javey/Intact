@@ -10,6 +10,7 @@ export const enum Types {
     JSXBlock,
     JSXExpression,
     JSXDirectiveIf,
+    JSXUnescapeText,
 
     JSXAttribute,
     JSXString,
@@ -74,7 +75,6 @@ export interface ASTComment extends ASTNode {
 export interface ASTExpression extends ASTNode {
     type: Types.JSXExpression
     value: ASTExpressionChild[]
-    unescaped: boolean
 }
 
 export interface ASTAttribute extends ASTNode {
@@ -95,10 +95,15 @@ export interface ASTString extends ASTNode {
     value: string
 }
 
+export interface ASTUnescapeText extends ASTNode {
+    type: Types.JSXUnescapeText
+    value: ASTExpressionChild[]
+}
+
 export type ASTElement = ASTCommonElement | ASTComponent | ASTVdt | ASTBlock
 export type ASTRootChild = ASTHoist | ASTJS | ASTElement | ASTComment
 export type ASTExpressionChild = ASTJS | ASTElement | ASTComment | ASTText
-export type ASTElementChild = ASTElement | ASTComment | ASTText | ASTExpression
+export type ASTElementChild = ASTElement | ASTComment | ASTText | ASTExpression | ASTUnescapeText
 export type ASTChild = ASTRootChild | ASTExpressionChild | ASTElementChild
 export type ASTAttributeTemplateValue = ASTString | ASTExpression
 export type ASTAttributeValue = ASTAttributeTemplateValue | ASTElementChild | ASTElementChild[]
@@ -110,7 +115,6 @@ export const enum Directives {
     For = 'v-for',
     ForValue = 'v-for-value',
     ForKey = 'v-for-key',
-    Model = 'v-model',
     Raw = 'v-raw',
 }
 

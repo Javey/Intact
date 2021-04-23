@@ -20,6 +20,8 @@ import {
     ASTElement,
     ASTExpressionChild,
     ASTDirectiveIf,
+    ASTAttributeTemplateValue,
+    ASTUnescapeText,
     Directives,
     DirectiveIf,
     DirectiveCommon,
@@ -34,12 +36,15 @@ import {
     isJSXIdentifierPart,
     isWhiteSpaceExceptLinebreak,
     directivesMap,
-    validateDirectiveValue,
-    validateDirectiveModel,
     throwError,
     defaultOptions,
     isElementNode,
 } from './helpers';
+import {
+    validateDirectiveValue,
+    validateDirectiveModel,
+    validateAttributeForBlock,
+} from './validate';
 
 type Braces = {count: number};
 
@@ -71,7 +76,6 @@ export class Parser {
     private parse(isRoot: boolean, spaces: number): ASTRootChild[] | ASTExpressionChild[] {
         const nodes: ASTRootChild[] = [];
         const braces: Braces = {count: 0};
-        // const ignoreWhitespacesRegExp = new RegExp(`^\\s{${this.column}}`);
 
         while (this.index < this.length && braces.count >= 0) {
             nodes.push(this.advance(braces, isRoot, spaces));
@@ -271,6 +275,7 @@ export class Parser {
         }
 
         const value = this.getValue(start);
+
         const {attributes, directives, keyed, hasVRaw} = this.parseJSXAttribute(value, type);
         const children = this.parseJSXChildren(value, type, attributes, hasVRaw, loc);
 
@@ -306,9 +311,9 @@ export class Parser {
 
     private parseJSXAttribute(tag: string, type: Types): 
         {
-            attributes: ASTElement['attributes'],
-            directives: ASTElement['directives'],
-            keyed: boolean,
+            attributes: ASTElement['attributes']
+            directives: ASTElement['directives']
+            keyed: boolean
             hasVRaw: boolean
         } 
     {
@@ -327,7 +332,7 @@ export class Parser {
             const delimiters = this.options.delimiters;
             if (this.isExpect(delimiters[0])) {
                 // support dynamic attributes
-                attributes.push(this.parseJSXExpression());
+                attributes.push(this.parseJSXExpression() as ASTExpression);
                 continue;
             }
 
@@ -349,7 +354,6 @@ export class Parser {
                         type: Types.JS,
                         value: ['true'],
                     }],
-                    unescaped: false,
                     loc: this.getLocation(),
                 } as ASTExpression;
             }
@@ -358,16 +362,13 @@ export class Parser {
                 if (directivesMap[name as Directives]) {
                     validateDirectiveValue(name, value.type, tag, type, this.source, value.loc);
                 }
+                if (type === Types.JSXBlock) {
+                    validateAttributeForBlock(tag, name, value, value.loc, this.source);
+                }
             }
 
             if (name === Directives.If || name === Directives.ElseIf || name === Directives.Else) {
-                directives[name] = {
-                    type: Types.JSXDirectiveIf,
-                    name,
-                    value,
-                    next: null,
-                    loc,
-                };
+                directives[name] = {type: Types.JSXDirectiveIf, name, value, next: null, loc};
             } else {
                 const attr = {type: Types.JSXAttribute, name, value, loc} as ASTAttribute;
                 if (directivesMap[name as Directives]) {
@@ -403,46 +404,11 @@ export class Parser {
         return this.getValue(start);
     }
 
-    // private parseJSXDirectiveIf(node: ASTTag, directive: ASTAttribute): void {
-        // const name = directive.name;
-        // if (name === 'v-else-if' || name === 'v-else') {
-            // const emptyTextNodes: ASTChild[] = []; // persist empty text node, skip them if find v-else-if or v-else
-            // const skipNodes = function() {
-                // emptyTextNodes.forEach((item) => {
-                    // item.type |= Types.Skip;
-                // });
-            // };
-
-            // let prevNode: ASTChild | null = node;
-            // while (prevNode = node.prev) {
-                // const type = prevNode.type;
-                // if (type & Types.JSXText && emptyRegexp.test((prevNode as ASTString).value)) {
-                    // emptyTextNodes.push(prevNode);
-                    // continue;
-                // }
-                // if (type & Types.JSXComment) continue; 
-                // if (type & tagTypes) {
-                    // const prevDirectives = (prevNode as ASTTag).directives;
-                    // if (prevDirectives['v-if'] || prevDirectives['v-else-if']) {
-                        // prevNode.next = node;
-                        // node.type |= Types.Skip;
-                        // skipNodes();
-                    // }
-                // }
-                // break;
-            // }
-
-            // if (!(node.type & Types.Skip)) {
-                // this.error(`${name} must be led with v-if or v-else-if`);
-            // }
-        // }
-    // }
-
     private parseJSXAttributeValue(): ASTString | ASTExpression {
         const delimiters = this.options.delimiters;
         let value: ASTString | ASTExpression;
         if (this.isExpect(delimiters[0])) {
-            value = this.parseJSXExpression();
+            value = this.parseJSXExpression() as ASTExpression;
         } else {
             const quote = this.char();
             if (quote !== '\'' && quote !== '"' && quote !== '`') {
@@ -480,7 +446,6 @@ export class Parser {
                         value: {
                             type: Types.JSXExpression,
                             value: children,
-                            unescaped: false,
                             loc: attrLoc,
                         },
                         loc,
@@ -620,7 +585,7 @@ export class Parser {
         return {type: Types.JSXText, value: this.getValue(start), loc};
     }
 
-    private parseJSXExpression(): ASTExpression {
+    private parseJSXExpression(): ASTExpression | ASTUnescapeText {
         const delimiters = this.options.delimiters;
 
         const loc = this.getLocation();
@@ -629,14 +594,14 @@ export class Parser {
         this.skipWhitespaceAndJSComment();
 
         const spaceColumn = this.getFirstSpaceColumn();
-        let unescaped = false;
+        let type = Types.JSXExpression;
         let value: ASTExpression['value'];
 
         if (this.isExpect('=')) {
             // if the lead char is '=', then treat it as unescape string
             this.expect('=');
             this.skipWhitespace();
-            unescaped = true;
+            type = Types.JSXUnescapeText;
         }
 
         if (this.isExpect(delimiters[1])) {
@@ -647,7 +612,7 @@ export class Parser {
 
         this.expect(delimiters[1], `Unclosed delimiter`, loc);
 
-        return {type: Types.JSXExpression, value, unescaped, loc};
+        return {type, value, loc};
     }
 
     private getLocation(): SourceLocation {

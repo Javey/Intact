@@ -89,7 +89,7 @@ export const enum Types {
     TextareaElement = 1 << 8,
     SvgElement = 1 << 9,
 
-    UnescapeText = 1 << 10,
+    UnescapeText = 1 << 10, // for server render to string
     Void = 1 << 11,
     Fragment = 1 << 12,
     InUse = 1 << 13,

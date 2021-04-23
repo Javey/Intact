@@ -94,59 +94,6 @@ export function isWhiteSpaceExceptLinebreak(charCode: number) {
         isWhiteSpace(charCode);
 }
 
-export function validateDirectiveValue(name: string, valueType: Types, tag: string, tagType: Types, source: string, loc: SourceLocation) {
-    if (name === Directives.Raw) {
-        if (tagType !== Types.JSXCommonElement) {
-            throwError(`Only html elememt supports v-raw, but got: ${tag}`, loc, source);
-        }
-    } else if (name === Directives.ForKey || name === Directives.ForValue) {
-        if (valueType !== Types.JSXString) {
-            throwError(`'${name}' must be a literal string.`, loc, source);
-        }
-    } else if (name === Directives.For || name === Directives.If || name === Directives.ElseIf || name === Directives.Else) {
-        if (valueType !== Types.JSXExpression) {
-            throwError(`'${name}' must be a expression.`, loc, source);
-        }
-    }
-}
-
-export function validateDirectiveIF(children: ASTChild[], loc: SourceLocation, source: string) {
-    let inIf = false;
-    children.forEach(child => {
-        // ignore comment
-        if (child.type === Types.JSXComment) return;
-
-        if (isElementNode(child)) {
-            const directives = child.directives;
-            if (directives[Directives.Else] || directives[Directives.ElseIf]) {
-                if (!inIf) {
-                    throwError(`'${Directives.Else || Directives.ElseIf}' must be lead with 'v-if' or 'v-else-if'`, loc, source); 
-                }
-            } else if (directives[Directives.If]) {
-                inIf = true;
-            } else {
-                inIf = false;
-            }
-        } else {
-            inIf = false;
-        }
-    });
-}
-
-export function validateDirectiveModel(tag: string, type: Types, attributes: ASTElement['attributes'], loc: SourceLocation, source: string) {
-    if (type === Types.JSXCommonElement && tag !== 'input' && tag !== 'textarea' && tag !== 'select') {
-        throwError(`Only form element and component support 'v-model'`, loc, source);
-    }
-    if (tag === 'input') {
-        const typeAttr = attributes.find(attr => {
-            return attr.type === Types.JSXAttribute && attr.name === 'type';
-        }) as ASTAttribute;
-        if (typeAttr && (typeAttr.value as ASTAttributeTemplateValue).type !== Types.JSXString) {
-            throwError(`If use 'v-model' on 'input' element, the 'type' property of element cannot be dynamic value.`, loc, source);
-        }
-    }
-}
-
 export function isElementNode(node: ASTNode): node is ASTElement {
     const type = node.type;
     return type === Types.JSXCommonElement || 
@@ -180,3 +127,6 @@ export const defaultOptions: Options = {
     delimiters: ['{', '}'],
 };
 
+export function isVModel(name: string) {
+    return name === 'v-model' || name.substr(0, 8) === 'v-model:';
+}
