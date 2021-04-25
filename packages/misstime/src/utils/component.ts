@@ -186,13 +186,14 @@ export function patchProps(component: Component<any>, lastProps: Props<any>, nex
 
 export function patchProp(component: Component<any>, props: Props<any>, prop: string, lastValue: any, nextValue: any, changeTraces: ChangeTrace[] | null) {
     if (isEventProp(prop)) {
-        prop = normalizeEventName(prop);
-        if (!isNullOrUndefined(lastValue)) {
-            component.off(prop, lastValue);
-        }
-        if (!isNullOrUndefined(nextValue)) {
-            component.on(prop, nextValue);
-        }
+        // prop = normalizeEventName(prop);
+        // if (!isNullOrUndefined(lastValue)) {
+            // component.off(prop, lastValue);
+        // }
+        // if (!isNullOrUndefined(nextValue)) {
+            // component.on(prop, nextValue);
+        // }
+        props[prop] = nextValue;
     } else {
         props[prop] = nextValue;
         if (!isNull(changeTraces)) {
@@ -223,6 +224,7 @@ export function setProps(component: Component<any>, newProps: Props<any>) {
             for (let j = changeTraces.length - 1; j > -1; j--) {
                 const {path, newValue, oldValue} = changeTraces[j];
 
+                callModelEvent(component, path, newValue);
                 component.trigger(`$change:${path}`, newValue, oldValue);
             }
         }
@@ -239,6 +241,13 @@ export function setProps(component: Component<any>, newProps: Props<any>) {
                 }
             }
         });
+    }
+}
+
+function callModelEvent(component: Component<any>, path: string, newValue: any) {
+    const modelEvent = (component.props as any)[`ev-$model:${path}`];
+    if (modelEvent) {
+        modelEvent(newValue);
     }
 }
 

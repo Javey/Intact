@@ -62,7 +62,7 @@ export class Event<P> {
         }
     }
 
-    trigger(name: string, ...args: any[]) {
+    trigger(name: string, args: any[]) {
         let callbacks = this.$events[name];
 
         if (!isUndefined(callbacks)) {

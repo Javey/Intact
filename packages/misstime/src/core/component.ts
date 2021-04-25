@@ -126,6 +126,17 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         forceUpdate(this, callback);
     }
 
+    trigger(name: string, ...args: any[]) {
+        // call event on props firstly
+        const propEvent = (this.props as any)[name];
+        if (isFunction(propEvent) && !this.$unmounted) {
+            propEvent.apply(this, args); 
+        }
+
+        super.trigger(name, args);
+    }
+
+
     watch(key: string, callback: Function) {
         this.on(`$change:${key}`, callback);
         this.on(`$receive:${key}`, callback);
