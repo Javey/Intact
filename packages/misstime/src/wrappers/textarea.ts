@@ -1,4 +1,9 @@
 import {isNullOrUndefined} from 'intact-shared';
+import {attachModelEvent} from '../events/attachEvents';
+
+export function textareaEvents(dom: HTMLTextAreaElement, event?: EventListener) {
+    attachModelEvent(dom, 'input', event);
+}
 
 export function applyValueTextArea(nextProps: any, dom: HTMLTextAreaElement, mounting: boolean) {
     const value = nextProps.value;

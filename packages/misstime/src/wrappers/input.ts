@@ -1,11 +1,14 @@
 import {isNullOrUndefined} from 'intact-shared';
-import {attachEvent} from '../events/attachEvents';
+import {attachModelEvent} from '../events/attachEvents';
+import {Props} from '../utils/types';
 
-// export function inputEvents(dom: HTMLInputElement, nextProps: Props<any>) {
-    // if (isCheckedType(nextProps.type)) {
-        // attachEvent(dom, 'change', ) 
-    // }
-// } 
+export function inputEvents(dom: HTMLInputElement, type: string, event?: EventListener) {
+    if (isCheckedType(type)) {
+        attachModelEvent(dom, 'change', event);
+    } else {
+        attachModelEvent(dom, 'input', event);
+    }
+} 
 
 export function applyValueInput(nextProps: any, dom: HTMLInputElement) {
     const {type, value, checked, multiple, defaultValue} = nextProps;

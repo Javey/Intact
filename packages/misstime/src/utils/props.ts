@@ -1,20 +1,24 @@
-import {VNode, Types, LinkedEvent, Reference, TransitionElement} from './types';
+import {VNode, Types, LinkedEvent, Reference, TransitionElement, IntactElement} from './types';
 import {isEventProp, namespaces} from './helpers';
 import {isNullOrUndefined, isUndefined, isString} from 'intact-shared';
 import {delegatedEvents, handleDelegatedEvent} from '../events/delegation';
-import {isLinkEvent, isSameLinkEvent} from '../events/linkEvent';
+import {isLinkEvent, isSameLinkEvent, wrapLinkEvent} from '../events/linkEvent';
 import {attachEvent} from '../events/attachEvents';
 import {normalizeEventName, REFERENCE} from './common';
-import {processElement} from '../wrappers/process';
+import {processElement, processVModel} from '../wrappers/process';
 
 export function mountProps(vNode: VNode, type: Types, props: any, dom: Element, isSVG: boolean) {
     const isFormElement = (type & Types.FormElement) > 0;
     REFERENCE.value = false;
+    REFERENCE.result = false;
     for (const prop in props) {
         patchProp(prop, null, props[prop], dom, isSVG, isFormElement, REFERENCE);
     }
     if (isFormElement) {
         processElement(type, vNode, dom, props, true, REFERENCE.value);
+        if (REFERENCE.result) {
+            processVModel(type, dom, props);
+        }
     }
 }
 
@@ -90,6 +94,21 @@ export function patchProp(
         case 'style':
             patchStyle(lastValue, nextValue, dom);
             break;
+        // handle v-model
+        case '$model:value':
+            (dom as IntactElement).$M = nextValue;
+            break;
+        case 'trueValue':
+            (dom as IntactElement).$TV = nextValue;
+            break;
+        case 'falseValue':
+            (dom as IntactElement).$FV = nextValue;
+            break;
+        case 'ev-$model:value':
+            if (!isSameLinkEvent(lastValue, nextValue)) {
+                REFERENCE.result = true;
+            }
+            break;
         default:
             if (delegatedEvents[prop]) {
                 handleDelegatedEvent(prop, lastValue, nextValue, dom); 
@@ -149,7 +168,7 @@ function patchStyle(lastValue: any, nextValue: any, dom: Element) {
     }
 }
 
-function patchEvent(name: string, lastValue: any, nextValue: any, dom: Element) {
+function patchEvent(name: string, lastValue: EventListener | LinkedEvent<any>, nextValue: EventListener | LinkedEvent<any>, dom: Element) {
     if (isLinkEvent(nextValue)) {
         if (isSameLinkEvent(lastValue, nextValue)) {
             return;
@@ -157,12 +176,4 @@ function patchEvent(name: string, lastValue: any, nextValue: any, dom: Element) 
         nextValue = wrapLinkEvent(nextValue);
     }
     attachEvent(dom, normalizeEventName(name), nextValue);
-}
-
-function wrapLinkEvent(nextValue: LinkedEvent<any, any>) {
-    const ev = nextValue.event;
-
-    return function(e: Event) {
-        ev(nextValue.data, e);
-    }
 }

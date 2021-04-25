@@ -9,6 +9,8 @@ import {
     ASTAttributeTemplateValue,
     Options,
 } from './types';
+import {Component, IntactElement} from 'misstime';
+import {isArray, isNullOrUndefined} from 'intact-shared';
 
 export function trimRight(str: string) {
     var index = str.length;
@@ -73,7 +75,7 @@ export const directivesMap: Record<Directives, true> = {
     [Directives.For]: true,
     [Directives.ForValue]: true,
     [Directives.ForKey]: true,
-    [Directives.Model]: true,
+    // [Directives.Model]: true,
     [Directives.Raw]: true,
 };
 
@@ -127,6 +129,76 @@ export const defaultOptions: Options = {
     delimiters: ['{', '}'],
 };
 
-export function isVModel(name: string) {
-    return name === 'v-model' || name.substr(0, 8) === 'v-model:';
+export function setRadioModel(component: Component<any>, event: Event) {
+    const target = event.target as IntactElement;
+    component.set(target.$M!, (target as HTMLInputElement).value);
+}
+
+export function setCheckboxModel(component: Component<any>, event: Event) {
+    const target = event.target as IntactElement;
+    const modelName = target.$M!;
+    const checked = target.checked;
+    let trueValue = target.$TV;
+    let falseValue = target.$FV;
+    let value = component.get(modelName); 
+
+    if (isNullOrUndefined(trueValue)) {
+        trueValue = true;
+    }
+    if (isNullOrUndefined(falseValue)) {
+        falseValue = false;
+    }
+
+    if (isArray(value)) {
+        value = value.slice(0);
+        const index = value.indexOf(trueValue);
+        if (checked) {
+            if (index === -1) {
+                value.push(trueValue);
+            }
+        } else {
+            if (index > -1) {
+                value.splice(index, 1);
+            }
+        }
+    } else {
+        value = checked ? trueValue : falseValue;
+    }
+
+    component.set(modelName, value);
+}
+
+export function isChecked(value: any, trueValue: any) {
+    if (isArray(value)) {
+        return value.indexOf(trueValue) > -1;
+    } else {
+        return value === trueValue;
+    }
+} 
+
+export function setSelectModel(component: Component<any>, event: Event) {
+    const target = event.target as HTMLSelectElement;
+    const multiple = target.multiple;
+    const options = target.options;
+    let value: any | any[];
+
+    if (multiple) {
+        value = [];
+        for (let i = 0; i < options.length; i++) {
+            const opt = options[i];
+            if (opt.selected) {
+                value.push(opt.value);
+            }
+        }
+    } else {
+        for (let i = 0; i < options.length; i++) {
+            const opt = options[i];
+            if (opt.selected) {
+                value = opt.value;
+                break;
+            }
+        }
+    }
+
+    component.set((target as IntactElement).$M!, value);
 }

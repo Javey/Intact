@@ -42,7 +42,7 @@ import {
 } from './helpers';
 import {
     validateDirectiveValue,
-    validateDirectiveModel,
+    validateModel,
     validateAttributeForBlock,
 } from './validate';
 
@@ -280,10 +280,7 @@ export class Parser {
         const children = this.parseJSXChildren(value, type, attributes, hasVRaw, loc);
 
         if (process.env.NODE_ENV !== 'production') {
-            const model = directives[Directives.Model];
-            if (model) {
-                validateDirectiveModel(value, type, attributes, model.loc, this.source);
-            }
+            validateModel(value, type, attributes, this.source);
         }
 
         return {type, value, attributes, directives, children, keyed, loc} as ASTElement;

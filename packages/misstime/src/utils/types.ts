@@ -169,21 +169,25 @@ export interface ComponentFunction<P = any, R extends Element | ComponentClass =
 
 export type Component = ComponentConstructor | ComponentFunction;
 
-export interface LinkedEvent<T, E extends Event> {
+export interface LinkedEvent<T, E extends Event = Event> {
     data: T;
     event: (data: T, event: E) => void;
 }
 
-export type IntactEventListener = EventListener | LinkedEvent<any, any> | null;
+export type IntactEventListener = EventListener | LinkedEvent<any> | null;
 
 export interface IntactElement extends Element {
     [key: string]: any;
     $EV?: Record<string, IntactEventListener>;
     $V?: VNode | null;
+    $M?: string | null; // v-model
+    $TV?: any; // trueValue
+    $FV?: any; // falseValue
 };
 
 export type Reference = {
     value: boolean
+    result: boolean
 };
 
 export type ChangeTrace = {path: string, newValue: any, oldValue: any};

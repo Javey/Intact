@@ -28,7 +28,7 @@ import {
     Options,
 } from './types';
 import {getTypeForVNodeElement, ChildrenTypes, Types as VNodeTypes} from 'misstime';
-import {isElementNode, getAttrName, isVModel} from './helpers';
+import {isElementNode, getAttrName} from './helpers';
 import {isArray} from 'intact-shared';
 
 type ModelMeta = {
@@ -72,7 +72,7 @@ export class Visitor {
 
         this.append(';');
         this.dedent();
-        this.append('}');
+        this.append('};');
     }
 
     getCode() {
@@ -571,7 +571,7 @@ export class Visitor {
                 case 'key':
                     if (!isCommonElement) {
                         addAttribute(name);
-                        this.visitJSXAttributeValue(attr.value as ASTAttributeTemplateValue);
+                        this.visitJSXAttributeValue(attr.value);
                     }
                     key = attr.value as ASTAttributeTemplateValue;
                     break;
@@ -600,20 +600,24 @@ export class Visitor {
                     break;
                 case 'value':
                     addAttribute(name);
-                    this.visitJSXAttributeValue(attr.value as ASTAttributeTemplateValue);
+                    this.visitJSXAttributeValue(attr.value);
                     modelMeta.value = attr.value as ASTAttributeTemplateValue;
                     break;
                 case 'v-model-true':
+                    addAttribute('trueValue');
+                    this.visitJSXAttributeValue(attr.value);
                     modelMeta.trueValue = attr.value as ASTAttributeTemplateValue;
                     break;
                 case 'v-model-false':
+                    addAttribute('falseValue');
+                    this.visitJSXAttributeValue(attr.value);
                     modelMeta.falseValue = attr.value as ASTAttributeTemplateValue;
                     break;
                 default:
                     if (name === 'v-model') {
                         models.push({name: 'value', value: attr.value as ASTAttributeTemplateValue});
                     } else if (name.substr(0, 8) === 'v-model:') {
-                        models.push({name: name.substr(9), value: attr.value as ASTAttributeTemplateValue});
+                        models.push({name: name.substr(8), value: attr.value as ASTAttributeTemplateValue});
                     } else {
                         addAttribute(name);
                         this.visitJSXAttributeValue(attr.value);
@@ -623,7 +627,7 @@ export class Visitor {
         });
 
         for (let i = 0; i < models.length; i++) {
-            this.visitJSXAttributeModel(node, models[i], modelMeta);
+            this.visitJSXAttributeModel(node, models[i], modelMeta, addAttribute);
         }
 
         if (!isFirstAttr) {
@@ -666,8 +670,69 @@ export class Visitor {
         }
     }
 
-    private visitJSXAttributeModel(node: ASTElement, model: Model, modelMeta: ModelMeta) {
+    private visitJSXAttributeModel(node: ASTElement, {name, value}: Model, modelMeta: ModelMeta, addAttribute: (name?: string) => void) {
+        let setModelFnName = '$setModel';
+        let shouldSetValue = true;
+        const handleRadioOrCheckbox = (head: string, middle: string, tail?: ASTAttributeTemplateValue) => {
+            shouldSetValue = false;
 
+            addAttribute('checked');
+            this.append(head);
+            this.visitJSXAttributeValue(value);
+            this.append(middle);
+            if (tail) {
+                this.visitJSXAttributeValue(tail);
+            } else {
+                this.append('true');
+            }
+        };
+
+        if (node.type === Types.JSXCommonElement) {
+            addAttribute(`$model:${name}`);
+            this.visitJSXAttributeValue(value);
+
+            switch (node.value) {
+                case 'input':
+                    const type = modelMeta.type;
+                    if (type) {
+                        switch (type.value) {
+                            case 'radio':
+                                handleRadioOrCheckbox('$this.get(', ') === ', modelMeta.value);
+                                setModelFnName = '$setRadioModel';
+                                break;
+                            case 'checkbox':
+                                handleRadioOrCheckbox('$isChecked($this.get(', '), ', modelMeta.trueValue);
+                                this.append(')');
+
+                                setModelFnName = '$setCheckboxModel';
+                                break;
+                        }
+                    }
+                case 'select':
+                    setModelFnName = '$setSelectModel';
+                    break;
+            }
+
+            addAttribute(`ev-$model:${name}`);
+            this.append(`$linkEvent($this, ${setModelFnName})`);
+        } else {
+            // is a component
+            addAttribute(`ev-$model:${name}`);
+            this.append(`function($v) {`);
+            this.indent();
+            this.append(`$this.set(`);
+            this.visitJSXAttributeValue(value);
+            this.append(', $v);');
+            this.dedent();
+            this.append('}');
+        }
+
+        if (shouldSetValue) {
+            addAttribute(name);
+            this.append('$this.get('),
+            this.visitJSXAttributeValue(value);
+            this.append(')');
+        }
     }
 
     private visitJSXBlocks(blocks: ASTBlock[], isRoot: boolean) {

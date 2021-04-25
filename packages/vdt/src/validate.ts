@@ -26,14 +26,20 @@ export function validateDirectiveValue(name: string, valueType: Types, tag: stri
     }
 }
 
-export function validateDirectiveModel(tag: string, type: Types, attributes: ASTElement['attributes'], loc: SourceLocation, source: string) {
+export function validateModel(tag: string, type: Types, attributes: ASTElement['attributes'], source: string) {
+    const find = (name: string) => {
+        return attributes.find(attr => attr.type === Types.JSXAttribute && attr.name === name);
+    };
+
+    const model = find('v-model');
+    if (!model) return;
+
+    const loc = model.loc;
     if (type === Types.JSXCommonElement && tag !== 'input' && tag !== 'textarea' && tag !== 'select') {
         throwError(`Only form element and component support 'v-model'`, loc, source);
     }
     if (tag === 'input') {
-        const typeAttr = attributes.find(attr => {
-            return attr.type === Types.JSXAttribute && attr.name === 'type';
-        }) as ASTAttribute;
+        const typeAttr = find('type');
         if (typeAttr && (typeAttr.value as ASTAttributeTemplateValue).type !== Types.JSXString) {
             throwError(`If use 'v-model' on 'input' element, the 'type' property of element cannot be dynamic value.`, loc, source);
         }

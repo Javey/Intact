@@ -8,7 +8,7 @@ export function linkEvent<T, E extends Event>(data: T, event: (data: T, event: E
     return null;
 }
 
-export function isLinkEvent(o: any): o is LinkedEvent<any, any> {
+export function isLinkEvent(o: any): o is LinkedEvent<any> {
     return !isNull(o) && typeof o === 'object';
 }
 
@@ -18,4 +18,12 @@ export function isSameLinkEvent(lastValue: any, nextValue: LinkedEvent<any, any>
         lastValue.event === nextValue.event &&
         lastValue.data === nextValue.data
     );
+}
+
+export function wrapLinkEvent(nextValue: LinkedEvent<any>) {
+    const ev = nextValue.event;
+
+    return function(e: Event) {
+        ev(nextValue.data, e);
+    }
 }

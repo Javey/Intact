@@ -258,6 +258,40 @@ describe('Generate', () => {
         it('v-if and v-for', () => {
             test(`<div><div v-for={a} v-if={value}></div></div>`);
         });
+
+        describe('v-model', () => {
+            it('radio without value', () => {
+                test(`<input v-model="propName" type="radio" />`);
+            });
+
+            it('radio with value', () => {
+                test(`<input v-model="propName" value="test" type="radio" />`);
+            });
+
+            it('checkbox without trueValue and falseValue', () => {
+                test(`<input v-model="propName" type="checkbox" />`);
+            });
+
+            it('checkbox with trueValue', () => {
+                test(`<input v-model="propName" v-model-true="1" type="checkbox" />`);
+            });
+
+            it('select', () => {
+                test(`<select v-model="propName"></select>`);
+            });
+
+            it('textarea', () => {
+                test(`<textarea v-model="propName"></textarea>`);
+            });
+
+            it('component', () => {
+                test(`<Component v-model="propName" />`);
+            });
+
+            it('component with multipe v-model', () => {
+                test(`<Component v-model="propName" v-model:name="myName" />`);
+            });
+        });
     });
 
     describe('JS', () => {

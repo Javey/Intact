@@ -28,7 +28,7 @@ import {
 import {isNullOrUndefined, isUndefined} from 'intact-shared';
 import {directClone, createVoidVNode, normalizeRoot} from './vnode';
 import {patchProp} from '../utils/props';
-import {processElement} from '../wrappers/process';
+import {processElement, processVModel} from '../wrappers/process';
 import {mountRef, unmountRef} from '../utils/ref';
 import {validateKeys, validateProps} from '../utils/validate';
 
@@ -171,6 +171,7 @@ export function patchElement(
     isSVG = isSVG || (nextType & Types.SvgElement) > 0;
 
     REFERENCE.value = false;
+    REFERENCE.result = false;
     let isFormElement = false;
     if (lastProps !== nextProps) {
         if (nextProps !== EMPTY_OBJ) {
@@ -234,6 +235,9 @@ export function patchElement(
 
     if (isFormElement) {
         processElement(nextType, nextVNode, dom, nextProps, false, REFERENCE.value);
+        if (REFERENCE.result) {
+            processVModel(nextType, dom, nextProps);
+        }
     }
 
     const lastRef = lastVNode.ref;
