@@ -449,5 +449,45 @@ describe('Props', () => {
                 expect((vNode.dom as HTMLTextAreaElement).value).to.equal('test');
             });
         });
+
+        describe('VModel', () => {
+            const component = {
+                v: '',
+                set(v: string) {
+                    component.v = v;
+                },
+            };
+
+            it('should handle v-model on input correctly', () => {
+                const vNode = h('input', {value: 'test', 'ev-$model:value': linkEvent(component, (v: typeof component, e: InputEvent) => {
+                    component.set((e.target as HTMLInputElement).value);
+                })});
+                render(vNode);
+
+                const input = vNode.dom as HTMLInputElement;
+                input.value = 'aa';
+                dispatchEvent(input, 'input');
+
+                expect(component.v).to.equal('aa');
+            });
+
+            it('should handle v-model and input event on input element correctly', () => {
+                const inputEvent = sinon.spy();
+                const modelEvent = sinon.spy();
+                const vNode = h('input', {
+                    value: 'test',
+                    'ev-$model:value': linkEvent(component, (v: typeof component, e: InputEvent) => {
+                        modelEvent();
+                    }),
+                    'ev-input': inputEvent
+                });
+                render(vNode);
+
+                const input = vNode.dom as HTMLInputElement;
+                dispatchEvent(input, 'input');
+
+                expect(inputEvent).to.have.been.calledBefore(modelEvent);
+            });
+        });
     });
 });

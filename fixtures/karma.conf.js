@@ -19,16 +19,16 @@ module.exports = function(config) {
                         test: /\.ts/,
                         loader: 'ts-loader',
                     },
-                    // {
-                        // test: /\.ts$/,
-                        // // include: /packages\/\w+\/src\/.*\.ts$/,
+                    {
+                        test: /\.ts$/,
+                        include: /packages\/\w+\/src\/.*\.ts$/,
                         // include: /packages\/vdt\/src\/.*\.ts$/,
-                        // enforce: 'post',
-                        // use: {
-                            // loader: 'istanbul-instrumenter-loader',
-                            // options: {esModule: true}
-                        // }
-                    // },
+                        enforce: 'post',
+                        use: {
+                            loader: 'istanbul-instrumenter-loader',
+                            options: {esModule: true}
+                        }
+                    },
                     {
                         test: /\.css$/,
                         use: ['style-loader', 'css-loader'],

@@ -84,7 +84,7 @@ export const enum Types {
 
     HtmlComment = 1 << 5,
 
-    InputElement = 1 << 5,
+    InputElement = 1 << 6,
     SelectElement = 1 << 7,
     TextareaElement = 1 << 8,
     SvgElement = 1 << 9,

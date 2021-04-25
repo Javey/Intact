@@ -281,7 +281,7 @@ function assertType(value: any, type: Exclude<TypePrimitive, null | undefined>) 
 }
 
 function getType(type: Function) {
-    const match = type && type.toString().match(/^\s*function (\w+)/);
+    const match = type && type.toString().match(/^\s*(?:function|class) (\w+)/);
     return match ? match[1] : '';
 }
 
