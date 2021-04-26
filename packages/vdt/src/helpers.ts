@@ -129,9 +129,14 @@ export const defaultOptions: Options = {
     delimiters: ['{', '}'],
 };
 
+function getValue(el: HTMLInputElement | HTMLOptionElement) {
+    const value = (el as IntactElement).$VA;
+    return isNullOrUndefined(value) ? el.value : value;
+}
+
 export function setRadioModel(component: Component<any>, event: Event) {
     const target = event.target as IntactElement;
-    component.set(target.$M!, (target as HTMLInputElement).value);
+    component.set(target.$M!, getValue(target as HTMLInputElement));
 }
 
 export function setCheckboxModel(component: Component<any>, event: Event) {
@@ -187,14 +192,14 @@ export function setSelectModel(component: Component<any>, event: Event) {
         for (let i = 0; i < options.length; i++) {
             const opt = options[i];
             if (opt.selected) {
-                value.push(opt.value);
+                value.push(getValue(opt));
             }
         }
     } else {
         for (let i = 0; i < options.length; i++) {
             const opt = options[i];
             if (opt.selected) {
-                value = opt.value;
+                value = getValue(opt);
                 break;
             }
         }

@@ -183,6 +183,7 @@ export interface IntactElement extends Element {
     $M?: string | null; // v-model
     $TV?: any; // trueValue
     $FV?: any; // falseValue
+    $VA?: any; // value
 };
 
 export type Reference = {

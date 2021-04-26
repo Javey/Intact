@@ -66,9 +66,12 @@ export function patchProp(
         case 'value':
         case 'volume':
             // if (hasControlledValue && prop === 'value') break;
-            if (isFormElement && prop === 'value') {
-                hasControlledValue.value = true;
-                break;
+            if (prop === 'value') {
+                (dom as IntactElement).$VA = nextValue;
+                if (isFormElement) {
+                    hasControlledValue.value = true;
+                    break;
+                }
             }
             value = isNullOrUndefined(nextValue) ? '' : nextValue;
             if ((dom as any)[prop] !== value) {

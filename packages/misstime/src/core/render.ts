@@ -27,8 +27,14 @@ if (hasDocumentAvailable) {
     */
     if (window.Node) {
         const prototype = Node.prototype as any;
-        prototype.$EV = null;
-        prototype.$V = null;
+        prototype.$EV = null; // event
+        prototype.$V = null; // vNode
+
+        // v-model
+        prototype.$M = null; // model
+        prototype.$TV = null; // trueValue
+        prototype.$FV = null; // falseValue
+        prototype.$VA = null; // value
 
         // Transtion Element
         prototype.$TC = undefined;
