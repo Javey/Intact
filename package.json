@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "benchmark": "karma start fixtures/karma.benchmark.js",
-    "test": "karma start fixtures/karma.conf.js",
+    "test": "karma start fixtures/karma.test.js",
     "snapshot": "UPDATE=1 npm run test"
   },
   "repository": {

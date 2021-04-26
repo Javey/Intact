@@ -8,9 +8,16 @@ import {
     ASTAttribute,
     ASTAttributeTemplateValue,
     Options,
+    ChildrenFlags,
 } from './types';
-import {Component, IntactElement} from 'misstime';
-import {isArray, isNullOrUndefined} from 'intact-shared';
+import {Component, IntactElement, ChildrenTypes} from 'misstime';
+import {
+    isArray, 
+    isNullOrUndefined,
+    throwError as sharedThrowError,
+    isUndefined,
+    isObject,
+} from 'intact-shared';
 
 export function trimRight(str: string) {
     var index = str.length;
@@ -206,4 +213,106 @@ export function setSelectModel(component: Component<any>, event: Event) {
     }
 
     component.set((target as IntactElement).$M!, value);
+}
+
+export function map(data: Record<string, any> | Map<any, any> | Set<any> | any[], iter: (key: any, value: any) => any, thisArg: any) {
+    if (isObject(data)) {
+        const ret: any = [];
+        const callback = (value: any, key: any) => {
+            const result = iter.call(thisArg, value, key);
+            if (isArray(result)) {
+                ret.push(...result);
+            } else {
+                ret.push(result);
+            }
+        };
+        if ((data as any).forEach) {
+            (data as any).forEach(callback);
+        } else if (isArray(data)) {
+            for (let i = 0; i < data.length; i++) {
+                callback(data[i], i);
+            } 
+        } else {
+            for (let key in data) {
+                callback((data as Record<string, any>)[key], key);
+            }
+        }
+
+        return ret;
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+        if (!isNullOrUndefined(data)) {
+            sharedThrowError(`Cannot handle ${typeof data} for ${Directives.For}.`);
+        }
+    }
+
+    return null;
+}
+
+export function computeChildrenFlagForVIf(lastFlag: ChildrenFlags, nextFlag: ChildrenFlags): ChildrenFlags {
+    if (lastFlag === ChildrenFlags.UnknownChildren) return lastFlag;
+
+    if (
+        lastFlag === ChildrenFlags.HasKeyedVNodeChildren && 
+        nextFlag === ChildrenFlags.HasNonKeyedVNodeChildren ||
+        lastFlag === ChildrenFlags.HasKeyedChildren &&
+        nextFlag === ChildrenFlags.HasNonKeyedChildren
+    ) return nextFlag; 
+
+    return lastFlag & nextFlag;
+}
+
+export function computeChildrenFlagForChildren(lastFlag: ChildrenFlags | undefined, nextFlag: ChildrenFlags): ChildrenFlags {
+    if (isUndefined(lastFlag)) return nextFlag;
+    if (lastFlag === ChildrenFlags.UnknownChildren) return lastFlag;
+
+    if (lastFlag === nextFlag) {
+        if (nextFlag === ChildrenFlags.HasKeyedVNodeChildren) {
+            return ChildrenFlags.HasKeyedVNodeChildren;
+        } else if (nextFlag === ChildrenFlags.HasNonKeyedVNodeChildren) {
+            return ChildrenFlags.HasNonKeyedChildren;
+        }
+    }
+
+    return ChildrenFlags.UnknownChildren;
+}
+
+export function childrenFlagToChildrenType(flag: ChildrenFlags): ChildrenTypes | string {
+    if (process.env.NODE_ENV !== 'production') {
+        switch (flag) {
+            case ChildrenFlags.UnknownChildren:
+                return `${ChildrenTypes.UnknownChildren} /* UnknownChildren */`;
+            case ChildrenFlags.HasInvalidChildren:
+                return `${ChildrenTypes.HasInvalidChildren} /* HasInvalidChildren */`;
+            case ChildrenFlags.HasKeyedVNodeChildren:
+            case ChildrenFlags.HasNonKeyedVNodeChildren:
+                return `${ChildrenTypes.HasVNodeChildren} /* HasVNodeChildren */`;
+            case ChildrenFlags.HasKeyedChildren:
+                return `${ChildrenTypes.HasKeyedChildren} /* HasKeyedChildren */`;
+            case ChildrenFlags.HasNonKeyedChildren:
+                return `${ChildrenTypes.HasNonKeyedChildren} /* HasNonKeyedChildren */`;
+            case ChildrenFlags.HasTextChildren:
+                return `${ChildrenTypes.HasTextChildren} /* HasTextChildren */`;
+            default:
+                sharedThrowError('Unknown flag: ' + flag);
+        } 
+    }
+    switch (flag) {
+        case ChildrenFlags.UnknownChildren:
+            return ChildrenTypes.UnknownChildren;
+        case ChildrenFlags.HasInvalidChildren:
+            return ChildrenTypes.HasInvalidChildren;
+        case ChildrenFlags.HasKeyedVNodeChildren:
+        case ChildrenFlags.HasNonKeyedVNodeChildren:
+            return ChildrenTypes.HasVNodeChildren;
+        case ChildrenFlags.HasKeyedChildren:
+            return ChildrenTypes.HasKeyedChildren;
+        case ChildrenFlags.HasNonKeyedChildren:
+            return ChildrenTypes.HasNonKeyedChildren;
+        case ChildrenFlags.HasTextChildren:
+            return ChildrenTypes.HasTextChildren;
+        default:
+            sharedThrowError('Unknown flag: ' + flag);
+    } 
 }

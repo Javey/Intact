@@ -130,3 +130,17 @@ export interface DirectiveFor {
 export type Options = {
     delimiters: [string, string]
 }
+
+export const enum ChildrenFlags {
+    UnknownChildren = 0,
+    HasInvalidChildren = 1,
+    HasKeyedVNodeChildren = 1 << 1,
+    HasNonKeyedVNodeChildren = 1 << 2,
+    HasKeyedChildren = 1 << 3,
+    HasNonKeyedChildren = 1 << 4,
+    HasTextChildren = 1 << 5,
+
+    VNodeChildren = HasKeyedVNodeChildren | HasNonKeyedVNodeChildren,
+    KeydChildren = HasKeyedVNodeChildren | HasKeyedChildren,
+    NonKeydChildren = HasNonKeyedVNodeChildren | HasNonKeyedChildren,
+}

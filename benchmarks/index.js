@@ -30,6 +30,7 @@
         // hasOwn.call(a, 'd');
     // });
 // });
+// import 'misstime/../benchmark/vnode';
 
 suite('if (!a) vs if (isUndefined(a))', () => {
     const a = undefined;

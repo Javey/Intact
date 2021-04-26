@@ -5,11 +5,11 @@ module.exports = function(config) {
     config.set({
         // logLevel: config.LOG_DEBUG,
         files: [
-            './benchmarks/*.js',
+            path.resolve(__dirname, 'benchmark.index.js'),
         ],
-        // preprocessors: {
-            // './benchmarks/*.ts': ['webpack']
-        // },
+        preprocessors: {
+            [path.resolve(__dirname, 'benchmark.index.js')]: ['webpack'],
+        },
         webpack: {
             mode: 'development',
             module: {
@@ -23,6 +23,7 @@ module.exports = function(config) {
             resolve: {
                 extensions: ['.ts', '.js'],
                 alias: {
+                    'intact-shared': path.resolve(__dirname, '../packages/shared/src/index.ts'),
                     'misstime': path.resolve('./packages/misstime/src'),
                 },
             },
@@ -32,7 +33,7 @@ module.exports = function(config) {
             'benchmark',
         ],
         reporters: ['benchmark'],
-        browsers: ['Chrome'],
+        // browsers: ['Chrome'],
         singleRun: true,
     });
 };

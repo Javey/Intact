@@ -26,10 +26,17 @@ import {
     Directives,
     DirectiveFor,
     Options,
+    ChildrenFlags,
 } from './types';
 import {getTypeForVNodeElement, ChildrenTypes, Types as VNodeTypes} from 'misstime';
-import {isElementNode, getAttrName} from './helpers';
-import {isArray} from 'intact-shared';
+import {
+    isElementNode, 
+    getAttrName, 
+    computeChildrenFlagForVIf,
+    computeChildrenFlagForChildren,
+    childrenFlagToChildrenType,
+} from './helpers';
+import {isArray, isUndefined} from 'intact-shared';
 
 type ModelMeta = {
     type?: ASTString
@@ -113,7 +120,7 @@ export class Visitor {
         }
     }
 
-    private visitNode(node: ASTNode, isRoot: boolean) {
+    private visitNode(node: ASTNode, isRoot: boolean): ChildrenFlags | undefined {
         const type = node.type;
         switch (type) {
             case Types.JSXCommonElement:
@@ -122,14 +129,18 @@ export class Visitor {
             case Types.JSXVdt:
                 return this.visitJSXElement(node as ASTElement, isRoot);
             case Types.JSXText:
+                return this.visitJSXText(node as ASTText);
             case Types.JSXString:
-                return this.visitString(node as ASTString | ASTText, false);
+                this.visitString(node as ASTString | ASTText, false);
+                return;
             case Types.JS:
-                return this.visitJS(node as ASTJS);
+                this.visitJS(node as ASTJS);
+                return;
             case Types.JSXExpression:
                 return this.visitJSXExpression(node as ASTExpression);
             case Types.JSHoist:
-                return this.visitJSHoist(node as ASTHoist);
+                this.visitJSHoist(node as ASTHoist);
+                return;
             case Types.JSXComment:
                 return this.visitJSXComment(node as ASTComment);
             case Types.JSXUnescapeText:
@@ -137,8 +148,7 @@ export class Visitor {
         }
     }
 
-    private visitJS(node: ASTJS): number {
-        // this.append(this.enterStringExpression ? `(${node.value})` : node.value);
+    private visitJS(node: ASTJS) {
         const spaces = this.spaces;
         const stack = this.expressionSpacesStack;
         this.spaces = stack[stack.length - 1];
@@ -155,48 +165,43 @@ export class Visitor {
 
         this.spaces = spaces;
         this.pushSpaces(node.spaces);
-
-        return node.spaces;
     }
 
     private visitJSHoist(node: ASTHoist) {
         this.hoist.push(node.value);
     }
 
-    private visitJSXElement(node: ASTElement, isRoot: boolean) {
-        this.visitJSXDirective(node, () => {
+    private visitJSXElement(node: ASTElement, isRoot: boolean): ChildrenFlags {
+        return this.visitJSXDirective(node, (): ChildrenFlags => {
             switch (node.type) {
                 case Types.JSXCommonElement:
                     if (node.value === 'template') {
                         // <template> is a fake tag, we only need handle its children and directives
-                        this.visitJSXChildren(node.children);
-                    } else {
-                        this.visitJSXCommonElement(node);
+                        return this.visitJSXChildren(node.children);
                     }
-                    break;
+                    return this.visitJSXCommonElement(node);
+                default:
+                    return ChildrenFlags.UnknownChildren;
                 case Types.JSXComponent:
-                    this.visitJSXComponent(node);
-                    break;
+                    return this.visitJSXComponent(node);
                 case Types.JSXBlock:
-                    this.visitJSXBlock(node, true);
-                    break;
+                    return this.visitJSXBlock(node, true);
                 case Types.JSXVdt:
-                    this.visitJSXVdt(node, isRoot);
-                    break;
+                    return this.visitJSXVdt(node, isRoot);
             }
         });
     }
 
-    private visitJSXCommonElement(node: ASTCommonElement) {
+    private visitJSXCommonElement(node: ASTCommonElement): ChildrenFlags {
         // TODO: createElementVNode methods
         const tag = node.value;
         this.append(`$ce(${getTypeForVNodeElement(tag)}, '${tag}'`);
 
         this.pushQueue();
         this.append(', ');
-        const childrenType = this.visitJSXChildren(node.children);
-        this.append(`, ${childrenType}`);
-        if (childrenType !== ChildrenTypes.HasInvalidChildren) {
+        const childrenFlag = this.visitJSXChildren(node.children);
+        this.append(`, ${childrenFlagToChildrenType(childrenFlag)}`);
+        if (childrenFlag !== ChildrenFlags.HasInvalidChildren) {
             this.flush(this.popQueue());
             this.pushQueue();
         }
@@ -221,7 +226,7 @@ export class Visitor {
             this.pushQueue();
         }
 
-        this.visitKeyAndRef(key, ref);
+        return this.visitKeyAndRef(key, ref);
     }
 
     private visitJSXComponent(node: ASTComponent) {
@@ -247,20 +252,28 @@ export class Visitor {
             this.pushQueue();
         }
 
-        this.visitKeyAndRef(key, ref);
+        return this.visitKeyAndRef(key, ref);
     }
 
-    private visitJSXExpression(node: ASTExpression) {
+    private visitJSXExpression(node: ASTExpression): ChildrenFlags {
         this.visit(node.value, false);
+        return ChildrenFlags.UnknownChildren;
     }
 
-    private visitJSXUnescapeText(node: ASTUnescapeText) {
+    private visitJSXText(node: ASTText): ChildrenFlags {
+        this.visitString(node, false);
+        return ChildrenFlags.HasTextChildren;
+    }
+
+    private visitJSXUnescapeText(node: ASTUnescapeText): ChildrenFlags {
         this.append('$cu(');
         this.visit(node.value, false);
         this.append(')');
+
+        return ChildrenFlags.HasNonKeyedVNodeChildren;
     }
 
-    private visitJSXBlock(node: ASTBlock, shouldCall: boolean) {
+    private visitJSXBlock(node: ASTBlock, shouldCall: boolean): ChildrenFlags {
         const {params, args} = this.getJSXBlocksAttribute(node);
         const name = node.value
 
@@ -311,9 +324,11 @@ export class Visitor {
                 this.append(`__$blocks['${name}']()`);
             }
         }
+
+        return ChildrenFlags.UnknownChildren;
     }
 
-    private visitJSXVdt(node: ASTVdt, isRoot: boolean) {
+    private visitJSXVdt(node: ASTVdt, isRoot: boolean): ChildrenFlags {
         const name = node.value;
         const blocks = this.getJSXBlocksAndSetChildren(node);
         
@@ -332,13 +347,17 @@ export class Visitor {
         this.append(');');
         this.dedent();
         this.append(`}).call($this)`);
+
+        return ChildrenFlags.UnknownChildren;
     }
 
-    private visitJSXComment(node: ASTComment) {
+    private visitJSXComment(node: ASTComment): ChildrenFlags {
         // TODO: createCommentVNode
         this.append('$ccv(');
         this.visitString(node, false);
         this.append(')');
+
+        return ChildrenFlags.HasNonKeyedVNodeChildren;
     }
 
     private visitString(node: ASTText | ASTString | ASTComment, noQuotes: boolean) {
@@ -349,7 +368,7 @@ export class Visitor {
         this.append(value);
     }
 
-    private visitJSXDirective(node: ASTElement, body: () => void) {
+    private visitJSXDirective(node: ASTElement, body: () => ChildrenFlags): ChildrenFlags {
         const directiveFor: DirectiveFor = {} as DirectiveFor;
         let directiveIf: ASTDirectiveIf | null = null;
 
@@ -377,20 +396,20 @@ export class Visitor {
         // handle v-for firstly
         if (directiveFor.data) {
             if (directiveIf) {
-                this.visitJSXDirectiveFor(directiveFor, () => {
-                    this.visitJSXDirectiveIf(directiveIf!, body);
+                return this.visitJSXDirectiveFor(directiveFor, () => {
+                    return this.visitJSXDirectiveIf(directiveIf!, body);
                 });
             } else {
-                this.visitJSXDirectiveFor(directiveFor, body);
+                return this.visitJSXDirectiveFor(directiveFor, body);
             }
         } else if (directiveIf) {
-            this.visitJSXDirectiveIf(directiveIf, body);
+            return this.visitJSXDirectiveIf(directiveIf, body);
         } else {
-            body();
+            return body();
         }
     }
 
-    private visitJSXDirectiveFor(directive: DirectiveFor, body: () => void) {
+    private visitJSXDirectiveFor(directive: DirectiveFor, body: () => ChildrenFlags): ChildrenFlags {
         // TODO: $map $this
         this.append('$map(');
         this.visitJSXAttributeValue(directive.data);
@@ -409,20 +428,27 @@ export class Visitor {
         this.append(') {'); 
         this.indent();
         this.append('return ');
-        body();
+        const childrenFlag = body();
         this.append(';');
         this.dedent();
         this.append('}, $this)');
+
+        if (childrenFlag & ChildrenFlags.KeydChildren) {
+            return ChildrenFlags.HasKeyedChildren;
+        } else if (childrenFlag === ChildrenFlags.UnknownChildren) {
+            return childrenFlag;
+        }
+        return ChildrenFlags.HasNonKeyedChildren;
     }
 
-    private visitJSXDirectiveIf(directive: ASTDirectiveIf, body: () => void) {
+    private visitJSXDirectiveIf(directive: ASTDirectiveIf, body: () => ChildrenFlags): ChildrenFlags {
         const indentLevel = this.indentLevel;
         let hasElse = false;
 
         this.visitJSXAttributeValue(directive.value);
         this.append(' ?');
         this.indent();
-        body();
+        let childrenFlag = body();
         this.append(' :');
         this.newline();
 
@@ -430,11 +456,12 @@ export class Visitor {
         while (next) {
             const nextDirectives = next.directives;
             const elseIfDir = nextDirectives[Directives.ElseIf];
+
             if (elseIfDir) {
                 this.visitJSXAttributeValue(elseIfDir.value);
                 this.append(' ?');
                 this.indent();
-                this.visitNode(next, false);
+                childrenFlag = computeChildrenFlagForVIf(childrenFlag, this.visitNode(next, false)!);
                 this.append(' :');
                 this.newline();
                 next = elseIfDir.next;
@@ -442,43 +469,42 @@ export class Visitor {
             } 
 
             if (nextDirectives[Directives.Else]) {
-                this.visitNode(next, false);
+                childrenFlag = computeChildrenFlagForVIf(childrenFlag, this.visitNode(next, false)!);
                 hasElse = true;
             }
+
             break;
         }
 
         if (!hasElse) {
             this.append('undefined');
+            childrenFlag = computeChildrenFlagForVIf(childrenFlag, ChildrenFlags.HasInvalidChildren);
         }
 
         this.indentLevel = indentLevel;
+
+        return childrenFlag;
     }
 
-    private visitJSXChildren(nodes: ASTChild[]): ChildrenTypes {
+    private visitJSXChildren(nodes: ASTChild[]): ChildrenFlags {
         const length = nodes.length;
         if (!length) {
             this.append('null');
-            return ChildrenTypes.HasInvalidChildren;
+            return ChildrenFlags.HasInvalidChildren;
         }
 
-        let childrenType: ChildrenTypes;
+        let childrenFlag: ChildrenFlags;
+
         if (length === 1) {
-            const child = nodes[0];
-            const type = child.type;
-            // TODO: v-if v-for
-            if (type === Types.JSXExpression) {
-                // if has expression, then we can not detect children's type
-                childrenType = ChildrenTypes.UnknownChildren;
-            } else if (type === Types.JSXText) {
-                childrenType = ChildrenTypes.HasTextChildren;
-            } else {
-                childrenType = ChildrenTypes.HasVNodeChildren;
+            const child = nodes[0]
+            let hasIndent = false;
+            if (isElementNode(child)) {
+                hasIndent = true;
                 this.append('(');
                 this.indent();
             }
-            this.visitNode(child, false);
-            if (childrenType === ChildrenTypes.HasVNodeChildren) {
+            childrenFlag = this.visitNode(child, false)!;
+            if (hasIndent) {
                 this.dedent();
                 this.append(')');
             }
@@ -486,22 +512,11 @@ export class Visitor {
             this.append('[');
             this.indent();
 
-            childrenType = ChildrenTypes.HasKeyedChildren;
             const lastIndex = nodes.length - 1;
             nodes.forEach((child, index) => {
                 const type = child.type;
-                // FIXME: should detect JSXVdt & JSXBlock?
-                // if (type & (Types.JSXExpression | Types.JSXVdt | Types.JSXBlock)) {
-                if (type === Types.JSXExpression) {
-                    childrenType = ChildrenTypes.UnknownChildren;
-                }
-                if (childrenType !== ChildrenTypes.UnknownChildren) {
-                    if (type === Types.JSXText || !(child as ASTElement).keyed) {
-                        childrenType = ChildrenTypes.HasNonKeyedChildren;
-                    }
-                }
-
-                this.visitNode(child, false);
+                const flag = this.visitNode(child, false);
+                childrenFlag = computeChildrenFlagForChildren(childrenFlag, flag!);
                 if (index !== lastIndex) {
                     this.append(',');
                     this.newline();
@@ -510,9 +525,15 @@ export class Visitor {
 
             this.dedent();
             this.append(']');
+
+            if (childrenFlag! === ChildrenFlags.HasKeyedVNodeChildren) {
+                childrenFlag = ChildrenFlags.HasKeyedChildren;
+            } else if (childrenFlag! === ChildrenFlags.HasNonKeyedVNodeChildren) {
+                childrenFlag = ChildrenFlags.HasNonKeyedChildren;
+            }
         }
 
-        return childrenType;
+        return childrenFlag!;
     }
 
     private visitJSXAttribute(node: ASTElement): 
@@ -808,12 +829,16 @@ export class Visitor {
         return ret;
     }
 
-    private visitKeyAndRef(key: ASTAttributeTemplateValue | null, ref: ASTAttributeTemplateValue | null) {
+    private visitKeyAndRef(key: ASTAttributeTemplateValue | null, ref: ASTAttributeTemplateValue | null): ChildrenFlags {
+        let childrenFlag: ChildrenFlags = ChildrenFlags.HasNonKeyedVNodeChildren;
+
         this.append(', ');
         if (key) {
             this.flush(this.popQueue());
             this.visitJSXAttributeValue(key);
             this.pushQueue();
+
+            childrenFlag = ChildrenFlags.HasKeyedVNodeChildren;
         } else {
             this.append('null');
         }
@@ -829,6 +854,8 @@ export class Visitor {
 
         this.popQueue();
         this.append(')');
+
+        return childrenFlag;
     }
 
     private append(code: string) {

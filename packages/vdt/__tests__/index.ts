@@ -316,6 +316,298 @@ describe('Vdt', () => {
         })
     });
 
+    describe('ChildrenType', () => {
+        describe('v-if', () => {
+            it('v-if has not v-else', () => {
+                test(stripIndent`
+                    <div>
+                        <div v-if={a}></div>
+                    </div>
+                `);
+            });
+
+            it('v-if has v-else', () => {
+                test(stripIndent`
+                    <div>
+                        <div v-if={a}></div>
+                        <span v-else></span>
+                    </div>
+                `);
+            });
+
+            it('v-if invalid element', () => {
+                test(stripIndent`
+                    <div>
+                        <template v-if={a}></template>
+                        <template v-else></template>
+                    </div>
+                `);
+            });
+
+            it('v-if text element', () => {
+                test(stripIndent`
+                    <div>
+                        <template v-if={a}>a</template>
+                        <template v-else>b</template>
+                    </div>
+                `);
+            });
+            
+            it('v-if with expression element', () => {
+                test(stripIndent`
+                    <div>
+                        <template v-if={a}>{a}</template>
+                        <template v-else>b</template>
+                    </div>
+                `);
+            });
+
+            it('v-if with single vNode and multiple vNodes', () => {
+                test(stripIndent`
+                    <div>
+                        <div v-if={a}>{a}</div>
+                        <template v-else>
+                            <div></div>
+                            <div></div>
+                        </template>
+                    </div>
+                `);
+            });
+        });
+
+        describe('v-for', () => {
+            it('v-for keyed vNode', () => {
+                test(stripIndent`
+                    <div>
+                        <div v-for={a} key={value}>{a}</div>
+                    </div>
+                `);
+            });
+
+            it('v-for non-keyed vNode', () => {
+                test(stripIndent`
+                    <div>
+                        <div v-for={a}>{a}</div>
+                    </div>
+                `);
+            });
+
+            it('v-for multiple keyed children', () => {
+                test(stripIndent`
+                    <div>
+                        <template v-for={a}>
+                            <div key="a"></div>
+                            <div key="b"></div>
+                        </template>
+                    </div>
+                `);
+            });
+
+            it('v-for multiple non-keyed children', () => {
+                test(stripIndent`
+                    <div>
+                        <template v-for={a}>
+                            <div></div>
+                            <div></div>
+                        </template>
+                    </div>
+                `);
+            });
+
+            it('v-for with multiple non-keyed and keyed children', () => {
+                test(stripIndent`
+                    <div>
+                        <template v-for={a}>
+                            <div></div>
+                            <div key="b"></div>
+                        </template>
+                    </div>
+                `);
+            });
+            
+            it('v-for with non-keyed v-if without v-else', () => {
+                 test(stripIndent`
+                    <div>
+                        <div v-for={a} v-if={a}></div>
+                    </div>
+                `);
+            });
+
+            it('v-for with non-keyed v-if with v-else in template', () => {
+                 test(stripIndent`
+                    <div>
+                        <template v-for={a}>
+                            <div v-if={a}></div>
+                            <div v-else></div>
+                        </template>
+                    </div>
+                `);
+            });
+
+            it('v-for with keyed v-if with v-else in template', () => {
+                 test(stripIndent`
+                    <div>
+                        <template v-for={a}>
+                            <div v-if={a} key="a"></div>
+                            <div v-else key="a"></div>
+                        </template>
+                    </div>
+                `);
+            });
+
+            it('v-for text', () => {
+                // TODO
+                test(stripIndent`
+                    <div>
+                        <template v-for={a}>
+                            a
+                        </template>
+                    </div>
+                `);
+            });
+        });
+
+        describe('Single Child', () => {
+            it('expression child', () => {
+                test(`<div>{a}</div>`);
+            });
+
+            it('text child', () => {
+                test(`<div>a</div>`);
+            });
+
+            it('element child', () => {
+                test(`<div><div></div></div>`);
+            });
+
+            it('component child', () => {
+                test(`<div><Div></Div></div>`);
+            });
+
+            it('comment child', () => {
+                test(`<div><!----></div>`);
+            });
+
+            it('unescape text child', () => {
+                test(`<div>{=a}</div>`);
+            });
+
+            it('block child', () => {
+                test(`<div><b:block>test</b:block></div>`);
+            });
+
+            it('vdt child', () => {
+                test(`<div><t:vdt /></div>`);
+            });
+
+            it('template text child', () => {
+                test(`<div><template>a</template></div>`);
+            });
+        });
+
+        describe('Multiple Children', () => {
+            it('keyed children', () => {
+                test(stripIndent`
+                    <div>
+                        <div key="a"></div>
+                        <div key="b"></div>
+                    </div>
+                `);
+            });
+
+            it('non-keyed children', () => {
+                test(stripIndent`
+                    <div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                `);
+            });
+
+            it('keyed and non-keyed children', () => {
+                test(stripIndent`
+                    <div>
+                        <div key="a"></div>
+                        <div></div>
+                    </div>
+                `);
+            });
+
+            it('non-keyed template children', () => {
+                 test(stripIndent`
+                    <div>
+                        <template>
+                            <div></div>
+                            <div></div>
+                        </template>
+                    </div>
+                `);
+            });
+
+            it('keyed template children', () => {
+                 test(stripIndent`
+                    <div>
+                        <template>
+                            <div key="a"></div>
+                            <div key="a"></div>
+                        </template>
+                    </div>
+                `);
+            });
+
+            it('non-keyed template with keyed children', () => {
+                 test(stripIndent`
+                    <div>
+                        <template>
+                            <div></div>
+                            <div></div>
+                        </template>
+                        <div key="a"></div>
+                    </div>
+                `);
+            });
+
+            it('keyed template with keyed children', () => {
+                 test(stripIndent`
+                    <div>
+                        <template>
+                            <div key="a"></div>
+                            <div key="a"></div>
+                        </template>
+                        <div key="a"></div>
+                    </div>
+                `);
+            });
+
+            it('expression children with keyed children', () => {
+                 test(stripIndent`
+                    <div>
+                        {a}
+                        <div key="a"></div>
+                    </div>
+                `);
+            });
+
+            it('multiple text children', () => {
+                 test(stripIndent`
+                    <div>
+                        <template>a</template>
+                        <template>b</template>
+                    </div>
+                `);
+            });
+
+            it('text children with keyed children', () => {
+                 test(stripIndent`
+                    <div>
+                        a
+                        <div key="a"></div>
+                    </div>
+                `);
+            });
+        });
+    });
+
     describe('Beautify', () => {
         it('expression', () => {
             test(stripIndent`
