@@ -1,7 +1,5 @@
 import {isFunction} from 'intact-shared';
 import {IntactElement} from '../utils/types';
-import {isCheckedType} from '../wrappers/input';
-import {Types} from '../utils/types';
 
 type EventData = [string, EventListener];
 
@@ -21,7 +19,7 @@ export function attachEvent(dom: IntactElement, eventName: string, handler?: Eve
 }
 
 export function attachModelEvent(dom: IntactElement, eventName: string, handler?: EventListener) {
-    const previousKey = `$$model:${name}`;
+    const previousKey = `$$model:${eventName}`;
     const previousEvent = (dom as any)[previousKey] as EventListener;
 
     if (previousEvent) {

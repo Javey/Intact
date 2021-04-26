@@ -513,6 +513,28 @@ describe('Props', () => {
                 expect(modelEvent).have.been.callCount(1);
                 expect(inputEvent).to.have.been.calledBefore(modelEvent);
             });
+
+            it('should patch v-model event correctly', () => {
+                const inputEvent = sinon.spy();
+                const changeEvent = sinon.spy();
+                const vNode = h('input', {
+                    value: 'test',
+                    'ev-$model:input': inputEvent,
+                });
+                r(vNode, container);
+
+                r(h('input', {
+                    type: 'checkbox',
+                    'ev-$model:change': changeEvent,
+                }), container);
+
+                const input = vNode.dom as HTMLInputElement;
+                dispatchEvent(input, 'input');
+                expect(inputEvent).callCount(0);
+
+                dispatchEvent(input, 'change');
+                expect(changeEvent).callCount(1);
+            });
         });
     });
 });

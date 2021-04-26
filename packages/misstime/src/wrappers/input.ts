@@ -2,14 +2,6 @@ import {isNullOrUndefined} from 'intact-shared';
 import {attachModelEvent} from '../events/attachEvents';
 import {Props} from '../utils/types';
 
-export function inputEvents(dom: HTMLInputElement, lastType: string, nextType: string, event?: EventListener) {
-    if (isCheckedType(nextType)) {
-        attachModelEvent(dom, 'change', event);
-    } else {
-        attachModelEvent(dom, 'input', event);
-    }
-} 
-
 export function applyValueInput(nextProps: any, dom: HTMLInputElement) {
     const {type, value, checked, multiple, defaultValue} = nextProps;
     const hasValue = !isNullOrUndefined(value);

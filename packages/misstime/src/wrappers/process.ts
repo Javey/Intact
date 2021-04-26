@@ -1,7 +1,7 @@
 import {VNode, Types, Props} from '../utils/types';
-import {applyValueInput, inputEvents} from './input';
-import {applyValueSelect, selectEvents} from './select';
-import {applyValueTextArea, textareaEvents} from './textarea';
+import {applyValueInput} from './input';
+import {applyValueSelect} from './select';
+import {applyValueTextArea} from './textarea';
 import {isNullOrUndefined} from 'intact-shared';
 import {wrapLinkEvent} from '../events/linkEvent';
 

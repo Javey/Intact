@@ -183,21 +183,3 @@ function patchModelEvent(name: string, lastValue: EventListener | LinkedEvent<an
     }
     attachModelEvent(dom, name, nextValue);
 }
-
-// function patchModelEvent(
-    // type: Types,
-    // dom: Element,
-    // lastValue: LinkedEvent<any> | undefined,
-    // nextValue: LinkedEvent<any> | undefined,
-    // lastProps: any,
-    // nextProps: any, 
-// ) {
-    // if (nextValue) {
-        // if (isSameLinkEvent(lastValue, nextValue)) {
-            // return;
-        // }
-        // nextValue = wrapLinkEvent(nextValue) as any;
-    // }
-    // processVModel(type, dom, nextValue as any as EventListener, lastProps, nextProps)
-// }
-
