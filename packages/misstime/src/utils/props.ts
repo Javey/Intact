@@ -1,24 +1,20 @@
-import {VNode, Types, LinkedEvent, Reference, TransitionElement, IntactElement} from './types';
+import {VNode, Types, LinkedEvent, Reference, TransitionElement, IntactElement, Props} from './types';
 import {isEventProp, namespaces} from './helpers';
 import {isNullOrUndefined, isUndefined, isString} from 'intact-shared';
 import {delegatedEvents, handleDelegatedEvent} from '../events/delegation';
 import {isLinkEvent, isSameLinkEvent, wrapLinkEvent} from '../events/linkEvent';
-import {attachEvent} from '../events/attachEvents';
+import {attachEvent, attachModelEvent} from '../events/attachEvents';
 import {normalizeEventName, REFERENCE} from './common';
-import {processElement, processVModel} from '../wrappers/process';
+import {processElement} from '../wrappers/process';
 
 export function mountProps(vNode: VNode, type: Types, props: any, dom: Element, isSVG: boolean) {
     const isFormElement = (type & Types.FormElement) > 0;
     REFERENCE.value = false;
-    REFERENCE.result = false;
     for (const prop in props) {
         patchProp(prop, null, props[prop], dom, isSVG, isFormElement, REFERENCE);
     }
     if (isFormElement) {
         processElement(type, vNode, dom, props, true, REFERENCE.value);
-        if (REFERENCE.result) {
-            processVModel(type, dom, props);
-        }
     }
 }
 
@@ -104,10 +100,11 @@ export function patchProp(
         case 'falseValue':
             (dom as IntactElement).$FV = nextValue;
             break;
-        case 'ev-$model:value':
-            if (!isSameLinkEvent(lastValue, nextValue)) {
-                REFERENCE.result = true;
-            }
+        case 'ev-$model:change':
+            patchModelEvent('change', lastValue, nextValue, dom);
+            break;
+        case 'ev-$model:input':
+            patchModelEvent('input', lastValue, nextValue, dom);
             break;
         default:
             if (delegatedEvents[prop]) {
@@ -177,3 +174,30 @@ function patchEvent(name: string, lastValue: EventListener | LinkedEvent<any>, n
     }
     attachEvent(dom, normalizeEventName(name), nextValue);
 }
+function patchModelEvent(name: string, lastValue: EventListener | LinkedEvent<any>, nextValue: EventListener | LinkedEvent<any>, dom: Element) {
+    if (isLinkEvent(nextValue)) {
+        if (isSameLinkEvent(lastValue, nextValue)) {
+            return;
+        }
+        nextValue = wrapLinkEvent(nextValue);
+    }
+    attachModelEvent(dom, name, nextValue);
+}
+
+// function patchModelEvent(
+    // type: Types,
+    // dom: Element,
+    // lastValue: LinkedEvent<any> | undefined,
+    // nextValue: LinkedEvent<any> | undefined,
+    // lastProps: any,
+    // nextProps: any, 
+// ) {
+    // if (nextValue) {
+        // if (isSameLinkEvent(lastValue, nextValue)) {
+            // return;
+        // }
+        // nextValue = wrapLinkEvent(nextValue) as any;
+    // }
+    // processVModel(type, dom, nextValue as any as EventListener, lastProps, nextProps)
+// }
+

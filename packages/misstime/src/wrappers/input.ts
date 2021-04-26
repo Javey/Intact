@@ -2,8 +2,8 @@ import {isNullOrUndefined} from 'intact-shared';
 import {attachModelEvent} from '../events/attachEvents';
 import {Props} from '../utils/types';
 
-export function inputEvents(dom: HTMLInputElement, type: string, event?: EventListener) {
-    if (isCheckedType(type)) {
+export function inputEvents(dom: HTMLInputElement, lastType: string, nextType: string, event?: EventListener) {
+    if (isCheckedType(nextType)) {
         attachModelEvent(dom, 'change', event);
     } else {
         attachModelEvent(dom, 'input', event);

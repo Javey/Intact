@@ -688,6 +688,8 @@ export class Visitor {
         };
 
         if (node.type === Types.JSXCommonElement) {
+            let eventName = 'change';
+
             addAttribute(`$model:${name}`);
             this.visitJSXAttributeValue(value);
 
@@ -706,14 +708,20 @@ export class Visitor {
 
                                 setModelFnName = '$setCheckboxModel';
                                 break;
+                            default:
+                                eventName = 'input';
+                                break;
                         }
                     }
                 case 'select':
                     setModelFnName = '$setSelectModel';
                     break;
+                default:
+                    eventName = 'input';
+                    break;
             }
 
-            addAttribute(`ev-$model:${name}`);
+            addAttribute(`ev-$model:${eventName}`);
             this.append(`$linkEvent($this, ${setModelFnName})`);
         } else {
             // is a component

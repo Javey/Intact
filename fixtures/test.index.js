@@ -7,4 +7,4 @@ function requireAll(r) {
 }
 
 requireAll(require.context('../packages/misstime/__tests__'), true, /\.ts$/);
-// requireAll(require.context('../packages/vdt/__tests__'), true, /\.ts$/);
+requireAll(require.context('../packages/vdt/__tests__'), true, /\.ts$/);

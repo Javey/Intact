@@ -21,7 +21,7 @@ export function attachEvent(dom: IntactElement, eventName: string, handler?: Eve
 }
 
 export function attachModelEvent(dom: IntactElement, eventName: string, handler?: EventListener) {
-    const previousKey = `$$model:value`;
+    const previousKey = `$$model:${name}`;
     const previousEvent = (dom as any)[previousKey] as EventListener;
 
     if (previousEvent) {

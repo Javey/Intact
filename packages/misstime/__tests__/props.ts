@@ -459,9 +459,12 @@ describe('Props', () => {
             };
 
             it('should handle v-model on input correctly', () => {
-                const vNode = h('input', {value: 'test', 'ev-$model:value': linkEvent(component, (v: typeof component, e: InputEvent) => {
-                    component.set((e.target as HTMLInputElement).value);
-                })});
+                const vNode = h('input', {
+                    value: 'test',
+                    'ev-$model:input': linkEvent(component, (v: typeof component, e: InputEvent) => {
+                        component.set((e.target as HTMLInputElement).value);
+                    })
+                });
                 render(vNode);
 
                 const input = vNode.dom as HTMLInputElement;
@@ -476,7 +479,7 @@ describe('Props', () => {
                 const modelEvent = sinon.spy();
                 const vNode = h('input', {
                     value: 'test',
-                    'ev-$model:value': linkEvent(component, (v: typeof component, e: InputEvent) => {
+                    'ev-$model:input': linkEvent(component, (v: typeof component, e: InputEvent) => {
                         modelEvent();
                     }),
                     'ev-input': inputEvent
@@ -486,6 +489,28 @@ describe('Props', () => {
                 const input = vNode.dom as HTMLInputElement;
                 dispatchEvent(input, 'input');
 
+                expect(inputEvent).have.been.callCount(1);
+                expect(modelEvent).have.been.callCount(1);
+                expect(inputEvent).to.have.been.calledAfter(modelEvent);
+            });
+
+            it('should handle v-model and input event order correctly', () => {
+                const inputEvent = sinon.spy();
+                const modelEvent = sinon.spy();
+                const vNode = h('input', {
+                    value: 'test',
+                    'ev-input': inputEvent,
+                    'ev-$model:input': linkEvent(component, (v: typeof component, e: InputEvent) => {
+                        modelEvent();
+                    }),
+                });
+                render(vNode);
+
+                const input = vNode.dom as HTMLInputElement;
+                dispatchEvent(input, 'input');
+
+                expect(inputEvent).have.been.callCount(1);
+                expect(modelEvent).have.been.callCount(1);
                 expect(inputEvent).to.have.been.calledBefore(modelEvent);
             });
         });

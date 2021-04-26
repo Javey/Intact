@@ -15,7 +15,7 @@ function test(template: string) {
     expect(code).to.matchSnapshot();
 }
 
-describe('Generate', () => {
+describe('Vdt', () => {
     afterEach(function() {
         if (this.currentTest!.err) {
             console.error(this.currentTest!.err);

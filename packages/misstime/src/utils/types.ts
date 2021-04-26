@@ -187,7 +187,6 @@ export interface IntactElement extends Element {
 
 export type Reference = {
     value: boolean
-    result: boolean
 };
 
 export type ChangeTrace = {path: string, newValue: any, oldValue: any};

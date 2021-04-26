@@ -40,7 +40,7 @@ if (process.env.NODE_ENV !== 'production') {
     Object.freeze(EMPTY_OBJ);
 }
 
-export const REFERENCE: Reference = {value: false, result: false};
+export const REFERENCE: Reference = {value: false};
 
 export const Fragment: string = '$F';
 
