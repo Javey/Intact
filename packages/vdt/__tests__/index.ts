@@ -628,6 +628,38 @@ describe('Vdt', () => {
         });
     });
 
+    describe('Extract Props', () => {
+        it('should extract props if has not dynamic prop', () => {
+            test(stripIndent`
+                <div>
+                    <div a="1" b class="c">a</div>
+                    <div a="1" b>a</div>
+                    <div a="1"></div>
+                    <div a="1" class="c"></div>
+                    <Div a="1" b class="c"></Div>
+                </div>
+            `);
+        });
+
+        it('should not extract props if has v-model', () => {
+             test(stripIndent`
+                <div>
+                    <input a="1" b class="c" v-model="a" />
+                    <Div a="1" b class="c" v-model="a"></Div>
+                </div>
+            `);
+        });
+
+        it('should not extract props if has blocks', () => {
+            test(stripIndent`
+                <div>
+                    <div a="1"><b:block /></div>
+                    <Div a="1"><b:block /></Div>
+                </div>
+            `)
+        });
+    });
+
     describe('Beautify', () => {
         it('expression', () => {
             test(stripIndent`

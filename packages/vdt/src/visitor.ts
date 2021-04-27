@@ -20,6 +20,7 @@ import {
     ASTElementChild,
     ASTExpressionChild,
     ASTAttributeTemplateValue,
+    ASTAttributeTemplateNoneValue,
     ASTAttributeValue,
     ASTDirectiveIf,
     ASTUnescapeText,
@@ -41,13 +42,13 @@ import {isArray, isUndefined} from 'intact-shared';
 
 type ModelMeta = {
     type?: ASTString
-    trueValue?: ASTAttributeTemplateValue
-    falseValue?: ASTAttributeTemplateValue
-    value?: ASTAttributeTemplateValue
+    trueValue?: ASTAttributeTemplateNoneValue
+    falseValue?: ASTAttributeTemplateNoneValue
+    value?: ASTAttributeTemplateNoneValue
 }
 type Model = {
     name: string
-    value: ASTAttributeTemplateValue
+    value: ASTAttributeTemplateNoneValue
 }
 type DirectiveCallback = (hasFor: boolean) => ChildrenFlags
 type Helpers = keyof typeof helpersMap
@@ -70,6 +71,7 @@ export class Visitor {
     private declares: Record<string, string[] | string> = {};
     private functionHead: string[];
     private tmpIndex = 0;
+    private hoistDeclares: [string, string[]][] = [];
 
     constructor(nodes: ASTRootChild[]) {
         this.functionHead = this.pushQueue();
@@ -93,15 +95,15 @@ export class Visitor {
     getCode() {
         const helpers: string[] = [];
         for (let key in this.helpers) {
-            helpers.push(`var ${key} = Vdt.${helpersMap[key as Helpers]};`);
+            helpers.push(`var ${key} = Vdt.${helpersMap[key as Helpers]};\n`);
         }
 
         return [
-            `var Vdt = _Vdt;\n`,
             this.hoist.join(''),
-            helpers.join('\n'),
-            '\n\n',
-            `return `,
+            `var Vdt = _$vdt;\n`,
+            helpers.join(''),
+            this.getHositDeclares(),
+            `\nreturn `,
             this.functionHead.join(''),
             this.getDelares(),
             this.queue.join(''),
@@ -110,10 +112,9 @@ export class Visitor {
 
     getModuleCode() {
         return [
-            `import Vdt from 'Vdt';\n`,
+            `import Vdt from 'vdt';\n`,
             this.hoist.join(''),
-            '\n',
-            'export default ',
+            '\nexport default ',
             this.queue.join(''),
         ].join('');
     }
@@ -131,6 +132,16 @@ export class Visitor {
         this.indentLevel--;
         this.popQueue();
 
+        return declares.join('');
+    }
+
+    private getHositDeclares() {
+        const declares = [];
+        const hoistDeclares = this.hoistDeclares;
+        for (let i = 0; i < hoistDeclares.length; i++) {
+            const [key, code] = hoistDeclares[i];
+            declares.push(`var ${key} = ${code.join('')};\n`);
+        }
         return declares.join('');
     }
 
@@ -183,6 +194,9 @@ export class Visitor {
                 return this.visitJSXComment(node as ASTComment);
             case Types.JSXUnescapeText:
                 return this.visitJSXUnescapeText(node as ASTUnescapeText);
+            case Types.JSXNone:
+                this.append('true');
+                return;
         }
     }
 
@@ -245,8 +259,7 @@ export class Visitor {
         }
 
         const propsQueue = this.pushQueue();
-        this.append(', ');
-        const {className, key, ref, hasProps} = this.visitJSXAttribute(node);
+        const {className, key, ref, hasProps, hasDynamicProp} = this.visitJSXAttribute(node);
         this.popQueue();
 
         this.append(', ');
@@ -258,16 +271,10 @@ export class Visitor {
             this.append('null')
         }
 
-        this.flush(propsQueue);
-        if (hasProps) {
-            this.flush(this.popQueue());
-            this.pushQueue();
-        }
-
-        return this.visitKeyAndRef(key, ref, false);
+        return this.visitProps(hasProps, hasDynamicProp, propsQueue, key, ref, false);
     }
 
-    private visitJSXComponent(node: ASTComponent) {
+    private visitJSXComponent(node: ASTComponent): ChildrenFlags {
         const blocks = this.getJSXBlocksAndSetChildren(node);
         if (blocks.length) {
             node.attributes.push({
@@ -281,16 +288,10 @@ export class Visitor {
         this.addHelper('_$cc');
         this.append(`_$cc(${node.value}`);
 
-        this.pushQueue();
-        this.append(', ');
-        const {className, key, ref, hasProps} = this.visitJSXAttribute(node);
+        const propsQueue = this.pushQueue();
+        const {className, key, ref, hasProps, hasDynamicProp} = this.visitJSXAttribute(node);
 
-        if (hasProps) {
-            this.flush(this.popQueue());
-            this.pushQueue();
-        }
-
-        return this.visitKeyAndRef(key, ref, true);
+        return this.visitProps(hasProps, hasDynamicProp, propsQueue, key, ref, true);
     }
 
     private visitJSXExpression(node: ASTExpression): ChildrenFlags {
@@ -590,22 +591,32 @@ export class Visitor {
 
     private visitJSXAttribute(node: ASTElement): 
         {
-            className: ASTAttributeTemplateValue | null,
-            key: ASTAttributeTemplateValue | null,
-            ref: ASTAttributeTemplateValue | null,
+            className: ASTAttributeTemplateNoneValue | null,
+            key: ASTAttributeTemplateNoneValue | null,
+            ref: ASTAttributeTemplateNoneValue | null,
             hasProps: boolean,
+            hasDynamicProp?: boolean,
         }
     {
         const attributes = node.attributes;
-        let className: ASTAttributeTemplateValue | null = null;
-        let key: ASTAttributeTemplateValue | null = null;
-        let ref: ASTAttributeTemplateValue | null = null;
+        let className: ASTAttributeTemplateNoneValue | null = null;
+        let key: ASTAttributeTemplateNoneValue | null = null;
+        let ref: ASTAttributeTemplateNoneValue | null = null;
 
         if (!attributes.length) {
             this.append('null');
             return {className, key, ref, hasProps: false};
         }
         
+        const isCommonElement = node.type === Types.JSXCommonElement;
+        const modelMeta: ModelMeta = {};
+        const models: Model[] = [];
+        const hasDynamicProp = this.detectDynamicProp(attributes, isCommonElement);
+        let indentLevel = this.indentLevel;
+        if (!hasDynamicProp) {
+            this.indentLevel = 0;
+        }
+
         let isFirstAttr: boolean = true;
         const addAttribute = (name?: string) => {
             if (isFirstAttr) {
@@ -620,10 +631,6 @@ export class Visitor {
                 this.append(`'${name}': `);
             }
         }
-    
-        const isCommonElement = node.type === Types.JSXCommonElement;
-        const modelMeta: ModelMeta = {};
-        const models: Model[] = [];
 
         attributes.forEach(attr => {
             if (attr.type === Types.JSXExpression) {
@@ -633,87 +640,113 @@ export class Visitor {
             } 
 
             const name = getAttrName(attr.name);
+            const value = attr.value as ASTAttributeTemplateNoneValue;
             switch (name) {
                 case 'className':
                     if (!isCommonElement) {
                         addAttribute(name);
-                        this.visitJSXAttributeClassName(attr.value as ASTAttributeTemplateValue);
+                        this.visitJSXAttributeClassName(value);
                     }
-                    className = attr.value as ASTAttributeTemplateValue;
-                    break;
+                    className = value;
+                    return;
                 case 'key':
                     if (!isCommonElement) {
                         addAttribute(name);
-                        this.visitJSXAttributeValue(attr.value);
+                        this.visitJSXAttributeValue(value);
                     }
-                    key = attr.value as ASTAttributeTemplateValue;
-                    break;
+                    key = value;
+                    return;
                 case 'ref':
                     if (!isCommonElement) {
                         addAttribute(name);
-                        this.visitJSXAttributeRef(attr.value as ASTAttributeTemplateValue, true);
+                        this.visitJSXAttributeRef(value, true);
                     }
-                    ref = attr.value as ASTAttributeTemplateValue;
-                    break;
-                case 'type':
-                    // save the type for v-model of input element
-                    addAttribute(name);
-                    this.visitJSXAttributeValue(attr.value);
-                    modelMeta.type = attr.value as ASTString;
-                    break;
+                    ref = value;
+                    return;
                 case 'blocks':
                     addAttribute(name);
-                    this.visitJSXBlocks(attr.value as ASTBlock[], false);
-                    break;
+                    this.visitJSXBlocks(value as any as ASTBlock[], false);
+                    return;
                 case 'type':
                     // save the type for v-model of input element
                     addAttribute(name);
-                    this.visitJSXAttributeValue(attr.value);
-                    modelMeta.type = attr.value as ASTString;
-                    break;
+                    this.visitJSXAttributeValue(value);
+                    modelMeta.type = value as ASTString;
+                    return;
                 case 'value':
                     addAttribute(name);
-                    this.visitJSXAttributeValue(attr.value);
-                    modelMeta.value = attr.value as ASTAttributeTemplateValue;
+                    this.visitJSXAttributeValue(value);
+                    modelMeta.value = value;
                     break;
                 case 'v-model-true':
                     addAttribute('trueValue');
-                    this.visitJSXAttributeValue(attr.value);
-                    modelMeta.trueValue = attr.value as ASTAttributeTemplateValue;
+                    this.visitJSXAttributeValue(value);
+                    modelMeta.trueValue = value;
                     break;
                 case 'v-model-false':
                     addAttribute('falseValue');
-                    this.visitJSXAttributeValue(attr.value);
-                    modelMeta.falseValue = attr.value as ASTAttributeTemplateValue;
+                    this.visitJSXAttributeValue(value);
+                    modelMeta.falseValue = value;
                     break;
                 default:
                     if (name === 'v-model') {
-                        models.push({name: 'value', value: attr.value as ASTAttributeTemplateValue});
+                        models.push({name: 'value', value});
+                        return;
                     } else if (name.substr(0, 8) === 'v-model:') {
-                        models.push({name: name.substr(8), value: attr.value as ASTAttributeTemplateValue});
+                        models.push({name: name.substr(8), value});
+                        return;
                     } else {
                         addAttribute(name);
-                        this.visitJSXAttributeValue(attr.value);
+                        this.visitJSXAttributeValue(value);
                     }
                     break;
             } 
+
         });
 
         for (let i = 0; i < models.length; i++) {
             this.visitJSXAttributeModel(node, models[i], modelMeta, addAttribute);
         }
 
-        if (!isFirstAttr) {
-            this.dedent();
-            this.append('}');
-        } else {
-            this.append('null');
-        }
+        this.dedent();
+        this.append('}');
 
-        return {className, key, ref, hasProps: !isFirstAttr};
+        this.indentLevel = indentLevel;
+
+        return {className, key, ref, hasProps: !isFirstAttr, hasDynamicProp};
     }
 
-    private visitJSXAttributeClassName(value: ASTAttributeTemplateValue) {
+    private detectDynamicProp(attributes: ASTBaseElement['attributes'], isCommonElement: boolean) {
+        for (let i = 0; i < attributes.length; i++) {
+            const attr = attributes[i];
+            if (attr.type === Types.JSXExpression) {
+                return true;
+            }
+            const name = getAttrName(attr.name);
+            switch (name) {
+                case 'className':
+                case 'key':
+                    if (isCommonElement) continue;
+                    break;
+                case 'ref':
+                    if (!isCommonElement) return true;
+                    break;
+                case 'blocks':
+                    return true;
+                default:
+                    if (name === 'v-model' || name.substr(0, 8) === 'v-model:') {
+                        return true;
+                    }
+                    if ((attr.value as ASTAttributeTemplateValue).type === Types.JSXExpression) {
+                        return true;
+                    }
+                    break;
+            }
+        }
+        return false;
+    }
+
+    private visitJSXAttributeClassName(value: ASTAttributeTemplateNoneValue) {
         if (value.type === Types.JSXExpression) {
             this.addHelper('_$cn');
             this.append('_$cn(');
@@ -732,7 +765,7 @@ export class Visitor {
         }
     }
 
-    private visitJSXAttributeRef(value: ASTAttributeTemplateValue, isComponent: boolean) {
+    private visitJSXAttributeRef(value: ASTAttributeTemplateNoneValue, isComponent: boolean) {
         if (value.type === Types.JSXString) {
             this.addDeclare('_$refs', 'this.refs');
             // if it is a component, the ref will use twice, so we extract it as variable
@@ -756,10 +789,15 @@ export class Visitor {
         }
     }
 
-    private visitJSXAttributeModel(node: ASTElement, {name, value}: Model, modelMeta: ModelMeta, addAttribute: (name?: string) => void) {
+    private visitJSXAttributeModel(
+        node: ASTElement,
+        {name, value}: Model,
+        modelMeta: ModelMeta,
+        addAttribute: (name?: string) => void
+    ) {
         let setModelFnName: Helpers = '_$sm';
         let shouldSetValue = true;
-        const handleRadioOrCheckbox = (head: string, middle: string, tail?: ASTAttributeTemplateValue) => {
+        const handleRadioOrCheckbox = (head: string, middle: string, tail?: ASTAttributeTemplateNoneValue) => {
             shouldSetValue = false;
 
             addAttribute('checked');
@@ -800,6 +838,7 @@ export class Visitor {
                                 break;
                         }
                     }
+                    break;
                 case 'select':
                     setModelFnName = '_$ssm';
                     break;
@@ -898,12 +937,31 @@ export class Visitor {
         return ret;
     }
 
-    private visitKeyAndRef(
-        key: ASTAttributeTemplateValue | null,
-        ref: ASTAttributeTemplateValue | null,
+    private visitProps(
+        hasProps: boolean,
+        hasDynamicProp: boolean | undefined,
+        propsQueue: string[],
+        key: ASTAttributeTemplateNoneValue | null,
+        ref: ASTAttributeTemplateNoneValue | null,
         isComponent: boolean,
     ): ChildrenFlags {
         let childrenFlag: ChildrenFlags = ChildrenFlags.HasNonKeyedVNodeChildren;
+
+        if (hasProps) {
+            if (isComponent) {
+                // if it is a component, discard the props in queue, we'll add it bellow
+                this.popQueue();
+            } else {
+                this.flush(this.popQueue());
+            }
+            this.append(', ');
+            if (hasDynamicProp) {
+                this.flush(propsQueue);
+            } else {
+                this.append(this.addHoistDeclare(propsQueue));
+            }
+            this.pushQueue();
+        }
 
         this.append(', ');
         if (key) {
@@ -943,8 +1001,13 @@ export class Visitor {
         this.helpers[helper] = true;
     }
 
-    private addDeclare(key: string | null, code: string[] | string) {
-        if (key === null) key = `_$tmp${this.tmpIndex++}`;
+    private addHoistDeclare(code: string[]) {
+        const key = `_$tmp${this.tmpIndex++}`;
+        this.hoistDeclares.push([key, code]);
+        return key;
+    }
+
+    private addDeclare(key: string, code: string[] | string) {
         this.declares[key] = code;
         return key;
     }

@@ -14,6 +14,7 @@ export const enum Types {
 
     JSXAttribute,
     JSXString,
+    JSXNone,
 }
 
 export interface SourceLocation {
@@ -48,6 +49,7 @@ export interface ASTBaseElement extends ASTNode {
     directives: {[key in DirectiveCommon]?: ASTAttribute} & {[key in DirectiveIf]?: ASTDirectiveIf}, 
     children: ASTElementChild[]
     keyed: boolean
+    hasDynamicProp: boolean
 }
 
 export interface ASTCommonElement extends ASTBaseElement {
@@ -83,6 +85,10 @@ export interface ASTAttribute extends ASTNode {
     value: ASTAttributeValue
 }
 
+export interface ASTNone extends ASTNode {
+    type: Types.JSXNone
+}
+
 export interface ASTDirectiveIf extends ASTNode {
     type: Types.JSXDirectiveIf,
     name: string,
@@ -105,7 +111,8 @@ export type ASTRootChild = ASTHoist | ASTJS | ASTElement | ASTComment
 export type ASTExpressionChild = ASTJS | ASTElement | ASTComment | ASTText
 export type ASTElementChild = ASTElement | ASTComment | ASTText | ASTExpression | ASTUnescapeText
 export type ASTChild = ASTRootChild | ASTExpressionChild | ASTElementChild
-export type ASTAttributeTemplateValue = ASTString | ASTExpression
+export type ASTAttributeTemplateNoneValue = ASTString | ASTExpression
+export type ASTAttributeTemplateValue = ASTAttributeTemplateNoneValue | ASTNone
 export type ASTAttributeValue = ASTAttributeTemplateValue | ASTElementChild | ASTElementChild[]
 
 export const enum Directives {

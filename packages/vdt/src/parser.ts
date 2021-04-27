@@ -22,6 +22,7 @@ import {
     ASTDirectiveIf,
     ASTAttributeTemplateValue,
     ASTUnescapeText,
+    ASTNone,
     Directives,
     DirectiveIf,
     DirectiveCommon,
@@ -318,7 +319,7 @@ export class Parser {
         const directives: ASTElement['directives'] = {};
         let keyed = false;
         let hasVRaw = false;
-        let value: ASTString | ASTExpression;
+        let value: ASTString | ASTExpression | ASTNone;
 
         while (this.index < this.length) {
             this.skipWhitespace();
@@ -346,13 +347,9 @@ export class Parser {
             } else {
                 // treat no-value attribute as true
                 value = {
-                    type: Types.JSXExpression,
-                    value: [{
-                        type: Types.JS,
-                        value: ['true'],
-                    }],
+                    type: Types.JSXNone,
                     loc: this.getLocation(),
-                } as ASTExpression;
+                } as ASTNone;
             }
 
             if (process.env.NODE_ENV !== 'produdction') {
