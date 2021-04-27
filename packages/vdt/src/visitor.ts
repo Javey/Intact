@@ -35,6 +35,7 @@ import {
     computeChildrenFlagForVIf,
     computeChildrenFlagForChildren,
     childrenFlagToChildrenType,
+    helpersMap,
 } from './helpers';
 import {isArray, isUndefined} from 'intact-shared';
 
@@ -48,6 +49,8 @@ type Model = {
     name: string
     value: ASTAttributeTemplateValue
 }
+type DirectiveCallback = (hasFor: boolean) => ChildrenFlags
+type Helpers = keyof typeof helpersMap
 
 const fakeLoc: SourceLocation = {line: 0, column: 0};
 
@@ -63,6 +66,8 @@ export class Visitor {
     private spaces = '';
     private spacesStatck: string[] = [''];
     private expressionSpacesStack: string[] = [];
+    private helpers: {[key in Helpers]?: true} = {};
+    private declares: Record<string, string[]> = {};
 
     constructor(nodes: ASTRootChild[]) {
         this.append(`function($props, $blocks) {`);
@@ -83,14 +88,26 @@ export class Visitor {
     }
 
     getCode() {
-        // return this.hoist.join('') + this.queue.join('');
-        return this.getModuleCode();
+        let helpers: string[] = [];
+        for (let key in this.helpers) {
+            helpers.push(`var ${key} = Vdt.${helpersMap[key as Helpers]};`);
+        }
+        return [
+            `var Vdt = _Vdt;\n`,
+            this.hoist.join(''),
+            helpers.join('\n'),
+            '\n\n',
+            `return `,
+            this.queue.join(''),
+        ].join('');
+        // return this.getModuleCode();
     }
 
     getModuleCode() {
         return [
-            `import {xxx} from 'Vdt';\n`,
+            `import Vdt from 'Vdt';\n`,
             this.hoist.join(''),
+            '\n',
             'export default ',
             this.queue.join(''),
         ].join('');
@@ -110,7 +127,7 @@ export class Visitor {
                 this.append('return ');
             }
 
-            this.visitNode(node, isRoot);
+            this.visitNode(node, isRoot, true);
         });
         let newLength = this.spacesStatck.length;
         this.expressionSpacesStack.pop();
@@ -120,16 +137,16 @@ export class Visitor {
         }
     }
 
-    private visitNode(node: ASTNode, isRoot: boolean): ChildrenFlags | undefined {
+    private visitNode(node: ASTNode, isRoot: boolean, textToVNode: boolean): ChildrenFlags | undefined {
         const type = node.type;
         switch (type) {
             case Types.JSXCommonElement:
             case Types.JSXComponent:
             case Types.JSXBlock:
             case Types.JSXVdt:
-                return this.visitJSXElement(node as ASTElement, isRoot);
+                return this.visitJSXElement(node as ASTElement, isRoot, textToVNode);
             case Types.JSXText:
-                return this.visitJSXText(node as ASTText);
+                return this.visitJSXText(node as ASTText, textToVNode);
             case Types.JSXString:
                 this.visitString(node as ASTString | ASTText, false);
                 return;
@@ -171,13 +188,13 @@ export class Visitor {
         this.hoist.push(node.value);
     }
 
-    private visitJSXElement(node: ASTElement, isRoot: boolean): ChildrenFlags {
-        return this.visitJSXDirective(node, (): ChildrenFlags => {
+    private visitJSXElement(node: ASTElement, isRoot: boolean, textToVNode: boolean): ChildrenFlags {
+        return this.visitJSXDirective(node, hasFor => {
             switch (node.type) {
                 case Types.JSXCommonElement:
                     if (node.value === 'template') {
                         // <template> is a fake tag, we only need handle its children and directives
-                        return this.visitJSXChildren(node.children);
+                        return this.visitJSXChildren(node.children, hasFor ? true : textToVNode);
                     }
                     return this.visitJSXCommonElement(node);
                 default:
@@ -193,9 +210,9 @@ export class Visitor {
     }
 
     private visitJSXCommonElement(node: ASTCommonElement): ChildrenFlags {
-        // TODO: createElementVNode methods
         const tag = node.value;
-        this.append(`$ce(${getTypeForVNodeElement(tag)}, '${tag}'`);
+        this.addHelper('_$ce');
+        this.append(`_$ce(${getTypeForVNodeElement(tag)}, '${tag}'`);
 
         this.pushQueue();
         this.append(', ');
@@ -240,8 +257,8 @@ export class Visitor {
             });
         }
 
-        // TODO: createComponentVNode
-        this.append(`$cc(${node.value}`);
+        this.addHelper('_$cc');
+        this.append(`_$cc(${node.value}`);
 
         this.pushQueue();
         this.append(', ');
@@ -260,13 +277,22 @@ export class Visitor {
         return ChildrenFlags.UnknownChildren;
     }
 
-    private visitJSXText(node: ASTText): ChildrenFlags {
+    private visitJSXText(node: ASTText, textToVNode: boolean): ChildrenFlags {
+        if (textToVNode) {
+            this.addHelper('_$ct');
+            this.append('_$ct(');
+            this.visitString(node, false);
+            this.append(')');
+            return ChildrenFlags.HasNonKeyedVNodeChildren;
+        }
+
         this.visitString(node, false);
         return ChildrenFlags.HasTextChildren;
     }
 
     private visitJSXUnescapeText(node: ASTUnescapeText): ChildrenFlags {
-        this.append('$cu(');
+        this.addHelper('_$cu');
+        this.append('_$cu(');
         this.visit(node.value, false);
         this.append(')');
 
@@ -299,7 +325,8 @@ export class Visitor {
         this.newline();
         this.append(`var callBlock = function() {`);
         this.indent();
-        this.append(`return _$blocks['${name}'].appy($this, [$noop].concat(args));`);
+        this.addHelper('_$no');
+        this.append(`return _$blocks['${name}'].appy($this, [_$no].concat(args));`);
         this.dedent();
         this.append('};');
         this.newline();
@@ -352,8 +379,8 @@ export class Visitor {
     }
 
     private visitJSXComment(node: ASTComment): ChildrenFlags {
-        // TODO: createCommentVNode
-        this.append('$ccv(');
+        this.addHelper('_$ccv');
+        this.append('_$ccv(');
         this.visitString(node, false);
         this.append(')');
 
@@ -368,7 +395,7 @@ export class Visitor {
         this.append(value);
     }
 
-    private visitJSXDirective(node: ASTElement, body: () => ChildrenFlags): ChildrenFlags {
+    private visitJSXDirective(node: ASTElement, body: DirectiveCallback): ChildrenFlags {
         const directiveFor: DirectiveFor = {} as DirectiveFor;
         let directiveIf: ASTDirectiveIf | null = null;
 
@@ -397,21 +424,21 @@ export class Visitor {
         if (directiveFor.data) {
             if (directiveIf) {
                 return this.visitJSXDirectiveFor(directiveFor, () => {
-                    return this.visitJSXDirectiveIf(directiveIf!, body);
+                    return this.visitJSXDirectiveIf(directiveIf!, () => body(true));
                 });
             } else {
-                return this.visitJSXDirectiveFor(directiveFor, body);
+                return this.visitJSXDirectiveFor(directiveFor, () => body(true));
             }
         } else if (directiveIf) {
-            return this.visitJSXDirectiveIf(directiveIf, body);
+            return this.visitJSXDirectiveIf(directiveIf, () => body(false));
         } else {
-            return body();
+            return body(false);
         }
     }
 
     private visitJSXDirectiveFor(directive: DirectiveFor, body: () => ChildrenFlags): ChildrenFlags {
-        // TODO: $map $this
-        this.append('$map(');
+        this.addHelper('_$ma');
+        this.append('_$ma(');
         this.visitJSXAttributeValue(directive.data);
         this.append(', function(');
         if (directive.value) {
@@ -461,7 +488,7 @@ export class Visitor {
                 this.visitJSXAttributeValue(elseIfDir.value);
                 this.append(' ?');
                 this.indent();
-                childrenFlag = computeChildrenFlagForVIf(childrenFlag, this.visitNode(next, false)!);
+                childrenFlag = computeChildrenFlagForVIf(childrenFlag, this.visitNode(next, false, false)!);
                 this.append(' :');
                 this.newline();
                 next = elseIfDir.next;
@@ -469,7 +496,7 @@ export class Visitor {
             } 
 
             if (nextDirectives[Directives.Else]) {
-                childrenFlag = computeChildrenFlagForVIf(childrenFlag, this.visitNode(next, false)!);
+                childrenFlag = computeChildrenFlagForVIf(childrenFlag, this.visitNode(next, false, false)!);
                 hasElse = true;
             }
 
@@ -486,7 +513,7 @@ export class Visitor {
         return childrenFlag;
     }
 
-    private visitJSXChildren(nodes: ASTChild[]): ChildrenFlags {
+    private visitJSXChildren(nodes: ASTChild[], textToVNode?: boolean): ChildrenFlags {
         const length = nodes.length;
         if (!length) {
             this.append('null');
@@ -503,7 +530,7 @@ export class Visitor {
                 this.append('(');
                 this.indent();
             }
-            childrenFlag = this.visitNode(child, false)!;
+            childrenFlag = this.visitNode(child, false, isUndefined(textToVNode) ? false : textToVNode)!;
             if (hasIndent) {
                 this.dedent();
                 this.append(')');
@@ -515,7 +542,7 @@ export class Visitor {
             const lastIndex = nodes.length - 1;
             nodes.forEach((child, index) => {
                 const type = child.type;
-                const flag = this.visitNode(child, false);
+                const flag = this.visitNode(child, false, true);
                 childrenFlag = computeChildrenFlagForChildren(childrenFlag, flag!);
                 if (index !== lastIndex) {
                     this.append(',');
@@ -663,8 +690,8 @@ export class Visitor {
 
     private visitJSXAttributeClassName(value: ASTAttributeTemplateValue) {
         if (value.type === Types.JSXExpression) {
-            // TODO: $className
-            this.append('$className(');
+            this.addHelper('_$cn');
+            this.append('_$cn(');
             this.visitJSXAttributeValue(value);
             this.append(')');
         } else {
@@ -676,14 +703,14 @@ export class Visitor {
         if (isArray(value)) {
             this.visitJSXChildren(value);
         } else {
-            this.visitNode(value, false);
+            this.visitNode(value, false, false);
         }
     }
 
     private visitJSXAttributeRef(value: ASTAttributeTemplateValue) {
         if (value.type === Types.JSXString) {
             // TODO: $refs and extract ref
-            this.append(`function(i) {$refs[`);
+            this.append(`function(i) {_$refs[`);
             this.visitJSXAttributeValue(value);
             this.append(`] = i}`);
         } else {
@@ -692,7 +719,7 @@ export class Visitor {
     }
 
     private visitJSXAttributeModel(node: ASTElement, {name, value}: Model, modelMeta: ModelMeta, addAttribute: (name?: string) => void) {
-        let setModelFnName = '$setModel';
+        let setModelFnName: Helpers = '_$sm';
         let shouldSetValue = true;
         const handleRadioOrCheckbox = (head: string, middle: string, tail?: ASTAttributeTemplateValue) => {
             shouldSetValue = false;
@@ -721,13 +748,14 @@ export class Visitor {
                         switch (type.value) {
                             case 'radio':
                                 handleRadioOrCheckbox('$this.get(', ') === ', modelMeta.value);
-                                setModelFnName = '$setRadioModel';
+                                setModelFnName = '_$srm';
                                 break;
                             case 'checkbox':
-                                handleRadioOrCheckbox('$isChecked($this.get(', '), ', modelMeta.trueValue);
+                                this.addHelper('_$ic');
+                                handleRadioOrCheckbox('_$ic($this.get(', '), ', modelMeta.trueValue);
                                 this.append(')');
 
-                                setModelFnName = '$setCheckboxModel';
+                                setModelFnName = '_$scm';
                                 break;
                             default:
                                 eventName = 'input';
@@ -735,7 +763,7 @@ export class Visitor {
                         }
                     }
                 case 'select':
-                    setModelFnName = '$setSelectModel';
+                    setModelFnName = '_$ssm';
                     break;
                 default:
                     eventName = 'input';
@@ -743,7 +771,9 @@ export class Visitor {
             }
 
             addAttribute(`ev-$model:${eventName}`);
-            this.append(`$linkEvent($this, ${setModelFnName})`);
+            this.addHelper('_$le');
+            this.addHelper(setModelFnName);
+            this.append(`_$le($this, ${setModelFnName})`);
         } else {
             // is a component
             addAttribute(`ev-$model:${name}`);
@@ -767,8 +797,7 @@ export class Visitor {
     private visitJSXBlocks(blocks: ASTBlock[], isRoot: boolean) {
         this.append('function($blocks) {');
         this.indent();
-        // TODO: $extend
-        this.append(`var _$blocks = {}, __$blocks = $extend({}, $blocks);`);
+        this.append(`var _$blocks = {}, __$blocks = $ex({}, $blocks);`);
         this.newline();
         this.append('return (');
 
@@ -861,9 +890,13 @@ export class Visitor {
     private append(code: string) {
         this.current.push(code);
 
-        if (true /* sourceMap */) {
+        // if (true [> sourceMap <]) {
             // TODO 
-        }
+        // }
+    }
+
+    private addHelper(helper: Helpers) {
+        this.helpers[helper] = true;
     }
 
     private pushQueue() {

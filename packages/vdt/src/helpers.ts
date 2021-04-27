@@ -316,3 +316,21 @@ export function childrenFlagToChildrenType(flag: ChildrenFlags): ChildrenTypes |
             sharedThrowError('Unknown flag: ' + flag);
     } 
 }
+
+export const helpersMap = {
+    '_$ce': 'createElementVNode',
+    '_$cc': 'createComponentVNode',
+    '_$ct': 'createTextVNode',
+    '_$ccv': 'createCommentVNode',
+    '_$cu': 'createUnescapeTextVNode',
+    '_$le': 'linkEvent',
+    '_$ma': 'map',
+    '_$ex': 'extends',
+    '_$sm': 'setModel',
+    '_$srm': 'setRadioModel',
+    '_$scm': 'setCheckboxModel',
+    '_$ssm': 'setSelectModel',
+    '_$ic': 'isChecked',
+    '_$cn': 'className',
+    '_$no': 'noop',
+}

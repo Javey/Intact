@@ -456,11 +456,31 @@ describe('Vdt', () => {
             });
 
             it('v-for text', () => {
-                // TODO
                 test(stripIndent`
                     <div>
                         <template v-for={a}>
                             a
+                        </template>
+                    </div>
+                `);
+            });
+
+            it('v-for text with keyed element', () => {
+                test(stripIndent`
+                    <div>
+                        <template v-for={a}>
+                            a
+                            <div key="a"></div>
+                        </template>
+                    </div>
+                `);
+            });
+
+            it('v-for nested template text', () => {
+                test(stripIndent`
+                    <div>
+                        <template v-for={a}>
+                            <template>a</template>
                         </template>
                     </div>
                 `);
