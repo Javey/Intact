@@ -1,8 +1,8 @@
 import type {Component} from '../core/component';
 import {Props, VNodeComponentClass, ChangeTrace, IntactDom, VNode, ComponentConstructor} from './types';
 import {get, set, isEventProp} from './helpers';
-import {isNull, isFunction, isUndefined, isNullOrUndefined, hasOwn} from 'intact-shared';
-import {normalizeEventName, EMPTY_OBJ, findDomFromVNode, callAll, getComponentName} from './common';
+import {isNull, isFunction, isUndefined, isNullOrUndefined, hasOwn, EMPTY_OBJ} from 'intact-shared';
+import {normalizeEventName, findDomFromVNode, callAll, getComponentName} from './common';
 import {normalizeRoot, createCommentVNode} from '../core/vnode';
 import {patch} from '../core/patch';
 import {mount} from '../core/mount';

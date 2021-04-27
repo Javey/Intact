@@ -19,13 +19,12 @@ import {
     setTextContent,
     removeChild,
     insertOrAppend,
-    EMPTY_OBJ,
     REFERENCE,
     findDomFromVNode,
     removeVNodeDom,
     moveVNodeDom,
 } from '../utils/common';
-import {isNullOrUndefined, isUndefined} from 'intact-shared';
+import {isNullOrUndefined, isUndefined, EMPTY_OBJ} from 'intact-shared';
 import {directClone, createVoidVNode, normalizeRoot} from './vnode';
 import {patchProp} from '../utils/props';
 import {processElement} from '../wrappers/process';

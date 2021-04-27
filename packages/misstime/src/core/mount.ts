@@ -13,11 +13,11 @@ import {
     ComponentClass,
     TransitionElement
 } from '../utils/types';
-import {isNullOrUndefined, throwError, isFunction, isUndefined} from 'intact-shared';
+import {isNullOrUndefined, throwError, isFunction, isUndefined, EMPTY_OBJ} from 'intact-shared';
 import {directClone, normalizeRoot} from './vnode';
 import {mountProps} from '../utils/props';
 import {mountRef} from '../utils/ref';
-import {setTextContent, EMPTY_OBJ, insertOrAppend} from '../utils/common';
+import {setTextContent, insertOrAppend} from '../utils/common';
 import {validateKeys, validateProps} from '../utils/validate';
 
 export function mount(

@@ -1,6 +1,6 @@
 import {VNode, ChildrenTypes, Types, Reference} from '../utils/types';
-import {isNullOrUndefined, isNumber, isArray, isUndefined} from 'intact-shared';
-import {EMPTY_OBJ, REFERENCE} from '../utils/common';
+import {isNullOrUndefined, isNumber, isArray, isUndefined, EMPTY_OBJ} from 'intact-shared';
+import {REFERENCE} from '../utils/common';
 import {attachModelEvent} from '../events/attachEvents';
 
 // export function selectEvents(dom: HTMLSelectElement, event?: EventListener) {

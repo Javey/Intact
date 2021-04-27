@@ -11,7 +11,6 @@ import {
     TypeDefs,
 } from '../utils/types';
 import {unmount} from './unmount';
-import {EMPTY_OBJ} from '../utils/common';
 import {get, set} from '../utils/helpers';
 import {
     isNull,
@@ -19,7 +18,8 @@ import {
     isUndefined,
     isObject,
     isNullOrUndefined,
-    isString
+    isString,
+    EMPTY_OBJ,
 } from 'intact-shared';
 import {
     componentInited, 

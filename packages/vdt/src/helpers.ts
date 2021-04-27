@@ -17,6 +17,7 @@ import {
     throwError as sharedThrowError,
     isUndefined,
     isObject,
+    EMPTY_OBJ,
 } from 'intact-shared';
 
 export function trimRight(str: string) {
@@ -333,4 +334,13 @@ export const helpersMap = {
     '_$ic': 'isChecked',
     '_$cn': 'className',
     '_$no': 'noop',
+    '_$em': 'EMPTY_OBJ',
+}
+
+export function extend(source: Record<string, any>, extra: Record<string, any>) {
+    if (extra === EMPTY_OBJ) return source;
+    for (let key in extra) {
+        source[key] = extra[key];
+    }
+    return source;
 }

@@ -52,3 +52,8 @@ export function error(message: string) {
 }
 
 export const hasOwn = Object.prototype.hasOwnProperty;
+
+export const EMPTY_OBJ: any = {};
+if (process.env.NODE_ENV !== 'production') {
+    Object.freeze(EMPTY_OBJ);
+}

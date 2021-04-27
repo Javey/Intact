@@ -67,9 +67,12 @@ export class Visitor {
     private spacesStatck: string[] = [''];
     private expressionSpacesStack: string[] = [];
     private helpers: {[key in Helpers]?: true} = {};
-    private declares: Record<string, string[]> = {};
+    private declares: Record<string, string[] | string> = {};
+    private functionHead: string[];
+    private tmpIndex = 0;
 
     constructor(nodes: ASTRootChild[]) {
+        this.functionHead = this.pushQueue();
         this.append(`function($props, $blocks) {`);
         this.indent();
         this.append(`$blocks || ($blocks = {});`);
@@ -77,9 +80,9 @@ export class Visitor {
         this.append(`$props || ($props = {});`);
         this.newline();
         this.append('var $this = this;');
-        this.append('\n');
-        this.newline();
+        this.popQueue();
 
+        this.newline();
         this.visit(nodes, true);
 
         this.append(';');
@@ -88,19 +91,21 @@ export class Visitor {
     }
 
     getCode() {
-        let helpers: string[] = [];
+        const helpers: string[] = [];
         for (let key in this.helpers) {
             helpers.push(`var ${key} = Vdt.${helpersMap[key as Helpers]};`);
         }
+
         return [
             `var Vdt = _Vdt;\n`,
             this.hoist.join(''),
             helpers.join('\n'),
             '\n\n',
             `return `,
+            this.functionHead.join(''),
+            this.getDelares(),
             this.queue.join(''),
         ].join('');
-        // return this.getModuleCode();
     }
 
     getModuleCode() {
@@ -111,6 +116,22 @@ export class Visitor {
             'export default ',
             this.queue.join(''),
         ].join('');
+    }
+
+    private getDelares() {
+        const declares = this.pushQueue();
+        this.indent();
+        for (let key in this.declares) {
+            const declare = this.declares[key];
+            this.append(`var ${key} = `);
+            this.append(isArray(declare) ? declare.join('') : declare);
+            this.append(';');
+            this.newline();
+        }
+        this.indentLevel--;
+        this.popQueue();
+
+        return declares.join('');
     }
 
     private visit(nodes: ASTRootChild[], isRoot: true): void;
@@ -243,7 +264,7 @@ export class Visitor {
             this.pushQueue();
         }
 
-        return this.visitKeyAndRef(key, ref);
+        return this.visitKeyAndRef(key, ref, false);
     }
 
     private visitJSXComponent(node: ASTComponent) {
@@ -269,7 +290,7 @@ export class Visitor {
             this.pushQueue();
         }
 
-        return this.visitKeyAndRef(key, ref);
+        return this.visitKeyAndRef(key, ref, true);
     }
 
     private visitJSXExpression(node: ASTExpression): ChildrenFlags {
@@ -303,7 +324,12 @@ export class Visitor {
         const {params, args} = this.getJSXBlocksAttribute(node);
         const name = node.value
 
-        // TODO: define tmp variables
+        if (shouldCall) {
+            this.addDeclare('_$blocks', '{}');
+            this.addDeclare('__$blocks', '{}');
+        }
+        this.addHelper('_$no');
+
         this.append(`(_$blocks['${name}'] = function(parent`);
         if (args) {
             this.append(', ')
@@ -325,7 +351,6 @@ export class Visitor {
         this.newline();
         this.append(`var callBlock = function() {`);
         this.indent();
-        this.addHelper('_$no');
         this.append(`return _$blocks['${name}'].appy($this, [_$no].concat(args));`);
         this.dedent();
         this.append('};');
@@ -626,7 +651,7 @@ export class Visitor {
                 case 'ref':
                     if (!isCommonElement) {
                         addAttribute(name);
-                        this.visitJSXAttributeRef(attr.value as ASTAttributeTemplateValue);
+                        this.visitJSXAttributeRef(attr.value as ASTAttributeTemplateValue, true);
                     }
                     ref = attr.value as ASTAttributeTemplateValue;
                     break;
@@ -707,12 +732,25 @@ export class Visitor {
         }
     }
 
-    private visitJSXAttributeRef(value: ASTAttributeTemplateValue) {
+    private visitJSXAttributeRef(value: ASTAttributeTemplateValue, isComponent: boolean) {
         if (value.type === Types.JSXString) {
-            // TODO: $refs and extract ref
+            this.addDeclare('_$refs', 'this.refs');
+            // if it is a component, the ref will use twice, so we extract it as variable
+            let indentLevel: number;
+            let refQueue: string[];
+            if (isComponent) {
+                refQueue = this.pushQueue();
+                indentLevel = this.indentLevel;
+                this.indentLevel = 0;
+            }
             this.append(`function(i) {_$refs[`);
             this.visitJSXAttributeValue(value);
             this.append(`] = i}`);
+            if (isComponent) {
+                this.indentLevel = indentLevel!;
+                this.popQueue();
+                this.append(this.addDeclare(`_$ref_${value.value}`, refQueue!));
+            }
         } else {
             this.visit(value.value, false);
         }
@@ -795,9 +833,11 @@ export class Visitor {
     }
 
     private visitJSXBlocks(blocks: ASTBlock[], isRoot: boolean) {
+        this.addHelper('_$ex');
+        this.addHelper('_$em');
         this.append('function($blocks) {');
         this.indent();
-        this.append(`var _$blocks = {}, __$blocks = $ex({}, $blocks);`);
+        this.append(`var _$blocks = {}, __$blocks = _$ex({}, $blocks);`);
         this.newline();
         this.append('return (');
 
@@ -812,7 +852,7 @@ export class Visitor {
         this.append(');');
 
         this.dedent();
-        this.append(`}.call($this, ${isRoot ? '$blocks' : '{}'})`);
+        this.append(`}.call($this, ${isRoot ? '$blocks' : '_$em'})`);
     }
 
     private getJSXBlocksAndSetChildren(node: ASTComponent | ASTVdt) {
@@ -858,7 +898,11 @@ export class Visitor {
         return ret;
     }
 
-    private visitKeyAndRef(key: ASTAttributeTemplateValue | null, ref: ASTAttributeTemplateValue | null): ChildrenFlags {
+    private visitKeyAndRef(
+        key: ASTAttributeTemplateValue | null,
+        ref: ASTAttributeTemplateValue | null,
+        isComponent: boolean,
+    ): ChildrenFlags {
         let childrenFlag: ChildrenFlags = ChildrenFlags.HasNonKeyedVNodeChildren;
 
         this.append(', ');
@@ -875,7 +919,7 @@ export class Visitor {
         this.append(', ');
         if (ref) {
             this.flush(this.popQueue());
-            this.visitJSXAttributeRef(ref);
+            this.visitJSXAttributeRef(ref, isComponent);
             this.pushQueue();
         } else {
             this.append('null');
@@ -897,6 +941,12 @@ export class Visitor {
 
     private addHelper(helper: Helpers) {
         this.helpers[helper] = true;
+    }
+
+    private addDeclare(key: string | null, code: string[] | string) {
+        if (key === null) key = `_$tmp${this.tmpIndex++}`;
+        this.declares[key] = code;
+        return key;
     }
 
     private pushQueue() {
