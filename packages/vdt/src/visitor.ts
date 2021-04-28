@@ -259,7 +259,7 @@ export class Visitor {
 
         const propsQueue = this.pushQueue();
         this.append(', ');
-        const {className, key, ref, hasProps, hasDynamicProp} = this.visitJSXAttribute(node, true);
+        const {className, key, ref, hasProps} = this.visitJSXAttribute(node);
         this.popQueue();
 
         this.append(', ');
@@ -273,7 +273,7 @@ export class Visitor {
 
         this.flush(propsQueue);
 
-        return this.visitProps(hasProps, hasDynamicProp, propsQueue, key, ref, false);
+        return this.visitProps(hasProps, key, ref, false);
     }
 
     private visitJSXComponent(node: ASTComponent): ChildrenFlags {
@@ -290,11 +290,11 @@ export class Visitor {
         this.addHelper('_$cc');
         this.append(`_$cc(${node.value}`);
 
-        const propsQueue = this.pushQueue();
+        this.pushQueue();
         this.append(', ');
-        const {className, key, ref, hasProps, hasDynamicProp} = this.visitJSXAttribute(node, true);
+        const {className, key, ref, hasProps} = this.visitJSXAttribute(node);
 
-        return this.visitProps(hasProps, hasDynamicProp, propsQueue, key, ref, true);
+        return this.visitProps(hasProps, key, ref, true);
     }
 
     private visitJSXExpression(node: ASTExpression): ChildrenFlags {
@@ -389,8 +389,7 @@ export class Visitor {
         const blocks = this.getJSXBlocksAndSetChildren(node);
         
         this.append(`${name}.call($this, `);
-        // const propsQueue = this.pushQueue();
-        this.visitJSXAttribute(node, false);
+        this.visitJSXAttribute(node);
         this.append(`, `);
         if (blocks.length) {
             this.visitJSXBlocks(blocks, isRoot);
@@ -589,13 +588,12 @@ export class Visitor {
         return childrenFlag!;
     }
 
-    private visitJSXAttribute(node: ASTElement, shouldDetectDynamicProp: boolean): 
+    private visitJSXAttribute(node: ASTElement): 
         {
             className: ASTAttributeTemplateNoneValue | null,
             key: ASTAttributeTemplateNoneValue | null,
             ref: ASTAttributeTemplateNoneValue | null,
             hasProps: boolean,
-            hasDynamicProp?: boolean,
         }
     {
         const attributes = node.attributes;
@@ -626,7 +624,7 @@ export class Visitor {
                 this.indent();
                 isFirstAttr = false;
             } else {
-                this.append(', ');
+                this.append(',');
                 this.newline();
             }
             if (name) {
@@ -726,7 +724,7 @@ export class Visitor {
             this.append(this.addHoistDeclare(propsQueue));
         }
 
-        return {className, key, ref, hasProps: !isFirstAttr, hasDynamicProp};
+        return {className, key, ref, hasProps: !isFirstAttr};
     }
 
     private hasDynamicProp(attributes: ASTBaseElement['attributes'], isCommonElement: boolean) {
@@ -984,8 +982,6 @@ export class Visitor {
 
     private visitProps(
         hasProps: boolean,
-        hasDynamicProp: boolean | undefined,
-        propsQueue: string[],
         key: ASTAttributeTemplateNoneValue | null,
         ref: ASTAttributeTemplateNoneValue | null,
         isComponent: boolean,
@@ -996,19 +992,6 @@ export class Visitor {
             this.flush(this.popQueue());
             this.pushQueue();
         }
-        // this.append(', ');
-        // if (hasProps) {
-            // if (hasDynamicProp) {
-                // this.flush(propsQueue);
-            // } else {
-                // this.append(this.addHoistDeclare(propsQueue));
-            // }
-
-            // this.flush(this.popQueue());
-            // this.pushQueue();
-        // } else {
-            // this.flush(propsQueue);
-        // }
 
         this.append(', ');
         if (key) {

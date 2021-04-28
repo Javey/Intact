@@ -246,16 +246,15 @@ return function($props, $blocks) {
 ```
 "var Vdt = _$vdt;
 var _$cc = Vdt.createComponentVNode;
-var _$tmp0 = {
-    'children': 'test'
-};
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
     
-    return _$cc(Div, _$tmp0);
+    return _$cc(Div, {
+        'children': 'test'
+    });
 };"
 ```
 
@@ -264,17 +263,16 @@ return function($props, $blocks) {
 ```
 "var Vdt = _$vdt;
 var _$cc = Vdt.createComponentVNode;
-var _$tmp0 = {
-    'id': '1', 
-    'children': 'test'
-};
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
     
-    return _$cc(Div, _$tmp0);
+    return _$cc(Div, {
+        'id': '1', 
+        'children': 'test'
+    });
 };"
 ```
 
@@ -283,17 +281,16 @@ return function($props, $blocks) {
 ```
 "var Vdt = _$vdt;
 var _$cc = Vdt.createComponentVNode;
-var _$tmp0 = {
-    'className': 'a', 
-    'children': 'test'
-};
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
     
-    return _$cc(Div, _$tmp0);
+    return _$cc(Div, {
+        'className': 'a', 
+        'children': 'test'
+    });
 };"
 ```
 
@@ -303,17 +300,16 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$cc = Vdt.createComponentVNode;
 var _$cn = Vdt.className;
-var _$tmp0 = {
-    'className': _$cn(a), 
-    'children': 'test'
-};
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
     
-    return _$cc(Div, _$tmp0);
+    return _$cc(Div, {
+        'className': _$cn(a), 
+        'children': 'test'
+    });
 };"
 ```
 
@@ -322,17 +318,16 @@ return function($props, $blocks) {
 ```
 "var Vdt = _$vdt;
 var _$cc = Vdt.createComponentVNode;
-var _$tmp0 = {
-    'key': 'a', 
-    'children': 'test'
-};
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
     
-    return _$cc(Div, _$tmp0, 'a');
+    return _$cc(Div, {
+        'key': 'a', 
+        'children': 'test'
+    }, 'a');
 };"
 ```
 
@@ -341,17 +336,16 @@ return function($props, $blocks) {
 ```
 "var Vdt = _$vdt;
 var _$cc = Vdt.createComponentVNode;
-var _$tmp0 = {
-    'key': a, 
-    'children': 'test'
-};
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
     
-    return _$cc(Div, _$tmp0, a);
+    return _$cc(Div, {
+        'key': a, 
+        'children': 'test'
+    }, a);
 };"
 ```
 
@@ -399,18 +393,17 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$cc = Vdt.createComponentVNode;
 var _$ce = Vdt.createElementVNode;
-var _$tmp0 = {
-    'children': (
-        _$ce(2, 'div', null, 1 /* HasInvalidChildren */, 'a')
-    )
-};
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
     
-    return _$cc(Div, _$tmp0);
+    return _$cc(Div, {
+        'children': (
+            _$ce(2, 'div', null, 1 /* HasInvalidChildren */, 'a')
+        )
+    });
 };"
 ```
 
@@ -420,19 +413,18 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$cc = Vdt.createComponentVNode;
 var _$ce = Vdt.createElementVNode;
-var _$tmp0 = {
-    'children': [
-        _$ce(2, 'div', null, 1 /* HasInvalidChildren */, 'a'),
-        _$ce(2, 'div')
-    ]
-};
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
     
-    return _$cc(Div, _$tmp0);
+    return _$cc(Div, {
+        'children': [
+            _$ce(2, 'div', null, 1 /* HasInvalidChildren */, 'a'),
+            _$ce(2, 'div')
+        ]
+    });
 };"
 ```
 
@@ -441,16 +433,15 @@ return function($props, $blocks) {
 ```
 "var Vdt = _$vdt;
 var _$cc = Vdt.createComponentVNode;
-var _$tmp0 = {
-    'children': a
-};
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
     
-    return _$cc(Div, _$tmp0);
+    return _$cc(Div, {
+        'children': a
+    });
 };"
 ```
 
@@ -459,18 +450,17 @@ return function($props, $blocks) {
 ```
 "var Vdt = _$vdt;
 var _$cc = Vdt.createComponentVNode;
-var _$tmp0 = {
-    'children': (
-        _$cc(Span)
-    )
-};
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
     
-    return _$cc(Div, _$tmp0);
+    return _$cc(Div, {
+        'children': (
+            _$cc(Span)
+        )
+    });
 };"
 ```
 
@@ -482,9 +472,6 @@ var _$cc = Vdt.createComponentVNode;
 var _$ex = Vdt.extend;
 var _$em = Vdt.EMPTY_OBJ;
 var _$no = Vdt.noop;
-var _$tmp0 = {
-    'children': 'test'
-};
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
@@ -497,7 +484,9 @@ return function($props, $blocks) {
             return (
                 (_$blocks['test'] = function(parent) {
                     return (
-                        _$cc(A, _$tmp0)
+                        _$cc(A, {
+                            'children': 'test'
+                        })
                     );
                 }),
                 (__$blocks['test'] = function() {
@@ -525,9 +514,6 @@ var _$cc = Vdt.createComponentVNode;
 var _$ex = Vdt.extend;
 var _$em = Vdt.EMPTY_OBJ;
 var _$no = Vdt.noop;
-var _$tmp0 = {
-    'children': 'test'
-};
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
@@ -540,7 +526,9 @@ return function($props, $blocks) {
             return (
                 (_$blocks['foo'] = function(parent) {
                     return (
-                        _$cc(A, _$tmp0)
+                        _$cc(A, {
+                            'children': 'test'
+                        })
                     );
                 }),
                 (__$blocks['foo'] = function() {
@@ -816,27 +804,6 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 var _$no = Vdt.noop;
-var _$tmp0 = {
-    'className': 'a', 
-    'children': (
-        _$ce(2, 'div', (
-            (_$blocks['block'] = function(parent) {
-                return 'test';
-            }),
-            (__$blocks['block'] = function() {
-                var args = arguments;
-                var block = $blocks['block'];
-                var callBlock = function() {
-                    return _$blocks['block'].apply($this, [_$no].concat(args));
-                };
-                return block ?
-                    block.apply($this, [callBlock].concat(args)) :
-                    callBlock();
-            }),
-            __$blocks['block']()
-        ), 0 /* UnknownChildren */)
-    )
-};
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
@@ -846,7 +813,27 @@ return function($props, $blocks) {
     var __$blocks = {};
     
     return _$ce(2, 'div', (
-        template.call($this, _$tmp0, null)
+        template.call($this, {
+            'className': 'a', 
+            'children': (
+                _$ce(2, 'div', (
+                    (_$blocks['block'] = function(parent) {
+                        return 'test';
+                    }),
+                    (__$blocks['block'] = function() {
+                        var args = arguments;
+                        var block = $blocks['block'];
+                        var callBlock = function() {
+                            return _$blocks['block'].apply($this, [_$no].concat(args));
+                        };
+                        return block ?
+                            block.apply($this, [callBlock].concat(args)) :
+                            callBlock();
+                    }),
+                    __$blocks['block']()
+                ), 0 /* UnknownChildren */)
+            )
+        }, null)
     ), 0 /* UnknownChildren */);
 };"
 ```

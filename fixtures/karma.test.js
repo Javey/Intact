@@ -46,6 +46,7 @@ module.exports = function(config) {
         },
         frameworks: [
             // 'jasmine',
+            'webpack',
             'mocha',
             'sinon-chai',
             'snapshot',
