@@ -231,7 +231,7 @@ export function createComponentVNode<T extends ComponentFunction | ComponentCons
     );
 }
 
-export function createUnkownComponentVNode<T extends ComponentFunction | ComponentConstructor>(
+export function createUnknownComponentVNode<T extends ComponentFunction | ComponentConstructor>(
     tag: T,
     props: VNodeProps<T> | null,
     key?: Key | null,

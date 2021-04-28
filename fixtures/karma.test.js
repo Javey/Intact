@@ -21,8 +21,8 @@ module.exports = function(config) {
                     },
                     {
                         test: /\.ts$/,
-                        include: /packages\/\w+\/src\/.*\.ts$/,
-                        // include: /packages\/vdt\/src\/.*\.ts$/,
+                        // include: /packages\/\w+\/src\/.*\.ts$/,
+                        include: /packages\/vdt\/src\/.*\.ts$/,
                         enforce: 'post',
                         use: {
                             loader: 'istanbul-instrumenter-loader',
@@ -65,6 +65,7 @@ module.exports = function(config) {
             mocha: {
                 reporter: 'html',
                 ui: 'bdd',
+                allowUncaught: true,
             }
         },
         coverageIstanbulReporter: {

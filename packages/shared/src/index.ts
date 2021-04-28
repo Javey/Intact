@@ -57,3 +57,5 @@ export const EMPTY_OBJ: any = {};
 if (process.env.NODE_ENV !== 'production') {
     Object.freeze(EMPTY_OBJ);
 }
+
+export const noop = () => {};

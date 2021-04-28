@@ -15,8 +15,9 @@ import {
     isArray, 
     isNullOrUndefined,
     throwError as sharedThrowError,
-    isUndefined,
+    isNull,
     isObject,
+    isStringOrNumber,
     EMPTY_OBJ,
 } from 'intact-shared';
 
@@ -142,7 +143,7 @@ function getValue(el: HTMLInputElement | HTMLOptionElement) {
     return isNullOrUndefined(value) ? el.value : value;
 }
 
-export function setRadioModel(component: Component<any>, event: Event) {
+export function setModel(component: Component<any>, event: Event) {
     const target = event.target as IntactElement;
     component.set(target.$M!, getValue(target as HTMLInputElement));
 }
@@ -216,41 +217,6 @@ export function setSelectModel(component: Component<any>, event: Event) {
     component.set((target as IntactElement).$M!, value);
 }
 
-export function map(data: Record<string, any> | Map<any, any> | Set<any> | any[], iter: (key: any, value: any) => any, thisArg: any) {
-    if (isObject(data)) {
-        const ret: any = [];
-        const callback = (value: any, key: any) => {
-            const result = iter.call(thisArg, value, key);
-            if (isArray(result)) {
-                ret.push(...result);
-            } else {
-                ret.push(result);
-            }
-        };
-        if ((data as any).forEach) {
-            (data as any).forEach(callback);
-        } else if (isArray(data)) {
-            for (let i = 0; i < data.length; i++) {
-                callback(data[i], i);
-            } 
-        } else {
-            for (let key in data) {
-                callback((data as Record<string, any>)[key], key);
-            }
-        }
-
-        return ret;
-    }
-
-    if (process.env.NODE_ENV !== 'production') {
-        if (!isNullOrUndefined(data)) {
-            sharedThrowError(`Cannot handle ${typeof data} for ${Directives.For}.`);
-        }
-    }
-
-    return null;
-}
-
 export function computeChildrenFlagForVIf(lastFlag: ChildrenFlags, nextFlag: ChildrenFlags): ChildrenFlags {
     if (lastFlag === ChildrenFlags.UnknownChildren) return lastFlag;
 
@@ -264,8 +230,8 @@ export function computeChildrenFlagForVIf(lastFlag: ChildrenFlags, nextFlag: Chi
     return lastFlag & nextFlag;
 }
 
-export function computeChildrenFlagForChildren(lastFlag: ChildrenFlags | undefined, nextFlag: ChildrenFlags): ChildrenFlags {
-    if (isUndefined(lastFlag)) return nextFlag;
+export function computeChildrenFlagForChildren(lastFlag: ChildrenFlags | null, nextFlag: ChildrenFlags): ChildrenFlags {
+    if (isNull(lastFlag)) return nextFlag;
     if (lastFlag === ChildrenFlags.UnknownChildren) return lastFlag;
 
     if (lastFlag === nextFlag) {
@@ -325,14 +291,15 @@ export const helpersMap = {
     '_$ccv': 'createCommentVNode',
     '_$cu': 'createUnescapeTextVNode',
     '_$le': 'linkEvent',
+
     '_$ma': 'map',
-    '_$ex': 'extends',
+    '_$ex': 'extend',
     '_$sm': 'setModel',
-    '_$srm': 'setRadioModel',
     '_$scm': 'setCheckboxModel',
     '_$ssm': 'setSelectModel',
-    '_$ic': 'isChecked',
+    '_$isc': 'isChecked',
     '_$cn': 'className',
+
     '_$no': 'noop',
     '_$em': 'EMPTY_OBJ',
 }
@@ -343,4 +310,51 @@ export function extend(source: Record<string, any>, extra: Record<string, any>) 
         source[key] = extra[key];
     }
     return source;
+}
+
+export function className(obj?: Record<string, any> | string | number | null) {
+    if (isNullOrUndefined(obj)) return null;
+    if (isStringOrNumber(obj)) return obj;
+    const ret = [];
+    for (let key in obj) {
+        if (obj[key]) {
+            ret.push(key);
+        }
+    }
+    return ret.join(' ');
+}
+
+export function map(data: Record<string, any> | Map<any, any> | Set<any> | any[], iter: (key: any, value: any) => any, thisArg: any) {
+    if (isObject(data)) {
+        const ret: any = [];
+        const callback = (value: any, key: any) => {
+            const result = iter.call(thisArg, value, key);
+            if (isArray(result)) {
+                ret.push(...result);
+            } else {
+                ret.push(result);
+            }
+        };
+        if ((data as any).forEach) {
+            (data as any).forEach(callback);
+        } else if (isArray(data)) {
+            for (let i = 0; i < data.length; i++) {
+                callback(data[i], i);
+            } 
+        } else {
+            for (let key in data) {
+                callback((data as Record<string, any>)[key], key);
+            }
+        }
+
+        return ret;
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+        if (!isNullOrUndefined(data)) {
+            sharedThrowError(`Cannot handle ${typeof data} for ${Directives.For}.`);
+        }
+    }
+
+    return null;
 }

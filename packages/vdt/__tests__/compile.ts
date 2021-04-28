@@ -15,13 +15,7 @@ function test(template: string) {
     expect(code).to.matchSnapshot();
 }
 
-describe('Vdt', () => {
-    afterEach(function() {
-        if (this.currentTest!.err) {
-            console.error(this.currentTest!.err);
-        }
-    });
-
+describe('Vdt Compile', () => {
     describe('Common Element', () => {
         it('without children', () => {
             test(`<div></div>`);

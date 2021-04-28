@@ -1,10 +1,14 @@
 export * from './utils/types';
-import {getTypeForVNodeElement, createVNode} from './core/vnode';
-import {Component} from './core/component';
-export {render} from './core/render';
-
 export {
     getTypeForVNodeElement,
-    Component,
     createVNode,
-}
+    createElementVNode,
+    createComponentVNode,
+    createUnknownComponentVNode,
+    createTextVNode,
+    createCommentVNode,
+    createUnescapeTextVNode,
+} from './core/vnode';
+export {Component} from './core/component';
+export {render} from './core/render';
+export {linkEvent} from './events/linkEvent';

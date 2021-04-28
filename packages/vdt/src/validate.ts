@@ -19,9 +19,13 @@ export function validateDirectiveValue(name: string, valueType: Types, tag: stri
         if (valueType !== Types.JSXString) {
             throwError(`'${name}' must be a literal string.`, loc, source);
         }
-    } else if (name === Directives.For || name === Directives.If || name === Directives.ElseIf || name === Directives.Else) {
+    } else if (name === Directives.For || name === Directives.If || name === Directives.ElseIf) {
         if (valueType !== Types.JSXExpression) {
             throwError(`'${name}' must be a expression.`, loc, source);
+        }
+    } else if (name === Directives.Else) {
+        if (valueType !== Types.JSXNone) {
+            throwError(`'${name}' should not have value.`, loc, source);
         }
     }
 }

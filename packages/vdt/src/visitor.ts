@@ -154,14 +154,14 @@ export class Visitor {
 
         this.expressionSpacesStack.push(this.spaces);
         const oldLength = this.spacesStatck.length;
-        nodes.forEach((node, i) => {
+        for (let i = 0; i < nodes.length; i++) {
             // if is root, add `return` keyword
             if (isRoot && i === lastIndex) {
                 this.append('return ');
             }
 
-            this.visitNode(node, isRoot, true);
-        });
+            this.visitNode(nodes[i], isRoot, true);
+        }
         let newLength = this.spacesStatck.length;
         this.expressionSpacesStack.pop();
         while (newLength > oldLength) {
@@ -233,8 +233,6 @@ export class Visitor {
                         return this.visitJSXChildren(node.children, hasFor ? true : textToVNode);
                     }
                     return this.visitJSXCommonElement(node);
-                default:
-                    return ChildrenFlags.UnknownChildren;
                 case Types.JSXComponent:
                     return this.visitJSXComponent(node);
                 case Types.JSXBlock:
@@ -260,10 +258,10 @@ export class Visitor {
         }
 
         const propsQueue = this.pushQueue();
-        const {className, key, ref, hasProps, hasDynamicProp} = this.visitJSXAttribute(node);
+        this.append(', ');
+        const {className, key, ref, hasProps, hasDynamicProp} = this.visitJSXAttribute(node, true);
         this.popQueue();
 
-        this.append(', ');
         if (className) {
             this.flush(this.popQueue());
             this.visitJSXAttributeClassName(className);
@@ -271,6 +269,8 @@ export class Visitor {
         } else {
             this.append('null')
         }
+
+        this.flush(propsQueue);
 
         return this.visitProps(hasProps, hasDynamicProp, propsQueue, key, ref, false);
     }
@@ -290,7 +290,8 @@ export class Visitor {
         this.append(`_$cc(${node.value}`);
 
         const propsQueue = this.pushQueue();
-        const {className, key, ref, hasProps, hasDynamicProp} = this.visitJSXAttribute(node);
+        this.append(', ');
+        const {className, key, ref, hasProps, hasDynamicProp} = this.visitJSXAttribute(node, true);
 
         return this.visitProps(hasProps, hasDynamicProp, propsQueue, key, ref, true);
     }
@@ -353,7 +354,7 @@ export class Visitor {
         this.newline();
         this.append(`var callBlock = function() {`);
         this.indent();
-        this.append(`return _$blocks['${name}'].appy($this, [_$no].concat(args));`);
+        this.append(`return _$blocks['${name}'].apply($this, [_$no].concat(args));`);
         this.dedent();
         this.append('};');
         this.newline();
@@ -386,21 +387,16 @@ export class Visitor {
         const name = node.value;
         const blocks = this.getJSXBlocksAndSetChildren(node);
         
-        this.append(`(function() {`);
-        this.indent();
-        this.append(`var props = `);
-        this.visitJSXAttribute(node);
-        this.append(';');
-        this.newline();
-        this.append(`return ${name}.call($this, props, `);
+        this.append(`${name}.call($this, `);
+        // const propsQueue = this.pushQueue();
+        this.visitJSXAttribute(node, false);
+        this.append(`, `);
         if (blocks.length) {
             this.visitJSXBlocks(blocks, isRoot);
         } else {
             this.append(isRoot ? '$blocks' : 'null');
         }
-        this.append(');');
-        this.dedent();
-        this.append(`}).call($this)`);
+        this.append(')');
 
         return ChildrenFlags.UnknownChildren;
     }
@@ -547,7 +543,7 @@ export class Visitor {
             return ChildrenFlags.HasInvalidChildren;
         }
 
-        let childrenFlag: ChildrenFlags;
+        let childrenFlag: ChildrenFlags | null = null;
 
         if (length === 1) {
             const child = nodes[0]
@@ -567,22 +563,24 @@ export class Visitor {
             this.indent();
 
             const lastIndex = nodes.length - 1;
-            nodes.forEach((child, index) => {
+            for (let i = 0; i < nodes.length; i++) {
+                const child = nodes[i];
                 const type = child.type;
                 const flag = this.visitNode(child, false, true);
                 childrenFlag = computeChildrenFlagForChildren(childrenFlag, flag!);
-                if (index !== lastIndex) {
+                if (i !== lastIndex) {
                     this.append(',');
                     this.newline();
                 }
-            });
+
+            }
 
             this.dedent();
             this.append(']');
 
-            if (childrenFlag! === ChildrenFlags.HasKeyedVNodeChildren) {
+            if (childrenFlag === ChildrenFlags.HasKeyedVNodeChildren) {
                 childrenFlag = ChildrenFlags.HasKeyedChildren;
-            } else if (childrenFlag! === ChildrenFlags.HasNonKeyedVNodeChildren) {
+            } else if (childrenFlag === ChildrenFlags.HasNonKeyedVNodeChildren) {
                 childrenFlag = ChildrenFlags.HasNonKeyedChildren;
             }
         }
@@ -590,7 +588,7 @@ export class Visitor {
         return childrenFlag!;
     }
 
-    private visitJSXAttribute(node: ASTElement): 
+    private visitJSXAttribute(node: ASTElement, shouldDetectDynamicProp: boolean): 
         {
             className: ASTAttributeTemplateNoneValue | null,
             key: ASTAttributeTemplateNoneValue | null,
@@ -609,6 +607,8 @@ export class Visitor {
             return {className, key, ref, hasProps: false};
         }
         
+        // use a queue to save props, so we can extract it when there isn't dynamic prop
+        const propsQueue = this.pushQueue();
         const isCommonElement = node.type === Types.JSXCommonElement;
         const modelMeta: ModelMeta = {};
         const models: Model[] = [];
@@ -633,11 +633,12 @@ export class Visitor {
             }
         }
 
-        attributes.forEach(attr => {
+        for (let i = 0; i < attributes.length; i++) {
+            const attr = attributes[i];
             if (attr.type === Types.JSXExpression) {
                 addAttribute();
                 this.visitJSXAttributeValue(attr);
-                return;
+                continue;
             } 
 
             const name = getAttrName(attr.name);
@@ -649,31 +650,31 @@ export class Visitor {
                         this.visitJSXAttributeClassName(value);
                     }
                     className = value;
-                    return;
+                    continue;
                 case 'key':
                     if (!isCommonElement) {
                         addAttribute(name);
                         this.visitJSXAttributeValue(value);
                     }
                     key = value;
-                    return;
+                    continue;
                 case 'ref':
                     if (!isCommonElement) {
                         addAttribute(name);
                         this.visitJSXAttributeRef(value, true);
                     }
                     ref = value;
-                    return;
+                    continue;
                 case 'blocks':
                     addAttribute(name);
                     this.visitJSXBlocks(value as any as ASTBlock[], false);
-                    return;
+                    continue;
                 case 'type':
                     // save the type for v-model of input element
                     addAttribute(name);
                     this.visitJSXAttributeValue(value);
                     modelMeta.type = value as ASTString;
-                    return;
+                    continue;
                 case 'value':
                     addAttribute(name);
                     this.visitJSXAttributeValue(value);
@@ -692,27 +693,37 @@ export class Visitor {
                 default:
                     if (name === 'v-model') {
                         models.push({name: 'value', value});
-                        return;
+                        continue;
                     } else if (name.substr(0, 8) === 'v-model:') {
                         models.push({name: name.substr(8), value});
-                        return;
+                        continue;
                     } else {
                         addAttribute(name);
                         this.visitJSXAttributeValue(value);
                     }
                     break;
             } 
-
-        });
+        }
 
         for (let i = 0; i < models.length; i++) {
             this.visitJSXAttributeModel(node, models[i], modelMeta, addAttribute);
         }
 
-        this.dedent();
-        this.append('}');
+        if (!isFirstAttr) {
+            this.dedent();
+            this.append('}');
+        } else {
+            this.append('null');
+        }
 
         this.indentLevel = indentLevel;
+        this.popQueue();
+
+        if (hasDynamicProp) {
+            this.flush(propsQueue);
+        } else {
+            this.append(this.addHoistDeclare(propsQueue));
+        }
 
         return {className, key, ref, hasProps: !isFirstAttr, hasDynamicProp};
     }
@@ -723,8 +734,9 @@ export class Visitor {
             if (attr.type === Types.JSXExpression) {
                 return true;
             }
-            const name = getAttrName(attr.name);
+            const name = attr.name;
             switch (name) {
+                case 'class':
                 case 'className':
                 case 'key':
                     if (isCommonElement) continue;
@@ -816,9 +828,13 @@ export class Visitor {
         modelMeta: ModelMeta,
         addAttribute: (name?: string) => void
     ) {
-        let setModelFnName: Helpers = '_$sm';
         let shouldSetValue = true;
-        const handleRadioOrCheckbox = (head: string, middle: string, tail?: ASTAttributeTemplateNoneValue) => {
+        const handleRadioOrCheckbox = (
+            head: string,
+            middle: string,
+            tail: ASTAttributeTemplateNoneValue | undefined,
+            defaultValue: string
+        ) => {
             shouldSetValue = false;
 
             addAttribute('checked');
@@ -828,11 +844,12 @@ export class Visitor {
             if (tail) {
                 this.visitJSXAttributeValue(tail);
             } else {
-                this.append('true');
+                this.append(defaultValue);
             }
         };
 
         if (node.type === Types.JSXCommonElement) {
+            let setModelFnName: Helpers = '_$sm';
             let eventName = 'change';
 
             addAttribute(`$model:${name}`);
@@ -844,12 +861,11 @@ export class Visitor {
                     if (type) {
                         switch (type.value) {
                             case 'radio':
-                                handleRadioOrCheckbox('$this.get(', ') === ', modelMeta.value);
-                                setModelFnName = '_$srm';
+                                handleRadioOrCheckbox('$this.get(', ') === ', modelMeta.value, "'on'");
                                 break;
                             case 'checkbox':
-                                this.addHelper('_$ic');
-                                handleRadioOrCheckbox('_$ic($this.get(', '), ', modelMeta.trueValue);
+                                this.addHelper('_$isc');
+                                handleRadioOrCheckbox('_$isc($this.get(', '), ', modelMeta.trueValue, 'true');
                                 this.append(')');
 
                                 setModelFnName = '_$scm';
@@ -918,14 +934,17 @@ export class Visitor {
     private getJSXBlocksAndSetChildren(node: ASTComponent | ASTVdt) {
         const blocks: ASTBlock[] = [];
         const children: ASTElementChild[] = [];
+        const nodeChildren = node.children;
 
-        node.children.forEach(child => {
+        for (let i = 0; i < nodeChildren.length; i++) {
+            const child = nodeChildren[i];
             if (child.type === Types.JSXBlock) {
                 blocks.push(child);
             } else {
                 children.push(child);
             }
-        });
+
+        }
 
         if (children.length) {
             node.attributes.push({
@@ -941,8 +960,10 @@ export class Visitor {
 
     private getJSXBlocksAttribute(node: ASTBlock) {
         const ret: {args: ASTString | null, params: ASTExpression | null} = {args: null, params: null};
+        const attributes = node.attributes as ASTAttribute[];
 
-        (node.attributes as ASTAttribute[]).forEach(attr => {
+        for (let i = 0; i < attributes.length; i++) {
+            const attr = attributes[i];
             switch (attr.name) {
                 case 'args':
                     ret.args = attr.value as ASTString;
@@ -953,7 +974,8 @@ export class Visitor {
                 default:
                     break;
             }
-        });
+
+        }
 
         return ret;
     }
@@ -969,20 +991,22 @@ export class Visitor {
         let childrenFlag: ChildrenFlags = ChildrenFlags.HasNonKeyedVNodeChildren;
 
         if (hasProps) {
-            if (isComponent) {
-                // if it is a component, discard the props in queue, we'll add it bellow
-                this.popQueue();
-            } else {
-                this.flush(this.popQueue());
-            }
-            this.append(', ');
-            if (hasDynamicProp) {
-                this.flush(propsQueue);
-            } else {
-                this.append(this.addHoistDeclare(propsQueue));
-            }
+            this.flush(this.popQueue());
             this.pushQueue();
         }
+        // this.append(', ');
+        // if (hasProps) {
+            // if (hasDynamicProp) {
+                // this.flush(propsQueue);
+            // } else {
+                // this.append(this.addHoistDeclare(propsQueue));
+            // }
+
+            // this.flush(this.popQueue());
+            // this.pushQueue();
+        // } else {
+            // this.flush(propsQueue);
+        // }
 
         this.append(', ');
         if (key) {
