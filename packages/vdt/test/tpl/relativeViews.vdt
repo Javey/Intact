@@ -1,3 +1,0 @@
-var template = require("tpl/include");
-
-<t:template />

@@ -1,3 +1,0 @@
-var template = require("./include");
-
-<t:template />

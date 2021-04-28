@@ -1,7 +1,5 @@
 import {
     VNodeElement,
-    VNodeComponentClass,
-    VNodeComponentFunction,
     VNodeTextElement,
     ComponentConstructor,
     ComponentFunction,
@@ -22,8 +20,6 @@ import {
     throwError,
     isInvalid,
     isStringOrNumber,
-    isString,
-    isUndefined,
 } from 'intact-shared';
 import {throwIfObjectIsNotVNode, validateVNodeElementChildren} from '../utils/validate';
 import {Fragment} from '../utils/common';

@@ -1,7 +1,0 @@
-<div class="c-flex-1">
-    <div key="view" class="c-flex-1">{{ self.get("view") }}</div>
-    <Animate v-if={{ self.get('loading') }} class="spinner" key="loading">
-        <div class="double-bounce1"></div>
-        <div class="double-bounce2"></div>
-    </Animate>
-</div>

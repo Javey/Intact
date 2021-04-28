@@ -1,6 +1,4 @@
 import {isNullOrUndefined} from 'intact-shared';
-import {attachModelEvent} from '../events/attachEvents';
-import {Props} from '../utils/types';
 
 export function applyValueInput(nextProps: any, dom: HTMLInputElement) {
     const {type, value, checked, multiple, defaultValue} = nextProps;

@@ -1,10 +1,9 @@
-import {VNode, Types, LinkedEvent, Reference, TransitionElement, IntactElement, Props} from './types';
-import {isEventProp, namespaces} from './helpers';
-import {isNullOrUndefined, isUndefined, isString} from 'intact-shared';
+import {VNode, Types, LinkedEvent, Reference, TransitionElement, IntactElement} from './types';
+import {isNullOrUndefined, isUndefined, isString, isEventProp} from 'intact-shared';
 import {delegatedEvents, handleDelegatedEvent} from '../events/delegation';
 import {isLinkEvent, isSameLinkEvent, wrapLinkEvent} from '../events/linkEvent';
 import {attachEvent, attachModelEvent} from '../events/attachEvents';
-import {normalizeEventName, REFERENCE} from './common';
+import {namespaces, REFERENCE, normalizeEventName} from './common';
 import {processElement} from '../wrappers/process';
 
 export function mountProps(vNode: VNode, type: Types, props: any, dom: Element, isSVG: boolean) {

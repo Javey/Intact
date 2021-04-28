@@ -190,15 +190,6 @@ export type Reference = {
     value: boolean
 };
 
-export type ChangeTrace = {path: string, newValue: any, oldValue: any};
-
-export type Template<T = any> = (this: T) => Children;
-
-export type SetOptions = {
-    silent: boolean
-    // async: false
-}
-
 export type TypePrimitive = Function | string | number | null | undefined; 
 export type TypeObject = {
     type?: TypePrimitive | TypePrimitive[],

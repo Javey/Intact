@@ -1,3 +1,0 @@
-var template = require(global.__ROOT + "/tpl/include");
-
-<t:template />

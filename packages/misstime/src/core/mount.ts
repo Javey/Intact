@@ -6,14 +6,11 @@ import {
     VNodeComponentFunction,
     VNodeTextElement,
     ChildrenTypes, 
-    NormalizedChildren, 
-    Props,
-    ComponentConstructor,
     IntactDom,
     ComponentClass,
     TransitionElement
 } from '../utils/types';
-import {isNullOrUndefined, throwError, isFunction, isUndefined, EMPTY_OBJ} from 'intact-shared';
+import {isNullOrUndefined, throwError, EMPTY_OBJ} from 'intact-shared';
 import {directClone, normalizeRoot} from './vnode';
 import {mountProps} from '../utils/props';
 import {mountRef} from '../utils/ref';

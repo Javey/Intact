@@ -1,7 +1,7 @@
-import {VNode, Types, ChildrenTypes, RefObject, ComponentClass, VNodeComponentClass} from '../utils/types';
+import {VNode, Types, ChildrenTypes, ComponentClass, VNodeComponentClass} from '../utils/types';
 import {unmountRef} from '../utils/ref';
 import {isNullOrUndefined} from 'intact-shared';
-import {removeChild, removeVNodeDom} from '../utils/common';
+import {removeVNodeDom} from '../utils/common';
 import {delegatedEvents, unmountDelegatedEvent} from '../events/delegation';
 
 export function remove(vNode: VNode, parentDom: Element) {

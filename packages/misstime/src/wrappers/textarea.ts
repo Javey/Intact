@@ -1,5 +1,4 @@
 import {isNullOrUndefined} from 'intact-shared';
-import {attachModelEvent} from '../events/attachEvents';
 
 // export function textareaEvents(dom: HTMLTextAreaElement, event?: EventListener) {
     // attachModelEvent(dom, 'input', event);

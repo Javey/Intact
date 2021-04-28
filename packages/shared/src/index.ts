@@ -1,3 +1,7 @@
+export function isEventProp(propName: string) {
+    return propName.substr(0, 3) === 'ev-';
+}
+
 export function isNullOrUndefined(o: any): o is null | undefined {
     return o === null || o === undefined;
 }
@@ -59,3 +63,5 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export const noop = () => {};
+
+export const hasDocumentAvailable: boolean = typeof document !== 'undefined';

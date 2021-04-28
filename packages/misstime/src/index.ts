@@ -8,7 +8,14 @@ export {
     createTextVNode,
     createCommentVNode,
     createUnescapeTextVNode,
+    normalizeRoot,
+    normalizeChildren,
+    createFragment,
+    createVoidVNode,
 } from './core/vnode';
-export {Component} from './core/component';
-export {render} from './core/render';
 export {linkEvent} from './events/linkEvent';
+export {render} from './core/render';
+export {patch} from './core/patch';
+export {mount} from './core/mount';
+export {unmount} from './core/unmount';
+export {findDomFromVNode, callAll} from './utils/common';

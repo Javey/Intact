@@ -3,7 +3,6 @@ import {
     Types,
     ChildrenTypes,
     NormalizedChildren,
-    Reference,
     VNodeElement,
     VNodeComponentClass,
     VNodeComponentFunction,
@@ -25,7 +24,7 @@ import {
     moveVNodeDom,
 } from '../utils/common';
 import {isNullOrUndefined, isUndefined, EMPTY_OBJ} from 'intact-shared';
-import {directClone, createVoidVNode, normalizeRoot} from './vnode';
+import {directClone, normalizeRoot} from './vnode';
 import {patchProp} from '../utils/props';
 import {processElement} from '../wrappers/process';
 import {mountRef, unmountRef} from '../utils/ref';

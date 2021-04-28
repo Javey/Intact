@@ -1,4 +1,4 @@
-import {ComponentClass, RefObject, Ref, Component} from './types';
+import {ComponentClass, RefObject, Ref} from './types';
 import {isFunction} from 'intact-shared';
 
 export function isRef(o: any): o is RefObject<any> {

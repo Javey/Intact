@@ -1,10 +1,10 @@
-import {VNode, Types, IntactElement, VNodeTag} from '../utils/types';
-import {isInvalid, throwError, error, isNullOrUndefined} from 'intact-shared';
+import {VNode, Types, IntactElement} from '../utils/types';
+import {isInvalid, throwError, error, isNullOrUndefined, hasDocumentAvailable} from 'intact-shared';
 import {directClone} from './vnode';
 import {mount} from './mount';
 import {remove} from './unmount';
 import {patch} from './patch';
-import {callAll, hasDocumentAvailable} from '../utils/common';
+import {callAll} from '../utils/common';
 
 /* istanbul ignore next */
 if (process.env.NODE_ENV !== 'production') {

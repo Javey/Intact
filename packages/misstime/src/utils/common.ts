@@ -11,6 +11,10 @@ import {
 } from './types';
 import {isNull, isNullOrUndefined} from 'intact-shared';
 
+export function normalizeEventName(name: string) {
+    return name.substr(3);
+}
+
 export function replaceChild(parentDom: Element, newDom: Element, lastDom: Element) {
     parentDom.replaceChild(newDom, lastDom);
 }
@@ -31,9 +35,6 @@ export function insertOrAppend(parentDom: Element, newNode: IntactDom, anchor: I
     }
 }
 
-export function normalizeEventName(name: string) {
-    return name.substr(3);
-}
 
 export const REFERENCE: Reference = {value: false};
 
@@ -143,4 +144,17 @@ export function callAll(mountedQueue: Function[]) {
     }
 }
 
-export const hasDocumentAvailable: boolean = typeof document !== 'undefined';
+const xlinkNS = "http://www.w3.org/1999/xlink";
+const xmlNS = "http://www.w3.org/XML/1998/namespace";
+export const namespaces: Record<string, string> = {
+    'xlink:href': xlinkNS,
+    'xlink:arcrole': xlinkNS,
+    'xlink:actuate': xlinkNS,
+    'xlink:show': xlinkNS,
+    'xlink:role': xlinkNS,
+    'xlink:title': xlinkNS,
+    'xlink:type': xlinkNS,
+    'xml:base': xmlNS,
+    'xml:lang': xmlNS,
+    'xml:space': xmlNS,
+};
