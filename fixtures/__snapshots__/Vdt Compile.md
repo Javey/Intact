@@ -270,7 +270,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$cc(Div, {
-        'id': '1', 
+        'id': '1',
         'children': 'test'
     });
 };"
@@ -288,7 +288,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$cc(Div, {
-        'className': 'a', 
+        'className': 'a',
         'children': 'test'
     });
 };"
@@ -307,7 +307,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$cc(Div, {
-        'className': _$cn(a), 
+        'className': _$cn(a),
         'children': 'test'
     });
 };"
@@ -325,7 +325,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$cc(Div, {
-        'key': 'a', 
+        'key': 'a',
         'children': 'test'
     }, 'a');
 };"
@@ -343,7 +343,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$cc(Div, {
-        'key': a, 
+        'key': a,
         'children': 'test'
     }, a);
 };"
@@ -363,7 +363,7 @@ return function($props, $blocks) {
     var _$ref_b = function(i) {_$refs['b'] = i};
     
     return _$cc(Div, {
-        'ref': _$ref_b, 
+        'ref': _$ref_b,
         'children': 'test'
     }, null, _$ref_b);
 };"
@@ -381,7 +381,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$cc(Div, {
-        'ref': b, 
+        'ref': b,
         'children': 'test'
     }, null, b);
 };"
@@ -814,7 +814,7 @@ return function($props, $blocks) {
     
     return _$ce(2, 'div', (
         template.call($this, {
-            'className': 'a', 
+            'className': 'a',
             'children': (
                 _$ce(2, 'div', (
                     (_$blocks['block'] = function(parent) {
@@ -941,9 +941,9 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(64, 'input', null, 1 /* HasInvalidChildren */, null, {
-        'type': 'radio', 
-        '$model:value': 'propName', 
-        'checked': $this.get('propName') === 'on', 
+        'type': 'radio',
+        '$model:value': 'propName',
+        'checked': $this.get('propName') === 'on',
         'ev-$model:change': _$le($this, _$sm)
     });
 };"
@@ -963,10 +963,10 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(64, 'input', null, 1 /* HasInvalidChildren */, null, {
-        'value': 'test', 
-        'type': 'radio', 
-        '$model:value': 'propName', 
-        'checked': $this.get('propName') === 'test', 
+        'value': 'test',
+        'type': 'radio',
+        '$model:value': 'propName',
+        'checked': $this.get('propName') === 'test',
         'ev-$model:change': _$le($this, _$sm)
     });
 };"
@@ -987,9 +987,9 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(64, 'input', null, 1 /* HasInvalidChildren */, null, {
-        'type': 'checkbox', 
-        '$model:value': 'propName', 
-        'checked': _$isc($this.get('propName'), true), 
+        'type': 'checkbox',
+        '$model:value': 'propName',
+        'checked': _$isc($this.get('propName'), true),
         'ev-$model:change': _$le($this, _$scm)
     });
 };"
@@ -1010,10 +1010,10 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(64, 'input', null, 1 /* HasInvalidChildren */, null, {
-        'trueValue': '1', 
-        'type': 'checkbox', 
-        '$model:value': 'propName', 
-        'checked': _$isc($this.get('propName'), '1'), 
+        'trueValue': '1',
+        'type': 'checkbox',
+        '$model:value': 'propName',
+        'checked': _$isc($this.get('propName'), '1'),
         'ev-$model:change': _$le($this, _$scm)
     });
 };"
@@ -1033,8 +1033,8 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(128, 'select', null, 1 /* HasInvalidChildren */, null, {
-        '$model:value': 'propName', 
-        'ev-$model:change': _$le($this, _$ssm), 
+        '$model:value': 'propName',
+        'ev-$model:change': _$le($this, _$ssm),
         'value': $this.get('propName')
     });
 };"
@@ -1054,8 +1054,8 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(256, 'textarea', null, 1 /* HasInvalidChildren */, null, {
-        '$model:value': 'propName', 
-        'ev-$model:input': _$le($this, _$sm), 
+        '$model:value': 'propName',
+        'ev-$model:input': _$le($this, _$sm),
         'value': $this.get('propName')
     });
 };"
@@ -1075,7 +1075,7 @@ return function($props, $blocks) {
     return _$cc(Component, {
         'ev-$model:value': function($v) {
             $this.set('propName', $v);
-        }, 
+        },
         'value': $this.get('propName')
     });
 };"
@@ -1095,11 +1095,11 @@ return function($props, $blocks) {
     return _$cc(Component, {
         'ev-$model:value': function($v) {
             $this.set('propName', $v);
-        }, 
-        'value': $this.get('propName'), 
+        },
+        'value': $this.get('propName'),
         'ev-$model:name': function($v) {
             $this.set('myName', $v);
-        }, 
+        },
         'name': $this.get('myName')
     });
 };"
@@ -1254,6 +1254,31 @@ return function($props, $blocks) {
     return _$ce(2, 'div', (
         a ?
             _$ce(2, 'div', a, 0 /* UnknownChildren */) :
+            [
+                _$ce(2, 'div'),
+                _$ce(2, 'div')
+            ]
+    ), 0 /* UnknownChildren */);
+};"
+```
+
+####     `v-if with keyed multiple vNodes and non-keyed multiple vNdoes`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', (
+        a ?
+            [
+                _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'a'),
+                _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'b')
+            ] :
             [
                 _$ce(2, 'div'),
                 _$ce(2, 'div')
@@ -1556,6 +1581,23 @@ return function($props, $blocks) {
     
     return _$ce(2, 'div', (
         _$ce(2, 'div')
+    ), 2 /* HasVNodeChildren */);
+};"
+```
+
+####     `keyed element child`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', (
+        _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'a')
     ), 2 /* HasVNodeChildren */);
 };"
 ```
@@ -1871,6 +1913,46 @@ return function($props, $blocks) {
 };"
 ```
 
+####     `keyed v-if with keyed element children`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', [
+        a ?
+            _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'a') :
+            _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'a'),
+        _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'b')
+    ], 8 /* HasKeyedChildren */);
+};"
+```
+
+####     `non-keyed v-if with keyed element children`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', [
+        a ?
+            _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'a') :
+            _$ce(2, 'div'),
+        _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'b')
+    ], 0 /* UnknownChildren */);
+};"
+```
+
 ## `Extract Props`
 
 ####   `should extract props if has not dynamic prop`
@@ -1880,11 +1962,11 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$cc = Vdt.createComponentVNode;
 var _$tmp0 = {
-    'a': '1', 
+    'a': '1',
     'b': true
 };
 var _$tmp1 = {
-    'a': '1', 
+    'a': '1',
     'b': true
 };
 var _$tmp2 = {
@@ -1894,8 +1976,8 @@ var _$tmp3 = {
     'a': '1'
 };
 var _$tmp4 = {
-    'a': '1', 
-    'b': true, 
+    'a': '1',
+    'b': true,
     'className': 'c'
 };
 
@@ -1970,19 +2052,19 @@ return function($props, $blocks) {
     
     return _$ce(2, 'div', [
         _$ce(64, 'input', null, 1 /* HasInvalidChildren */, 'c', {
-            'a': '1', 
-            'b': true, 
-            '$model:value': 'a', 
-            'ev-$model:change': _$le($this, _$sm), 
+            'a': '1',
+            'b': true,
+            '$model:value': 'a',
+            'ev-$model:change': _$le($this, _$sm),
             'value': $this.get('a')
         }),
         _$cc(Div, {
-            'a': '1', 
-            'b': true, 
-            'className': 'c', 
+            'a': '1',
+            'b': true,
+            'className': 'c',
             'ev-$model:value': function($v) {
                 $this.set('a', $v);
-            }, 
+            },
             'value': $this.get('a')
         })
     ], 4 /* HasNonKeyedChildren */);
@@ -2027,7 +2109,7 @@ return function($props, $blocks) {
             __$blocks['block']()
         ), 0 /* UnknownChildren */, null, _$tmp0),
         _$cc(Div, {
-            'a': '1', 
+            'a': '1',
             'blocks': function($blocks) {
                 var _$blocks = {}, __$blocks = _$ex({}, $blocks);
                 return (

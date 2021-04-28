@@ -38,6 +38,15 @@ describe('Vdt Render', () => {
         `);
     });
 
+    it('render null and number classname', () => {
+         test(stripIndent`
+            <div>
+                <div class={null}></div>
+                <div class={1}></div>
+            </div>
+        `);
+    });
+
     it('render blocks', () => {
         test(stripIndent`
             <div>
@@ -54,24 +63,6 @@ describe('Vdt Render', () => {
 
     it('render with js', () => {
         test('const a = 1; <div>{a}</div>');
-    });
-
-    it('render class component', () => {
-        test('const C = $props.C; <C />', {
-            C: class extends Component {
-                static template = () => {
-                    return h('span');
-                }
-            }
-        });
-    });
-
-    it('render function component', () => {
-        test('const C = $props.C; <C />', {
-            C: () => {
-                return h('span');
-            }
-        });
     });
 
     it('render comment', () => {
@@ -132,6 +123,72 @@ describe('Vdt Render', () => {
                     </template>
                 </div>
             `);
+        });
+
+        it('render v-for object', () => {
+            test(stripIndent`
+                <div>
+                    <div v-for={{a: 1, b: 2}}>{key}: {value}</div>
+                </div>
+            `);
+        });
+
+        it('should throw error if v-for value is invalid', () => {
+            expect(() => {
+                test(stripIndent`
+                    <div>
+                        <div v-for={1}>{key}: {value}</div>
+                    </div>
+                `);
+            }).to.throw();
+        });
+
+        it('should throw if v-for null', () => {
+            expect(() => {
+                test(stripIndent`
+                    <div>
+                        <div v-for={null}>{key}: {value}</div>
+                    </div>
+                `);
+            }).to.throw();
+        });
+
+        it('v-for empty array', () => {
+            test(stripIndent`
+                <div>
+                    <div v-for={[]}>{key}: {value}</div>
+                </div>
+            `);
+        });
+    });
+
+    describe('Component', () => {
+        it('render class component', () => {
+            test('const C = $props.C; <C />', {
+                C: class extends Component {
+                    static template = () => {
+                        return h('span');
+                    }
+                }
+            });
+        });
+
+        it('render function component', () => {
+            test('const C = $props.C; <C />', {
+                C: () => {
+                    return h('span');
+                }
+            });
+        });
+
+        it('render blocks for class component', () => {
+            test('const C = $props.C; <C />', {
+                C: class extends Component {
+                    static template = () => {
+                        return h('span');
+                    }
+                }
+            });
         });
     });
 });

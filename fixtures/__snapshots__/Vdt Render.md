@@ -24,6 +24,12 @@
 "<div><div class=\"a\"></div><div class=\"a\"></div></div>"
 ```
 
+#### `render null and number classname`
+
+```
+"<div><div></div><div class=\"1\"></div></div>"
+```
+
 #### `render blocks`
 
 ```
@@ -40,18 +46,6 @@
 
 ```
 "<div>1</div>"
-```
-
-#### `render class component`
-
-```
-"<span></span>"
-```
-
-#### `render function component`
-
-```
-"<span></span>"
 ```
 
 #### `render comment`
@@ -96,5 +90,37 @@
 
 ```
 "<div><div>0: 1</div><div>0: 1</div><div>1: 2</div><div>1: 2</div><div>2: 3</div><div>2: 3</div></div>"
+```
+
+####   `render v-for object`
+
+```
+"<div><div>a: 1</div><div>b: 2</div></div>"
+```
+
+####   `v-for empty array`
+
+```
+"<div></div>"
+```
+
+## `Component`
+
+####   `render class component`
+
+```
+"<span></span>"
+```
+
+####   `render function component`
+
+```
+"<span></span>"
+```
+
+####   `render blocks for class component`
+
+```
+"<span></span>"
 ```
 

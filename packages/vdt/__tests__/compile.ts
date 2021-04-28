@@ -367,6 +367,21 @@ describe('Vdt Compile', () => {
                     </div>
                 `);
             });
+
+            it('v-if with keyed multiple vNodes and non-keyed multiple vNdoes', () => {
+                test(stripIndent`
+                    <div>
+                        <template v-if={a}>
+                            <div key="a"></div>
+                            <div key="b"></div>
+                        </template>
+                        <template v-else>
+                            <div></div>
+                            <div></div>
+                        </template>
+                    </div>
+                `);
+            });
         });
 
         describe('v-for', () => {
@@ -494,6 +509,10 @@ describe('Vdt Compile', () => {
                 test(`<div><div></div></div>`);
             });
 
+            it('keyed element child', () => {
+                test(`<div><div key="a"></div></div>`);
+            });
+
             it('component child', () => {
                 test(`<div><Div></Div></div>`);
             });
@@ -616,6 +635,26 @@ describe('Vdt Compile', () => {
                     <div>
                         a
                         <div key="a"></div>
+                    </div>
+                `);
+            });
+
+            it('keyed v-if with keyed element children', () => {
+                test(stripIndent`
+                    <div>
+                        <div v-if={a} key="a"></div>
+                        <div v-else key="a"></div>
+                        <div key="b"></div>
+                    </div>
+                `);
+            });
+
+            it('non-keyed v-if with keyed element children', () => {
+                test(stripIndent`
+                    <div>
+                        <div v-if={a} key="a"></div>
+                        <div v-else></div>
+                        <div key="b"></div>
                     </div>
                 `);
             });

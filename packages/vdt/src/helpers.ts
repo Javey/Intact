@@ -222,10 +222,10 @@ export function computeChildrenFlagForVIf(lastFlag: ChildrenFlags, nextFlag: Chi
 
     if (
         lastFlag === ChildrenFlags.HasKeyedVNodeChildren && 
-        nextFlag === ChildrenFlags.HasNonKeyedVNodeChildren ||
-        lastFlag === ChildrenFlags.HasKeyedChildren &&
-        nextFlag === ChildrenFlags.HasNonKeyedChildren
-    ) return nextFlag; 
+        nextFlag === ChildrenFlags.HasNonKeyedVNodeChildren
+    ) {
+        return nextFlag;
+    }
 
     return lastFlag & nextFlag;
 }
@@ -261,10 +261,12 @@ export function childrenFlagToChildrenType(flag: ChildrenFlags): ChildrenTypes |
                 return `${ChildrenTypes.HasNonKeyedChildren} /* HasNonKeyedChildren */`;
             case ChildrenFlags.HasTextChildren:
                 return `${ChildrenTypes.HasTextChildren} /* HasTextChildren */`;
+            /* istanbul ignore next */
             default:
                 sharedThrowError('Unknown flag: ' + flag);
         } 
     }
+    /* istanbul ignore next */
     switch (flag) {
         case ChildrenFlags.UnknownChildren:
             return ChildrenTypes.UnknownChildren;
@@ -338,6 +340,7 @@ export function map(data: Record<string, any> | Map<any, any> | Set<any> | any[]
         if ((data as any).forEach) {
             (data as any).forEach(callback);
         } else if (isArray(data)) {
+            /* istanbul ignore next */
             for (let i = 0; i < data.length; i++) {
                 callback(data[i], i);
             } 
@@ -351,10 +354,6 @@ export function map(data: Record<string, any> | Map<any, any> | Set<any> | any[]
     }
 
     if (process.env.NODE_ENV !== 'production') {
-        if (!isNullOrUndefined(data)) {
-            sharedThrowError(`Cannot handle ${typeof data} for ${Directives.For}.`);
-        }
+        sharedThrowError(`Cannot handle ${JSON.stringify(data)} for ${Directives.For}.`);
     }
-
-    return null;
 }
