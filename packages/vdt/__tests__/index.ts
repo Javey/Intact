@@ -641,6 +641,19 @@ describe('Vdt', () => {
             `);
         });
 
+        it('should extract props which value is primitive value', () => {
+            test(stripIndent`
+                <div>
+                    <div a={1}></div>
+                    <div a={ 111 }></div>
+                    <div a={true}></div>
+                    <div a={false}></div>
+                    <div a={null}></div>
+                    <div a={undefined}></div>
+                </div>
+            `);
+        });
+
         it('should not extract props if has v-model', () => {
              test(stripIndent`
                 <div>

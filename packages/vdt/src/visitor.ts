@@ -54,6 +54,7 @@ type DirectiveCallback = (hasFor: boolean) => ChildrenFlags
 type Helpers = keyof typeof helpersMap
 
 const fakeLoc: SourceLocation = {line: 0, column: 0};
+const numberRegExp = /^\d+$/;
 
 export class Visitor {
     private enterStringExpression: boolean = false;
@@ -611,7 +612,7 @@ export class Visitor {
         const isCommonElement = node.type === Types.JSXCommonElement;
         const modelMeta: ModelMeta = {};
         const models: Model[] = [];
-        const hasDynamicProp = this.detectDynamicProp(attributes, isCommonElement);
+        const hasDynamicProp = this.hasDynamicProp(attributes, isCommonElement);
         let indentLevel = this.indentLevel;
         if (!hasDynamicProp) {
             this.indentLevel = 0;
@@ -716,7 +717,7 @@ export class Visitor {
         return {className, key, ref, hasProps: !isFirstAttr, hasDynamicProp};
     }
 
-    private detectDynamicProp(attributes: ASTBaseElement['attributes'], isCommonElement: boolean) {
+    private hasDynamicProp(attributes: ASTBaseElement['attributes'], isCommonElement: boolean) {
         for (let i = 0; i < attributes.length; i++) {
             const attr = attributes[i];
             if (attr.type === Types.JSXExpression) {
@@ -737,7 +738,27 @@ export class Visitor {
                     if (name === 'v-model' || name.substr(0, 8) === 'v-model:') {
                         return true;
                     }
-                    if ((attr.value as ASTAttributeTemplateValue).type === Types.JSXExpression) {
+                    const value = attr.value as ASTAttributeTemplateValue;
+                    if (value.type === Types.JSXExpression) {
+                        // if value is number / true / false, treat it as static value
+                        let tmp;
+                        if (
+                            (tmp = value.value, tmp.length === 1) &&
+                            (tmp = tmp[0], tmp.type === Types.JS) &&
+                            (tmp = tmp.value, tmp.length === 1)
+                        ) {
+                            const jsValue = tmp[0];
+                            switch (jsValue) {
+                                case 'true':
+                                case 'false':
+                                case 'null':
+                                case 'undefined':
+                                    continue;
+                                default:
+                                    if (numberRegExp.test(jsValue)) continue;
+                                    break;
+                            }
+                        }
                         return true;
                     }
                     break;
