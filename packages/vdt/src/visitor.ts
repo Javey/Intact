@@ -262,6 +262,7 @@ export class Visitor {
         const {className, key, ref, hasProps, hasDynamicProp} = this.visitJSXAttribute(node, true);
         this.popQueue();
 
+        this.append(', ');
         if (className) {
             this.flush(this.popQueue());
             this.visitJSXAttributeClassName(className);
@@ -719,7 +720,7 @@ export class Visitor {
         this.indentLevel = indentLevel;
         this.popQueue();
 
-        if (hasDynamicProp) {
+        if (isFirstAttr || hasDynamicProp) {
             this.flush(propsQueue);
         } else {
             this.append(this.addHoistDeclare(propsQueue));
@@ -745,6 +746,7 @@ export class Visitor {
                     if (!isCommonElement) return true;
                     break;
                 case 'blocks':
+                case 'children':
                     return true;
                 default:
                     if (name === 'v-model' || name.substr(0, 8) === 'v-model:') {
