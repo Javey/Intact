@@ -1,6 +1,7 @@
 import * as Vdt from '../src/index';
-import {render, Component, createVNode as h} from 'misstime';
+import {render, createVNode as h} from 'misstime';
 import {stripIndent} from 'common-tags';
+import {Component} from 'intact';
 
 describe('Vdt Render', () => {
     let container: HTMLDivElement

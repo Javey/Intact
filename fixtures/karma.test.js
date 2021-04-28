@@ -40,6 +40,8 @@ module.exports = function(config) {
                 alias: {
                     'intact-shared': path.resolve(__dirname, '../packages/shared/src/index.ts'),
                     'misstime': path.resolve(__dirname, '../packages/misstime/src/index.ts'),
+                    'intact': path.resolve(__dirname, '../packages/intact/src/index.ts'),
+                    'vdt': path.resolve(__dirname, '../packages/vdt/src/index.ts'),
                 }
             },
             devtool: 'inline-source-map',

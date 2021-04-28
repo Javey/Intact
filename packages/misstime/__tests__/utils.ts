@@ -1,8 +1,7 @@
-import {Props, ComponentClass, VNodeComponentClass, VNode} from '../src/utils/types';
-import {createVNode as h} from '../src/core/vnode';
+import {VNode} from '../src/utils/types';
 import {render} from '../src/core/render';
-import {nextTick as _nextTick} from '../src/utils/component';
-import {nextFrame as _nextFrame} from '../src/components/heplers';
+import {nextTick as _nextTick} from 'intact';
+import {nextFrame as _nextFrame} from '../../intact/src/components/heplers';
 
 export function dispatchEvent(target: Element, eventName: string, options?: Object) {
     let event;
