@@ -1,11 +1,7 @@
-import {Component} from '../../src/core/component';
-import {render} from '../../src/core/render';
-import {createVNode as h, VNode as VNodeConstructor, createTextVNode} from '../../src/core/vnode';
-import {Fragment, findDomFromVNode} from '../../src/utils/common';
-import {VNode, VNodeComponentClass, Template, TransitionElement} from '../../src/utils/types';
-import {Transition} from '../../src/components/transition';
-import {createRef} from '../../src/utils/ref';
-import {wait, nextFrame, testTransition} from '../utils';
+import {Component} from '../src/core/component';
+import {render, createVNode as h, createTextVNode, TransitionElement, createRef} from 'misstime';
+import {Transition} from '../src/components/transition';
+import {wait, nextFrame, testTransition} from '../../misstime/__tests__/utils';
 import './transition.css';
 
 describe('Component', function() {

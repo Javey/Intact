@@ -49,7 +49,6 @@ export interface ASTBaseElement extends ASTNode {
     directives: {[key in DirectiveCommon]?: ASTAttribute} & {[key in DirectiveIf]?: ASTDirectiveIf}, 
     children: ASTElementChild[]
     keyed: boolean
-    hasDynamicProp: boolean
 }
 
 export interface ASTCommonElement extends ASTBaseElement {

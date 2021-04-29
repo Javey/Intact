@@ -1,7 +1,6 @@
-import {set, get} from '../../src/utils/helpers';
-import {Component} from '../../src/core/component';
-import {createVNode as h} from '../../src/core/vnode';
-import {render} from '../../src/core/render';
+import {set, get} from '../src/utils/helpers';
+import {Component} from '../src/core/component';
+import {createVNode as h, render} from 'misstime';
 
 describe('Component', () => {
     describe('Helpers', () => {

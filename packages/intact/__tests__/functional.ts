@@ -1,9 +1,6 @@
-import {Component} from '../../src/core/component';
-import {render} from '../../src/core/render';
-import {createVNode as h} from '../../src/core/vnode';
-import {Fragment} from '../../src/utils/common';
-import {VNode, ComponentClass, Props, Template} from '../../src/utils/types';
-import {patchTest as _patchTest} from '../utils';
+import {Component} from '../src/core/component';
+import {render, createVNode as h, Fragment, VNode} from 'misstime';
+import {patchTest as _patchTest} from '../../misstime/__tests__/utils';
 
 describe('Functional component', () => {
     let container: Element;

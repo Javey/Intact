@@ -10,7 +10,7 @@ import {
     Options,
     ChildrenFlags,
 } from './types';
-import {Component, IntactElement, ChildrenTypes} from 'misstime';
+import {IntactElement, ChildrenTypes} from 'misstime';
 import {
     isArray, 
     isNullOrUndefined,
@@ -20,6 +20,7 @@ import {
     isStringOrNumber,
     EMPTY_OBJ,
 } from 'intact-shared';
+import {Component} from 'intact';
 
 export function trimRight(str: string) {
     var index = str.length;
