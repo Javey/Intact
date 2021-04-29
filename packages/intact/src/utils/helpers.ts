@@ -1,4 +1,4 @@
-import {ChangeTrace} from './types';
+import {ChangeTrace, Compile} from './types';
 import {hasOwn, isString, isNullOrUndefined, isObject, throwError, isArray} from 'intact-shared';
 
 export function get<O extends object, K extends keyof O>(object: O, path: K): O[K];
@@ -90,3 +90,9 @@ function clone(object: object) {
 
     return {...object};
 }
+
+let compile: Compile | undefined;
+export function registerCompile(_compile: Compile) {
+    compile = _compile;
+}
+export {compile};

@@ -8,7 +8,7 @@ import {
     unmount,
 } from 'misstime';
 import {Template, SetOptions} from '../utils/types';
-import {get, set} from '../utils/helpers';
+import {get, set, compile} from '../utils/helpers';
 import {
     isNull,
     isFunction,
@@ -59,7 +59,13 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         super();
 
         this.$mountedQueue = mountedQueue;
-        this.$template = (this.constructor as typeof Component).template as Template; 
+
+        const template = (this.constructor as typeof Component).template;
+        if (isFunction(template)) {
+            this.$template = template as Template; 
+        } else {
+            this.$template = compile!(template);
+        }
 
         this.$defaults = this.defaults();
         this.props = {...this.$defaults} as P;
@@ -88,7 +94,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     }
 
     set<K extends keyof P>(key: K, value: P[K], options?: SetOptions): void;
-    set(key: string, value: any, options?: SetOptions): void;
+    set<K extends string>(key: Exclude<K, keyof P>, value: any, options?: SetOptions): void;
     set(data: Partial<P> & Record<string, any>, options?: SetOptions): void;
     set(key: string | Record<string, any>, value?: any, options?: SetOptions) {
         if (isObject(key)) {

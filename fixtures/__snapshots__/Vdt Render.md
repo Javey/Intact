@@ -30,12 +30,6 @@
 "<div><div></div><div class=\"1\"></div></div>"
 ```
 
-#### `render blocks`
-
-```
-"<div><div class=\"a\"></div></div>"
-```
-
 #### `render template`
 
 ```
@@ -52,6 +46,44 @@
 
 ```
 "<div><!--test--></div>"
+```
+
+## `Vdt & Block`
+
+####   `render blocks`
+
+```
+"<div><div class=\"a\"></div></div>"
+```
+
+####   `render vdt`
+
+```
+"<div>1</div>"
+```
+
+####   `render vdt call parent`
+
+```
+"<div>12</div>"
+```
+
+####   `render vdt extends vdt`
+
+```
+"<div>ancenstor father child</div>"
+```
+
+####   `render block with data`
+
+```
+"<ul><li>0: a</li><li>1: b</li></ul>"
+```
+
+####   `extend block with data`
+
+```
+"<ul><li>0: a a_0</li><li>1: b b_1</li></ul>"
 ```
 
 ## `Directives`
@@ -121,6 +153,6 @@
 ####   `render blocks for class component`
 
 ```
-"<span></span>"
+"<div>child</div>"
 ```
 

@@ -75,6 +75,15 @@ describe('Component', () => {
             render(h(Test, null, h(Test, {ref: i => component = i})), container);
             expect(component!.$parent).to.be.instanceof(Test);
         });
+
+        it('should mount component which template is string', () => {
+            class Test extends Component<{test: string}> {
+                static template = `<div>{this.get('test')}</div>`
+            } 
+
+            render(h(Test, {test: 'test'}), container);
+            expect(container.innerHTML).to.equal('<div>test</div>');
+        });
     });
 
     describe('Patch', () => {

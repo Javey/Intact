@@ -433,6 +433,7 @@ export class Parser {
                 // if it is a text element, treat children as innerHTML attribute
                 const attrLoc = this.getLocation();
                 const children = this.parseJSXChildrenValue(tag, type, hasVRaw, true, loc);
+                // TODO
                 if (children.length) {
                     attributes.push({
                         type: Types.JSXAttribute,

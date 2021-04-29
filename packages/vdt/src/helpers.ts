@@ -139,12 +139,12 @@ export const defaultOptions: Options = {
     delimiters: ['{', '}'],
 };
 
-function getValue(el: HTMLInputElement | HTMLOptionElement) {
-    const value = (el as IntactElement).$VA;
-    return isNullOrUndefined(value) ? el.value : value;
+export function setTextModel(component: Component<any>, event: Event) {
+    const target = event.target as IntactElement;
+    component.set(target.$M!, (target as HTMLInputElement).value);
 }
 
-export function setModel(component: Component<any>, event: Event) {
+export function setRadioModel(component: Component<any>, event: Event) {
     const target = event.target as IntactElement;
     component.set(target.$M!, getValue(target as HTMLInputElement));
 }
@@ -216,6 +216,11 @@ export function setSelectModel(component: Component<any>, event: Event) {
     }
 
     component.set((target as IntactElement).$M!, value);
+}
+
+function getValue(el: HTMLInputElement | HTMLOptionElement) {
+    const value = (el as IntactElement).$VA;
+    return isNullOrUndefined(value) ? el.value : value;
 }
 
 export function computeChildrenFlagForVIf(lastFlag: ChildrenFlags, nextFlag: ChildrenFlags): ChildrenFlags {
@@ -297,7 +302,8 @@ export const helpersMap = {
 
     '_$ma': 'map',
     '_$ex': 'extend',
-    '_$sm': 'setModel',
+    '_$stm': 'setTextModel',
+    '_$srm': 'setRadioModel',
     '_$scm': 'setCheckboxModel',
     '_$ssm': 'setSelectModel',
     '_$isc': 'isChecked',

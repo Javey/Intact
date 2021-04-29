@@ -224,6 +224,24 @@ return function($props, $blocks) {
 };"
 ```
 
+####   `expression attribute`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, {
+        ...a,
+        'a': '1'
+    });
+};"
+```
+
 ## `Component`
 
 ####   `without children`
@@ -471,7 +489,6 @@ return function($props, $blocks) {
 var _$cc = Vdt.createComponentVNode;
 var _$ex = Vdt.extend;
 var _$em = Vdt.EMPTY_OBJ;
-var _$no = Vdt.noop;
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
@@ -479,24 +496,23 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$cc(Div, {
-        'blocks': function($blocks) {
+        '$blocks': function($blocks) {
             var _$blocks = {}, __$blocks = _$ex({}, $blocks);
             return (
-                (_$blocks['test'] = function(parent) {
+                (_$blocks['test'] = function($super) {
                     return (
                         _$cc(A, {
                             'children': 'test'
                         })
                     );
                 }),
-                (__$blocks['test'] = function() {
-                    var args = arguments;
+                (__$blocks['test'] = function($super, data) {
                     var block = $blocks['test'];
                     var callBlock = function() {
-                        return _$blocks['test'].apply($this, [_$no].concat(args));
+                        return _$blocks['test'].call($this, $super, data);
                     };
                     return block ?
-                        block.apply($this, [callBlock].concat(args)) :
+                        block.call($this, callBlock, data) :
                         callBlock();
                 }),
                 __$blocks
@@ -513,7 +529,6 @@ return function($props, $blocks) {
 var _$cc = Vdt.createComponentVNode;
 var _$ex = Vdt.extend;
 var _$em = Vdt.EMPTY_OBJ;
-var _$no = Vdt.noop;
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
@@ -521,37 +536,35 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$cc(Div, {
-        'blocks': function($blocks) {
+        '$blocks': function($blocks) {
             var _$blocks = {}, __$blocks = _$ex({}, $blocks);
             return (
-                (_$blocks['foo'] = function(parent) {
+                (_$blocks['foo'] = function($super) {
                     return (
                         _$cc(A, {
                             'children': 'test'
                         })
                     );
                 }),
-                (__$blocks['foo'] = function() {
-                    var args = arguments;
+                (__$blocks['foo'] = function($super, data) {
                     var block = $blocks['foo'];
                     var callBlock = function() {
-                        return _$blocks['foo'].apply($this, [_$no].concat(args));
+                        return _$blocks['foo'].call($this, $super, data);
                     };
                     return block ?
-                        block.apply($this, [callBlock].concat(args)) :
+                        block.call($this, callBlock, data) :
                         callBlock();
                 }),
-                (_$blocks['bar'] = function(parent) {
+                (_$blocks['bar'] = function($super) {
                     return 'test';
                 }),
-                (__$blocks['bar'] = function() {
-                    var args = arguments;
+                (__$blocks['bar'] = function($super, data) {
                     var block = $blocks['bar'];
                     var callBlock = function() {
-                        return _$blocks['bar'].apply($this, [_$no].concat(args));
+                        return _$blocks['bar'].call($this, $super, data);
                     };
                     return block ?
-                        block.apply($this, [callBlock].concat(args)) :
+                        block.call($this, callBlock, data) :
                         callBlock();
                 }),
                 __$blocks
@@ -578,22 +591,21 @@ return function($props, $blocks) {
     var __$blocks = {};
     
     return _$ce(2, 'div', (
-        (_$blocks['block'] = function(parent) {
+        (_$blocks['block'] = function($super) {
             return (
                 _$ce(2, 'div', 'test', 16 /* HasTextChildren */)
             );
         }),
-        (__$blocks['block'] = function() {
-            var args = arguments;
+        (__$blocks['block'] = function($super, data) {
             var block = $blocks['block'];
             var callBlock = function() {
-                return _$blocks['block'].apply($this, [_$no].concat(args));
+                return _$blocks['block'].call($this, $super, data);
             };
             return block ?
-                block.apply($this, [callBlock].concat(args)) :
+                block.call($this, callBlock, data) :
                 callBlock();
         }),
-        __$blocks['block']()
+        __$blocks['block'](_$no)
     ), 0 /* UnknownChildren */);
 };"
 ```
@@ -613,22 +625,21 @@ return function($props, $blocks) {
     var __$blocks = {};
     
     return _$ce(2, 'div', (
-        (_$blocks['block'] = function(parent, a, b) {
+        (_$blocks['block'] = function($super, a, b) {
             return (
                 _$ce(2, 'div', 'test', 16 /* HasTextChildren */)
             );
         }),
-        (__$blocks['block'] = function() {
-            var args = arguments;
+        (__$blocks['block'] = function($super, data) {
             var block = $blocks['block'];
             var callBlock = function() {
-                return _$blocks['block'].apply($this, [_$no].concat(args));
+                return _$blocks['block'].call($this, $super, data);
             };
             return block ?
-                block.apply($this, [callBlock].concat(args)) :
+                block.call($this, callBlock, data) :
                 callBlock();
         }),
-        __$blocks['block']()
+        __$blocks['block'](_$no)
     ), 0 /* UnknownChildren */);
 };"
 ```
@@ -648,22 +659,21 @@ return function($props, $blocks) {
     var __$blocks = {};
     
     return _$ce(2, 'div', (
-        (_$blocks['block'] = function(parent) {
+        (_$blocks['block'] = function($super) {
             return (
                 _$ce(2, 'div', 'test', 16 /* HasTextChildren */)
             );
         }),
-        (__$blocks['block'] = function() {
-            var args = arguments;
+        (__$blocks['block'] = function($super, data) {
             var block = $blocks['block'];
             var callBlock = function() {
-                return _$blocks['block'].apply($this, [_$no].concat(args));
+                return _$blocks['block'].call($this, $super, data);
             };
             return block ?
-                block.apply($this, [callBlock].concat(args)) :
+                block.call($this, callBlock, data) :
                 callBlock();
         }),
-        __$blocks['block'].apply($this, [a, b])
+        __$blocks['block'](_$no, [a, b])
     ), 0 /* UnknownChildren */);
 };"
 ```
@@ -690,7 +700,6 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ex = Vdt.extend;
 var _$em = Vdt.EMPTY_OBJ;
-var _$no = Vdt.noop;
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
@@ -700,17 +709,16 @@ return function($props, $blocks) {
     return template.call($this, null, function($blocks) {
         var _$blocks = {}, __$blocks = _$ex({}, $blocks);
         return (
-            (_$blocks['block'] = function(parent) {
+            (_$blocks['block'] = function($super) {
                 return 'test';
             }),
-            (__$blocks['block'] = function() {
-                var args = arguments;
+            (__$blocks['block'] = function($super, data) {
                 var block = $blocks['block'];
                 var callBlock = function() {
-                    return _$blocks['block'].apply($this, [_$no].concat(args));
+                    return _$blocks['block'].call($this, $super, data);
                 };
                 return block ?
-                    block.apply($this, [callBlock].concat(args)) :
+                    block.call($this, callBlock, data) :
                     callBlock();
             }),
             __$blocks
@@ -725,7 +733,6 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ex = Vdt.extend;
 var _$em = Vdt.EMPTY_OBJ;
-var _$no = Vdt.noop;
 var _$tmp0 = {
     'className': 'a'
 };
@@ -738,17 +745,16 @@ return function($props, $blocks) {
     return template.call($this, _$tmp0, function($blocks) {
         var _$blocks = {}, __$blocks = _$ex({}, $blocks);
         return (
-            (_$blocks['block'] = function(parent) {
+            (_$blocks['block'] = function($super) {
                 return 'test';
             }),
-            (__$blocks['block'] = function() {
-                var args = arguments;
+            (__$blocks['block'] = function($super, data) {
                 var block = $blocks['block'];
                 var callBlock = function() {
-                    return _$blocks['block'].apply($this, [_$no].concat(args));
+                    return _$blocks['block'].call($this, $super, data);
                 };
                 return block ?
-                    block.apply($this, [callBlock].concat(args)) :
+                    block.call($this, callBlock, data) :
                     callBlock();
             }),
             __$blocks
@@ -764,7 +770,6 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ex = Vdt.extend;
 var _$em = Vdt.EMPTY_OBJ;
-var _$no = Vdt.noop;
 var _$tmp0 = {
     'className': 'a'
 };
@@ -778,17 +783,16 @@ return function($props, $blocks) {
         template.call($this, _$tmp0, function($blocks) {
             var _$blocks = {}, __$blocks = _$ex({}, $blocks);
             return (
-                (_$blocks['block'] = function(parent) {
+                (_$blocks['block'] = function($super) {
                     return 'test';
                 }),
-                (__$blocks['block'] = function() {
-                    var args = arguments;
+                (__$blocks['block'] = function($super, data) {
                     var block = $blocks['block'];
                     var callBlock = function() {
-                        return _$blocks['block'].apply($this, [_$no].concat(args));
+                        return _$blocks['block'].call($this, $super, data);
                     };
                     return block ?
-                        block.apply($this, [callBlock].concat(args)) :
+                        block.call($this, callBlock, data) :
                         callBlock();
                 }),
                 __$blocks
@@ -817,20 +821,19 @@ return function($props, $blocks) {
             'className': 'a',
             'children': (
                 _$ce(2, 'div', (
-                    (_$blocks['block'] = function(parent) {
+                    (_$blocks['block'] = function($super) {
                         return 'test';
                     }),
-                    (__$blocks['block'] = function() {
-                        var args = arguments;
+                    (__$blocks['block'] = function($super, data) {
                         var block = $blocks['block'];
                         var callBlock = function() {
-                            return _$blocks['block'].apply($this, [_$no].concat(args));
+                            return _$blocks['block'].call($this, $super, data);
                         };
                         return block ?
-                            block.apply($this, [callBlock].concat(args)) :
+                            block.call($this, callBlock, data) :
                             callBlock();
                     }),
-                    __$blocks['block']()
+                    __$blocks['block'](_$no)
                 ), 0 /* UnknownChildren */)
             )
         }, null)
@@ -876,7 +879,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        _$ma(a, function(value, key) {
+        _$ma(a, function($value, $key) {
             return _$ce(2, 'div');
         }, $this)
     ), 4 /* HasNonKeyedChildren */);
@@ -916,7 +919,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        _$ma(a, function(value, key) {
+        _$ma(a, function($value, $key) {
             return value ?
                 _$ce(2, 'div') :
                 undefined;
@@ -933,7 +936,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 var _$le = Vdt.linkEvent;
-var _$sm = Vdt.setModel;
+var _$srm = Vdt.setRadioModel;
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
@@ -944,7 +947,7 @@ return function($props, $blocks) {
         'type': 'radio',
         '$model:value': 'propName',
         'checked': $this.get('propName') === 'on',
-        'ev-$model:change': _$le($this, _$sm)
+        'ev-$model:change': _$le($this, _$srm)
     });
 };"
 ```
@@ -955,7 +958,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 var _$le = Vdt.linkEvent;
-var _$sm = Vdt.setModel;
+var _$srm = Vdt.setRadioModel;
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
@@ -967,7 +970,7 @@ return function($props, $blocks) {
         'type': 'radio',
         '$model:value': 'propName',
         'checked': $this.get('propName') === 'test',
-        'ev-$model:change': _$le($this, _$sm)
+        'ev-$model:change': _$le($this, _$srm)
     });
 };"
 ```
@@ -1019,6 +1022,31 @@ return function($props, $blocks) {
 };"
 ```
 
+####     `checkbox with trueValue and falseValue`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+var _$isc = Vdt.isChecked;
+var _$le = Vdt.linkEvent;
+var _$scm = Vdt.setCheckboxModel;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(64, 'input', null, 1 /* HasInvalidChildren */, null, {
+        'trueValue': '1',
+        'type': 'checkbox',
+        'falseValue': '2',
+        '$model:value': 'propName',
+        'checked': _$isc($this.get('propName'), '1'),
+        'ev-$model:change': _$le($this, _$scm)
+    });
+};"
+```
+
 ####     `select`
 
 ```
@@ -1046,7 +1074,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 var _$le = Vdt.linkEvent;
-var _$sm = Vdt.setModel;
+var _$stm = Vdt.setTextModel;
 
 return function($props, $blocks) {
     $blocks || ($blocks = {});
@@ -1055,7 +1083,7 @@ return function($props, $blocks) {
     
     return _$ce(256, 'textarea', null, 1 /* HasInvalidChildren */, null, {
         '$model:value': 'propName',
-        'ev-$model:input': _$le($this, _$sm),
+        'ev-$model:input': _$le($this, _$stm),
         'value': $this.get('propName')
     });
 };"
@@ -1101,6 +1129,49 @@ return function($props, $blocks) {
             $this.set('myName', $v);
         },
         'name': $this.get('myName')
+    });
+};"
+```
+
+####     `number type`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+var _$le = Vdt.linkEvent;
+var _$stm = Vdt.setTextModel;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(64, 'input', null, 1 /* HasInvalidChildren */, null, {
+        'type': 'number',
+        '$model:value': 'propName',
+        'ev-$model:input': _$le($this, _$stm),
+        'value': $this.get('propName')
+    });
+};"
+```
+
+####     `without type`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+var _$le = Vdt.linkEvent;
+var _$stm = Vdt.setTextModel;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(64, 'input', null, 1 /* HasInvalidChildren */, null, {
+        '$model:value': 'propName',
+        'ev-$model:input': _$le($this, _$stm),
+        'value': $this.get('propName')
     });
 };"
 ```
@@ -1302,7 +1373,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        _$ma(a, function(value, key) {
+        _$ma(a, function($value, $key) {
             return _$ce(2, 'div', a, 0 /* UnknownChildren */, null, null, value);
         }, $this)
     ), 8 /* HasKeyedChildren */);
@@ -1322,7 +1393,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        _$ma(a, function(value, key) {
+        _$ma(a, function($value, $key) {
             return _$ce(2, 'div', a, 0 /* UnknownChildren */);
         }, $this)
     ), 4 /* HasNonKeyedChildren */);
@@ -1342,7 +1413,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        _$ma(a, function(value, key) {
+        _$ma(a, function($value, $key) {
             return [
                 _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'a'),
                 _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'b')
@@ -1365,7 +1436,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        _$ma(a, function(value, key) {
+        _$ma(a, function($value, $key) {
             return [
                 _$ce(2, 'div'),
                 _$ce(2, 'div')
@@ -1388,7 +1459,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        _$ma(a, function(value, key) {
+        _$ma(a, function($value, $key) {
             return [
                 _$ce(2, 'div'),
                 _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'b')
@@ -1411,7 +1482,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        _$ma(a, function(value, key) {
+        _$ma(a, function($value, $key) {
             return a ?
                 _$ce(2, 'div') :
                 undefined;
@@ -1433,7 +1504,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        _$ma(a, function(value, key) {
+        _$ma(a, function($value, $key) {
             return (
                 a ?
                     _$ce(2, 'div') :
@@ -1457,7 +1528,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        _$ma(a, function(value, key) {
+        _$ma(a, function($value, $key) {
             return (
                 a ?
                     _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'a') :
@@ -1482,7 +1553,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        _$ma(a, function(value, key) {
+        _$ma(a, function($value, $key) {
             return _$ct('\\n        a\\n    ');
         }, $this)
     ), 4 /* HasNonKeyedChildren */);
@@ -1503,7 +1574,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        _$ma(a, function(value, key) {
+        _$ma(a, function($value, $key) {
             return [
                 _$ct('\\n        a\\n        '),
                 _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'a')
@@ -1527,7 +1598,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        _$ma(a, function(value, key) {
+        _$ma(a, function($value, $key) {
             return (
                 _$ct('a')
             );
@@ -1667,20 +1738,19 @@ return function($props, $blocks) {
     var __$blocks = {};
     
     return _$ce(2, 'div', (
-        (_$blocks['block'] = function(parent) {
+        (_$blocks['block'] = function($super) {
             return 'test';
         }),
-        (__$blocks['block'] = function() {
-            var args = arguments;
+        (__$blocks['block'] = function($super, data) {
             var block = $blocks['block'];
             var callBlock = function() {
-                return _$blocks['block'].apply($this, [_$no].concat(args));
+                return _$blocks['block'].call($this, $super, data);
             };
             return block ?
-                block.apply($this, [callBlock].concat(args)) :
+                block.call($this, callBlock, data) :
                 callBlock();
         }),
-        __$blocks['block']()
+        __$blocks['block'](_$no)
     ), 0 /* UnknownChildren */);
 };"
 ```
@@ -2042,7 +2112,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 var _$le = Vdt.linkEvent;
-var _$sm = Vdt.setModel;
+var _$stm = Vdt.setTextModel;
 var _$cc = Vdt.createComponentVNode;
 
 return function($props, $blocks) {
@@ -2055,7 +2125,7 @@ return function($props, $blocks) {
             'a': '1',
             'b': true,
             '$model:value': 'a',
-            'ev-$model:change': _$le($this, _$sm),
+            'ev-$model:input': _$le($this, _$stm),
             'value': $this.get('a')
         }),
         _$cc(Div, {
@@ -2093,37 +2163,35 @@ return function($props, $blocks) {
     
     return _$ce(2, 'div', [
         _$ce(2, 'div', (
-            (_$blocks['block'] = function(parent) {
+            (_$blocks['block'] = function($super) {
                 return null;
             }),
-            (__$blocks['block'] = function() {
-                var args = arguments;
+            (__$blocks['block'] = function($super, data) {
                 var block = $blocks['block'];
                 var callBlock = function() {
-                    return _$blocks['block'].apply($this, [_$no].concat(args));
+                    return _$blocks['block'].call($this, $super, data);
                 };
                 return block ?
-                    block.apply($this, [callBlock].concat(args)) :
+                    block.call($this, callBlock, data) :
                     callBlock();
             }),
-            __$blocks['block']()
+            __$blocks['block'](_$no)
         ), 0 /* UnknownChildren */, null, _$tmp0),
         _$cc(Div, {
             'a': '1',
-            'blocks': function($blocks) {
+            '$blocks': function($blocks) {
                 var _$blocks = {}, __$blocks = _$ex({}, $blocks);
                 return (
-                    (_$blocks['block'] = function(parent) {
+                    (_$blocks['block'] = function($super) {
                         return null;
                     }),
-                    (__$blocks['block'] = function() {
-                        var args = arguments;
+                    (__$blocks['block'] = function($super, data) {
                         var block = $blocks['block'];
                         var callBlock = function() {
-                            return _$blocks['block'].apply($this, [_$no].concat(args));
+                            return _$blocks['block'].call($this, $super, data);
                         };
                         return block ?
-                            block.apply($this, [callBlock].concat(args)) :
+                            block.call($this, callBlock, data) :
                             callBlock();
                     }),
                     __$blocks
@@ -2131,6 +2199,32 @@ return function($props, $blocks) {
             }.call($this, _$em)
         })
     ], 4 /* HasNonKeyedChildren */);
+};"
+```
+
+## `ESM`
+
+####   `should compile to esm code`
+
+```
+"import {
+    createComponentVNode as _$cc,
+    createElementVNode as _$ce,
+} from 'vdt';
+import a from 'b';
+
+export default function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    const a = 1;
+    return _$cc(Div, {
+        'a': '1',
+        'children': (
+            _$ce(2, 'div', a, 0 /* UnknownChildren */)
+        )
+    });
 };"
 ```
 

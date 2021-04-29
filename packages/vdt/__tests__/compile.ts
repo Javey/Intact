@@ -71,7 +71,11 @@ describe('Vdt Compile', () => {
 
         it('unescape text children', () => {
             test(`<div>{= test }</div>`);
-        })
+        });
+
+        it('expression attribute', () => {
+            test(`<div {...a} a="1"></div>`);
+        });
     });
 
     describe('Component', () => {
@@ -270,6 +274,10 @@ describe('Vdt Compile', () => {
                 test(`<input v-model="propName" v-model-true="1" type="checkbox" />`);
             });
 
+            it('checkbox with trueValue and falseValue', () => {
+                test(`<input v-model="propName" v-model-true="1" type="checkbox" v-model-false="2" />`);
+            });
+
             it('select', () => {
                 test(`<select v-model="propName"></select>`);
             });
@@ -284,6 +292,14 @@ describe('Vdt Compile', () => {
 
             it('component with multipe v-model', () => {
                 test(`<Component v-model="propName" v-model:name="myName" />`);
+            });
+
+            it('number type', () => {
+                test(`<input v-model="propName" type="number" />`);
+            });
+
+            it('without type', () => {
+                test(`<input v-model="propName"/>`);
             });
         });
     });
@@ -703,6 +719,22 @@ describe('Vdt Compile', () => {
                     <Div a="1"><b:block /></Div>
                 </div>
             `)
+        });
+    });
+
+    describe('ESM', () => {
+        it('should compile to esm code', () => {
+            const template = stripIndent`
+                import a from 'b';
+                const a = 1;
+                <Div a="1"><div>{a}</div></Div>
+            `;
+            const parser = new Parser(template);
+            const visitor = new Visitor(parser.ast);
+            const code = visitor.getModuleCode();
+            console.log(code);
+            expect(code).to.matchSnapshot();
+
         });
     });
 

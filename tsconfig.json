@@ -50,7 +50,7 @@
             "packages/shared/src/index.ts"
         ],
         "vdt": [
-            "packages/vdt/src/common.ts"
+            "packages/vdt/src/index.ts"
         ],
         "intact": [
             "packages/intact/src/index.ts"

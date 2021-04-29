@@ -132,11 +132,14 @@ export type RefFunction<T> = { bivarianceHack(i: T | null): any }["bivarianceHac
 
 export type Ref<T> = RefFunction<T> | RefObject<T>;
 
+export type Blocks<T = any> = Record<string, (this: T, parent: () => Children, ...args: any[]) => Children>
+
 export type Props<P extends {}, T extends Element | ComponentClass = Element | ComponentClass> = {
     children?: Children
     ref?: Ref<T> 
     key?: Key
     className?: string
+    $blocks?: Blocks
 } & P;
 
 export interface ComponentConstructor<T extends ComponentClass = ComponentClass> {

@@ -23,8 +23,8 @@ let microTaskPending = false;
 
 const QUEUE: Component<any>[] = [];
 
-export function renderSyncComponnet(
-    component: Component<any>,
+export function renderSyncComponnet<P>(
+    component: Component<P>,
     lastVNode: VNodeComponentClass | null,
     nextVNode: VNodeComponentClass,
     parentDom: Element,
@@ -37,7 +37,7 @@ export function renderSyncComponnet(
     }
     component.$blockRender = false;
 
-    const vNode = normalizeRoot(component.$template(), nextVNode);
+    const vNode = normalizeRoot(component.$template(EMPTY_OBJ, component.get('$blocks')), nextVNode);
     // reuse the dom even if they are different
     let lastInput: VNode | null = null;
     if (!isNull(lastVNode) && (lastInput = lastVNode.children!.$lastInput)) {
@@ -55,8 +55,8 @@ export function renderSyncComponnet(
     component.$rendered = true;
 }
 
-export function renderAsyncComponent(
-    component: Component<any>,
+export function renderAsyncComponent<P>(
+    component: Component<P>,
     lastVNode: VNodeComponentClass | null,
     nextVNode: VNodeComponentClass,
     parentDom: Element,
@@ -77,8 +77,8 @@ export function renderAsyncComponent(
     });
 }
 
-export function updateSyncComponent(
-    component: Component<any>,
+export function updateSyncComponent<P>(
+    component: Component<P>,
     lastVNode: VNodeComponentClass,
     nextVNode: VNodeComponentClass,
     parentDom: Element, 
@@ -100,7 +100,7 @@ export function updateSyncComponent(
     }
     component.$blockRender = false;
 
-    const vNode = normalizeRoot(component.$template(), nextVNode);
+    const vNode = normalizeRoot(component.$template(EMPTY_OBJ, component.get('$blocks')), nextVNode);
     patch(component.$lastInput!, vNode, parentDom, component, component.$SVG, anchor, mountedQueue);
     component.$lastInput = vNode;
 
@@ -116,8 +116,8 @@ export function updateSyncComponent(
     }
 }
 
-export function updateAsyncComponent(
-    component: Component<any>,
+export function updateAsyncComponent<P>(
+    component: Component<P>,
     lastVNode: VNodeComponentClass,
     nextVNode: VNodeComponentClass,
     parentDom: Element, 
@@ -132,7 +132,7 @@ export function updateAsyncComponent(
     });
 }
 
-export function componentInited(component: Component<any>, triggerReceiveEvents: Function | null) {
+export function componentInited<P>(component: Component<P>, triggerReceiveEvents: Function | null) {
     component.$inited = true;
 
     if (!isNull(triggerReceiveEvents)) {
@@ -142,14 +142,14 @@ export function componentInited(component: Component<any>, triggerReceiveEvents:
     component.trigger('$inited');
 }
 
-export function mountProps(component: Component<any>, nextProps: Props<any>) {
+export function mountProps<P>(component: Component<P>, nextProps: Props<P, Component<P>>) {
     const props = component.props;
     const changeTraces: ChangeTrace[] = [];
     for (let prop in nextProps) {
-        const nextValue = nextProps[prop];
+        const nextValue = nextProps[prop as keyof typeof nextProps];
         if (isUndefined(nextValue)) continue;
 
-        const lastValue = props[prop];
+        const lastValue = props[prop as keyof typeof props];
         if (lastValue !== nextValue) {
             patchProp(component, props, prop, lastValue, nextValue, changeTraces);
         }

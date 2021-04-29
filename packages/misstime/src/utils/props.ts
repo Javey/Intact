@@ -35,6 +35,7 @@ export function patchProp(
         case 'ref':
         case 'multiple':
         case 'selectedIndex':
+        case '$blocks':
             break;
         // case 'autoFocus':
             // (dom as any).autofocus = !!nextValue;

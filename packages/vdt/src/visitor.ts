@@ -112,10 +112,31 @@ export class Visitor {
     }
 
     getModuleCode() {
+        const helpers = this.pushQueue();
+        const keys = Object.keys(this.helpers);
+        const length = keys.length;
+        if (length) {
+            helpers.push(`import {`);
+            this.indent();
+            for (let i = 0; i < length; i++) {
+                const key = keys[i];
+                helpers.push(`${helpersMap[key as Helpers]} as ${key},`);
+                if (i !== length - 1) {
+                    this.newline();
+                }
+            }
+            this.dedent();
+            this.append(`} from 'vdt';\n`);
+        }
+        this.popQueue();
+
         return [
-            `import Vdt from 'vdt';\n`,
+            helpers.join(''),
             this.hoist.join(''),
+            this.getHositDeclares(),
             '\nexport default ',
+            this.functionHead.join(''),
+            this.getDelares(),
             this.queue.join(''),
         ].join('');
     }
@@ -281,7 +302,7 @@ export class Visitor {
         if (blocks.length) {
             node.attributes.push({
                 type: Types.JSXAttribute,
-                name: 'blocks',
+                name: '$blocks',
                 value: blocks,
                 loc: fakeLoc,
             });
@@ -332,9 +353,8 @@ export class Visitor {
             this.addDeclare('_$blocks', '{}');
             this.addDeclare('__$blocks', '{}');
         }
-        this.addHelper('_$no');
 
-        this.append(`(_$blocks['${name}'] = function(parent`);
+        this.append(`(_$blocks['${name}'] = function($super`);
         if (args) {
             this.append(', ')
             this.visitString(args, true);
@@ -347,21 +367,21 @@ export class Visitor {
         this.dedent();
         this.append(`}),`);
         this.newline();
-        this.append(`(__$blocks['${name}'] = function() {`);
+        this.append(`(__$blocks['${name}'] = function($super, data) {`);
         this.indent();
-        this.append(`var args = arguments;`);
-        this.newline();
+        // this.append(`var args = arguments;`);
+        // this.newline();
         this.append(`var block = $blocks['${name}'];`);
         this.newline();
         this.append(`var callBlock = function() {`);
         this.indent();
-        this.append(`return _$blocks['${name}'].apply($this, [_$no].concat(args));`);
+        this.append(`return _$blocks['${name}'].call($this, $super, data);`);
         this.dedent();
         this.append('};');
         this.newline();
         this.append(`return block ?`);
         this.indent();
-        this.append(`block.apply($this, [callBlock].concat(args)) :`);
+        this.append(`block.call($this, callBlock, data) :`);
         this.newline();
         this.append(`callBlock();`);
         this.indentLevel--;
@@ -372,12 +392,13 @@ export class Visitor {
         if (shouldCall) {
             this.append(',');
             this.newline();
+            this.addHelper('_$no');
             if (params) {
-                this.append(`__$blocks['${name}'].apply($this, `);
+                this.append(`__$blocks['${name}'](_$no, `);
                 this.visitJSXAttributeValue(params);
                 this.append(')');
             } else {
-                this.append(`__$blocks['${name}']()`);
+                this.append(`__$blocks['${name}'](_$no)`);
             }
         }
 
@@ -467,13 +488,13 @@ export class Visitor {
         if (directive.value) {
             this.visitString(directive.value, true);
         } else {
-            this.append('value');
+            this.append('$value');
         }
         this.append(', ');
         if (directive.key) {
             this.visitString(directive.key, true);
         } else {
-            this.append('key');
+            this.append('$key');
         }
         this.append(') {'); 
         this.indent();
@@ -516,12 +537,11 @@ export class Visitor {
                 this.newline();
                 next = elseIfDir.next;
                 continue;
-            } 
-
-            if (nextDirectives[Directives.Else]) {
+            } else {
+                // should be Directives.Else
                 childrenFlag = computeChildrenFlagForVIf(childrenFlag, this.visitNode(next, false, false)!);
                 hasElse = true;
-            }
+            } 
 
             break;
         }
@@ -664,7 +684,7 @@ export class Visitor {
                     }
                     ref = value;
                     continue;
-                case 'blocks':
+                case '$blocks':
                     addAttribute(name);
                     this.visitJSXBlocks(value as any as ASTBlock[], false);
                     continue;
@@ -743,7 +763,7 @@ export class Visitor {
                 case 'ref':
                     if (!isCommonElement) return true;
                     break;
-                case 'blocks':
+                case '$blocks':
                 case 'children':
                     return true;
                 default:
@@ -849,7 +869,7 @@ export class Visitor {
         };
 
         if (node.type === Types.JSXCommonElement) {
-            let setModelFnName: Helpers = '_$sm';
+            let setModelFnName: Helpers = '_$stm';
             let eventName = 'change';
 
             addAttribute(`$model:${name}`);
@@ -862,6 +882,7 @@ export class Visitor {
                         switch (type.value) {
                             case 'radio':
                                 handleRadioOrCheckbox('$this.get(', ') === ', modelMeta.value, "'on'");
+                                setModelFnName = '_$srm';
                                 break;
                             case 'checkbox':
                                 this.addHelper('_$isc');
@@ -870,10 +891,14 @@ export class Visitor {
 
                                 setModelFnName = '_$scm';
                                 break;
+                            // case 'number':
+                                // TODO: shoud cast to number
                             default:
                                 eventName = 'input';
                                 break;
                         }
+                    } else {
+                        eventName = 'input';
                     }
                     break;
                 case 'select':
@@ -971,6 +996,7 @@ export class Visitor {
                 case 'params':
                     ret.params = attr.value as ASTExpression;
                     break;
+                /* istanbul ignore next */
                 default:
                     break;
             }
