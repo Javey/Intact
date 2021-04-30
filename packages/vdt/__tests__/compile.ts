@@ -1,16 +1,17 @@
 import {Parser} from '../src/parser';
 import {Visitor} from '../src/visitor';
 import {stripIndent} from 'common-tags';
+import {Options} from '../src/types';
 
-function generate(template: string) {
-    const parser = new Parser(template);
+function generate(template: string, options?: Options) {
+    const parser = new Parser(template, options);
     const visitor = new Visitor(parser.ast);
     
     return visitor.getCode();
 }
 
-function test(template: string) {
-    const code = generate(template);
+function test(template: string, options?: Options) {
+    const code = generate(template, options);
     console.log(code);
     expect(code).to.matchSnapshot();
 }
@@ -121,6 +122,14 @@ describe('Vdt Compile', () => {
 
         it('redundant { in child should throw', () => {
             expect(() => test(`<div>{{a}</div>`)).to.throw();
+        });
+
+        it('delimiters: ["{{", "}}"]', () => {
+            expect(test(stripIndent`
+                <div class={{ className }} style={{ {width: '100px'} }}>
+                    {{ a }}
+                </div>
+            `, {delimiters: ['{{', '}}']}));
         });
     });
 
@@ -707,7 +716,7 @@ describe('Vdt Compile', () => {
         });
 
         describe('Multiple Children', () => {
-            it('keyed children', () => {
+            it('two keyed children', () => {
                 test(stripIndent`
                     <div>
                         <div key="a"></div>
@@ -716,13 +725,33 @@ describe('Vdt Compile', () => {
                 `);
             });
 
-            it('non-keyed children', () => {
+            it('more than two keyed children', () => {
+                test(stripIndent`
+                    <div>
+                        <div key="a"></div>
+                        <div key="b"></div>
+                        <div key="c"></div>
+                    </div>
+                `);
+            });
+
+            it('two non-keyed children', () => {
                 test(stripIndent`
                     <div>
                         <div></div>
                         <div></div>
                     </div>
                 `);
+            });
+
+            it('more than two non-keyed elements', () => {
+                test(stripIndent`
+                    <div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                `)
             });
 
             it('keyed and non-keyed children', () => {
@@ -826,6 +855,7 @@ describe('Vdt Compile', () => {
                     </div>
                 `);
             });
+
         });
     });
 

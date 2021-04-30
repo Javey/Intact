@@ -333,6 +333,24 @@ return function($props, $blocks) {
 };"
 ```
 
+####   `delimiters: ["{{", "}}"]`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+var _$cn = Vdt.className;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', a, 0 /* UnknownChildren */, _$cn(className), {
+        'style': {width: '100px'}
+    });
+};"
+```
+
 ## `Special String-like Code`
 
 ####   `breakline string`
@@ -2163,7 +2181,7 @@ return function($props, $blocks) {
 
 ##   `Multiple Children`
 
-####     `keyed children`
+####     `two keyed children`
 
 ```
 "var Vdt = _$vdt;
@@ -2181,7 +2199,7 @@ return function($props, $blocks) {
 };"
 ```
 
-####     `non-keyed children`
+####     `more than two keyed children`
 
 ```
 "var Vdt = _$vdt;
@@ -2193,6 +2211,44 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', [
+        _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'a'),
+        _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'b'),
+        _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'c')
+    ], 8 /* HasKeyedChildren */);
+};"
+```
+
+####     `two non-keyed children`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', [
+        _$ce(2, 'div'),
+        _$ce(2, 'div')
+    ], 4 /* HasNonKeyedChildren */);
+};"
+```
+
+####     `more than two non-keyed elements`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', [
+        _$ce(2, 'div'),
         _$ce(2, 'div'),
         _$ce(2, 'div')
     ], 4 /* HasNonKeyedChildren */);
@@ -2434,7 +2490,7 @@ return function($props, $blocks) {
         _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, _$tmp2),
         _$ce(2, 'div', null, 1 /* HasInvalidChildren */, 'c', _$tmp3),
         _$cc(Div, _$tmp4)
-    ], 0 /* UnknownChildren */);
+    ], 4 /* HasNonKeyedChildren */);
 };"
 ```
 
@@ -2474,7 +2530,7 @@ return function($props, $blocks) {
         _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, _$tmp3),
         _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, _$tmp4),
         _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, _$tmp5)
-    ], 0 /* UnknownChildren */);
+    ], 4 /* HasNonKeyedChildren */);
 };"
 ```
 

@@ -1,63 +1,83 @@
 # `Vdt Render`
 
-#### `render common element`
+## `Common Element`
+
+####   `render common element`
 
 ```
 "<div></div>"
 ```
 
-#### `render common element with children`
+####   `render common element with children`
 
 ```
 "<div>1</div>"
 ```
 
-#### `render dynamic props`
+####   `render dynamic props`
 
 ```
 "<div id=\"id\"></div>"
 ```
 
-#### `render class`
+####   `render class`
 
 ```
 "<div><div class=\"a\"></div><div class=\"a\"></div></div>"
 ```
 
-#### `render null and number classname`
+####   `render null and number classname`
 
 ```
 "<div><div></div><div class=\"1\"></div></div>"
 ```
 
-#### `render template`
+####   `render template`
 
 ```
 "<div>a</div>"
 ```
 
-#### `render with js`
+####   `render with js`
 
 ```
 "<div>1</div>"
 ```
 
-#### `render comment`
+####   `render comment`
 
 ```
 "<div><!--test--></div>"
 ```
 
-#### `render script`
+####   `render script`
 
 ```
 "<script>var a = 1;</script>"
 ```
 
-#### `render textarea`
+####   `render textarea`
 
 ```
 "<textarea>&lt;div&gt;1&lt;/div&gt;</textarea>"
+```
+
+####   `whitespaces between strings should not be skipped`
+
+```
+"<div> aa b <div>c </div></div>"
+```
+
+####   `whitespaces between string and expression should not be skipped`
+
+```
+"<div> aa a b <div>c</div></div>"
+```
+
+####   `whitespaces between expression and element should be skipped`
+
+```
+"<div>1 b <div>1 1</div>1</div>"
 ```
 
 ## `Vdt & Block`

@@ -238,17 +238,8 @@ export function computeChildrenFlagForVIf(lastFlag: ChildrenFlags, nextFlag: Chi
 
 export function computeChildrenFlagForChildren(lastFlag: ChildrenFlags | null, nextFlag: ChildrenFlags): ChildrenFlags {
     if (isNull(lastFlag)) return nextFlag;
-    if (lastFlag === ChildrenFlags.UnknownChildren) return lastFlag;
 
-    if (lastFlag === nextFlag) {
-        if (nextFlag === ChildrenFlags.HasKeyedVNodeChildren) {
-            return ChildrenFlags.HasKeyedVNodeChildren;
-        } else if (nextFlag === ChildrenFlags.HasNonKeyedVNodeChildren) {
-            return ChildrenFlags.HasNonKeyedChildren;
-        }
-    }
-
-    return ChildrenFlags.UnknownChildren;
+    return lastFlag & nextFlag;
 }
 
 export function childrenFlagToChildrenType(flag: ChildrenFlags): ChildrenTypes | string {
