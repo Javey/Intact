@@ -323,8 +323,14 @@ export class Visitor {
     }
 
     private visitJSXExpression(node: ASTExpression): ChildrenFlags {
-        this.visit(node.value, false);
-        return ChildrenFlags.UnknownChildren;
+        const value = node.value;
+        if (!value.length) {
+            this.append('null');
+            return ChildrenFlags.HasInvalidChildren;
+        } else {
+            this.visit(value, false);
+            return ChildrenFlags.UnknownChildren;
+        }
     }
 
     private visitJSXText(node: ASTText, textToVNode: boolean): ChildrenFlags {
@@ -362,7 +368,7 @@ export class Visitor {
 
     private visitJSXBlock(node: ASTBlock, shouldCall: boolean): ChildrenFlags {
         const {params, args} = this.getJSXBlocksAttribute(node);
-        const name = node.value
+        const name = node.value;
 
         if (shouldCall) {
             this.addDeclare('_$blocks', '{}');
@@ -790,9 +796,11 @@ export class Visitor {
                     const value = attr.value as ASTAttributeTemplateValue;
                     if (value.type === Types.JSXExpression) {
                         // if value is number / true / false, treat it as static value
-                        let tmp;
+                        let tmp: any = value.value;
+                        const length = tmp.length;
+                        if (!length) return false; // is an empty expresion, it will be generated to null
                         if (
-                            (tmp = value.value, tmp.length === 1) &&
+                            length === 1 &&
                             (tmp = tmp[0], tmp.type === Types.JS) &&
                             (tmp = tmp.value, tmp.length === 1)
                         ) {

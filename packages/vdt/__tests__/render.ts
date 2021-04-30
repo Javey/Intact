@@ -19,50 +19,68 @@ describe('Vdt Render', () => {
         document.body.append(container);
     });
 
-    it('render common element', () => {
-        test('<div></div>');
-    });
+    describe('Common Element', () => {
+        it('render common element', () => {
+            test('<div></div>');
+        });
 
-    it('render common element with children', () => {
-        test('<div>{$props.a}</div>', {a: 1});
-    });
+        it('render common element with children', () => {
+            test('<div>{$props.a}</div>', {a: 1});
+        });
 
-    it('render dynamic props', () => {
-        test('<div id={$props.id}></div>', {id: 'id'});
-    });
+        it('render dynamic props', () => {
+            test('<div id={$props.id}></div>', {id: 'id'});
+        });
 
-    it('render class', () => {
-        test(stripIndent`
-            <div>
-                <div class="a"></div>
-                <div class={{a: true}}></div>
-            </div>
-        `);
-    });
+        it('render class', () => {
+            test(stripIndent`
+                <div>
+                    <div class="a"></div>
+                    <div class={{a: true}}></div>
+                </div>
+            `);
+        });
 
-    it('render null and number classname', () => {
-         test(stripIndent`
-            <div>
-                <div class={null}></div>
-                <div class={1}></div>
-            </div>
-        `);
-    });
+        it('render null and number classname', () => {
+             test(stripIndent`
+                <div>
+                    <div class={null}></div>
+                    <div class={1}></div>
+                </div>
+            `);
+        });
 
-    it('render template', () => {
-        test('<div><template>a</template></div>');
-    });
+        it('render template', () => {
+            test('<div><template>a</template></div>');
+        });
 
-    it('render with js', () => {
-        test('const a = 1; <div>{a}</div>');
-    });
+        it('render with js', () => {
+            test('const a = 1; <div>{a}</div>');
+        });
 
-    it('render comment', () => {
-        test('<div><!--test--></div>');
-    });
+        it('render comment', () => {
+            test('<div><!--test--></div>');
+        });
 
-    it('render text tag', () => {
-        test('<script>var a = {$props.a};</script>', {a: 1});
+        it('render script', () => {
+            test('<script>var a = {$props.a};</script>', {a: 1});
+        });
+
+        it('render textarea', () => {
+            test('<textarea><div>{$props.a}</div></textarea>', {a: 1});
+        });
+
+        it('whitespaces between strings should not be skipped', () => {
+            test(`<div> aa b <div>c </div> </div>`);
+        });
+
+        it('whitespaces between string and expression should not be skipped', () => {
+            test(`<div> aa {$props.value} b <div>{$props.c}</div> </div>`, {value: 'a', c: 'c'});
+        });
+
+        it('whitespaces between expression and element should be skipped', () => {
+            test(`const value = $props.value;<div> {value} b <div>{value} {value} </div> {value} </div>`, {value: 1});
+        });
     });
 
     describe('Vdt & Block', () => {
@@ -199,6 +217,16 @@ describe('Vdt Render', () => {
             `);
         });
 
+        it('render v-if and v-else that there is element between them', () => {
+            test(stripIndent`
+                <div>
+                    <div v-if={false}>false</div>
+                    <div>middle</div>
+                    <div v-else>true</div>
+                </div>
+            `);
+        });
+
         it('render v-for', () => {
             test(stripIndent`
                 <div>
@@ -261,6 +289,14 @@ describe('Vdt Render', () => {
             test(stripIndent`
                 <div>
                     <div v-for={[]}>{$key}: {$value}</div>
+                </div>
+            `);
+        });
+
+        it('v-raw', () => {
+            test(stripIndent`
+                <div v-raw>
+                    {a}<span></span>
                 </div>
             `);
         });

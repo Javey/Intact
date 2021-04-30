@@ -48,6 +48,18 @@
 "<div><!--test--></div>"
 ```
 
+#### `render script`
+
+```
+"<script>var a = 1;</script>"
+```
+
+#### `render textarea`
+
+```
+"<textarea>&lt;div&gt;1&lt;/div&gt;</textarea>"
+```
+
 ## `Vdt & Block`
 
 ####   `render blocks`
@@ -118,6 +130,12 @@
 "<div><div>true</div></div>"
 ```
 
+####   `render v-if and v-else that there is element between them`
+
+```
+"<div><div>true</div><div>middle</div></div>"
+```
+
 ####   `render v-for`
 
 ```
@@ -146,6 +164,14 @@
 
 ```
 "<div></div>"
+```
+
+####   `v-raw`
+
+```
+"<div>
+    {a}&lt;span&gt;&lt;/span&gt;
+</div>"
 ```
 
 ## `Component`

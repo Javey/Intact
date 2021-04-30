@@ -117,7 +117,7 @@ export function isElementNode(node: ASTNode): node is ASTElement {
 export function throwError(msg: string, loc: SourceLocation, source: string): never {
     const lines = source.split('\n');
     let {line, column} = loc;
-    column++;
+    column;
     const error = new Error(
         `${msg} (${line}:${column})\n` +
         `> ${line} | ${lines[line - 1]}\n` +

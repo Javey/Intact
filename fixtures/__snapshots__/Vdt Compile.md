@@ -242,6 +242,263 @@ return function($props, $blocks) {
 };"
 ```
 
+####   `ignore empty expression attribute`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, {
+        ...a,
+        'a': '1'
+    });
+};"
+```
+
+####   `empty expression as attribute value`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+var _$tmp0 = {
+    'a': null
+};
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, _$tmp0);
+};"
+```
+
+####   `empty expresion as child`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+var _$ct = Vdt.createTextVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', [
+        null,
+        _$ct('test')
+    ], 0 /* UnknownChildren */);
+};"
+```
+
+####   `text tag`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(256, 'textarea', null, 1 /* HasInvalidChildren */, null, {
+        'value': '<div>' + 'a' + '</div>'
+    });
+};"
+```
+
+####   `redundant } in child should be parsed correctly`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+var _$ct = Vdt.createTextVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', [
+        a,
+        _$ct('}')
+    ], 0 /* UnknownChildren */);
+};"
+```
+
+## `Special String-like Code`
+
+####   `breakline string`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    const a = `a
+b`;
+    const b = null;
+    return _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, {
+        'a': 'a\\n    b',
+        'b': `a
+        b`
+    });
+};"
+```
+
+####   `should not check tag closing in string`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    const a = '<div>';
+    return _$ce(2, 'div');
+};"
+```
+
+####   `escape quote`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+var _$tmp0 = {
+    'a': 'a\\'a',
+    'b': 'a\\'a'
+};
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', [
+        'a\\'a',
+        \"a'a\"
+    ], 0 /* UnknownChildren */, null, _$tmp0);
+};"
+```
+
+####   `breakline comment and tag in comment`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+var _$ccv = Vdt.createCommentVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', _$ccv('\\n        <div>\\n    '), 2 /* HasVNodeChildren */);
+};"
+```
+
+####   `regexp`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    const a = /<div>/
+    return _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, {
+        'validate': /\"<'/
+    });
+};"
+```
+
+####   `slash / as division sign`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    /te'st/
+    var a = /*test*/ /*test*/ /te'st/;
+    (function() { return 1;  }) / 2;
+    return _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, {
+        'width': 100 / 10
+    });
+};"
+```
+
+####   `js single line comment`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    const a = /<div>/ // <div>
+    return _$ce(2, 'div');
+};"
+```
+
+####   `js multiple lines comment`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    /* 
+ * <div>
+ */ 
+    const a = /<div>/
+    return _$ce(2, 'div');
+};"
+```
+
+####   `< in as text node`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', 'a < b ? a : b; a <2? a : b', 16 /* HasTextChildren */);
+};"
+```
+
 ## `Component`
 
 ####   `without children`
@@ -1025,6 +1282,21 @@ return function($props, $blocks) {
 };"
 ```
 
+####   `v-raw`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', '\\n    {a}<span></span>\\n', 16 /* HasTextChildren */);
+};"
+```
+
 ##   `v-model`
 
 ####     `radio without value`
@@ -1300,6 +1572,7 @@ return function($props, $blocks) {
 "import {name} from 'xxxx';
 import a from 'xxxx'
 
+import x from 'x';
 var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
@@ -2302,6 +2575,24 @@ return function($props, $blocks) {
             }.call($this, _$em)
         })
     ], 4 /* HasNonKeyedChildren */);
+};"
+```
+
+####   `should extract props if text tag has not expression`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+var _$tmp0 = {
+    'value': '<div>aaa</div>'
+};
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(256, 'textarea', null, 1 /* HasInvalidChildren */, null, _$tmp0);
 };"
 ```
 

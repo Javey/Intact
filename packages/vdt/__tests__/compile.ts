@@ -77,9 +77,134 @@ describe('Vdt Compile', () => {
             test(`<div {...a} a="1"></div>`);
         });
 
+        it('ignore empty expression attribute', () => {
+            test(`<div {...a} {/*test*/} a="1"></div>`);
+        });
+
+        it('empty expression as attribute value', () => {
+            test(`<div a={}></div>`);
+        });
+
+        it('empty expresion as child', () => {
+            test(`<div>{/*test*/}test</div>`);
+        });
+
         it('text tag', () => {
             test(`<textarea><div>{'a'}</div></textarea>`);
         });
+
+        it('unclosed tag should throw', () => {
+            expect(() => test(`<div>aaa`)).to.throw(stripIndent`
+                Unclosed tag: </div> (1:2)
+                > 1 | <div>aaa
+                    |  ^
+            `);
+        });
+
+        it('redundant } in child should be parsed correctly', () => {
+            test(`<div>{a}}</div>`);
+        });
+
+        it('redundant } in js should throw', () => {
+            expect(() => test(stripIndent`
+                <ul>
+                    {a.map(value => {
+                        return <li a={value}}>{value}</li>
+                    })}
+                </ul>
+            `)).to.throw(stripIndent`
+                Unexpected identifier } (3:29)
+                > 3 |         return <li a={value}}>{value}</li>
+                    |                             ^
+            `);
+        });
+
+        it('redundant { in child should throw', () => {
+            expect(() => test(`<div>{{a}</div>`)).to.throw();
+        });
+    });
+
+    describe('Special String-like Code', () => {
+        it('breakline string', () => {
+            test(stripIndent`
+                const a = \`a
+                b\`;
+                const b = null;
+                <div a="a
+                    b"
+                    b={\`a
+                        b\`}
+                ></div>
+            `);
+        });
+
+        it('should not check tag closing in string', () => {
+            test(stripIndent`
+                const a = '<div>';
+                <div></div>
+            `);
+        });
+
+        it('should throw if string has not closed quote', () => {
+            expect(() => test(stripIndent`
+                const a = '<div>
+                <div></div>
+            `)).to.throw();
+        });
+
+        it('escape quote', () => {
+            test(`<div a="a\'a" b="a'a">{'a\\'a'}{"a'a"}</div>`);
+        });
+
+        it('breakline comment and tag in comment', () => {
+            test(stripIndent`
+                <div>
+                    <!--
+                        <div>
+                    -->
+                </div>
+            `)
+        });
+
+        it('regexp', () => {
+            test(stripIndent`
+                const a = /<div>/
+                <div validate={/"<'/}></div>
+            `);
+        });
+
+        it('slash / as division sign', () => {
+            test(stripIndent`
+                /te'st/
+                var a = /*test*/ /*test*/ /te'st/;
+                (function() { return 1;  }) / 2;
+                <div width={100 / 10}></div>
+            `);
+        });
+
+        it('js single line comment', () => {
+            test(stripIndent`
+                const a = /<div>/ // <div>
+                <div></div>
+            `);
+        });
+
+        it('js multiple lines comment', () => {
+            test(stripIndent`
+                /* 
+                 * <div>
+                 */ 
+                const a = /<div>/
+                <div></div>
+            `);
+        });
+
+        it('< in as text node', () => {
+            test(stripIndent`
+                <div>a < b ? a : b; a <2? a : b</div>
+            `);
+        });
+
     });
 
     describe('Component', () => {
@@ -275,6 +400,14 @@ describe('Vdt Compile', () => {
             test(`<div><div v-for={a} v-if={value}></div></div>`);
         });
 
+        it('v-raw', () => {
+            test(stripIndent`
+                <div v-raw>
+                    {a}<span></span>
+                </div>
+            `);
+        });
+
         describe('v-model', () => {
             it('radio without value', () => {
                 test(`<input v-model="propName" type="radio" />`);
@@ -339,6 +472,7 @@ describe('Vdt Compile', () => {
                 import a from 'xxxx'
 
                 const b = a;
+                import x from 'x';
                 <div>{b}</div>
             `);
         })
@@ -764,11 +898,19 @@ describe('Vdt Compile', () => {
 
     describe('Validate', () => {
         it('should throw when v-raw on component', () => {
-            expect(() => test(`<C v-raw>test</C>`)).to.throw();
+            expect(() => test(`<C v-raw>test</C>`)).to.throw(stripIndent`
+                 Only html elememt supports v-raw, but got: C (1:4)
+                 > 1 | <C v-raw>test</C>
+                     |    ^
+             `);
         });
 
         it('should throw if v-for-key / v-for-value is not a literal string', () => {
-            expect(() => test(`<div v-for={a} v-for-key={'a'}></div>`)).to.throw();
+            expect(() => test(`<div v-for={a} v-for-key={'a'}></div>`)).to.throw(stripIndent`
+                'v-for-key' must be a literal string. (1:26)
+                > 1 | <div v-for={a} v-for-key={'a'}></div>
+                    |                          ^
+            `);
             expect(() => test(`<div v-for={a} v-for-value={'a'}></div>`)).to.throw();
         });
 
@@ -794,6 +936,19 @@ describe('Vdt Compile', () => {
             expect(() => test(`<b:block key="a" />`)).to.throw();
             expect(() => test(`<b:block args={a} />`)).to.throw();
             expect(() => test(`<b:block params='a' />`)).to.throw();
+        });
+
+        it('should throw if attribute name is invlaid', () => {
+            expect(() => test(`<div =></div>`)).to.throw();
+        });
+
+        it('should throw if string attribute does not start with quote', () => {
+            expect(() => test(`<div a=a></div>`)).to.throw();
+        });
+
+        it('should throw if has not v-if but has v-else-if or v-else', () => {
+            expect(() => test(`<template><div v-else-if={a}></div></template>`)).to.throw();
+            expect(() => test(`<template><div v-else></div></template>`)).to.throw();
         });
     });
 

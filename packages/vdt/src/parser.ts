@@ -55,7 +55,7 @@ const emptyRegexp = /^\s*$/;
 export class Parser {
     private index: number = 0;
     private line: number = 1;
-    private column: number = 0;
+    private column: number = 1;
     private source: string;
     private length: number;
     private options: Options = defaultOptions;
@@ -133,7 +133,6 @@ export class Parser {
         let shouldTrimRight = false;
 
         while (this.index < this.length) {
-            // this.skipJSComment(value, ignoreWhitespaces);
             this.skipJSComment();
             const ch = this.char();
             let tmp;
@@ -147,7 +146,7 @@ export class Parser {
                     this.index === 0 || 
                     // is not </, this is a end tag
                     (tmp = this.char(this.index - 1)) && tmp !== '<' &&
-                    // is not a sign of division
+                    // is not a division sign
                     // FIXME: expect `if (a > 1) /test/`
                     (tmp = this.getLastCharCode()) && !isJSIdentifierPart(tmp) && tmp !== 41 // )
                 )
@@ -219,9 +218,8 @@ export class Parser {
             const ch = this.char();
             if (ch.charCodeAt(0) === 10) {
                 this.updateLine();
-            } else {
-                this.updateIndex();
             }
+            this.updateIndex();
 
             if (ch === quote) {
                 quote = '';
@@ -233,7 +231,7 @@ export class Parser {
             }
         }
         if (quote !== '') {
-            this.error('Unclosed quote');
+            this.error('Unclosed quote', loc);
         }
 
         return {type: Types.JSXString, value: str, loc};
@@ -259,6 +257,7 @@ export class Parser {
                 case 98: // b
                     type = Types.JSXBlock;
                     break;
+                /* istanbul ignore next */
                 default:
                     this.error('Unknown directive ' + String.fromCharCode(flag) + ':');
             }
@@ -330,7 +329,11 @@ export class Parser {
             const delimiters = this.options.delimiters;
             if (this.isExpect(delimiters[0])) {
                 // support dynamic attributes
-                attributes.push(this.parseJSXExpression() as ASTExpression);
+                const expression = this.parseJSXExpression() as ASTExpression;
+                if (expression.value.length) {
+                    // ignore empty expression
+                    attributes.push(expression);
+                }
                 continue;
             }
 
@@ -381,8 +384,10 @@ export class Parser {
     }
 
     private parseJSXAttributeName(): string {
-        if (!isJSXIdentifierPart(this.charCode())) {
-            this.error('Unexpected identifier ' + this.char());
+        if (process.env.NODE_ENV !== 'production') {
+            if (!isJSXIdentifierPart(this.charCode())) {
+                this.error('Unexpected identifier ' + this.char());
+            }
         }
 
         const start = this.index;
@@ -433,11 +438,10 @@ export class Parser {
                 // if it is a text element, treat children as innerHTML attribute
                 const attrLoc = this.getLocation();
                 const children = this.parseJSXChildrenValue(tag, type, hasVRaw, true, loc);
-                // TODO
                 if (children.length) {
                     attributes.push({
                         type: Types.JSXAttribute,
-                        name: 'innerHTML',
+                        name: tag === 'textarea' ? 'value' : 'innerHTML',
                         value: {
                             type: Types.JSXStrings,
                             value: children,
@@ -670,12 +674,11 @@ export class Parser {
                     this.updateIndex(2);
                     while (this.index < this.length) {
                         const code = this.charCode();
-                        this.updateIndex();
                         if (code === 10) {
                             // is \n
-                            this.updateLine();
                             break;
                         }
+                        this.updateIndex();
                     }
                 } else if (ch === '*') {
                     this.updateIndex(2);
