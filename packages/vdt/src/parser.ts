@@ -439,7 +439,7 @@ export class Parser {
                         type: Types.JSXAttribute,
                         name: 'innerHTML',
                         value: {
-                            type: Types.JSXExpression,
+                            type: Types.JSXStrings,
                             value: children,
                             loc: attrLoc,
                         },

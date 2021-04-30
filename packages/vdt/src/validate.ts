@@ -13,7 +13,11 @@ import {throwError, isElementNode} from './helpers';
 export function validateDirectiveValue(name: string, valueType: Types, tag: string, tagType: Types, source: string, loc: SourceLocation) {
     if (name === Directives.Raw) {
         if (tagType !== Types.JSXCommonElement) {
-            throwError(`Only html elememt supports v-raw, but got: ${tag}`, loc, source);
+            throwError(
+                `Only html elememt supports v-raw, but got: ${tag}`, 
+                {line: loc.line, column: loc.column - Directives.Raw.length},
+                source
+            );
         }
     } else if (name === Directives.ForKey || name === Directives.ForValue) {
         if (valueType !== Types.JSXString) {
@@ -45,7 +49,12 @@ export function validateModel(tag: string, type: Types, attributes: ASTElement['
     if (tag === 'input') {
         const typeAttr = find('type');
         if (typeAttr && (typeAttr.value as ASTAttributeTemplateValue).type !== Types.JSXString) {
-            throwError(`If use 'v-model' on 'input' element, the 'type' property of element cannot be dynamic value.`, loc, source);
+            throwError(
+                `If use 'v-model' on 'input' element, ` + 
+                `the 'type' property of element cannot be dynamic value.`,
+                (typeAttr.value as ASTAttributeTemplateValue).loc,
+                source
+            );
         }
     }
 }

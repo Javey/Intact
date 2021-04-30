@@ -61,9 +61,9 @@ describe('Vdt Render', () => {
         test('<div><!--test--></div>');
     });
 
-    // it('render text tag', () => {
-        // test('<script>var a = 1;</script>', {a: 1});
-    // });
+    it('render text tag', () => {
+        test('<script>var a = {$props.a};</script>', {a: 1});
+    });
 
     describe('Vdt & Block', () => {
         it('render blocks', () => {
@@ -71,6 +71,26 @@ describe('Vdt Render', () => {
                 <div>
                     <b:test>
                         <div class="a"></div>
+                    </b:test>
+                </div>
+            `);
+        });
+
+        it('render block with v-if', () => {
+            test(stripIndent`
+                <div>
+                    <b:test v-if={false}>
+                        <div class="a"></div>
+                    </b:test>
+                </div>
+            `);
+        });
+
+        it('render block with v-for', () => {
+            test(stripIndent`
+                <div>
+                    <b:test v-for={[1, 2]}>
+                        <div class="a">{$value}</div>
                     </b:test>
                 </div>
             `);

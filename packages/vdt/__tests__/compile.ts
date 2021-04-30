@@ -76,6 +76,10 @@ describe('Vdt Compile', () => {
         it('expression attribute', () => {
             test(`<div {...a} a="1"></div>`);
         });
+
+        it('text tag', () => {
+            test(`<textarea><div>{'a'}</div></textarea>`);
+        });
     });
 
     describe('Component', () => {
@@ -152,12 +156,6 @@ describe('Vdt Compile', () => {
     });
 
     describe('Block', () => {
-        it('should throw if attribute is invalid', () => {
-            expect(() => test(`<b:block key="a" />`)).to.throw();
-            expect(() => test(`<b:block args={a} />`)).to.throw();
-            expect(() => test(`<b:block params='a' />`)).to.throw();
-        });
-
         it('without args and params', () => {
             test(stripIndent`
                 <div>
@@ -182,6 +180,26 @@ describe('Vdt Compile', () => {
             test(stripIndent`
                 <div>
                     <b:block params={[a, b]}>
+                        <div>test</div>
+                    </b:block>
+                </div>
+            `);
+        });
+
+        it('with directive if', () => {
+            test(stripIndent`
+                <div>
+                    <b:block params={[a, b]} v-if={a}>
+                        <div>test</div>
+                    </b:block>
+                </div>
+            `);
+        });
+
+        it('with directive for', () => {
+            test(stripIndent`
+                <div>
+                    <b:block params={[a, b]} v-for={a}>
                         <div>test</div>
                     </b:block>
                 </div>
@@ -720,6 +738,12 @@ describe('Vdt Compile', () => {
                 </div>
             `)
         });
+
+        it('should extract props if text tag has not expression', () => {
+            test(stripIndent`
+                <textarea><div>aaa</div></textarea>
+            `);
+        });
     });
 
     describe('ESM', () => {
@@ -735,6 +759,41 @@ describe('Vdt Compile', () => {
             console.log(code);
             expect(code).to.matchSnapshot();
 
+        });
+    });
+
+    describe('Validate', () => {
+        it('should throw when v-raw on component', () => {
+            expect(() => test(`<C v-raw>test</C>`)).to.throw();
+        });
+
+        it('should throw if v-for-key / v-for-value is not a literal string', () => {
+            expect(() => test(`<div v-for={a} v-for-key={'a'}></div>`)).to.throw();
+            expect(() => test(`<div v-for={a} v-for-value={'a'}></div>`)).to.throw();
+        });
+
+        it('should throw if v-for / v-if / v-else-if is not a expression', () => {
+            expect(() => test(`<div v-for="a"></div>`)).to.throw();
+            expect(() => test(`<div v-if="a"></div>`)).to.throw();
+            expect(() => test(`<div v-else-if="a"></div>`)).to.throw();
+        });
+
+        it('should throw if v-else has value', () => {
+            expect(() => test(`<div v-else="a"></div>`)).to.throw();
+        });
+
+        it('should throw if use v-model on non-form element', () => {
+            expect(() => test(`<div v-model="a"></div>`)).to.throw();
+        });
+
+        it('should throw if use v-model but type is dynamic', () => {
+            expect(() => test(`<input v-model="a" type={type} />`)).to.throw();
+        });
+
+        it('should throw if block has invalid attribute', () => {
+            expect(() => test(`<b:block key="a" />`)).to.throw();
+            expect(() => test(`<b:block args={a} />`)).to.throw();
+            expect(() => test(`<b:block params='a' />`)).to.throw();
         });
     });
 

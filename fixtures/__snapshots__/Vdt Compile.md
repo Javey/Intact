@@ -499,22 +499,24 @@ return function($props, $blocks) {
         '$blocks': function($blocks) {
             var _$blocks = {}, __$blocks = _$ex({}, $blocks);
             return (
-                (_$blocks['test'] = function($super) {
-                    return (
-                        _$cc(A, {
-                            'children': 'test'
-                        })
-                    );
-                }),
-                (__$blocks['test'] = function($super, data) {
-                    var block = $blocks['test'];
-                    var callBlock = function() {
-                        return _$blocks['test'].call($this, $super, data);
-                    };
-                    return block ?
-                        block.call($this, callBlock, data) :
-                        callBlock();
-                }),
+                (
+                    (_$blocks['test'] = function($super) {
+                        return (
+                            _$cc(A, {
+                                'children': 'test'
+                            })
+                        );
+                    }),
+                    (__$blocks['test'] = function($super, data) {
+                        var block = $blocks['test'];
+                        var callBlock = function() {
+                            return _$blocks['test'].call($this, $super, data);
+                        };
+                        return block ?
+                            block.call($this, callBlock, data) :
+                            callBlock();
+                    })
+                ),
                 __$blocks
             );
         }.call($this, _$em)
@@ -539,34 +541,38 @@ return function($props, $blocks) {
         '$blocks': function($blocks) {
             var _$blocks = {}, __$blocks = _$ex({}, $blocks);
             return (
-                (_$blocks['foo'] = function($super) {
-                    return (
-                        _$cc(A, {
-                            'children': 'test'
-                        })
-                    );
-                }),
-                (__$blocks['foo'] = function($super, data) {
-                    var block = $blocks['foo'];
-                    var callBlock = function() {
-                        return _$blocks['foo'].call($this, $super, data);
-                    };
-                    return block ?
-                        block.call($this, callBlock, data) :
-                        callBlock();
-                }),
-                (_$blocks['bar'] = function($super) {
-                    return 'test';
-                }),
-                (__$blocks['bar'] = function($super, data) {
-                    var block = $blocks['bar'];
-                    var callBlock = function() {
-                        return _$blocks['bar'].call($this, $super, data);
-                    };
-                    return block ?
-                        block.call($this, callBlock, data) :
-                        callBlock();
-                }),
+                (
+                    (_$blocks['foo'] = function($super) {
+                        return (
+                            _$cc(A, {
+                                'children': 'test'
+                            })
+                        );
+                    }),
+                    (__$blocks['foo'] = function($super, data) {
+                        var block = $blocks['foo'];
+                        var callBlock = function() {
+                            return _$blocks['foo'].call($this, $super, data);
+                        };
+                        return block ?
+                            block.call($this, callBlock, data) :
+                            callBlock();
+                    })
+                ),
+                (
+                    (_$blocks['bar'] = function($super) {
+                        return 'test';
+                    }),
+                    (__$blocks['bar'] = function($super, data) {
+                        var block = $blocks['bar'];
+                        var callBlock = function() {
+                            return _$blocks['bar'].call($this, $super, data);
+                        };
+                        return block ?
+                            block.call($this, callBlock, data) :
+                            callBlock();
+                    })
+                ),
                 __$blocks
             );
         }.call($this, _$em)
@@ -591,21 +597,23 @@ return function($props, $blocks) {
     var __$blocks = {};
     
     return _$ce(2, 'div', (
-        (_$blocks['block'] = function($super) {
-            return (
-                _$ce(2, 'div', 'test', 16 /* HasTextChildren */)
-            );
-        }),
-        (__$blocks['block'] = function($super, data) {
-            var block = $blocks['block'];
-            var callBlock = function() {
-                return _$blocks['block'].call($this, $super, data);
-            };
-            return block ?
-                block.call($this, callBlock, data) :
-                callBlock();
-        }),
-        __$blocks['block'](_$no)
+        (
+            (_$blocks['block'] = function($super) {
+                return (
+                    _$ce(2, 'div', 'test', 16 /* HasTextChildren */)
+                );
+            }),
+            (__$blocks['block'] = function($super, data) {
+                var block = $blocks['block'];
+                var callBlock = function() {
+                    return _$blocks['block'].call($this, $super, data);
+                };
+                return block ?
+                    block.call($this, callBlock, data) :
+                    callBlock();
+            }),
+            __$blocks['block'](_$no)
+        )
     ), 0 /* UnknownChildren */);
 };"
 ```
@@ -625,21 +633,23 @@ return function($props, $blocks) {
     var __$blocks = {};
     
     return _$ce(2, 'div', (
-        (_$blocks['block'] = function($super, a, b) {
-            return (
-                _$ce(2, 'div', 'test', 16 /* HasTextChildren */)
-            );
-        }),
-        (__$blocks['block'] = function($super, data) {
-            var block = $blocks['block'];
-            var callBlock = function() {
-                return _$blocks['block'].call($this, $super, data);
-            };
-            return block ?
-                block.call($this, callBlock, data) :
-                callBlock();
-        }),
-        __$blocks['block'](_$no)
+        (
+            (_$blocks['block'] = function($super, a, b) {
+                return (
+                    _$ce(2, 'div', 'test', 16 /* HasTextChildren */)
+                );
+            }),
+            (__$blocks['block'] = function($super, data) {
+                var block = $blocks['block'];
+                var callBlock = function() {
+                    return _$blocks['block'].call($this, $super, data);
+                };
+                return block ?
+                    block.call($this, callBlock, data) :
+                    callBlock();
+            }),
+            __$blocks['block'](_$no)
+        )
     ), 0 /* UnknownChildren */);
 };"
 ```
@@ -659,21 +669,100 @@ return function($props, $blocks) {
     var __$blocks = {};
     
     return _$ce(2, 'div', (
-        (_$blocks['block'] = function($super) {
+        (
+            (_$blocks['block'] = function($super) {
+                return (
+                    _$ce(2, 'div', 'test', 16 /* HasTextChildren */)
+                );
+            }),
+            (__$blocks['block'] = function($super, data) {
+                var block = $blocks['block'];
+                var callBlock = function() {
+                    return _$blocks['block'].call($this, $super, data);
+                };
+                return block ?
+                    block.call($this, callBlock, data) :
+                    callBlock();
+            }),
+            __$blocks['block'](_$no, [a, b])
+        )
+    ), 0 /* UnknownChildren */);
+};"
+```
+
+####   `with directive if`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+var _$no = Vdt.noop;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    var _$blocks = {};
+    var __$blocks = {};
+    
+    return _$ce(2, 'div', (
+        a ?
+            (
+                (_$blocks['block'] = function($super) {
+                    return (
+                        _$ce(2, 'div', 'test', 16 /* HasTextChildren */)
+                    );
+                }),
+                (__$blocks['block'] = function($super, data) {
+                    var block = $blocks['block'];
+                    var callBlock = function() {
+                        return _$blocks['block'].call($this, $super, data);
+                    };
+                    return block ?
+                        block.call($this, callBlock, data) :
+                        callBlock();
+                }),
+                __$blocks['block'](_$no, [a, b])
+            ) :
+            undefined
+    ), 0 /* UnknownChildren */);
+};"
+```
+
+####   `with directive for`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+var _$ma = Vdt.map;
+var _$no = Vdt.noop;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    var _$blocks = {};
+    var __$blocks = {};
+    
+    return _$ce(2, 'div', (
+        _$ma(a, function($value, $key) {
             return (
-                _$ce(2, 'div', 'test', 16 /* HasTextChildren */)
+                (_$blocks['block'] = function($super) {
+                    return (
+                        _$ce(2, 'div', 'test', 16 /* HasTextChildren */)
+                    );
+                }),
+                (__$blocks['block'] = function($super, data) {
+                    var block = $blocks['block'];
+                    var callBlock = function() {
+                        return _$blocks['block'].call($this, $super, data);
+                    };
+                    return block ?
+                        block.call($this, callBlock, data) :
+                        callBlock();
+                }),
+                __$blocks['block'](_$no, [a, b])
             );
-        }),
-        (__$blocks['block'] = function($super, data) {
-            var block = $blocks['block'];
-            var callBlock = function() {
-                return _$blocks['block'].call($this, $super, data);
-            };
-            return block ?
-                block.call($this, callBlock, data) :
-                callBlock();
-        }),
-        __$blocks['block'](_$no, [a, b])
+        }, $this)
     ), 0 /* UnknownChildren */);
 };"
 ```
@@ -709,18 +798,20 @@ return function($props, $blocks) {
     return template.call($this, null, function($blocks) {
         var _$blocks = {}, __$blocks = _$ex({}, $blocks);
         return (
-            (_$blocks['block'] = function($super) {
-                return 'test';
-            }),
-            (__$blocks['block'] = function($super, data) {
-                var block = $blocks['block'];
-                var callBlock = function() {
-                    return _$blocks['block'].call($this, $super, data);
-                };
-                return block ?
-                    block.call($this, callBlock, data) :
-                    callBlock();
-            }),
+            (
+                (_$blocks['block'] = function($super) {
+                    return 'test';
+                }),
+                (__$blocks['block'] = function($super, data) {
+                    var block = $blocks['block'];
+                    var callBlock = function() {
+                        return _$blocks['block'].call($this, $super, data);
+                    };
+                    return block ?
+                        block.call($this, callBlock, data) :
+                        callBlock();
+                })
+            ),
             __$blocks
         );
     }.call($this, $blocks));
@@ -745,18 +836,20 @@ return function($props, $blocks) {
     return template.call($this, _$tmp0, function($blocks) {
         var _$blocks = {}, __$blocks = _$ex({}, $blocks);
         return (
-            (_$blocks['block'] = function($super) {
-                return 'test';
-            }),
-            (__$blocks['block'] = function($super, data) {
-                var block = $blocks['block'];
-                var callBlock = function() {
-                    return _$blocks['block'].call($this, $super, data);
-                };
-                return block ?
-                    block.call($this, callBlock, data) :
-                    callBlock();
-            }),
+            (
+                (_$blocks['block'] = function($super) {
+                    return 'test';
+                }),
+                (__$blocks['block'] = function($super, data) {
+                    var block = $blocks['block'];
+                    var callBlock = function() {
+                        return _$blocks['block'].call($this, $super, data);
+                    };
+                    return block ?
+                        block.call($this, callBlock, data) :
+                        callBlock();
+                })
+            ),
             __$blocks
         );
     }.call($this, $blocks));
@@ -783,18 +876,20 @@ return function($props, $blocks) {
         template.call($this, _$tmp0, function($blocks) {
             var _$blocks = {}, __$blocks = _$ex({}, $blocks);
             return (
-                (_$blocks['block'] = function($super) {
-                    return 'test';
-                }),
-                (__$blocks['block'] = function($super, data) {
-                    var block = $blocks['block'];
-                    var callBlock = function() {
-                        return _$blocks['block'].call($this, $super, data);
-                    };
-                    return block ?
-                        block.call($this, callBlock, data) :
-                        callBlock();
-                }),
+                (
+                    (_$blocks['block'] = function($super) {
+                        return 'test';
+                    }),
+                    (__$blocks['block'] = function($super, data) {
+                        var block = $blocks['block'];
+                        var callBlock = function() {
+                            return _$blocks['block'].call($this, $super, data);
+                        };
+                        return block ?
+                            block.call($this, callBlock, data) :
+                            callBlock();
+                    })
+                ),
                 __$blocks
             );
         }.call($this, _$em))
@@ -821,19 +916,21 @@ return function($props, $blocks) {
             'className': 'a',
             'children': (
                 _$ce(2, 'div', (
-                    (_$blocks['block'] = function($super) {
-                        return 'test';
-                    }),
-                    (__$blocks['block'] = function($super, data) {
-                        var block = $blocks['block'];
-                        var callBlock = function() {
-                            return _$blocks['block'].call($this, $super, data);
-                        };
-                        return block ?
-                            block.call($this, callBlock, data) :
-                            callBlock();
-                    }),
-                    __$blocks['block'](_$no)
+                    (
+                        (_$blocks['block'] = function($super) {
+                            return 'test';
+                        }),
+                        (__$blocks['block'] = function($super, data) {
+                            var block = $blocks['block'];
+                            var callBlock = function() {
+                                return _$blocks['block'].call($this, $super, data);
+                            };
+                            return block ?
+                                block.call($this, callBlock, data) :
+                                callBlock();
+                        }),
+                        __$blocks['block'](_$no)
+                    )
                 ), 0 /* UnknownChildren */)
             )
         }, null)
@@ -1738,19 +1835,21 @@ return function($props, $blocks) {
     var __$blocks = {};
     
     return _$ce(2, 'div', (
-        (_$blocks['block'] = function($super) {
-            return 'test';
-        }),
-        (__$blocks['block'] = function($super, data) {
-            var block = $blocks['block'];
-            var callBlock = function() {
-                return _$blocks['block'].call($this, $super, data);
-            };
-            return block ?
-                block.call($this, callBlock, data) :
-                callBlock();
-        }),
-        __$blocks['block'](_$no)
+        (
+            (_$blocks['block'] = function($super) {
+                return 'test';
+            }),
+            (__$blocks['block'] = function($super, data) {
+                var block = $blocks['block'];
+                var callBlock = function() {
+                    return _$blocks['block'].call($this, $super, data);
+                };
+                return block ?
+                    block.call($this, callBlock, data) :
+                    callBlock();
+            }),
+            __$blocks['block'](_$no)
+        )
     ), 0 /* UnknownChildren */);
 };"
 ```
@@ -2163,37 +2262,41 @@ return function($props, $blocks) {
     
     return _$ce(2, 'div', [
         _$ce(2, 'div', (
-            (_$blocks['block'] = function($super) {
-                return null;
-            }),
-            (__$blocks['block'] = function($super, data) {
-                var block = $blocks['block'];
-                var callBlock = function() {
-                    return _$blocks['block'].call($this, $super, data);
-                };
-                return block ?
-                    block.call($this, callBlock, data) :
-                    callBlock();
-            }),
-            __$blocks['block'](_$no)
+            (
+                (_$blocks['block'] = function($super) {
+                    return null;
+                }),
+                (__$blocks['block'] = function($super, data) {
+                    var block = $blocks['block'];
+                    var callBlock = function() {
+                        return _$blocks['block'].call($this, $super, data);
+                    };
+                    return block ?
+                        block.call($this, callBlock, data) :
+                        callBlock();
+                }),
+                __$blocks['block'](_$no)
+            )
         ), 0 /* UnknownChildren */, null, _$tmp0),
         _$cc(Div, {
             'a': '1',
             '$blocks': function($blocks) {
                 var _$blocks = {}, __$blocks = _$ex({}, $blocks);
                 return (
-                    (_$blocks['block'] = function($super) {
-                        return null;
-                    }),
-                    (__$blocks['block'] = function($super, data) {
-                        var block = $blocks['block'];
-                        var callBlock = function() {
-                            return _$blocks['block'].call($this, $super, data);
-                        };
-                        return block ?
-                            block.call($this, callBlock, data) :
-                            callBlock();
-                    }),
+                    (
+                        (_$blocks['block'] = function($super) {
+                            return null;
+                        }),
+                        (__$blocks['block'] = function($super, data) {
+                            var block = $blocks['block'];
+                            var callBlock = function() {
+                                return _$blocks['block'].call($this, $super, data);
+                            };
+                            return block ?
+                                block.call($this, callBlock, data) :
+                                callBlock();
+                        })
+                    ),
                     __$blocks
                 );
             }.call($this, _$em)

@@ -24,6 +24,7 @@ import {
     ASTAttributeValue,
     ASTDirectiveIf,
     ASTUnescapeText,
+    ASTStrings,
     Directives,
     DirectiveFor,
     Options,
@@ -216,6 +217,9 @@ export class Visitor {
                 return this.visitJSXComment(node as ASTComment);
             case Types.JSXUnescapeText:
                 return this.visitJSXUnescapeText(node as ASTUnescapeText);
+            case Types.JSXStrings:
+                this.visitStrings(node as ASTStrings);
+                return;
             case Types.JSXNone:
                 this.append('true');
                 return;
@@ -336,6 +340,17 @@ export class Visitor {
         return ChildrenFlags.HasTextChildren;
     }
 
+    private visitStrings(node: ASTStrings) {
+        const value = node.value;
+        const lastIndex = value.length - 1;
+        for (let i = 0; i <= lastIndex; i++) {
+            this.visitNode(value[i], false, false);
+            if (i !== lastIndex) {
+                this.append(' + ');
+            }
+        }
+    }
+
     private visitJSXUnescapeText(node: ASTUnescapeText): ChildrenFlags {
         this.addHelper('_$cu');
         this.append('_$cu(');
@@ -354,6 +369,8 @@ export class Visitor {
             this.addDeclare('__$blocks', '{}');
         }
 
+        this.append('(');
+        this.indent();
         this.append(`(_$blocks['${name}'] = function($super`);
         if (args) {
             this.append(', ')
@@ -369,8 +386,6 @@ export class Visitor {
         this.newline();
         this.append(`(__$blocks['${name}'] = function($super, data) {`);
         this.indent();
-        // this.append(`var args = arguments;`);
-        // this.newline();
         this.append(`var block = $blocks['${name}'];`);
         this.newline();
         this.append(`var callBlock = function() {`);
@@ -401,6 +416,8 @@ export class Visitor {
                 this.append(`__$blocks['${name}'](_$no)`);
             }
         }
+        this.dedent();
+        this.append(')');
 
         return ChildrenFlags.UnknownChildren;
     }
@@ -792,6 +809,14 @@ export class Visitor {
                             }
                         }
                         return true;
+                    }
+                    if (value.type === Types.JSXStrings) {
+                        const values = value.value;
+                        for (let i = 0; i < values.length; i++) {
+                            if (values[i].type === Types.JSXExpression) {
+                                return true;
+                            }
+                        }
                     }
                     break;
             }

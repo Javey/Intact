@@ -14,6 +14,7 @@ export const enum Types {
 
     JSXAttribute,
     JSXString,
+    JSXStrings, // value is a an string array, for text tag
     JSXNone,
 }
 
@@ -100,6 +101,11 @@ export interface ASTString extends ASTNode {
     value: string
 }
 
+export interface ASTStrings extends ASTNode {
+    type: Types.JSXStrings,
+    value: (ASTText | ASTExpression)[]
+}
+
 export interface ASTUnescapeText extends ASTNode {
     type: Types.JSXUnescapeText
     value: ASTExpressionChild[]
@@ -110,7 +116,7 @@ export type ASTRootChild = ASTHoist | ASTJS | ASTElement | ASTComment
 export type ASTExpressionChild = ASTJS | ASTElement | ASTComment | ASTText
 export type ASTElementChild = ASTElement | ASTComment | ASTText | ASTExpression | ASTUnescapeText
 export type ASTChild = ASTRootChild | ASTExpressionChild | ASTElementChild
-export type ASTAttributeTemplateNoneValue = ASTString | ASTExpression
+export type ASTAttributeTemplateNoneValue = ASTString | ASTExpression | ASTStrings
 export type ASTAttributeTemplateValue = ASTAttributeTemplateNoneValue | ASTNone
 export type ASTAttributeValue = ASTAttributeTemplateValue | ASTElementChild | ASTElementChild[]
 

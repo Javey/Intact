@@ -56,6 +56,18 @@
 "<div><div class=\"a\"></div></div>"
 ```
 
+####   `render block with v-if`
+
+```
+"<div></div>"
+```
+
+####   `render block with v-for`
+
+```
+"<div><div class=\"a\">1</div><div class=\"a\">2</div></div>"
+```
+
 ####   `render vdt`
 
 ```
