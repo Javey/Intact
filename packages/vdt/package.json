@@ -46,5 +46,10 @@
     "rollup-watch": "^4.0.0",
     "should": "^11.2.1",
     "uglify-js": "^3.3.23"
+  },
+  "dependencies": {
+    "tslib": "^2.2.0",
+    "misstime": "^3.0.0",
+    "intact-shared": "^3.0.0"
   }
 }
