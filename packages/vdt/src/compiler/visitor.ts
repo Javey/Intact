@@ -302,6 +302,19 @@ export class Visitor {
     }
 
     private visitJSXComponent(node: ASTComponent): ChildrenFlags {
+        let name = node.value;
+        switch (name) {
+            case 'Transition':
+                name = '_$tr';
+                this.addHelper(name as '_$tr');
+                break;
+            case 'TransitionGroup':
+                name = '_$tg';
+                this.addHelper(name as '_$tg');
+                break;
+            default:
+                break;
+        } 
         const blocks = this.getJSXBlocksAndSetChildren(node);
         if (blocks.length) {
             node.attributes.push({
@@ -313,7 +326,7 @@ export class Visitor {
         }
 
         this.addHelper('_$cc');
-        this.append(`_$cc(${node.value}`);
+        this.append(`_$cc(${name}`);
 
         this.pushQueue();
         this.append(', ');
@@ -434,7 +447,7 @@ export class Visitor {
         let name = node.value;
         if (name === 'super') {
             name = '_$su';
-            this.addHelper('_$su');
+            this.addHelper(name as '_$su');
         }
         
         this.append(`${name}.call($this, `);

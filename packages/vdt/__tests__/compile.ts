@@ -287,6 +287,16 @@ describe('Vdt Compile', () => {
                 </Div>
             `)
         });
+
+        it('Transition & TransitionGroup', () => {
+            test(stripIndent`
+                <TransitionGroup>
+                    <Transition>
+                        <div>1</div>
+                    </Transition>
+                </TransitionGroup>
+            `);
+        });
     });
 
     describe('Block', () => {

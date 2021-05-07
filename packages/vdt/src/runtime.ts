@@ -18,3 +18,4 @@ export {
     superCall,
 } from './utils/helpers';
 export {EMPTY_OBJ, noop } from 'intact-shared';
+export {Transition, TransitionGroup} from 'intact';

@@ -304,6 +304,9 @@ export const helpersMap = {
 
     '_$no': 'noop',
     '_$em': 'EMPTY_OBJ',
+
+    '_$tr': 'Transtion',
+    '_$tg': 'TransitionGroup',
 }
 
 export function extend(source: Record<string, any>, extra: Record<string, any>) {
