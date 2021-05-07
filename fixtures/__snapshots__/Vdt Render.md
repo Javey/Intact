@@ -214,3 +214,9 @@
 "<div>child</div>"
 ```
 
+####   `render super`
+
+```
+"<div>ab</div>"
+```
+

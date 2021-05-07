@@ -855,6 +855,32 @@ return function($props, $blocks) {
 };"
 ```
 
+####   `Transition & TransitionGroup`
+
+```
+"var Vdt = _$vdt;
+var _$tg = Vdt.TransitionGroup;
+var _$cc = Vdt.createComponentVNode;
+var _$tr = Vdt.Transtion;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$cc(_$tg, {
+        'children': (
+            _$cc(_$tr, {
+                'children': (
+                    _$ce(2, 'div', '1', 16 /* HasTextChildren */)
+                )
+            })
+        )
+    });
+};"
+```
+
 ## `Block`
 
 ####   `without args and params`
@@ -1210,6 +1236,45 @@ return function($props, $blocks) {
             )
         }, null)
     ), 0 /* UnknownChildren */);
+};"
+```
+
+####   `super`
+
+```
+"var Vdt = _$vdt;
+var _$su = Vdt.superCall;
+var _$ex = Vdt.extend;
+var _$em = Vdt.EMPTY_OBJ;
+var _$tmp0 = {
+    'className': 'a'
+};
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$su.call($this, _$tmp0, function($blocks) {
+        var _$blocks = {}, __$blocks = _$ex({}, $blocks);
+        return (
+            (
+                (_$blocks['block'] = function($super) {
+                    return 'test';
+                }),
+                (__$blocks['block'] = function($super, data) {
+                    var block = $blocks['block'];
+                    var callBlock = function() {
+                        return _$blocks['block'].call($this, $super, data);
+                    };
+                    return block ?
+                        block.call($this, callBlock, data) :
+                        callBlock();
+                })
+            ),
+            __$blocks
+        );
+    }.call($this, $blocks));
 };"
 ```
 
@@ -2660,7 +2725,7 @@ return function($props, $blocks) {
 "import {
     createComponentVNode as _$cc,
     createElementVNode as _$ce,
-} from 'vdt';
+} from 'vdt/runtime';
 import a from 'b';
 
 export default function($props, $blocks) {
