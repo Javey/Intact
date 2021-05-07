@@ -5,3 +5,5 @@ import {registerCompile} from './utils/helpers';
 import {compile} from 'vdt';
 
 registerCompile(compile);
+
+export {compile};

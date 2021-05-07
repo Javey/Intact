@@ -29,7 +29,7 @@ import {
     DirectiveFor,
     Options,
     ChildrenFlags,
-} from './types';
+} from '../utils/types';
 import {getTypeForVNodeElement, ChildrenTypes, Types as VNodeTypes} from 'misstime';
 import {
     isElementNode, 
@@ -38,7 +38,7 @@ import {
     computeChildrenFlagForChildren,
     childrenFlagToChildrenType,
     helpersMap,
-} from './helpers';
+} from '../utils/helpers';
 import {isArray, isUndefined} from 'intact-shared';
 
 type ModelMeta = {
@@ -127,7 +127,7 @@ export class Visitor {
                 }
             }
             this.dedent();
-            this.append(`} from 'vdt';\n`);
+            this.append(`} from 'vdt/runtime';\n`);
         }
         this.popQueue();
 
@@ -429,8 +429,13 @@ export class Visitor {
     }
 
     private visitJSXVdt(node: ASTVdt, isRoot: boolean): ChildrenFlags {
-        const name = node.value;
         const blocks = this.getJSXBlocksAndSetChildren(node);
+
+        let name = node.value;
+        if (name === 'super') {
+            name = '_$su';
+            this.addHelper('_$su');
+        }
         
         this.append(`${name}.call($this, `);
         this.visitJSXAttribute(node);

@@ -19,8 +19,9 @@ import {
     isObject,
     isStringOrNumber,
     EMPTY_OBJ,
+    isString,
 } from 'intact-shared';
-import {Component} from 'intact';
+import {Component, compile} from 'intact';
 
 export function trimRight(str: string) {
     var index = str.length;
@@ -299,6 +300,7 @@ export const helpersMap = {
     '_$ssm': 'setSelectModel',
     '_$isc': 'isChecked',
     '_$cn': 'className',
+    '_$su': 'superCall',
 
     '_$no': 'noop',
     '_$em': 'EMPTY_OBJ',
@@ -354,4 +356,13 @@ export function map(data: Record<string, any> | Map<any, any> | Set<any> | any[]
     if (process.env.NODE_ENV !== 'production') {
         sharedThrowError(`Cannot handle ${JSON.stringify(data)} for ${Directives.For}.`);
     }
+}
+
+const getPrototypeOf = Object.getPrototypeOf;
+export function superCall(this: Component<any>, props: any, blocks: any) {
+    let superTemplate = getPrototypeOf(getPrototypeOf(this)).constructor.template;
+    if (isString(superTemplate)) {
+        superTemplate = compile(superTemplate);
+    }
+    return superTemplate.call(this, props, blocks);
 }

@@ -27,7 +27,7 @@ import {
     DirectiveIf,
     DirectiveCommon,
     Options,
-} from './types';
+} from '../utils/types';
 import {
     trimRight,
     selfClosingTags,
@@ -40,12 +40,12 @@ import {
     throwError,
     defaultOptions,
     isElementNode,
-} from './helpers';
+} from '../utils/helpers';
 import {
     validateDirectiveValue,
     validateModel,
     validateAttributeForBlock,
-} from './validate';
+} from '../utils/validate';
 
 type Braces = {count: number};
 

@@ -1,7 +1,7 @@
-import {Parser} from '../src/parser';
-import {Visitor} from '../src/visitor';
+import {Parser} from '../src/compiler/parser';
+import {Visitor} from '../src/compiler/visitor';
 import {stripIndent} from 'common-tags';
-import {Options} from '../src/types';
+import {Options} from '../src/utils/types';
 
 function generate(template: string, options?: Options) {
     const parser = new Parser(template, options);
@@ -381,6 +381,14 @@ describe('Vdt Compile', () => {
                         </div>
                     </t:template>
                 </div>
+            `);
+        });
+
+        it('super', () => {
+             test(stripIndent`
+                <t:super class="a">
+                    <b:block>test</b:block>
+                </t:super>
             `);
         });
     });

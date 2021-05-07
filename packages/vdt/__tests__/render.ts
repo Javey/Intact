@@ -329,9 +329,22 @@ describe('Vdt Render', () => {
                 </C>
             `, {
                 C: class extends Component {
-                    static template = `<div><b:test>parent</b:test></div>` 
+                    static template = `<div><b:test>parent</b:test></div>`; 
                 }
             });
+        });
+
+
+        it('render super', () => {
+            class A extends Component {
+                static template = `<div><b:test>a</b:test></div>`;
+            }
+
+            class B extends A {
+                static template = `<t:super><b:test>{$super()}b</b:test></t:super>`;
+            }
+
+            test(`const B = $props.B; <B />`, {B});
         });
     });
 
