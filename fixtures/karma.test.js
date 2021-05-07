@@ -42,6 +42,7 @@ module.exports = function(config) {
                     'misstime': path.resolve(__dirname, '../packages/misstime/src/index.ts'),
                     'intact': path.resolve(__dirname, '../packages/intact/src/index.ts'),
                     'vdt': path.resolve(__dirname, '../packages/vdt/src/index.ts'),
+                    'vdt/compile': path.resolve(__dirname, '../packages/vdt/src/compile.ts'),
                 }
             },
             devtool: 'inline-source-map',

@@ -362,7 +362,7 @@ export function map(data: Record<string, any> | Map<any, any> | Set<any> | any[]
 }
 
 const getPrototypeOf = Object.getPrototypeOf;
-export function superCall(this: Component<any>, props: any, blocks: any) {
+export function superCall(this: any, props: any, blocks: any) {
     let superTemplate = getPrototypeOf(getPrototypeOf(this)).constructor.template;
     if (isString(superTemplate)) {
         superTemplate = compile(superTemplate);
