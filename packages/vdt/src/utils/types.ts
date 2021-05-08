@@ -140,7 +140,7 @@ export interface DirectiveFor {
 }
 
 export type Options = {
-    delimiters: [string, string]
+    delimiters: [string, string],
 }
 
 export const enum ChildrenFlags {

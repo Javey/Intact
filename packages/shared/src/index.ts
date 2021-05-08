@@ -65,3 +65,9 @@ if (process.env.NODE_ENV !== 'production') {
 export const noop = () => {};
 
 export const hasDocumentAvailable: boolean = typeof document !== 'undefined';
+
+let compile: any;
+export function registerCompile(_compile: any) {
+    compile = _compile;
+}
+export {compile};

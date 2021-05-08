@@ -19,16 +19,16 @@ module.exports = function(config) {
                         test: /\.ts/,
                         loader: 'ts-loader',
                     },
-                    {
-                        test: /\.ts$/,
-                        include: /packages\/\w+\/src\/.*\.ts$/,
+                    // {
+                        // test: /\.ts$/,
+                        // // include: /packages\/\w+\/src\/.*\.ts$/,
                         // include: /packages\/vdt\/src\/.*\.ts$/,
-                        enforce: 'post',
-                        use: {
-                            loader: 'istanbul-instrumenter-loader',
-                            options: {esModule: true}
-                        }
-                    },
+                        // enforce: 'post',
+                        // use: {
+                            // loader: 'istanbul-instrumenter-loader',
+                            // options: {esModule: true}
+                        // }
+                    // },
                     {
                         test: /\.css$/,
                         use: ['style-loader', 'css-loader'],
@@ -42,7 +42,7 @@ module.exports = function(config) {
                     'misstime': path.resolve(__dirname, '../packages/misstime/src/index.ts'),
                     'intact': path.resolve(__dirname, '../packages/intact/src/index.ts'),
                     'vdt': path.resolve(__dirname, '../packages/vdt/src/index.ts'),
-                    'vdt/compile': path.resolve(__dirname, '../packages/vdt/src/compile.ts'),
+                    // 'vdt/compile': path.resolve(__dirname, '../packages/vdt/src/compile.ts'),
                 }
             },
             devtool: 'inline-source-map',

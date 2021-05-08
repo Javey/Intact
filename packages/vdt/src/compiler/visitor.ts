@@ -303,18 +303,18 @@ export class Visitor {
 
     private visitJSXComponent(node: ASTComponent): ChildrenFlags {
         let name = node.value;
-        switch (name) {
-            case 'Transition':
-                name = '_$tr';
-                this.addHelper(name as '_$tr');
-                break;
-            case 'TransitionGroup':
-                name = '_$tg';
-                this.addHelper(name as '_$tg');
-                break;
-            default:
-                break;
-        } 
+        // switch (name) {
+            // case 'Transition':
+                // name = '_$tr';
+                // this.addHelper(name as '_$tr');
+                // break;
+            // case 'TransitionGroup':
+                // name = '_$tg';
+                // this.addHelper(name as '_$tg');
+                // break;
+            // default:
+                // break;
+        // } 
         const blocks = this.getJSXBlocksAndSetChildren(node);
         if (blocks.length) {
             node.attributes.push({

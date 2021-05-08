@@ -7,14 +7,15 @@ import {
     TypeDefs,
     unmount,
 } from 'misstime';
-import {Template, SetOptions} from '../utils/types';
-import {get, set, compile} from '../utils/helpers';
+import {Template, SetOptions, Compile} from '../utils/types';
+import {get, set} from '../utils/helpers';
 import {
     isNull,
     isFunction,
     isUndefined,
     isObject,
     EMPTY_OBJ,
+    compile,
 } from 'intact-shared';
 import {
     componentInited, 
@@ -64,7 +65,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         if (isFunction(template)) {
             this.$template = template as Template; 
         } else {
-            this.$template = compile!(template);
+            this.$template = (compile as Compile)(template);
         }
 
         this.$defaults = this.defaults();

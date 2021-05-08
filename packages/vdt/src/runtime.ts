@@ -16,6 +16,6 @@ export {
     setSelectModel,
     isChecked,
     superCall,
+    defaultOptions,
 } from './utils/helpers';
 export {EMPTY_OBJ, noop } from 'intact-shared';
-export {Transition, TransitionGroup} from 'intact';

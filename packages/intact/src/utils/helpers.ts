@@ -90,9 +90,3 @@ function clone(object: object) {
 
     return {...object};
 }
-
-let compile: Compile | undefined;
-export function registerCompile(_compile: Compile) {
-    compile = _compile;
-}
-export {compile};

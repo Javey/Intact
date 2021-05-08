@@ -10,7 +10,7 @@ import {
     Options,
     ChildrenFlags,
 } from './types';
-import {IntactElement, ChildrenTypes} from 'misstime';
+import {IntactElement, ChildrenTypes, Props, Blocks} from 'misstime';
 import {
     isArray, 
     isNullOrUndefined,
@@ -20,8 +20,9 @@ import {
     isStringOrNumber,
     EMPTY_OBJ,
     isString,
+    compile,
 } from 'intact-shared';
-import {Component, compile} from 'intact';
+import type {Component} from 'intact';
 
 export function trimRight(str: string) {
     var index = str.length;
@@ -263,25 +264,26 @@ export function childrenFlagToChildrenType(flag: ChildrenFlags): ChildrenTypes |
             default:
                 sharedThrowError('Unknown flag: ' + flag);
         } 
+    } else {
+        /* istanbul ignore next */
+        switch (flag) {
+            case ChildrenFlags.UnknownChildren:
+                return ChildrenTypes.UnknownChildren;
+            case ChildrenFlags.HasInvalidChildren:
+                return ChildrenTypes.HasInvalidChildren;
+            case ChildrenFlags.HasKeyedVNodeChildren:
+            case ChildrenFlags.HasNonKeyedVNodeChildren:
+                return ChildrenTypes.HasVNodeChildren;
+            case ChildrenFlags.HasKeyedChildren:
+                return ChildrenTypes.HasKeyedChildren;
+            case ChildrenFlags.HasNonKeyedChildren:
+                return ChildrenTypes.HasNonKeyedChildren;
+            case ChildrenFlags.HasTextChildren:
+                return ChildrenTypes.HasTextChildren;
+            default:
+                sharedThrowError('Unknown flag: ' + flag);
+        } 
     }
-    /* istanbul ignore next */
-    switch (flag) {
-        case ChildrenFlags.UnknownChildren:
-            return ChildrenTypes.UnknownChildren;
-        case ChildrenFlags.HasInvalidChildren:
-            return ChildrenTypes.HasInvalidChildren;
-        case ChildrenFlags.HasKeyedVNodeChildren:
-        case ChildrenFlags.HasNonKeyedVNodeChildren:
-            return ChildrenTypes.HasVNodeChildren;
-        case ChildrenFlags.HasKeyedChildren:
-            return ChildrenTypes.HasKeyedChildren;
-        case ChildrenFlags.HasNonKeyedChildren:
-            return ChildrenTypes.HasNonKeyedChildren;
-        case ChildrenFlags.HasTextChildren:
-            return ChildrenTypes.HasTextChildren;
-        default:
-            sharedThrowError('Unknown flag: ' + flag);
-    } 
 }
 
 export const helpersMap = {
@@ -305,8 +307,8 @@ export const helpersMap = {
     '_$no': 'noop',
     '_$em': 'EMPTY_OBJ',
 
-    '_$tr': 'Transtion',
-    '_$tg': 'TransitionGroup',
+    // '_$tr': 'Transtion',
+    // '_$tg': 'TransitionGroup',
 }
 
 export function extend(source: Record<string, any>, extra: Record<string, any>) {
@@ -362,7 +364,7 @@ export function map(data: Record<string, any> | Map<any, any> | Set<any> | any[]
 }
 
 const getPrototypeOf = Object.getPrototypeOf;
-export function superCall(this: any, props: any, blocks: any) {
+export function superCall(this: Component<any>, props: Props<any>, blocks: Blocks) {
     let superTemplate = getPrototypeOf(getPrototypeOf(this)).constructor.template;
     if (isString(superTemplate)) {
         superTemplate = compile(superTemplate);

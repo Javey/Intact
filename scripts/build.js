@@ -23,6 +23,10 @@ const plugins = [
         tsconfig: resolve(__dirname, '../tsconfig.json'),
         exclude: ['**/__tests__'],
         cacheRoot: resolveRoot(`node_modules/.rpt2_cache/${pkgJson.name}_${options.env}_${options.format}`),
+        tsconfigOverride: {
+            declaration: true,
+            sourceMap: false,
+        }
     }),
     replace({
         values: {
