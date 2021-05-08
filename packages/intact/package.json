@@ -17,6 +17,10 @@
     "build:doc": "webpack --config site/webpack.config.js && cp docs site/dist -r",
     "deploy:doc": "node site/build.js"
   },
+  "files": [
+    "dist",
+    "index.js"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/Javey/Intact"

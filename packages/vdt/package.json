@@ -21,6 +21,11 @@
     "release-minor": "git checkout master && npm version minor && git push origin master --tags && git push && npm publish",
     "release-major": "git checkout master && npm version major && git push origin master --tags && git push && npm publish"
   },
+  "files": [
+    "dist",
+    "index.js",
+    "runtime.js"
+  ],
   "devDependencies": {
     "babel-plugin-add-module-exports": "^0.2.1",
     "babel-plugin-external-helpers": "^6.22.0",
