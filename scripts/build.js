@@ -27,8 +27,11 @@ const plugins = [
         exclude: ['**/__tests__'],
         cacheRoot: resolveRoot(`node_modules/.rpt2_cache/${pkgJson.name}_${options.env}_${options.format}`),
         tsconfigOverride: {
-            declaration: true,
-            sourceMap: false,
+            compilerOptions: {
+                declaration: true,
+                // declarationMap: true,
+                sourceMap: false,
+            }
         }
     }),
 ];
