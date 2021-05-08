@@ -2,7 +2,8 @@
   "name": "misstime",
   "version": "0.3.18",
   "description": "",
-  "main": "dist/index.js",
+  "main": "index.js",
+  "module": "dist/index.esm.js",
   "directories": {
     "test": "test"
   },

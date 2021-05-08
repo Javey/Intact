@@ -2,7 +2,8 @@
   "name": "intact",
   "description": "A very lightweight data-binding library to create rich web application",
   "version": "2.5.15",
-  "main": "dist/index",
+  "main": "index.js",
+  "module": "dist/index.runtime.esm.js",
   "scripts": {
     "test": "karma start karma.conf.saucelabs.js",
     "test:local": "karma start karma.conf.js",
