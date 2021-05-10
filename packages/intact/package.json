@@ -4,6 +4,7 @@
   "version": "2.5.15",
   "main": "index.js",
   "module": "dist/index.runtime.esm.js",
+  "typings": "dist/intact.d.ts",
   "scripts": {
     "test": "karma start karma.conf.saucelabs.js",
     "test:local": "karma start karma.conf.js",

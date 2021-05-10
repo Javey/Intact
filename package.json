@@ -37,6 +37,7 @@
   },
   "homepage": "https://github.com/Javey/Intact#readme",
   "devDependencies": {
+    "@microsoft/api-extractor": "^7.15.1",
     "@rollup/plugin-alias": "^3.1.2",
     "@rollup/plugin-replace": "^2.4.2",
     "@types/benchmark": "^2.1.0",
