@@ -1,6 +1,6 @@
 import {ComponentClass} from 'misstime';
 
-export const enum Types {
+export const enum ASTTypes {
     JS,
     JSHoist,
 
@@ -26,23 +26,23 @@ export interface SourceLocation {
 }
 
 export interface ASTNode {
-    type: Types
+    type: ASTTypes
     loc: SourceLocation
 }
 
 export interface ASTJS extends ASTNode {
-    type: Types.JS
+    type: ASTTypes.JS
     value: string[]
     spaces: number
 }
 
 export interface ASTHoist extends ASTNode {
-    type: Types.JSHoist
+    type: ASTTypes.JSHoist
     value: string
 }
 
 export interface ASTText extends ASTNode {
-    type: Types.JSXText
+    type: ASTTypes.JSXText
     value: string
 }
 
@@ -55,61 +55,61 @@ export interface ASTBaseElement extends ASTNode {
 }
 
 export interface ASTCommonElement extends ASTBaseElement {
-    type: Types.JSXCommonElement
+    type: ASTTypes.JSXCommonElement
     hasVRaw: boolean
 }
 
 export interface ASTComponent extends ASTBaseElement {
-    type: Types.JSXComponent
+    type: ASTTypes.JSXComponent
 }
 
 export interface ASTVdt extends ASTBaseElement {
-    type: Types.JSXVdt
+    type: ASTTypes.JSXVdt
 }
 
 export interface ASTBlock extends ASTBaseElement {
-    type: Types.JSXBlock
+    type: ASTTypes.JSXBlock
 }
 
 export interface ASTComment extends ASTNode {
-    type: Types.JSXComment
+    type: ASTTypes.JSXComment
     value: string
 }
 
 export interface ASTExpression extends ASTNode {
-    type: Types.JSXExpression
+    type: ASTTypes.JSXExpression
     value: ASTExpressionChild[]
 }
 
 export interface ASTAttribute extends ASTNode {
-    type: Types.JSXAttribute
+    type: ASTTypes.JSXAttribute
     name: string
     value: ASTAttributeValue
 }
 
 export interface ASTNone extends ASTNode {
-    type: Types.JSXNone
+    type: ASTTypes.JSXNone
 }
 
 export interface ASTDirectiveIf extends ASTNode {
-    type: Types.JSXDirectiveIf,
+    type: ASTTypes.JSXDirectiveIf,
     name: string,
     value: ASTAttributeTemplateValue,
     next: ASTElement | null,
 }
 
 export interface ASTString extends ASTNode {
-    type: Types.JSXString
+    type: ASTTypes.JSXString
     value: string
 }
 
 export interface ASTStrings extends ASTNode {
-    type: Types.JSXStrings,
+    type: ASTTypes.JSXStrings,
     value: (ASTText | ASTExpression)[]
 }
 
 export interface ASTUnescapeText extends ASTNode {
-    type: Types.JSXUnescapeText
+    type: ASTTypes.JSXUnescapeText
     value: ASTExpressionChild[]
 }
 

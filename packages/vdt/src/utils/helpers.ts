@@ -1,6 +1,6 @@
 import {
     Directives,
-    Types,
+    ASTTypes,
     SourceLocation,
     ASTChild,
     ASTNode,
@@ -108,10 +108,10 @@ export function isWhiteSpaceExceptLinebreak(charCode: number) {
 
 export function isElementNode(node: ASTNode): node is ASTElement {
     const type = node.type;
-    return type === Types.JSXCommonElement || 
-        type === Types.JSXComponent ||
-        type === Types.JSXVdt ||
-        type === Types.JSXBlock;
+    return type === ASTTypes.JSXCommonElement || 
+        type === ASTTypes.JSXComponent ||
+        type === ASTTypes.JSXVdt ||
+        type === ASTTypes.JSXBlock;
 }
 
 export function throwError(msg: string, loc: SourceLocation, source: string): never {

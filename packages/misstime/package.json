@@ -47,6 +47,7 @@
     "webpack": "^5.20.1"
   },
   "dependencies": {
-    "intact-shared": "^3.0.0"
-  }
+    "intact-shared": "^3.0.0-beta.0"
+  },
+  "sideEffect": false
 }

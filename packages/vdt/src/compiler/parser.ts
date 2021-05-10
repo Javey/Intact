@@ -1,5 +1,5 @@
 import {
-    Types,
+    ASTTypes,
     ASTNode,
     ASTJS,
     ASTHoist,
@@ -119,7 +119,7 @@ export class Parser {
             }
         }
 
-        return {type: Types.JSHoist, value: this.getValue(start), loc};
+        return {type: ASTTypes.JSHoist, value: this.getValue(start), loc};
     }
 
     private scanJS(braces: Braces, isRoot: boolean, spaces: number): ASTJS {
@@ -194,7 +194,7 @@ export class Parser {
             this.trimRightForValue(value);
         }
 
-        return {type: Types.JS, value, spaces: leadSpaces, loc};
+        return {type: ASTTypes.JS, value, spaces: leadSpaces, loc};
     }
 
     private scanJSX(): ASTElement | ASTComment {
@@ -234,7 +234,7 @@ export class Parser {
             this.error('Unclosed quote', loc);
         }
 
-        return {type: Types.JSXString, value: str, loc};
+        return {type: ASTTypes.JSXString, value: str, loc};
     }
 
     private parseJSXElement(): ASTElement {
@@ -242,20 +242,20 @@ export class Parser {
         const loc = this.getLocation();
         let start = this.index;
         let node: ASTElement;
-        let type: Types; 
+        let type: ASTTypes; 
 
         if (flag >= 65 && flag <= 90/* upper case */) {
             // is a component 
-            type = Types.JSXComponent;
+            type = ASTTypes.JSXComponent;
         } else if (this.charCode(this.index + 1) === 58/* : */){
             // is a directive
             start += 2;
             switch (flag) {
                 case 116: // t
-                    type = Types.JSXVdt;
+                    type = ASTTypes.JSXVdt;
                     break;
                 case 98: // b
-                    type = Types.JSXBlock;
+                    type = ASTTypes.JSXBlock;
                     break;
                 /* istanbul ignore next */
                 default:
@@ -264,7 +264,7 @@ export class Parser {
             this.updateIndex(2);
         } else {
             // is an element
-            type = Types.JSXCommonElement;
+            type = ASTTypes.JSXCommonElement;
         }
 
         while (this.index < this.length) {
@@ -303,10 +303,10 @@ export class Parser {
         const value = this.getValue(start);
         this.expect('-->');
 
-        return {type: Types.JSXComment, value, loc};
+        return {type: ASTTypes.JSXComment, value, loc};
     }
 
-    private parseJSXAttribute(tag: string, type: Types): 
+    private parseJSXAttribute(tag: string, type: ASTTypes): 
         {
             attributes: ASTElement['attributes']
             directives: ASTElement['directives']
@@ -350,7 +350,7 @@ export class Parser {
             } else {
                 // treat no-value attribute as true
                 value = {
-                    type: Types.JSXNone,
+                    type: ASTTypes.JSXNone,
                     loc: this.getLocation(),
                 } as ASTNone;
             }
@@ -359,15 +359,15 @@ export class Parser {
                 if (directivesMap[name as Directives]) {
                     validateDirectiveValue(name, value.type, tag, type, this.source, value.loc);
                 }
-                if (type === Types.JSXBlock) {
+                if (type === ASTTypes.JSXBlock) {
                     validateAttributeForBlock(tag, name, value, value.loc, this.source);
                 }
             }
 
             if (name === Directives.If || name === Directives.ElseIf || name === Directives.Else) {
-                directives[name] = {type: Types.JSXDirectiveIf, name, value, next: null, loc};
+                directives[name] = {type: ASTTypes.JSXDirectiveIf, name, value, next: null, loc};
             } else {
-                const attr = {type: Types.JSXAttribute, name, value, loc} as ASTAttribute;
+                const attr = {type: ASTTypes.JSXAttribute, name, value, loc} as ASTAttribute;
                 if (directivesMap[name as Directives]) {
                     if (name === Directives.Raw) {
                         hasVRaw = true;
@@ -419,10 +419,10 @@ export class Parser {
         return value;
     }
 
-    private parseJSXChildren(tag: string, type: Types, attributes: ASTElement['attributes'], hasVRaw: boolean, loc: SourceLocation): ASTChild[] {
+    private parseJSXChildren(tag: string, type: ASTTypes, attributes: ASTElement['attributes'], hasVRaw: boolean, loc: SourceLocation): ASTChild[] {
         let children: ASTChild[] = [];
 
-        if (type === Types.JSXCommonElement && selfClosingTags[tag]) {
+        if (type === ASTTypes.JSXCommonElement && selfClosingTags[tag]) {
             // self closing tag
             if (this.char() === '/') {
                 this.updateIndex();
@@ -440,10 +440,10 @@ export class Parser {
                 const children = this.parseJSXChildrenValue(tag, type, hasVRaw, true, loc);
                 if (children.length) {
                     attributes.push({
-                        type: Types.JSXAttribute,
+                        type: ASTTypes.JSXAttribute,
                         name: tag === 'textarea' ? 'value' : 'innerHTML',
                         value: {
-                            type: Types.JSXStrings,
+                            type: ASTTypes.JSXStrings,
                             value: children,
                             loc: attrLoc,
                         },
@@ -458,15 +458,15 @@ export class Parser {
         return children;
     }
 
-    private parseJSXChildrenValue(tag: string, type: Types, hasVRaw: boolean, isTextTag: boolean, loc: SourceLocation): ASTElementChild[] {
+    private parseJSXChildrenValue(tag: string, type: ASTTypes, hasVRaw: boolean, isTextTag: boolean, loc: SourceLocation): ASTElementChild[] {
         const children: ASTElementChild[] = [];
         let endTag = tag + '>';
 
         switch (type) {
-            case Types.JSXBlock:
+            case ASTTypes.JSXBlock:
                 endTag = '</b:' + endTag;
                 break;
-            case Types.JSXVdt:
+            case ASTTypes.JSXVdt:
                 endTag = '</t:' + endTag;
                 break;
             default:
@@ -581,7 +581,7 @@ export class Parser {
             this.updateIndex();
         }
 
-        return {type: Types.JSXText, value: this.getValue(start), loc};
+        return {type: ASTTypes.JSXText, value: this.getValue(start), loc};
     }
 
     private parseJSXExpression(): ASTExpression | ASTUnescapeText {
@@ -593,14 +593,14 @@ export class Parser {
         this.skipWhitespaceAndJSComment();
 
         const spaceColumn = this.getFirstSpaceColumn();
-        let type = Types.JSXExpression;
+        let type = ASTTypes.JSXExpression;
         let value: ASTExpression['value'];
 
         if (this.isExpect('=')) {
             // if the lead char is '=', then treat it as unescape string
             this.expect('=');
             this.skipWhitespace();
-            type = Types.JSXUnescapeText;
+            type = ASTTypes.JSXUnescapeText;
         }
 
         if (this.isExpect(delimiters[1])) {

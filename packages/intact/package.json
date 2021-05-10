@@ -76,9 +76,10 @@
     "webpack-dev-server": "^3.1.14"
   },
   "dependencies": {
-    "intact-shared": "^3.0.0",
-    "misstime": "^3.0.0",
+    "intact-shared": "^3.0.0-beta.0",
+    "misstime": "^3.0.0-beta.0",
     "tslib": "^2.2.0",
-    "vdt": "^3.0.0"
-  }
+    "vdt": "^3.0.0-beta.0"
+  },
+  "sideEffect": false
 }

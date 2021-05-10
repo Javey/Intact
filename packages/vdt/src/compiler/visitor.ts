@@ -1,5 +1,5 @@
 import {
-    Types,
+    ASTTypes,
     ASTNode,
     ASTJS,
     ASTHoist,
@@ -30,7 +30,7 @@ import {
     Options,
     ChildrenFlags,
 } from '../utils/types';
-import {getTypeForVNodeElement, ChildrenTypes, Types as VNodeTypes} from 'misstime';
+import {getTypeForVNodeElement, ChildrenTypes} from 'misstime';
 import {
     isElementNode, 
     getAttrName, 
@@ -127,7 +127,7 @@ export class Visitor {
                 }
             }
             this.dedent();
-            this.append(`} from ${moduleName};\n`);
+            this.append(`} from '${moduleName}';\n`);
         }
         this.popQueue();
 
@@ -195,32 +195,32 @@ export class Visitor {
     private visitNode(node: ASTNode, isRoot: boolean, textToVNode: boolean): ChildrenFlags | undefined {
         const type = node.type;
         switch (type) {
-            case Types.JSXCommonElement:
-            case Types.JSXComponent:
-            case Types.JSXBlock:
-            case Types.JSXVdt:
+            case ASTTypes.JSXCommonElement:
+            case ASTTypes.JSXComponent:
+            case ASTTypes.JSXBlock:
+            case ASTTypes.JSXVdt:
                 return this.visitJSXElement(node as ASTElement, isRoot, textToVNode);
-            case Types.JSXText:
+            case ASTTypes.JSXText:
                 return this.visitJSXText(node as ASTText, textToVNode);
-            case Types.JSXString:
+            case ASTTypes.JSXString:
                 this.visitString(node as ASTString | ASTText, false);
                 return;
-            case Types.JS:
+            case ASTTypes.JS:
                 this.visitJS(node as ASTJS);
                 return;
-            case Types.JSXExpression:
+            case ASTTypes.JSXExpression:
                 return this.visitJSXExpression(node as ASTExpression);
-            case Types.JSHoist:
+            case ASTTypes.JSHoist:
                 this.visitJSHoist(node as ASTHoist);
                 return;
-            case Types.JSXComment:
+            case ASTTypes.JSXComment:
                 return this.visitJSXComment(node as ASTComment);
-            case Types.JSXUnescapeText:
+            case ASTTypes.JSXUnescapeText:
                 return this.visitJSXUnescapeText(node as ASTUnescapeText);
-            case Types.JSXStrings:
+            case ASTTypes.JSXStrings:
                 this.visitStrings(node as ASTStrings);
                 return;
-            case Types.JSXNone:
+            case ASTTypes.JSXNone:
                 this.append('true');
                 return;
         }
@@ -252,17 +252,17 @@ export class Visitor {
     private visitJSXElement(node: ASTElement, isRoot: boolean, textToVNode: boolean): ChildrenFlags {
         return this.visitJSXDirective(node, hasFor => {
             switch (node.type) {
-                case Types.JSXCommonElement:
+                case ASTTypes.JSXCommonElement:
                     if (node.value === 'template') {
                         // <template> is a fake tag, we only need handle its children and directives
                         return this.visitJSXChildren(node.children, hasFor ? true : textToVNode);
                     }
                     return this.visitJSXCommonElement(node);
-                case Types.JSXComponent:
+                case ASTTypes.JSXComponent:
                     return this.visitJSXComponent(node);
-                case Types.JSXBlock:
+                case ASTTypes.JSXBlock:
                     return this.visitJSXBlock(node, true);
-                case Types.JSXVdt:
+                case ASTTypes.JSXVdt:
                     return this.visitJSXVdt(node, isRoot);
             }
         });
@@ -318,7 +318,7 @@ export class Visitor {
         const blocks = this.getJSXBlocksAndSetChildren(node);
         if (blocks.length) {
             node.attributes.push({
-                type: Types.JSXAttribute,
+                type: ASTTypes.JSXAttribute,
                 name: '$blocks',
                 value: blocks,
                 loc: fakeLoc,
@@ -669,7 +669,7 @@ export class Visitor {
         
         // use a queue to save props, so we can extract it when there isn't dynamic prop
         const propsQueue = this.pushQueue();
-        const isCommonElement = node.type === Types.JSXCommonElement;
+        const isCommonElement = node.type === ASTTypes.JSXCommonElement;
         const modelMeta: ModelMeta = {};
         const models: Model[] = [];
         const hasDynamicProp = this.hasDynamicProp(attributes, isCommonElement);
@@ -695,7 +695,7 @@ export class Visitor {
 
         for (let i = 0; i < attributes.length; i++) {
             const attr = attributes[i];
-            if (attr.type === Types.JSXExpression) {
+            if (attr.type === ASTTypes.JSXExpression) {
                 addAttribute();
                 this.visitJSXAttributeValue(attr);
                 continue;
@@ -791,7 +791,7 @@ export class Visitor {
     private hasDynamicProp(attributes: ASTBaseElement['attributes'], isCommonElement: boolean) {
         for (let i = 0; i < attributes.length; i++) {
             const attr = attributes[i];
-            if (attr.type === Types.JSXExpression) {
+            if (attr.type === ASTTypes.JSXExpression) {
                 return true;
             }
             const name = attr.name;
@@ -812,14 +812,14 @@ export class Visitor {
                         return true;
                     }
                     const value = attr.value as ASTAttributeTemplateValue;
-                    if (value.type === Types.JSXExpression) {
+                    if (value.type === ASTTypes.JSXExpression) {
                         // if value is number / true / false, treat it as static value
                         let tmp: any = value.value;
                         const length = tmp.length;
                         if (!length) return false; // is an empty expresion, it will be generated to null
                         if (
                             length === 1 &&
-                            (tmp = tmp[0], tmp.type === Types.JS) &&
+                            (tmp = tmp[0], tmp.type === ASTTypes.JS) &&
                             (tmp = tmp.value, tmp.length === 1)
                         ) {
                             const jsValue = tmp[0];
@@ -836,10 +836,10 @@ export class Visitor {
                         }
                         return true;
                     }
-                    if (value.type === Types.JSXStrings) {
+                    if (value.type === ASTTypes.JSXStrings) {
                         const values = value.value;
                         for (let i = 0; i < values.length; i++) {
-                            if (values[i].type === Types.JSXExpression) {
+                            if (values[i].type === ASTTypes.JSXExpression) {
                                 return true;
                             }
                         }
@@ -851,7 +851,7 @@ export class Visitor {
     }
 
     private visitJSXAttributeClassName(value: ASTAttributeTemplateNoneValue) {
-        if (value.type === Types.JSXExpression) {
+        if (value.type === ASTTypes.JSXExpression) {
             this.addHelper('_$cn');
             this.append('_$cn(');
             this.visitJSXAttributeValue(value);
@@ -870,7 +870,7 @@ export class Visitor {
     }
 
     private visitJSXAttributeRef(value: ASTAttributeTemplateNoneValue, isComponent: boolean) {
-        if (value.type === Types.JSXString) {
+        if (value.type === ASTTypes.JSXString) {
             this.addDeclare('_$refs', 'this.refs');
             // if it is a component, the ref will use twice, so we extract it as variable
             let indentLevel: number;
@@ -919,7 +919,7 @@ export class Visitor {
             }
         };
 
-        if (node.type === Types.JSXCommonElement) {
+        if (node.type === ASTTypes.JSXCommonElement) {
             let setModelFnName: Helpers = '_$stm';
             let eventName = 'change';
 
@@ -1014,7 +1014,7 @@ export class Visitor {
 
         for (let i = 0; i < nodeChildren.length; i++) {
             const child = nodeChildren[i];
-            if (child.type === Types.JSXBlock) {
+            if (child.type === ASTTypes.JSXBlock) {
                 blocks.push(child);
             } else {
                 children.push(child);
@@ -1024,7 +1024,7 @@ export class Visitor {
 
         if (children.length) {
             node.attributes.push({
-                type: Types.JSXAttribute,
+                type: ASTTypes.JSXAttribute,
                 name: 'children',
                 value: children,
                 loc: fakeLoc,

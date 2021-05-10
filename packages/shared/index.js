@@ -3,5 +3,5 @@
 if (process.env.NODE_ENV === 'production') {
     module.exports = require('./dist/index.cjs.prod.js');
 } else {
-    module.exports = require('./dist/index.cjs.dev.cjs');
+    module.exports = require('./dist/index.cjs.dev.js');
 }

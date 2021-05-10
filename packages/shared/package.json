@@ -13,5 +13,6 @@
     "index.js"
   ],
   "author": "Javey",
-  "license": "MIT"
+  "license": "MIT",
+  "sideEffect": false
 }

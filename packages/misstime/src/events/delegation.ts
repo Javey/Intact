@@ -25,10 +25,10 @@ function getDelegatedEventObject<T>(v: T): Record<string, T> {
     };
 }
 
-const attachedEventCounts = getDelegatedEventObject<number>(0);
-const attachedEvents = getDelegatedEventObject<EventListener | null>(null);
+const attachedEventCounts = /*#__PURE__*/ getDelegatedEventObject<number>(0);
+const attachedEvents = /*#__PURE__*/ getDelegatedEventObject<EventListener | null>(null);
 
-export const delegatedEvents = getDelegatedEventObject<boolean>(true);
+export const delegatedEvents = /*#__PURE__*/ getDelegatedEventObject<boolean>(true);
 
 function updateOrAddDelegatedEvent(name: string, dom: IntactElement) {
     let eventsObject = dom.$EV;

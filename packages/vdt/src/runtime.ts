@@ -1,4 +1,5 @@
 export * from 'misstime';
+export * from './utils/types';
 export {
     extend,
     className,

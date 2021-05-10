@@ -18,85 +18,87 @@ let caf: (handle: number) => void;
 const endEvents: string[] = [];
 let transitionProp = 'transition';
 let animationProp = 'animation';
-if (hasDocumentAvailable) {
-    raf = window.requestAnimationFrame ||
-        window.webkitRequestAnimationFrame ||
-        (window as any).mozRequestAnimationFrame ||
-        (window as any).msRequestAnimationFrame ||
-        window.setTimeout;
-    caf = window.cancelAnimationFrame ||
-        window.webkitCancelAnimationFrame ||
-        (window as any).mozCancelRequestAnimationFrame ||
-        (window as any).msAnimationFrame ||
-        window.clearTimeout
+/*#__PURE__*/ (() => {
+    if (hasDocumentAvailable) {
+        raf = window.requestAnimationFrame ||
+            window.webkitRequestAnimationFrame ||
+            (window as any).mozRequestAnimationFrame ||
+            (window as any).msRequestAnimationFrame ||
+            window.setTimeout;
+        caf = window.cancelAnimationFrame ||
+            window.webkitCancelAnimationFrame ||
+            (window as any).mozCancelRequestAnimationFrame ||
+            (window as any).msAnimationFrame ||
+            window.clearTimeout
 
-    const testEl = document.createElement('div');
+        const testEl = document.createElement('div');
 
-    // set handle class function
-    if (testEl.classList) {
-        addClass = (dom: Element, className: string) => dom.classList.add(className);
-        removeClass = (dom: Element, className: string) => dom.classList.remove(className);
-    } else {
-        const hasClass = (dom: Element, className: string) => ` ${dom.className} `.indexOf(` ${className} `) > -1;
-        addClass = (dom: Element, className: string) => !hasClass(dom, className) && (dom.className += ' ' + className);
-        removeClass = (dom: Element, className: string) => {
-            if (hasClass(dom, className)) {
-                dom.className = dom.className
-                    .replace(new RegExp(`(^|\\s)${className}(?:\\s|$)`, 'g'), '$1')
-                    .replace(/\s+/g, ' ') // multiple spaces to one
-                    .replace(/^\s*|\s*$/g, ''); // trim the ends
-            }
-        } 
-    }
-
-    const EVENT_NAME_MAP: any = {
-        transitionend: {
-            'transition': 'transitionend',
-            'WebkitTransition': 'webkitTransitionEnd',
-            'MozTransition': 'mozTransitionEnd',
-            'OTransition': 'oTransitionEnd',
-            'msTransition': 'MSTransitionEnd'
-        },
-
-        animationend: {
-            'animation': 'animationend',
-            'WebkitAnimation': 'webkitAnimationEnd',
-            'MozAnimation': 'mozAnimationEnd',
-            'OAnimation': 'oAnimationEnd',
-            'msAnimation': 'MSAnimationEnd'
-        }
-    };
-
-    const style = testEl.style;
-
-	// On some platforms, in particular some releases of Android 4.x,
-    // the un-prefixed "animation" and "transition" properties are defined on the
-    // style object but the events that fire will still be prefixed, so we need
-    // to check if the un-prefixed events are useable, and if not remove them
-    // from the map
-    if (!('AnimationEvent' in window)) {
-        delete EVENT_NAME_MAP.animationend.animation;
-    }
-
-    if (!('TransitionEvent' in window)) {
-        delete EVENT_NAME_MAP.transitionend.transition;
-    }
-
-    for (let baseEventName in EVENT_NAME_MAP) {
-        let baseEvents = EVENT_NAME_MAP[baseEventName];
-        for (let styleName in baseEvents) {
-            if (styleName in style) {
-                endEvents.push(baseEvents[styleName]);
-                if (baseEventName === 'transitionend') {
-                    transitionProp = styleName;
-                } else {
-                    animationProp = styleName;
+        // set handle class function
+        if (testEl.classList) {
+            addClass = (dom: Element, className: string) => dom.classList.add(className);
+            removeClass = (dom: Element, className: string) => dom.classList.remove(className);
+        } else {
+            const hasClass = (dom: Element, className: string) => ` ${dom.className} `.indexOf(` ${className} `) > -1;
+            addClass = (dom: Element, className: string) => !hasClass(dom, className) && (dom.className += ' ' + className);
+            removeClass = (dom: Element, className: string) => {
+                if (hasClass(dom, className)) {
+                    dom.className = dom.className
+                        .replace(new RegExp(`(^|\\s)${className}(?:\\s|$)`, 'g'), '$1')
+                        .replace(/\s+/g, ' ') // multiple spaces to one
+                        .replace(/^\s*|\s*$/g, ''); // trim the ends
                 }
-                break;
-            }
+            } 
         }
-    }  
-}
+
+        const EVENT_NAME_MAP: any = {
+            transitionend: {
+                'transition': 'transitionend',
+                'WebkitTransition': 'webkitTransitionEnd',
+                'MozTransition': 'mozTransitionEnd',
+                'OTransition': 'oTransitionEnd',
+                'msTransition': 'MSTransitionEnd'
+            },
+
+            animationend: {
+                'animation': 'animationend',
+                'WebkitAnimation': 'webkitAnimationEnd',
+                'MozAnimation': 'mozAnimationEnd',
+                'OAnimation': 'oAnimationEnd',
+                'msAnimation': 'MSAnimationEnd'
+            }
+        };
+
+        const style = testEl.style;
+
+        // On some platforms, in particular some releases of Android 4.x,
+        // the un-prefixed "animation" and "transition" properties are defined on the
+        // style object but the events that fire will still be prefixed, so we need
+        // to check if the un-prefixed events are useable, and if not remove them
+        // from the map
+        if (!('AnimationEvent' in window)) {
+            delete EVENT_NAME_MAP.animationend.animation;
+        }
+
+        if (!('TransitionEvent' in window)) {
+            delete EVENT_NAME_MAP.transitionend.transition;
+        }
+
+        for (let baseEventName in EVENT_NAME_MAP) {
+            let baseEvents = EVENT_NAME_MAP[baseEventName];
+            for (let styleName in baseEvents) {
+                if (styleName in style) {
+                    endEvents.push(baseEvents[styleName]);
+                    if (baseEventName === 'transitionend') {
+                        transitionProp = styleName;
+                    } else {
+                        animationProp = styleName;
+                    }
+                    break;
+                }
+            }
+        }  
+    }
+})();
 
 export const TransitionEvents = {
     on: function(dom: Element, eventListener: EventListener) {
