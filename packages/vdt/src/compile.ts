@@ -1,7 +1,7 @@
 import {Parser} from './compiler/parser';
 import {Visitor} from './compiler/visitor';
 import * as Vdt from './runtime';
-import type {Template} from 'intact';
+import {Template} from 'misstime';
 
 const cache: {[key: string]: Template} = {};
 

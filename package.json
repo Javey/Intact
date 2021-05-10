@@ -7,9 +7,9 @@
     "benchmark": "karma start fixtures/karma.benchmark.js",
     "test": "karma start fixtures/karma.test.js",
     "snapshot": "UPDATE=1 npm run test",
-    "clean": "rm -rf node_modules/.rpt2_cache && lerna exec -- rm -rf dist",
+    "clean": "rimraf node_modules/.rpt2_cache && lerna exec -- rimraf dist",
     "prebuild": "npm run clean",
-    "build": "run-p build:**",
+    "build": "run-p build:** && npm run types",
     "build:es:dev": "            npm run rollup -- --env=development --name=index --ext=esm.dev.js          --format=es   --minify=false",
     "build:es:prod": "           npm run rollup -- --env=production  --name=index --ext=esm.prod.js         --format=es   --minify=false",
     "build:es": "                npm run rollup -- --env=unknown     --name=index --ext=esm.js              --format=es   --minify=false --replace=false",
@@ -24,7 +24,8 @@
     "build:runtime:cjs:prod": "  npm run rollup -- --env=production  --name=index --ext=runtime.cjs.prod.js --format=cjs  --minify=false                 --entry=src/runtime.ts",
     "build:runtime:iife:dev": "  npm run rollup -- --env=development              --ext=runtime.js          --format=iife --minify=false                 --entry=src/runtime.ts",
     "build:runtime:iife:prod": " npm run rollup -- --env=production               --ext=runtime.min.js      --format=iife --minify=true                  --entry=src/runtime.ts",
-    "rollup": "lerna exec -- node ../../scripts/build.js"
+    "rollup": "lerna exec -- node ../../scripts/build.js",
+    "types": "lerna exec -- node ../../scripts/typings.js"
   },
   "repository": {
     "type": "git",
@@ -66,9 +67,11 @@
     "karma-sourcemap-loader": "^0.3.8",
     "karma-webpack": "^5.0.0",
     "lerna": "^4.0.0",
+    "merge-dirs": "^0.2.1",
     "minimist": "^1.2.5",
     "mocha": "^8.3.2",
     "npm-run-all": "^4.1.5",
+    "rimraf": "^3.0.2",
     "rollup": "^2.47.0",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.30.0",

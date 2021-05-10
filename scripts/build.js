@@ -79,6 +79,15 @@ async function build() {
         format,
         name,
     });
+
+    // const {Extractor, ExtractorConfig} = require('@microsoft/api-extractor');
+    // const extractorConfigPath = resolve(cwd, 'api-extractor.json');
+    // const extractorConfig = ExtractorConfig.loadFileAndPrepare(extractorConfigPath);
+    // const extractorResult = Extractor.invoke(extractorConfig, {
+        // localBuild: true,
+        // showVerboseMessages: true,
+        // typescriptCompilerFolder: resolveRoot('node_modules/typescript'),
+    // });
 }
 
 build();

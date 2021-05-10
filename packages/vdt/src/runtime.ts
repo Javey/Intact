@@ -1,11 +1,4 @@
-export {
-    createElementVNode,
-    createUnknownComponentVNode as createComponentVNode,
-    createTextVNode,
-    createCommentVNode,
-    createUnescapeTextVNode,
-    linkEvent
-} from 'misstime';
+export * from 'misstime';
 export {
     extend,
     className,
@@ -18,4 +11,4 @@ export {
     superCall,
     defaultOptions,
 } from './utils/helpers';
-export {EMPTY_OBJ, noop } from 'intact-shared';
+export {EMPTY_OBJ, noop} from 'intact-shared';

@@ -112,7 +112,7 @@ export class Visitor {
         ].join('');
     }
 
-    getModuleCode() {
+    getModuleCode(moduleName: string = 'vdt/runtime') {
         const helpers = this.pushQueue();
         const keys = Object.keys(this.helpers);
         const length = keys.length;
@@ -127,7 +127,7 @@ export class Visitor {
                 }
             }
             this.dedent();
-            this.append(`} from 'vdt/runtime';\n`);
+            this.append(`} from ${moduleName};\n`);
         }
         this.popQueue();
 

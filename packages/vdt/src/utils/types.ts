@@ -1,3 +1,5 @@
+import {ComponentClass} from 'misstime';
+
 export const enum Types {
     JS,
     JSHoist,
@@ -140,7 +142,9 @@ export interface DirectiveFor {
 }
 
 export type Options = {
-    delimiters: [string, string],
+    delimiters: [string, string]
+    set<T extends ComponentClass>(component: T, key: string, value: any): void
+    get<T extends ComponentClass>(component: T, key: string): any
 }
 
 export const enum ChildrenFlags {

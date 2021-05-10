@@ -1,11 +1,12 @@
 export * from './common';
 
-import {registerCompile, error} from 'intact-shared';
+import {error} from 'intact-shared';
+import {registerCompile} from 'misstime';
 
-export function compile() {
+function compile() {
     if (process.env.NODE_ENV !== 'production') {
         error('Runtime compilation is not support in this build of Intact.');
     }
 }
 
-registerCompile(compile);
+registerCompile(compile as any);

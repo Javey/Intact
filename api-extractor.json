@@ -5,20 +5,6 @@
   "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
 
   /**
-   * Optionally specifies another JSON config file that this file extends from.  This provides a way for
-   * standard settings to be shared across multiple projects.
-   *
-   * If the path starts with "./" or "../", the path is resolved relative to the folder of the file that contains
-   * the "extends" field.  Otherwise, the first path segment is interpreted as an NPM package name, and will be
-   * resolved using NodeJS require().
-   *
-   * SUPPORTED TOKENS: none
-   * DEFAULT VALUE: ""
-   */
-  // "extends": "./shared/api-extractor-base.json"
-  // "extends": "my-package/include/api-extractor-base.json"
-
-  /**
    * Determines the "<projectFolder>" token that can be used with other config file settings.  The project folder
    * typically contains the tsconfig.json and package.json config files, but the path is user-defined.
    *
@@ -45,7 +31,7 @@
    *
    * SUPPORTED TOKENS: <projectFolder>, <packageName>, <unscopedPackageName>
    */
-  "mainEntryPointFilePath": "<projectFolder>/packages/<unscopedPackageName>/dist/packages/<unscopedPackageName>/src/index.d.ts",
+  // "mainEntryPointFilePath": "<projectFolder>/packages/<packageName>/dist/packages/<unscopedPackageName>/src/index.d.ts",
 
   /**
    * A list of NPM package names whose exports should be treated as part of this package.
@@ -77,7 +63,7 @@
      * SUPPORTED TOKENS: <projectFolder>, <packageName>, <unscopedPackageName>
      * DEFAULT VALUE: "<projectFolder>/tsconfig.json"
      */
-    // "tsconfigFilePath": "<projectFolder>/tsconfig.json",
+    "tsconfigFilePath": "<projectFolder>/tsconfig.json",
     /**
      * Provides a compiler configuration that will be used instead of reading the tsconfig.json file from disk.
      * The object must conform to the TypeScript tsconfig schema:
@@ -222,7 +208,7 @@
      * SUPPORTED TOKENS: <projectFolder>, <packageName>, <unscopedPackageName>
      * DEFAULT VALUE: ""
      */
-    "publicTrimmedFilePath": "<projectFolder>/packages/<unscopedPackageName>/dist/<unscopedPackageName>.d.ts"
+    // "publicTrimmedFilePath": "<projectFolder>/packages/<unscopedPackageName>/dist/<unscopedPackageName>.d.ts"
 
     /**
      * When a declaration is trimmed, by default it will be replaced by a code comment such as
@@ -331,6 +317,10 @@
       "default": {
         "logLevel": "warning"
         // "addToApiReportFile": false
+      },
+
+      "ae-missing-release-tag": {
+        "logLevel": "none"
       }
 
       // "ae-extra-release-tag": {

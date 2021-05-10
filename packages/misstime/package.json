@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "module": "dist/index.esm.js",
+  "typings": "dist/index.d.ts",
   "directories": {
     "test": "test"
   },

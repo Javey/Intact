@@ -8,6 +8,7 @@ import {
 } from 'intact-shared';
 import {
     VNode,
+    VNodeTag,
     Props,
     TransitionHooks,
     TransitionElement,

@@ -4,6 +4,7 @@
   "description": "A template engine based on virtual-dom",
   "main": "index.js",
   "module": "dist/index.esm.js",
+  "typings": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git://github.com/Javey/vdt.js.vdt"

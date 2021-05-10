@@ -6,8 +6,10 @@ import {
     VNode,
     TypeDefs,
     unmount,
+    Template,
+    compile,
 } from 'misstime';
-import {Template, SetOptions, Compile} from '../utils/types';
+import {SetOptions} from '../utils/types';
 import {get, set} from '../utils/helpers';
 import {
     isNull,
@@ -15,7 +17,6 @@ import {
     isUndefined,
     isObject,
     EMPTY_OBJ,
-    compile,
 } from 'intact-shared';
 import {
     componentInited, 
@@ -65,7 +66,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         if (isFunction(template)) {
             this.$template = template as Template; 
         } else {
-            this.$template = (compile as Compile)(template);
+            this.$template = compile(template);
         }
 
         this.$defaults = this.defaults();

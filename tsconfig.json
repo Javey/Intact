@@ -15,7 +15,7 @@
     // "declarationMap": true,                      /* Generates a sourcemap for each corresponding '.d.ts' file. */
     "sourceMap": true,                           /* Generates corresponding '.map' file. */
     // "outFile": "./",                             /* Concatenate and emit output to single file. */
-    // "outDir": "./build",                              /* Redirect output structure to the directory. */
+    "outDir": "./build",                              /* Redirect output structure to the directory. */
     "rootDir": ".",                             /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */
     // "composite": true,                           /* Enable project compilation */
     // "tsBuildInfoFile": "./",                     /* Specify file to store incremental compilation information */
@@ -44,7 +44,7 @@
     // "noPropertyAccessFromIndexSignature": true,  /* Require undeclared properties from index signatures to use element accesses. */
 
     /* Module Resolution Options */
-    // "moduleResolution": "node",                  /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (TypeScript pre-1.6). */
+    "moduleResolution": "node",                  /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (TypeScript pre-1.6). */
     "baseUrl": "./",                             /* Base directory to resolve non-absolute module names. */
     "paths": {
         "intact-shared": [
@@ -52,6 +52,9 @@
         ],
         "vdt": [
             "packages/vdt/src/index.ts"
+        ],
+        "vdt/runtime": [
+            "packages/vdt/src/runtime.ts"
         ],
         "intact": [
             "packages/intact/src/index.ts"
@@ -84,5 +87,10 @@
     /* Advanced Options */
     "skipLibCheck": true,                           /* Skip type checking of declaration files. */
     "forceConsistentCasingInFileNames": true        /* Disallow inconsistently-cased references to the same file. */
-  }
+  },
+  "include": [
+    "packages/*/src",
+    "packages/*/__tests__",
+    "typings/global/index.d.ts"
+  ]
 }

@@ -1,4 +1,4 @@
-import {ChangeTrace, Compile} from './types';
+import {ChangeTrace} from './types';
 import {hasOwn, isString, isNullOrUndefined, isObject, throwError, isArray} from 'intact-shared';
 
 export function get<O extends object, K extends keyof O>(object: O, path: K): O[K];

@@ -1,7 +1,6 @@
 export * from './common';
 
-import {registerCompile} from 'intact-shared';
-import {compile} from 'vdt';
-export {compile};
+import {registerCompile} from 'misstime';
+import {vdtCompile} from 'vdt';
 
-registerCompile(compile);
+registerCompile(vdtCompile);
