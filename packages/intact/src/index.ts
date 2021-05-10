@@ -1,4 +1,4 @@
-export * from './runtime';
+export * from './common';
 
 import {registerCompile} from 'intact-shared';
 import {compile} from 'vdt';
