@@ -1,6 +1,6 @@
 {
   "name": "vdt",
-  "version": "1.3.5",
+  "version": "3.0.0-beta.0",
   "description": "A template engine based on virtual-dom",
   "main": "index.js",
   "module": "dist/index.esm.js",
@@ -54,8 +54,8 @@
     "uglify-js": "^3.3.23"
   },
   "dependencies": {
-    "tslib": "^2.2.0",
+    "intact-shared": "^3.0.0",
     "misstime": "^3.0.0",
-    "intact-shared": "^3.0.0"
+    "tslib": "^2.2.0"
   }
 }
