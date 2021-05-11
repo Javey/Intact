@@ -1,7 +1,7 @@
 import {isNullOrUndefined, isString, hasDocumentAvailable} from 'intact-shared';
 
-export enum AnimateType {
-    Transition = 0,
+export const enum AnimateType {
+    Transition,
     Animation,
 }
 
@@ -11,14 +11,16 @@ export type AnimationInfo = {
     propCount: number
 }
 
-export let addClass: (dom: Element, className: string) => void;
-export let removeClass: (dom: Element, className: string) => void;
-let raf: (fn: () => void) => number;
-let caf: (handle: number) => void;
-const endEvents: string[] = [];
 let transitionProp = 'transition';
 let animationProp = 'animation';
-/*#__PURE__*/ (() => {
+const endEvents: string[] = [];
+
+export const nodeOps = /*#__PURE__*/ (() => {
+    let addClass: (dom: Element, className: string) => void;
+    let removeClass: (dom: Element, className: string) => void;
+    let raf: (fn: () => void) => number;
+    let caf: (handle: number) => void;
+
     if (hasDocumentAvailable) {
         raf = window.requestAnimationFrame ||
             window.webkitRequestAnimationFrame ||
@@ -98,6 +100,8 @@ let animationProp = 'animation';
             }
         }  
     }
+
+    return {raf: raf!, caf: caf!, addClass: addClass!, removeClass: removeClass!};
 })();
 
 export const TransitionEvents = {
@@ -149,6 +153,7 @@ export function className(obj?: Record<string | number, any> | null | string) {
 
 export function nextFrame(fn: () => void) {
     let innerFrame: number;
+    const {raf, caf} = nodeOps;
     let frame = raf!(() => {
         innerFrame = raf!(fn);
     });

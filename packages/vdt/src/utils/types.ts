@@ -143,8 +143,6 @@ export interface DirectiveFor {
 
 export type Options = {
     delimiters: [string, string]
-    set<T extends ComponentClass>(component: T, key: string, value: any): void
-    get<T extends ComponentClass>(component: T, key: string): any
 }
 
 export const enum ChildrenFlags {
@@ -159,4 +157,9 @@ export const enum ChildrenFlags {
     VNodeChildren = HasKeyedVNodeChildren | HasNonKeyedVNodeChildren,
     KeydChildren = HasKeyedVNodeChildren | HasKeyedChildren,
     NonKeydChildren = HasNonKeyedVNodeChildren | HasNonKeyedChildren,
+}
+
+export interface ComponentWithSetterAndGetter extends ComponentClass {
+    set(key: string, value: any): void
+    get(key: string): any
 }

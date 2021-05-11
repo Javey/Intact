@@ -31,8 +31,7 @@ export interface TransitionGroupProps extends Omit<TransitionProps, 'show'> {
     moveClass?: string
 }
 
-/*#__PURE__*/
-export class TransitionGroup<P extends TransitionGroupProps = TransitionGroupProps>  extends BaseTransition<P> {
+export class TransitionGroup<P extends TransitionGroupProps = TransitionGroupProps> extends BaseTransition<P> {
     static template(this: TransitionGroup) {
         const props = this.props;
 

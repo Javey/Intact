@@ -36,14 +36,17 @@ const plugins = [
     }),
 ];
 
+const replaceValues = {
+    '/** @class */': '/*#__PURE__*/ /** @class */', // for tree-shaking
+};
 if (options.replace) {
-    plugins.push(replace({
-        values: {
-            'process.env.NODE_ENV': JSON.stringify(options.env),
-        },
-        preventAssignment: true,
-    }));
+    replaceValues['process.env.NODE_ENV'] = JSON.stringify(options.env);
 }
+plugins.push(replace({
+    values: replaceValues,
+    preventAssignment: true,
+    delimiters: ['', ''],
+}));
 
 if (options.minify) {
     plugins.push(terser({

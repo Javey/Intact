@@ -9,6 +9,7 @@ import {
     ASTAttributeTemplateValue,
     Options,
     ChildrenFlags,
+    ComponentWithSetterAndGetter,
 } from './types';
 import {IntactElement, ChildrenTypes, Props, Blocks, compile, ComponentClass} from 'misstime';
 import {
@@ -137,31 +138,25 @@ export const getAttrName = (name: string) => {
 
 export const defaultOptions: Options = {
     delimiters: ['{', '}'],
-    set<T extends ComponentClass>(component: T, key: string, value: any) {
-        component.props[key] = value;
-    },
-    get<T extends ComponentClass>(component: T, key: string) {
-        return component.props[key];
-    }
 };
 
-export function setTextModel<T extends ComponentClass>(component: T, event: Event) {
+export function setTextModel<T extends ComponentWithSetterAndGetter>(component: T, event: Event) {
     const target = event.target as IntactElement;
-    defaultOptions.set(component, target.$M!, (target as HTMLInputElement).value);
+    component.set(target.$M!, (target as HTMLInputElement).value);
 }
 
-export function setRadioModel<T extends ComponentClass>(component: T, event: Event) {
+export function setRadioModel<T extends ComponentWithSetterAndGetter>(component: T, event: Event) {
     const target = event.target as IntactElement;
-    defaultOptions.set(component, target.$M!, getValue(target as HTMLInputElement));
+    component.set(target.$M!, getValue(target as HTMLInputElement));
 }
 
-export function setCheckboxModel<T extends ComponentClass>(component: T, event: Event) {
+export function setCheckboxModel<T extends ComponentWithSetterAndGetter>(component: T, event: Event) {
     const target = event.target as IntactElement;
     const modelName = target.$M!;
     const checked = target.checked;
     let trueValue = target.$TV;
     let falseValue = target.$FV;
-    let value = defaultOptions.get(component, modelName); 
+    let value = component.get(modelName); 
 
     if (isNullOrUndefined(trueValue)) {
         trueValue = true;
@@ -186,7 +181,7 @@ export function setCheckboxModel<T extends ComponentClass>(component: T, event: 
         value = checked ? trueValue : falseValue;
     }
 
-    defaultOptions.set(component, modelName, value);
+    component.set(modelName, value);
 }
 
 export function isChecked(value: any, trueValue: any) {
@@ -197,7 +192,7 @@ export function isChecked(value: any, trueValue: any) {
     }
 } 
 
-export function setSelectModel<T extends ComponentClass>(component: T, event: Event) {
+export function setSelectModel<T extends ComponentWithSetterAndGetter>(component: T, event: Event) {
     const target = event.target as HTMLSelectElement;
     const multiple = target.multiple;
     const options = target.options;
@@ -221,7 +216,7 @@ export function setSelectModel<T extends ComponentClass>(component: T, event: Ev
         }
     }
 
-    defaultOptions.set(component, (target as IntactElement).$M!, value);
+    component.set((target as IntactElement).$M!, value);
 }
 
 function getValue(el: HTMLInputElement | HTMLOptionElement) {

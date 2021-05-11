@@ -6,6 +6,8 @@ export function isNullOrUndefined(o: any): o is null | undefined {
     return o === null || o === undefined;
 }
 
+export const toString = Object.prototype.toString;
+
 export const isArray = Array.isArray || function(arr: any): arr is Array<any> {
     return toString.call(arr) === '[object Array]';
 };

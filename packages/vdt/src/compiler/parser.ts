@@ -62,7 +62,7 @@ export class Parser {
 
     public ast: ASTRootChild[];
 
-    constructor(source: string, options?: Options) {
+    constructor(source: string, options?: Partial<Options>) {
         this.source = trimRight(source);
         this.length = this.source.length;
         if (options) {
