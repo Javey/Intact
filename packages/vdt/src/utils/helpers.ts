@@ -80,14 +80,22 @@ export const textTags: Record<string, true> = {
 }
 
 export const directivesMap: Record<Directives, true> = {
-    [Directives.If]: true,
-    [Directives.ElseIf]: true,
-    [Directives.Else]: true,
-    [Directives.For]: true,
-    [Directives.ForValue]: true,
-    [Directives.ForKey]: true,
-    // [Directives.Model]: true,
-    [Directives.Raw]: true,
+    /* for tree-shaking and performance */
+    'v-if': true,
+    'v-else-if': true,
+    'v-else': true,
+    'v-for': true,
+    'v-for-value': true,
+    'v-for-key': true,
+    'v-raw': true,
+    // [Directives.If]: true,
+    // [Directives.ElseIf]: true,
+    // [Directives.Else]: true,
+    // [Directives.For]: true,
+    // [Directives.ForValue]: true,
+    // [Directives.ForKey]: true,
+    // // [Directives.Model]: true,
+    // [Directives.Raw]: true,
 };
 
 export function isJSIdentifierPart(ch: number) {
