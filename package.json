@@ -31,7 +31,7 @@
     "release-patch": "lenra version patch --force-publish && npm run _publish",
     "release-minor": "lerna version minor --force-publish && npm run _publish",
     "release-major": "lerna version major --force-publish && npm run _publish",
-    "prelease": "npm run prelease-patch",
+    "prelease": "lerna version prerelease --preid beta --force-publish && npm run _publish -- --tag=beta",
     "prelease-patch": "lerna version prepatch --preid beta --force-publish && npm run _publish -- --tag=beta",
     "prelease-minor": "lerna version preminor --preid beta --force-publish && npm run _publish -- --tag=beta",
     "prelease-major": "lerna version premajor --preid beta --force-publish && npm run _publish -- --tag=beta"
