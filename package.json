@@ -25,7 +25,16 @@
     "build:runtime:iife:dev": "  npm run rollup -- --env=development              --ext=runtime.js          --format=iife --minify=false                 --entry=src/runtime.ts",
     "build:runtime:iife:prod": " npm run rollup -- --env=production               --ext=runtime.min.js      --format=iife --minify=true                  --entry=src/runtime.ts",
     "rollup": "lerna exec -- node ../../scripts/build.js",
-    "types": "lerna exec -- node ../../scripts/typings.js"
+    "types": "lerna exec -- node ../../scripts/typings.js",
+    "_publish": "lerna exec -- npm publish",
+    "release": "npm run release-patch",
+    "release-patch": "lenra version patch --force-publish && npm run _publish",
+    "release-minor": "lerna version minor --force-publish && npm run _publish",
+    "release-major": "lerna version major --force-publish && npm run _publish",
+    "prelease": "npm run prelease-patch",
+    "prelease-patch": "lerna version prepatch --preid beta --force-publish && npm run _publish -- --tag=beta",
+    "prelease-minor": "lerna version preminor --preid beta --force-publish && npm run _publish -- --tag=beta",
+    "prelease-major": "lerna version premajor --preid beta --force-publish && npm run _publish -- --tag=beta"
   },
   "repository": {
     "type": "git",
