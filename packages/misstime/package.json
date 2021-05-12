@@ -1,6 +1,6 @@
 {
   "name": "misstime",
-  "version": "3.0.0-beta.0",
+  "version": "3.0.0-beta.1",
   "description": "",
   "main": "index.js",
   "module": "dist/index.esm.js",
@@ -47,7 +47,7 @@
     "webpack": "^5.20.1"
   },
   "dependencies": {
-    "intact-shared": "^3.0.0-beta.0"
+    "intact-shared": "^3.0.0-beta.1"
   },
   "sideEffect": false
 }
