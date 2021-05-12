@@ -71,7 +71,7 @@ const external = format === 'umd' ||
     format === 'iife' ||
     format === 'es' && options.env !== 'unknown' ?
         [] :
-        Object.keys({...pkgJson.dependencies, 'vdt/runtime': true});
+        Object.keys(pkgJson.dependencies || {});
 
 const name = pkgJson.name.replace(/(^\w)|(-\w)/g, v => v.charAt(v.length - 1).toUpperCase());
 const input = join(cwd, options.entry);
