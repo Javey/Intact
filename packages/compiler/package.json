@@ -1,6 +1,6 @@
 {
   "name": "vdt-compiler",
-  "version": "3.0.0-beta.1",
+  "version": "3.0.0-beta.2",
   "description": "The compiler of Vdt",
   "main": "index.js",
   "module": "dist/index.esm.js",
@@ -16,8 +16,8 @@
     "index.js"
   ],
   "dependencies": {
-    "intact-shared": "^3.0.0-beta.1",
-    "misstime": "^3.0.0-beta.1",
+    "intact-shared": "^3.0.0-beta.2",
+    "misstime": "^3.0.0-beta.2",
     "tslib": "^2.2.0"
   },
   "sideEffect": false
