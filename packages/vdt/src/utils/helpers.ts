@@ -80,7 +80,7 @@ export const textTags: Record<string, true> = {
 }
 
 export const directivesMap: Record<Directives, true> = {
-    /* for tree-shaking and performance */
+    /* don't use Directives, because of tree-shaking and performance */
     'v-if': true,
     'v-else-if': true,
     'v-else': true,
