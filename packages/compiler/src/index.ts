@@ -1,4 +1,3 @@
-export * from './runtime';
-export {compile as vdtCompile} from './compile';
-export {Parser} from './compiler/parser';
-export {Visitor} from './compiler/visitor';
+export * from './utils/types';
+export {Parser} from './core/parser';
+export {Visitor} from './core/visitor';

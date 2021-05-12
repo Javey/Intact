@@ -1,10 +1,20 @@
 import {render, createVNode as h, VNode, Blocks} from 'misstime';
 import {stripIndent} from 'common-tags';
 import {Component} from 'intact';
-import {compile} from '../src/compile';
 import {dispatchEvent, nextTick} from '../../misstime/__tests__/utils';
+import {Template} from '../src/types';
+import * as Vdt from '../src';
+import {Parser, Visitor} from 'vdt-compiler';
 
-describe('Vdt Render', () => {
+function compile(source: string): Template {
+    const parser = new Parser(source);
+    const visitor = new Visitor(parser.ast);
+    const code = visitor.getCode();
+
+    return new Function('_$vdt', code)(Vdt);
+}
+
+describe('Vdt Runtime', () => {
     let container: HTMLDivElement
 
     function test(source: string, data?: any, blocks?: Blocks) {

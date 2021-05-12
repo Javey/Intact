@@ -1,5 +1,5 @@
-import {Parser} from '../src/compiler/parser';
-import {Visitor} from '../src/compiler/visitor';
+import {Parser} from '../src/core/parser';
+import {Visitor} from '../src/core/visitor';
 import {stripIndent} from 'common-tags';
 import {Options} from '../src/utils/types';
 
@@ -16,7 +16,7 @@ function test(template: string, options?: Options) {
     expect(code).to.matchSnapshot();
 }
 
-describe('Vdt Compile', () => {
+describe('Vdt Compiler', () => {
     describe('Common Element', () => {
         it('without children', () => {
             test(`<div></div>`);

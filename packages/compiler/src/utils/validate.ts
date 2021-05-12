@@ -2,13 +2,10 @@ import {
     Directives,
     ASTTypes,
     SourceLocation,
-    ASTChild,
-    ASTNode,
     ASTElement,
-    ASTAttribute,
     ASTAttributeTemplateValue,
 } from './types';
-import {throwError, isElementNode} from './helpers';
+import {throwError} from './helpers';
 
 export function validateDirectiveValue(name: string, valueType: ASTTypes, tag: string, tagType: ASTTypes, source: string, loc: SourceLocation) {
     if (name === Directives.Raw) {

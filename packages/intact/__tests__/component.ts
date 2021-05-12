@@ -1,6 +1,6 @@
 import {Component} from '../src/core/component';
 import {render, createVNode as h, Fragment, VNode} from 'misstime';
-import {Template} from '../src/utils/types';
+import {Template} from 'vdt';
 
 describe('Component', () => {
     let container: Element;

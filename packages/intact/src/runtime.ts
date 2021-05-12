@@ -1,7 +1,6 @@
 export * from './common';
-
 import {error} from 'intact-shared';
-import {registerCompile} from 'misstime';
+import {registerCompile} from 'vdt';
 
 function compile() {
     if (process.env.NODE_ENV !== 'production') {

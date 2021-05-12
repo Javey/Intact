@@ -200,7 +200,3 @@ export type TypeObject = {
     required?: boolean | Function,
 }
 export type TypeDefs<T> = {[key in keyof Props<T>]?: TypePrimitive | TypePrimitive[] | TypeObject};
-
-export type Template<T = any> = (this: T, $props: Props<any> | null, $blocks?: Blocks<T>) => Children;
-
-export type Compile = (source: string) => Template

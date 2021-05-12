@@ -6,8 +6,6 @@ import {
     VNode,
     TypeDefs,
     unmount,
-    Template,
-    compile,
 } from 'misstime';
 import {SetOptions} from '../utils/types';
 import {get, set} from '../utils/helpers';
@@ -29,6 +27,7 @@ import {
     updateAsyncComponent,
 } from '../utils/componentUtils';
 import {Event} from './event';
+import {Template, compile} from 'vdt';
 
 export abstract class Component<P extends {} = {}> extends Event<P> implements ComponentClass<P> {
     static readonly template: Template | string;

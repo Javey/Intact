@@ -53,8 +53,8 @@
         "vdt": [
             "packages/vdt/src/index.ts"
         ],
-        "vdt/runtime": [
-            "packages/vdt/src/runtime.ts"
+        "vdt-compiler": [
+            "packages/compiler/src/index.ts"
         ],
         "intact": [
             "packages/intact/src/index.ts"

@@ -8,7 +8,6 @@ import {
     ComponentFunction,
     ComponentClass,
     TransitionElement,
-    Compile,
 } from './types';
 import {isNull, isNullOrUndefined} from 'intact-shared';
 
@@ -159,9 +158,3 @@ export const namespaces: Record<string, string> = {
     'xml:lang': xmlNS,
     'xml:space': xmlNS,
 };
-
-let compile: Compile;
-export function registerCompile(_compile: Compile) {
-    compile = _compile;
-}
-export {compile};

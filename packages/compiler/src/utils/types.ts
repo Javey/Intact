@@ -158,8 +158,3 @@ export const enum ChildrenFlags {
     KeydChildren = HasKeyedVNodeChildren | HasKeyedChildren,
     NonKeydChildren = HasNonKeyedVNodeChildren | HasNonKeyedChildren,
 }
-
-export interface ComponentWithSetterAndGetter extends ComponentClass {
-    set(key: string, value: any): void
-    get(key: string): any
-}
