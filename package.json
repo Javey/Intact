@@ -26,7 +26,7 @@
     "build:runtime:iife:prod": " npm run rollup -- --env=production               --ext=runtime.min.js      --format=iife --minify=true                  --entry=src/runtime.ts",
     "rollup": "lerna exec -- node ../../scripts/build.js",
     "types": "lerna exec -- node ../../scripts/typings.js",
-    "_publish": "lerna exec -- npm publish",
+    "_publish": "npm run build && lerna exec -- npm publish",
     "release": "npm run release-patch",
     "release-patch": "lenra version patch --force-publish && npm run _publish",
     "release-minor": "lerna version minor --force-publish && npm run _publish",
