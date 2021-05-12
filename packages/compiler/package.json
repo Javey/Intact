@@ -1,23 +1,23 @@
 {
-  "name": "misstime",
+  "name": "vdt-compiler",
   "version": "3.0.0-beta.1",
-  "description": "A virtual dom library fork from inferno",
+  "description": "The compiler of Vdt",
   "main": "index.js",
   "module": "dist/index.esm.js",
   "typings": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Javey/Intact.git",
+    "directory": "packages/compiler"
+  },
+  "license": "MIT",
   "files": [
     "dist",
     "index.js"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/Javey/Intact.git",
-    "directory": "packages/misstime"
-  },
-  "author": "javey",
-  "license": "MIT",
   "dependencies": {
-    "intact-shared": "^3.0.0-beta.1"
+    "intact-shared": "^3.0.0-beta.1",
+    "tslib": "^2.2.0"
   },
   "sideEffect": false
 }

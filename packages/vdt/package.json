@@ -1,58 +1,21 @@
 {
   "name": "vdt",
   "version": "3.0.0-beta.1",
-  "description": "A template engine based on virtual-dom",
+  "description": "A template engine based on virtual dom library misstime",
   "main": "index.js",
   "module": "dist/index.esm.js",
   "typings": "dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git://github.com/Javey/vdt.js.vdt"
+    "url": "git://github.com/Javey/Intact.git",
+    "directory": "packages/vdt"
   },
   "license": "MIT",
-  "scripts": {
-    "doc": "cd site && node server.js",
-    "deploy:doc": "cd site && gulp build",
-    "build": "rollup -c rollup.config.js && rollup -c rollup.config.browser.js && uglifyjs dist/vdt.js -o dist/vdt.min.js -m && rollup -c rollup.config.node.js",
-    "test": "mocha --require coffee-script/register test/*.coffee; mocha-headless-chrome -f test/browser/index.html -a no-sandbox -a disable-setuid-sandbox",
-    "cover": "istanbul cover _mocha -- --compilers coffee:coffee-script/register test/*.coffee",
-    "release": "npm run release-patch",
-    "prelease": "npm version prerelease && git push --tags --force && git push && npm publish",
-    "release-patch": "git checkout master && npm version patch && git push origin master --tags && git push && npm publish",
-    "release-minor": "git checkout master && npm version minor && git push origin master --tags && git push && npm publish",
-    "release-major": "git checkout master && npm version major && git push origin master --tags && git push && npm publish"
-  },
   "files": [
     "dist",
     "index.js",
     "runtime.js"
   ],
-  "devDependencies": {
-    "babel-plugin-add-module-exports": "^0.2.1",
-    "babel-plugin-external-helpers": "^6.22.0",
-    "babel-plugin-transform-decorators-legacy": "^1.3.5",
-    "babel-plugin-transform-es3-member-expression-literals": "^6.22.0",
-    "babel-plugin-transform-es3-property-literals": "^6.22.0",
-    "babel-preset-es2015": "^6.24.1",
-    "babel-preset-es2015-loose": "^8.0.0",
-    "babel-preset-stage-0": "^6.24.1",
-    "coffee-script": "^1.9.2",
-    "gulp": "^4.0.0",
-    "gulp-babel": "^6.1.2",
-    "istanbul": "^0.4.5",
-    "jquery": "^3.3.1",
-    "misstime": "git+https://github.com/Javey/misstime.git",
-    "mocha": "^5.0.5",
-    "mocha-headless-chrome": "^1.8.2",
-    "rollup": "^0.41.6",
-    "rollup-plugin-babel": "^2.7.1",
-    "rollup-plugin-commonjs": "^8.0.2",
-    "rollup-plugin-node-resolve": "^3.0.0",
-    "rollup-plugin-replace": "^1.1.1",
-    "rollup-watch": "^4.0.0",
-    "should": "^11.2.1",
-    "uglify-js": "^3.3.23"
-  },
   "dependencies": {
     "intact-shared": "^3.0.0-beta.1",
     "misstime": "^3.0.0-beta.1",
