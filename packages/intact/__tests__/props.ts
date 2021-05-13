@@ -156,7 +156,7 @@ describe('Component', () => {
                 const onRender = sinon.spy();
                 const onChangeName = sinon.spy();
                 const onChangedName = sinon.spy();
-                class Test extends Component {
+                class Test extends Component<TestProps> {
                     static template(this: Test) {
                         onRender();
                         return h('div', null, this.get('name'));
@@ -180,7 +180,7 @@ describe('Component', () => {
                 const onRender = sinon.spy();
                 const onChangeName = sinon.spy();
                 const onChangedName = sinon.spy();
-                class Test extends Component {
+                class Test extends Component<TestProps> {
                     static template(this: Test) {
                         onRender();
                         return h('div', null, this.get('name'));
@@ -204,7 +204,7 @@ describe('Component', () => {
                 const onRender = sinon.spy();
                 const onChangeName = sinon.spy();
                 const onChangedName = sinon.spy();
-                class Test extends Component {
+                class Test extends Component<TestProps> {
                     static template(this: Test) {
                         onRender();
                         return h('div', null, this.get('name'));
@@ -232,7 +232,7 @@ describe('Component', () => {
                 const onRender = sinon.spy();
                 const onChangeName = sinon.spy();
                 const onChangedName = sinon.spy();
-                class Test extends Component {
+                class Test extends Component<TestProps> {
                     static template(this: Test) {
                         onRender();
                         this.set('name', 1);
@@ -264,7 +264,7 @@ describe('Component', () => {
                 const onChangedName = sinon.spy((...args: any[]) => {
                     console.log('changed', ...args);
                 });
-                class Test extends Component {
+                class Test extends Component<TestProps> {
                     static template(this: Test) {
                         onRender();
                         this.set('name', 3);
@@ -299,7 +299,7 @@ describe('Component', () => {
 
             it('should only update one time when we set prop multiple times in template', async () => {
                 const onRender = sinon.spy();
-                class Test extends Component {
+                class Test extends Component<{name: string, age: number}> {
                     static template(this: Test) {
                         onRender();
                         this.set('name', 'name');

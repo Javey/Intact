@@ -6,9 +6,15 @@ export class Event<P> {
     // internal properties
     public $blockAddEvent: boolean = false;
 
-    on<K extends Extract<keyof P, string>>(name: `$receive:${K}`, callback: (newValue: P[K], oldValue: P[K] | undefined) => void): void;
-    on<K extends Extract<keyof P, string>>(name: `$change:${K}`, callback: (newValue: P[K], oldValue: P[K]) => void): void;
-    on<K extends Extract<keyof P, string>>(name: `$changed:${K}`, callback: (newValue: P[K], oldValue: P[K]) => void): void;
+    // on<K extends Extract<keyof P, string>>(name: `$receive:${K}`, callback: (newValue: P[K], oldValue: P[K] | undefined) => void): void;
+    // on<K extends Extract<keyof P, string>>(name: `$change:${K}`, callback: (newValue: P[K], oldValue: P[K]) => void): void;
+    // on<K extends Extract<keyof P, string>>(name: `$changed:${K}`, callback: (newValue: P[K], oldValue: P[K]) => void): void;
+    // @ts-ignore if we use generic type, we can not get expected type check when use Extract<keyof P, string>
+    on<K extends keyof P>(name: `$receive:${K}`, callback: (newValue: P[K], oldValue: P[K] | undefined) => void): void;
+    // @ts-ignore
+    on<K extends keyof P>(name: `$change:${K}`, callback: (newValue: P[K], oldValue: P[K]) => void): void;
+    // @ts-ignore
+    on<K extends keyof P>(name: `$changed:${K}`, callback: (newValue: P[K], oldValue: P[K]) => void): void;
     on(name: string, callback: Function): void;
     on(name: string, callback: Function) {
         if (process.env.NODE_ENV !== 'production') {

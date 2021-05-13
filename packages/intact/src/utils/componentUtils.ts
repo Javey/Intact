@@ -23,8 +23,8 @@ let microTaskPending = false;
 
 const QUEUE: Component<any>[] = [];
 
-export function renderSyncComponnet<P>(
-    component: Component<P>,
+export function renderSyncComponnet(
+    component: Component,
     lastVNode: VNodeComponentClass | null,
     nextVNode: VNodeComponentClass,
     parentDom: Element,
@@ -55,8 +55,8 @@ export function renderSyncComponnet<P>(
     component.$rendered = true;
 }
 
-export function renderAsyncComponent<P>(
-    component: Component<P>,
+export function renderAsyncComponent(
+    component: Component,
     lastVNode: VNodeComponentClass | null,
     nextVNode: VNodeComponentClass,
     parentDom: Element,
@@ -77,8 +77,8 @@ export function renderAsyncComponent<P>(
     });
 }
 
-export function updateSyncComponent<P>(
-    component: Component<P>,
+export function updateSyncComponent(
+    component: Component,
     lastVNode: VNodeComponentClass,
     nextVNode: VNodeComponentClass,
     parentDom: Element, 
@@ -116,8 +116,8 @@ export function updateSyncComponent<P>(
     }
 }
 
-export function updateAsyncComponent<P>(
-    component: Component<P>,
+export function updateAsyncComponent(
+    component: Component,
     lastVNode: VNodeComponentClass,
     nextVNode: VNodeComponentClass,
     parentDom: Element, 
@@ -132,7 +132,7 @@ export function updateAsyncComponent<P>(
     });
 }
 
-export function componentInited<P>(component: Component<P>, triggerReceiveEvents: Function | null) {
+export function componentInited(component: Component, triggerReceiveEvents: Function | null) {
     component.$inited = true;
 
     if (!isNull(triggerReceiveEvents)) {
@@ -142,14 +142,14 @@ export function componentInited<P>(component: Component<P>, triggerReceiveEvents
     component.trigger('$inited');
 }
 
-export function mountProps<P>(component: Component<P>, nextProps: Props<P, Component<P>>) {
+export function mountProps<P>(component: Component<P>, nextProps: P) {
     const props = component.props;
     const changeTraces: ChangeTrace[] = [];
     for (let prop in nextProps) {
-        const nextValue = nextProps[prop as keyof typeof nextProps];
+        const nextValue = nextProps[prop];
         if (isUndefined(nextValue)) continue;
 
-        const lastValue = props[prop as keyof typeof props];
+        const lastValue = props[prop];
         if (lastValue !== nextValue) {
             patchProp(component, props, prop, lastValue, nextValue, changeTraces);
         }
@@ -159,7 +159,7 @@ export function mountProps<P>(component: Component<P>, nextProps: Props<P, Compo
     return () => triggerReceiveEvents(component, changeTraces);
 }
 
-export function patchProps(component: Component<any>, lastProps: Props<any>, nextProps: Props<any>, defaultProps: Partial<Props<any>>) {
+export function patchProps<P>(component: Component<P>, lastProps: P, nextProps: P, defaultProps: Partial<P>) {
     lastProps || (lastProps = EMPTY_OBJ);
     nextProps || (nextProps = EMPTY_OBJ);
 
@@ -169,8 +169,8 @@ export function patchProps(component: Component<any>, lastProps: Props<any>, nex
 
         if (nextProps !== EMPTY_OBJ) {
             for (const prop in nextProps) {
-                const lastValue = rollbackToDefault(prop, lastProps[prop], defaultProps);
-                const nextValue = rollbackToDefault(prop, nextProps[prop], defaultProps);
+                const lastValue = rollbackToDefault(prop, lastProps[prop as keyof typeof lastProps], defaultProps);
+                const nextValue = rollbackToDefault(prop, nextProps[prop as keyof typeof nextProps], defaultProps);
 
                 if (lastValue !== nextValue) {
                     patchProp(component, props, prop, lastValue, nextValue, changeTraces);
@@ -180,8 +180,8 @@ export function patchProps(component: Component<any>, lastProps: Props<any>, nex
 
         if (lastProps !== EMPTY_OBJ) {
             for (const prop in lastProps) {
-                if (!isUndefined(lastProps[prop]) && !hasOwn.call(nextProps, prop)) {
-                    patchProp(component, props, prop, lastProps[prop], defaultProps[prop], null);
+                if (!isUndefined(lastProps[prop as keyof typeof lastProps]) && !hasOwn.call(nextProps, prop)) {
+                    patchProp(component, props, prop, lastProps[prop as keyof typeof lastProps], defaultProps[prop as keyof typeof defaultProps], null);
                 }
             }
         }
@@ -190,25 +190,14 @@ export function patchProps(component: Component<any>, lastProps: Props<any>, nex
     }
 }
 
-export function patchProp(component: Component<any>, props: Props<any>, prop: string, lastValue: any, nextValue: any, changeTraces: ChangeTrace[] | null) {
-    if (isEventProp(prop)) {
-        // prop = normalizeEventName(prop);
-        // if (!isNullOrUndefined(lastValue)) {
-            // component.off(prop, lastValue);
-        // }
-        // if (!isNullOrUndefined(nextValue)) {
-            // component.on(prop, nextValue);
-        // }
-        props[prop] = nextValue;
-    } else {
-        props[prop] = nextValue;
-        if (!isNull(changeTraces)) {
-            changeTraces.push({path: prop, newValue: nextValue, oldValue: lastValue});
-        }
+export function patchProp<P>(component: Component<P>, props: P, prop: keyof P, lastValue: any, nextValue: any, changeTraces: ChangeTrace[] | null) {
+    props[prop] = nextValue;
+    if (!isEventProp(prop as string) && !isNull(changeTraces)) {
+        changeTraces.push({path: prop as string, newValue: nextValue, oldValue: lastValue});
     }
 }
 
-export function setProps(component: Component<any>, newProps: Props<any>) {
+export function setProps<P>(component: Component<P>, newProps: P) {
     const props = component.props;
     const changeTracesGroup: ChangeTrace[][] = [];
 
@@ -217,7 +206,7 @@ export function setProps(component: Component<any>, newProps: Props<any>) {
         const nextValue = newProps[propName];
 
         if (lastValue !== nextValue) {
-            changeTracesGroup.push(set(props, propName, nextValue));
+            changeTracesGroup.push(set(props, propName as any, nextValue));
         }
     }
 
@@ -250,14 +239,14 @@ export function setProps(component: Component<any>, newProps: Props<any>) {
     }
 }
 
-function callModelEvent(component: Component<any>, path: string, newValue: any) {
+function callModelEvent(component: Component, path: string, newValue: any) {
     const modelEvent = (component.props as any)[`ev-$model:${path}`];
     if (modelEvent) {
         modelEvent(newValue);
     }
 }
 
-export function forceUpdate(component: Component<any>, callback?: Function) {
+export function forceUpdate(component: Component, callback?: Function) {
     if (!component.$inited) {
         if (isFunction(callback)) {
             (component.$queue || (component.$queue = [])).push(callback);
@@ -283,7 +272,7 @@ export function forceUpdate(component: Component<any>, callback?: Function) {
     }
 }
 
-function triggerReceiveEvents(component: Component<any>, changeTraces: ChangeTrace[]) {
+function triggerReceiveEvents(component: Component, changeTraces: ChangeTrace[]) {
     for (let i = 0; i < changeTraces.length; i++) {
         const {path, newValue, oldValue} = changeTraces[i];
         component.trigger(`$receive:${path}`, newValue, oldValue);
@@ -291,7 +280,7 @@ function triggerReceiveEvents(component: Component<any>, changeTraces: ChangeTra
 }
 
 function rerender() {
-    let component: Component<any> | undefined = undefined;
+    let component: Component | undefined = undefined;
     microTaskPending = false;
 
     while (component = QUEUE.shift()) {
@@ -312,7 +301,7 @@ function rerender() {
     }
 }
 
-function callAllQueue(component: Component<any>) {
+function callAllQueue(component: Component) {
     const queue = component.$queue;
     if (queue) {
         for (let i = 0; i < queue.length; i++) {
