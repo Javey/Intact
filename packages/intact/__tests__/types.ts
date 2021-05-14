@@ -5,11 +5,9 @@ interface AProps {
 }
 
 class A<T extends AProps> extends Component<T> {
-    defaults() {
-        return {
-            a: 'a',
-        } as Partial<T>
-    }
+    static defaults: Partial<AProps> = {
+        a: 'a' 
+    };
 
     init() {
         this.set({a: 'a'});
@@ -34,11 +32,9 @@ interface BProps extends AProps {
     b: number 
 }
 export class B<T extends BProps> extends A<T> {
-    defaults() {
-        return {
-            ...super.defaults(),
-            b: 1,
-        }
+    static defaults: Partial<BProps> = {
+        ...A.defaults,
+        b: 1,
     }
 
     init() {

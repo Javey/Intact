@@ -8,7 +8,7 @@ import {
     unmount,
 } from 'misstime';
 import {SetOptions} from '../utils/types';
-import {get, set} from '../utils/helpers';
+import {get, set, deepFreeze} from '../utils/helpers';
 import {
     isNull,
     isFunction,
@@ -31,6 +31,7 @@ import {Template, compile} from 'vdt';
 
 export abstract class Component<P extends {} = {}> extends Event<P> implements ComponentClass<P> {
     static readonly template: Template | string;
+    static readonly defaults = EMPTY_OBJ;
     static readonly typeDefs?: TypeDefs<any>;
     static readonly displayName?: string;
 
@@ -54,22 +55,26 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
 
     // private properties
     public $template: Template;
-    public $defaults: Partial<P>;
+    // public $defaults: Partial<P>;
 
     constructor(props: P | null, mountedQueue: Function[]) {
         super();
 
         this.$mountedQueue = mountedQueue;
 
-        const template = (this.constructor as typeof Component).template;
+        const constructor = this.constructor as typeof Component;
+        const template = constructor.template;
         if (isFunction(template)) {
             this.$template = template as Template; 
         } else {
             this.$template = compile(template);
         }
 
-        this.$defaults = this.defaults();
-        this.props = {...this.$defaults} as P;
+        if (process.env.NODE_ENV !== 'production') {
+            deepFreeze(constructor.defaults);
+        }
+
+        this.props = {...constructor.defaults};
         let triggerReceiveEvents: Function | null = null;
         if (!isNull(props)) {
             triggerReceiveEvents = mountProps(this, props); 
@@ -90,9 +95,9 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         componentInited(this, triggerReceiveEvents);
     }
 
-    defaults(): Partial<P> {
-        return EMPTY_OBJ;
-    }
+    // defaults() {
+        // return EMPTY_OBJ;
+    // }
 
     set<K extends keyof P>(key: K, value: P[K], options?: SetOptions): void;
     set<K extends string>(key: Exclude<K, keyof P>, value: any, options?: SetOptions): void;

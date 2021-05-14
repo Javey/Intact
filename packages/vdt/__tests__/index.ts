@@ -366,9 +366,7 @@ describe('Vdt Runtime', () => {
                     <input v-model="a" />
                 `;
 
-                defaults() {
-                    return {a: 'test'}
-                }
+                static defaults = {a: 'test'};
             }
             render(h(Test, {ref: i => component = i}), container);
 
@@ -512,9 +510,7 @@ describe('Vdt Runtime', () => {
                         <input type="checkbox" v-model="a" v-model-true={2} />
                     </template>
                 `;
-                defaults() {
-                    return {a: []}
-                }
+                static defaults = {a: []};
             }
             render(h(Test, {ref: i => component = i}), container);
 
@@ -547,9 +543,7 @@ describe('Vdt Runtime', () => {
                     <textarea v-model="a"></textarea>
                 `;
 
-                defaults() {
-                    return {a: 'test'}
-                }
+                static defaults = {a: 'test'};
             }
             render(h(Test, {ref: i => component = i}), container);
 

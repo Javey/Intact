@@ -88,7 +88,7 @@ export function updateSyncComponent(
 ) {
     component.$blockRender = true;
     if (!force) {
-        patchProps(component, lastVNode.props, nextVNode.props, component.$defaults);
+        patchProps(component, lastVNode.props, nextVNode.props, (component.constructor as typeof Component).defaults);
     }
     if (isFunction(component.beforeUpdate)) {
         if (process.env.NODE_ENV !== 'production') {

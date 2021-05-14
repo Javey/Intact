@@ -33,9 +33,7 @@ describe('Component', () => {
                 return h('div', null, this.get('name'));
             }
 
-            defaults() {
-                return {name: 1} as P;
-            }
+            static defaults = {name: 1};
         }
         
         afterEach(() => render(null, container));
