@@ -2,6 +2,22 @@ import {Component} from '../src/core/component';
 
 interface AProps {
     a: string
+    aa: boolean
+}
+
+class AA extends Component<AProps> {
+    init() {
+        this.set('a', 'a');
+        this.set('b', 1);
+        // @ts-expect-error
+        this.set('a', 1);
+        this.set({a: 'a'});
+        this.set({a: 'a', b: 1});
+        // @ts-expect-error
+        this.set({a: 1});
+        // @ts-expect-error
+        this.set({a: 1, b: 1});
+    }
 }
 
 class A<T extends AProps> extends Component<T> {
@@ -10,12 +26,17 @@ class A<T extends AProps> extends Component<T> {
     };
 
     init() {
-        this.set({a: 'a'});
         this.set('a', 'a');
-        this.get('a');
-
+        this.set('b' as any, 1);
         // @ts-expect-error
-        this.get('b');
+        this.set('a', 1);
+        this.set({a: 'a'});
+        this.set({a: 'a', b: 1} as any);
+        // @ts-expect-error
+        this.set({a: 1});
+
+        expectType<string>(this.get('a'));
+        expectType<any>(this.get('b'));
 
         this.watch('a', (v, o) => {
             expectType<string>(v); 
@@ -38,18 +59,23 @@ export class B<T extends BProps> extends A<T> {
     }
 
     init() {
-        this.set({a: 'a'});
         this.set('a', 'a');
-        this.get('a');
         this.set('b', 1);
-        this.set({b: 1});
-        this.get('b');
-
         // @ts-expect-error
-        this.get('c');
+        this.set('c', 1);
+        this.set('c' as any, 1);
+        // @ts-expect-error
+        this.set('b', 'b');
+
+        this.set({a: 'a'});
+        this.set({b: 1});
+
+        expectType<string>(this.get('a'));
+        expectType<number>(this.get('b'));
+        expectType<any>(this.get('c'));
 
         this.on('$change:a', (v, o) => {
-
+            expectType<string>(v); 
         });
 
         this.watch('b', (v, o) => {
@@ -63,6 +89,4 @@ export class B<T extends BProps> extends A<T> {
     }
 }
 
-function expectType<T>(value: T): void {
-
-}
+function expectType<T>(value: T): void { }

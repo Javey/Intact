@@ -101,7 +101,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
 
     set<K extends keyof P>(key: K, value: P[K], options?: SetOptions): void;
     set<K extends string>(key: Exclude<K, keyof P>, value: any, options?: SetOptions): void;
-    // set(data: Partial<P>, options?: SetOptions): void;
+    set<U extends Partial<P>>(data: U, options?: SetOptions): void;
     set<K extends keyof P>(data: Pick<P, K>, options?: SetOptions): void;
     set(key: string | Record<string, any>, value?: any, options?: SetOptions) {
         if (isObject(key)) {
@@ -122,7 +122,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
 
     get(): Props<P, ComponentClass<P>>;
     get<K extends keyof Props<P, ComponentClass<P>>>(key: K): Props<P, ComponentClass<P>>[K]; 
-    // get<K extends string>(key: K extends keyof Props<P, ComponentClass<P>> ? never : K): any;
+    get<K extends string>(key: K): any;
     get(key?: any) {
         if (isUndefined(key)) return this.props;
 
