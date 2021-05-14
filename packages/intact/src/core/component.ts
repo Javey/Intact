@@ -103,7 +103,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     set<K extends string>(key: Exclude<K, keyof P>, value: any, options?: SetOptions): void;
     set<U extends Partial<P>>(data: U, options?: SetOptions): void;
     set<K extends keyof P>(data: Pick<P, K>, options?: SetOptions): void;
-    set(key: string | Record<string, any>, value?: any, options?: SetOptions) {
+    set(key: any, value?: any, options?: SetOptions) {
         if (isObject(key)) {
             options = value as SetOptions;
         } else {

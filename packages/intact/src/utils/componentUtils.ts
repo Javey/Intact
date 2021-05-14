@@ -23,8 +23,8 @@ let microTaskPending = false;
 
 const QUEUE: Component<any>[] = [];
 
-export function renderSyncComponnet(
-    component: Component,
+export function renderSyncComponnet<P>(
+    component: Component<P>,
     lastVNode: VNodeComponentClass | null,
     nextVNode: VNodeComponentClass,
     parentDom: Element,
@@ -55,8 +55,8 @@ export function renderSyncComponnet(
     component.$rendered = true;
 }
 
-export function renderAsyncComponent(
-    component: Component,
+export function renderAsyncComponent<P>(
+    component: Component<P>,
     lastVNode: VNodeComponentClass | null,
     nextVNode: VNodeComponentClass,
     parentDom: Element,
@@ -77,8 +77,8 @@ export function renderAsyncComponent(
     });
 }
 
-export function updateSyncComponent(
-    component: Component,
+export function updateSyncComponent<P>(
+    component: Component<P>,
     lastVNode: VNodeComponentClass,
     nextVNode: VNodeComponentClass,
     parentDom: Element, 
@@ -116,8 +116,8 @@ export function updateSyncComponent(
     }
 }
 
-export function updateAsyncComponent(
-    component: Component,
+export function updateAsyncComponent<P>(
+    component: Component<P>,
     lastVNode: VNodeComponentClass,
     nextVNode: VNodeComponentClass,
     parentDom: Element, 
@@ -132,7 +132,7 @@ export function updateAsyncComponent(
     });
 }
 
-export function componentInited(component: Component, triggerReceiveEvents: Function | null) {
+export function componentInited<P>(component: Component<P>, triggerReceiveEvents: Function | null) {
     component.$inited = true;
 
     if (!isNull(triggerReceiveEvents)) {
@@ -239,14 +239,14 @@ export function setProps<P>(component: Component<P>, newProps: P) {
     }
 }
 
-function callModelEvent(component: Component, path: string, newValue: any) {
+function callModelEvent<P>(component: Component<P>, path: string, newValue: any) {
     const modelEvent = (component.props as any)[`ev-$model:${path}`];
     if (modelEvent) {
         modelEvent(newValue);
     }
 }
 
-export function forceUpdate(component: Component, callback?: Function) {
+export function forceUpdate<P>(component: Component<P>, callback?: Function) {
     if (!component.$inited) {
         if (isFunction(callback)) {
             (component.$queue || (component.$queue = [])).push(callback);
@@ -272,7 +272,7 @@ export function forceUpdate(component: Component, callback?: Function) {
     }
 }
 
-function triggerReceiveEvents(component: Component, changeTraces: ChangeTrace[]) {
+function triggerReceiveEvents<P>(component: Component<P>, changeTraces: ChangeTrace[]) {
     for (let i = 0; i < changeTraces.length; i++) {
         const {path, newValue, oldValue} = changeTraces[i];
         component.trigger(`$receive:${path}`, newValue, oldValue);
@@ -301,7 +301,7 @@ function rerender() {
     }
 }
 
-function callAllQueue(component: Component) {
+function callAllQueue(component: Component<any>) {
     const queue = component.$queue;
     if (queue) {
         for (let i = 0; i < queue.length; i++) {

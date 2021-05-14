@@ -45,7 +45,7 @@ export type PendingCallback = (cancelled?: boolean) => void
 
 export type VNodeProps<T extends VNodeTag> =
     T extends string ? 
-        Props<Record<string, any>, Element> :
+        Props<{[key in string]: any}, Element> :
         T extends null ?
             Props<{}, Element> :
             T extends ComponentConstructor<infer C> ?

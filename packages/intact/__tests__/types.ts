@@ -1,4 +1,5 @@
 import {Component} from '../src/core/component';
+import {UnknownKey, WithUnknownKey} from '../src/utils/types';
 
 interface AProps {
     a: string
@@ -27,11 +28,15 @@ class A<T extends AProps> extends Component<T> {
 
     init() {
         this.set('a', 'a');
-        this.set('b' as any, 1);
+        // @ts-expect-error
+        this.set('b', 1);
+        this.set('b' as UnknownKey<T>, 1);
         // @ts-expect-error
         this.set('a', 1);
         this.set({a: 'a'});
-        this.set({a: 'a', b: 1} as any);
+        this.set({a: '1', b: 1} as WithUnknownKey<T, {b: number}>);
+        // @ts-expect-error
+        this.set({a: 1, b: 1} as WithUnknownKey<T, {b: number}>);
         // @ts-expect-error
         this.set({a: 1});
 
