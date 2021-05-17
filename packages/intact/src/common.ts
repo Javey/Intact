@@ -4,3 +4,4 @@ export {nextTick} from './utils/componentUtils';
 export {Transition, TransitionProps} from './components/transition';
 export {TransitionGroup, TransitionGroupProps} from './components/transitionGroup';
 export * from 'vdt';
+export {provide, inject} from './core/inject';
