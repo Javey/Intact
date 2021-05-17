@@ -87,14 +87,14 @@ export class TransitionGroup<P extends TransitionGroupProps = TransitionGroupPro
         }
 
         return vNode;
-    }
+    };
+
+    static defaults: Partial<TransitionGroupProps> = {
+        move: true,
+    };
 
     private lastChildren: VNode[] = [];
     private children: VNode[] = []; 
-
-    defaults() {
-        return {move: true} as Partial<P>;
-    }
 
     mounted() {  }
 

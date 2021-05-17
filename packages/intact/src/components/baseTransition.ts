@@ -73,14 +73,14 @@ export class BaseTransition<P extends BaseTransitionProps = BaseTransitionProps>
         return vNode;
     }
 
+    static defaults: Partial<BaseTransitionProps> = {
+        show: true
+    };
+
     // private isLeaving: boolean = false;
     public leavingVNodesCache: Record<string, VNode> = {};
     public el: TransitionElement | null = null;
 
-    defaults() {
-        return {show: true} as Partial<P>;
-    }
-    
     mounted() {
         const lastInput = this.$lastInput!;
         // is a void vNode 

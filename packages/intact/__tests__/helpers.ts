@@ -114,7 +114,7 @@ describe('Component', () => {
             test({b: 1, f: new Date()});
             test({b: 1, g: () => {}});
             test({b: 1, h: 1});
-            test({b: 1, i: new A({b: 1}, [])});
+            test({b: 1, i: new A({b: 1})});
             test({b: 1, j: 1});
             test({b: 1, j: []});
             // test({b: 1, k: Symbol()});

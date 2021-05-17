@@ -29,6 +29,8 @@ import {
 import {Event} from './event';
 import {Template, compile} from 'vdt';
 
+export let currentInstance: Component<any> | null = null;
+
 export abstract class Component<P extends {} = {}> extends Event<P> implements ComponentClass<P> {
     static readonly template: Template | string;
     static readonly defaults = EMPTY_OBJ;
@@ -42,10 +44,11 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     public $SVG: boolean = false;
     public $vNode: VNodeComponentClass<this> | null = null;
     public $lastInput: VNode | null = null;
-    public $mountedQueue: Function[];
+    public $mountedQueue: Function[] | null = null;
     public $blockRender: boolean = false;
     public $queue: Function[] | null = null;
-    public $parent: ComponentClass | null = null;
+    public $parent: Component<any> | null = null;
+    public provides: Record<string, any> | null = null;
 
     // lifecyle states
     public $inited: boolean = false;
@@ -55,12 +58,9 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
 
     // private properties
     public $template: Template;
-    // public $defaults: Partial<P>;
 
-    constructor(props: P | null, mountedQueue: Function[]) {
+    constructor(props: P | null) {
         super();
-
-        this.$mountedQueue = mountedQueue;
 
         const constructor = this.constructor as typeof Component;
         const template = constructor.template;
@@ -75,29 +75,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         }
 
         this.props = {...constructor.defaults};
-        let triggerReceiveEvents: Function | null = null;
-        if (!isNull(props)) {
-            triggerReceiveEvents = mountProps(this, props); 
-        }
-
-        if (isFunction(this.init)) {
-            const ret = this.init(props);
-            if (ret && ret.then) {
-                (ret as Promise<any>).then(() => componentInited(this, triggerReceiveEvents), err => {
-                    if (process.env.NODE_ENV !== 'production') {
-                        console.error('Unhandled promise rejection in init: ', err);
-                    }
-                    componentInited(this, triggerReceiveEvents);
-                });
-                return;
-            }
-        }
-        componentInited(this, triggerReceiveEvents);
     }
-
-    // defaults() {
-        // return EMPTY_OBJ;
-    // }
 
     set<K extends keyof P>(key: K, value: P[K], options?: SetOptions): void;
     set<K extends string>(key: Exclude<K, keyof P>, value: any, options?: SetOptions): void;
@@ -161,6 +139,29 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         // (getter as any)._result = result;
         // return result;
     // }
+
+    $init(props: P | null) {
+        currentInstance = this;
+        let triggerReceiveEvents: Function | null = null;
+        if (!isNull(props)) {
+            triggerReceiveEvents = mountProps(this, props); 
+        }
+
+        if (isFunction(this.init)) {
+            const ret = this.init(props);
+            if (ret && ret.then) {
+                (ret as Promise<any>).then(() => componentInited(this, triggerReceiveEvents), err => {
+                    if (process.env.NODE_ENV !== 'production') {
+                        console.error('Unhandled promise rejection in init: ', err);
+                    }
+                    componentInited(this, triggerReceiveEvents);
+                });
+                return;
+            }
+        }
+        componentInited(this, triggerReceiveEvents);
+        currentInstance = null;
+    }
 
     $render(
         lastVNode: VNodeComponentClass | null,

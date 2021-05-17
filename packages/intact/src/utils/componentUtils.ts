@@ -254,7 +254,7 @@ export function forceUpdate<P>(component: Component<P>, callback?: Function) {
     } else if (component.$blockRender) {
         // component is before rendering or updating
         if (isFunction(callback)) {
-            component.$mountedQueue.push(callback);
+            component.$mountedQueue!.push(callback);
         }
     } else {
         // TODO: if QUEUE.length === 0, update immediately

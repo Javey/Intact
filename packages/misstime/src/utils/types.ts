@@ -143,7 +143,7 @@ export type Props<P extends {}, T extends Element | ComponentClass = Element | C
 } & P;
 
 export interface ComponentConstructor<T extends ComponentClass = ComponentClass> {
-    new (props: T extends ComponentClass<infer P> ? P : {}, mountedQueue: Function[]): T
+    new (props: T extends ComponentClass<infer P> ? P : null): T
     displayName?: string
     typeDefs?: TypeDefs<T extends ComponentClass<infer P> ? P : {}>
 }
@@ -158,6 +158,7 @@ export interface ComponentClass<P = any> {
     $mountedQueue: Function[] | null;
     $parent: ComponentClass | null;
 
+    $init(props: P | null): void;
     $render(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null, mountedQueue: Function[]): void;
     $mount(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass): void;
     $update(lastVNode: VNodeComponentClass , vNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null, mountedQueue: Function[], force: boolean): void;
