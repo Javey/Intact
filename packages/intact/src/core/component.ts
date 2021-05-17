@@ -7,7 +7,7 @@ import {
     TypeDefs,
     unmount,
 } from 'misstime';
-import {SetOptions} from '../utils/types';
+import {SetOptions, InjectionKey} from '../utils/types';
 import {get, set, deepFreeze} from '../utils/helpers';
 import {
     isNull,
@@ -48,7 +48,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     public $blockRender: boolean = false;
     public $queue: Function[] | null = null;
     public $parent: Component<any> | null = null;
-    public provides: Record<string, any> | null = null;
+    public $provides: Record<InjectionKey, any> | null = null;
 
     // lifecyle states
     public $inited: boolean = false;
@@ -141,6 +141,11 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     // }
 
     $init(props: P | null) {
+        const parent = this.$parent;
+        if (parent !== null) {
+            this.$provides = parent.$provides;
+        }
+
         currentInstance = this;
         let triggerReceiveEvents: Function | null = null;
         if (!isNull(props)) {
