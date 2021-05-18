@@ -1070,6 +1070,16 @@ describe('Vdt Compiler', () => {
                     <input />
                 </div>
             `);
-        })
+        });
+
+        it('element in js', () => {
+            test(stripIndent`
+                if (a) {
+                    <div></div>
+                }
+                <div a="a"></div>
+                <div a="a"></div>
+            `);
+        });
     });
 });

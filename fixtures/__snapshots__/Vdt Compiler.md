@@ -2841,3 +2841,28 @@ return function($props, $blocks) {
 };"
 ```
 
+####   `element in js`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+var _$tmp0 = {
+    'a': 'a'
+};
+var _$tmp1 = {
+    'a': 'a'
+};
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    if (a) {
+        _$ce(2, 'div')
+    }
+    _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, _$tmp0)
+    return _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, _$tmp1);
+};"
+```
+

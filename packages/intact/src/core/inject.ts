@@ -25,6 +25,8 @@ export function provide<T>(key: InjectionKey, value: T) {
     provides![key as string] = value;
 }
 
+export function inject<T>(key: InjectionKey): T | undefined;
+export function inject<T>(key: InjectionKey, defaultValue: T): T;
 export function inject<T>(key: InjectionKey, defaultValue?: T): T | undefined {
     if (process.env.NODE_ENV !== 'production') {
         if (!currentInstance) {
@@ -40,6 +42,6 @@ export function inject<T>(key: InjectionKey, defaultValue?: T): T | undefined {
     } else if (!isUndefined(defaultValue)) {
         return defaultValue;
     } else if (process.env.NODE_ENV !== 'production') {
-        error(`injection "${key as string}" not found.`);
+        error(`injection "${String(key)}" not found.`);
     }
 }

@@ -227,7 +227,7 @@ export class Visitor {
     }
 
     private visitJS(node: ASTJS) {
-        const spaces = this.spaces;
+        // const spaces = this.spaces;
         const stack = this.expressionSpacesStack;
         this.spaces = stack[stack.length - 1];
 
@@ -241,7 +241,7 @@ export class Visitor {
             }
         }
 
-        this.spaces = spaces;
+        // this.spaces = spaces;
         this.pushSpaces(node.spaces);
     }
 
