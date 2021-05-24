@@ -178,14 +178,14 @@ export function patchElement(
                 const lastValue = lastProps[prop];
                 const nextValue = nextProps[prop];
                 if (lastValue !== nextValue) {
-                    patchProp(prop, lastValue, nextValue, dom, isSVG, isFormElement, REFERENCE);
+                    patchProp(prop, lastValue, nextValue, dom, isSVG, isFormElement, REFERENCE, lastVNode);
                 }
             }
         }
         if (lastProps !== EMPTY_OBJ) {
             for (const prop in lastProps) {
                 if (isNullOrUndefined(nextProps[prop]) && !isNullOrUndefined(lastProps[prop])) {
-                    patchProp(prop, lastProps[prop], null, dom, isSVG, isFormElement, REFERENCE);
+                    patchProp(prop, lastProps[prop], null, dom, isSVG, isFormElement, REFERENCE, lastVNode);
                 }
             }
         }

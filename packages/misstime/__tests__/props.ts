@@ -1,14 +1,17 @@
 import {createElementVNode, createVNode as h} from '../src/core/vnode';
-import {Types, ChildrenTypes, VNode} from '../src/utils/types';
+import {Types, ChildrenTypes, VNode, ComponentClass} from '../src/utils/types';
 import {dispatchEvent} from './utils';
 import {linkEvent} from '../src/events/linkEvent';
 import {render as r} from '../src/core/render';
+import {mount} from '../src/core/mount';
+import {unmount} from '../src/core/unmount';
 
 describe('Props', () => {
     let container: HTMLElement;
 
     function render(vNode: VNode) {
         (container as any).$V = null;
+        container.innerHTML = '';
         r(vNode, container);
     }
 
@@ -534,6 +537,77 @@ describe('Props', () => {
 
                 dispatchEvent(input, 'change');
                 expect(changeEvent).callCount(1);
+            });
+        });
+
+        describe('InnerHTML', () => {
+            const _unmount = sinon.spy();
+            class A implements ComponentClass {
+                props = {};
+                $inited = true;
+                $SVG = false;
+                $vNode = null;
+                $lastInput: VNode | null = null;
+                $mountedQueue = null;
+                $parent = null;
+
+                $init() { 
+
+                }
+
+                $render(lastVNode: any, nextVNode: any, parentDom: Element, anchor: Element, mountedQueue: Function[]) {
+                    const vNode = h('div', null, 'component');
+                    mount(vNode, parentDom, null, false, anchor, mountedQueue);
+                    this.$lastInput = vNode;
+                }
+
+                $mount() {
+
+                }
+
+                $update() {
+
+                }
+
+                $unmount() {
+                    _unmount();
+                    unmount(this.$lastInput!);
+                }
+            } 
+
+            it('should mount innerHTML', () => {
+                render(h('div', {innerHTML: 'test'}));
+                expect(container.innerHTML).to.equal('<div>test</div>');
+
+                render(h('div', {innerHTML: undefined}));
+                expect(container.innerHTML).to.equal('<div></div>');
+            });
+
+            it('should remove innerHTML', () => {
+                r(h('div', {innerHTML: 'test'}), container);
+                r(h('div', {innerHTML: undefined}), container);
+
+                expect(container.innerHTML).to.equal('<div></div>');
+            });
+
+            it('should unmount children', () => {
+                r(h('div', null, h(A)), container);
+                r(h('div', {innerHTML: undefined}), container);
+
+                expect(_unmount).to.have.callCount(1);
+                expect(container.innerHTML).to.equal('<div></div>');
+
+                r(h('div', null, [h(A), h(A)]), container);
+                r(h('div', {innerHTML: undefined}), container);
+                expect(_unmount).to.have.callCount(3);
+                expect(container.innerHTML).to.equal('<div></div>');
+            });
+
+            it('should replace with component', () => {
+                r(h('div', {innerHTML: 'test'}), container);
+                r(h('div', null, h(A)), container);
+
+                expect(container.innerHTML).to.equal('<div><div>component</div></div>');
             });
         });
     });

@@ -1,16 +1,17 @@
-import {VNode, Types, LinkedEvent, Reference, TransitionElement, IntactElement} from './types';
-import {isNullOrUndefined, isUndefined, isString, isEventProp} from 'intact-shared';
+import {VNode, Types, LinkedEvent, Reference, TransitionElement, IntactElement, VNodeElement, ChildrenTypes} from './types';
+import {isNullOrUndefined, isUndefined, isString, isEventProp, isNull} from 'intact-shared';
 import {delegatedEvents, handleDelegatedEvent} from '../events/delegation';
 import {isLinkEvent, isSameLinkEvent, wrapLinkEvent} from '../events/linkEvent';
 import {attachEvent, attachModelEvent} from '../events/attachEvents';
 import {namespaces, REFERENCE, normalizeEventName} from './common';
 import {processElement} from '../wrappers/process';
+import {unmountAllChildren, unmount} from '../core/unmount';
 
 export function mountProps(vNode: VNode, type: Types, props: any, dom: Element, isSVG: boolean) {
     const isFormElement = (type & Types.FormElement) > 0;
     REFERENCE.value = false;
     for (const prop in props) {
-        patchProp(prop, null, props[prop], dom, isSVG, isFormElement, REFERENCE);
+        patchProp(prop, null, props[prop], dom, isSVG, isFormElement, REFERENCE, null);
     }
     if (isFormElement) {
         processElement(type, vNode, dom, props, true, REFERENCE.value);
@@ -25,6 +26,7 @@ export function patchProp(
     isSVG: boolean,
     isFormElement: boolean,
     hasControlledValue: Reference,
+    lastVNode: VNodeElement | null,
 ) {
     let value;
     switch (prop) {
@@ -87,8 +89,9 @@ export function patchProp(
             }
             break;
         case 'innerHTML':
+            patchInnerHTML(lastValue, nextValue, dom, lastVNode);
             // TODO: umount children if it has component children
-            (dom as any).innerHTML = nextValue;
+            // (dom as any).innerHTML = nextValue;
             break;
         case 'style':
             patchStyle(lastValue, nextValue, dom);
@@ -177,6 +180,7 @@ function patchEvent(name: string, lastValue: EventListener | LinkedEvent<any>, n
     }
     attachEvent(dom, normalizeEventName(name), nextValue);
 }
+
 function patchModelEvent(name: string, lastValue: EventListener | LinkedEvent<any>, nextValue: EventListener | LinkedEvent<any>, dom: Element) {
     if (isLinkEvent(nextValue)) {
         if (isSameLinkEvent(lastValue, nextValue)) {
@@ -185,4 +189,25 @@ function patchModelEvent(name: string, lastValue: EventListener | LinkedEvent<an
         nextValue = wrapLinkEvent(nextValue);
     }
     attachModelEvent(dom, name, nextValue);
+}
+
+function patchInnerHTML(lastValue: string | undefined | null, nextValue: string | undefined | null, dom: Element, lastVNode: VNodeElement | null) {
+    if (isNullOrUndefined(lastValue)) {
+        lastValue = '';
+    }
+    if (isNullOrUndefined(nextValue)) {
+        nextValue = '';
+    }
+    if (lastValue !== nextValue) {
+        if (!isNull(lastVNode)) {
+            if (lastVNode.childrenType & ChildrenTypes.MultipleChildren) {
+                unmountAllChildren(lastVNode.children as VNode[]);
+            } else if (lastVNode.childrenType === ChildrenTypes.HasVNodeChildren) {
+                unmount(lastVNode.children as VNode);
+            }
+            lastVNode.children = null;
+            lastVNode.childrenType = ChildrenTypes.HasInvalidChildren;
+        }
+        dom.innerHTML = nextValue;
+    }
 }

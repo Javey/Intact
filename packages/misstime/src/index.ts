@@ -21,4 +21,3 @@ export {unmount} from './core/unmount';
 export {findDomFromVNode, callAll} from './utils/common';
 export {createRef} from './utils/ref';
 export {Fragment} from './utils/common';
-export {Types} from './utils/types';
