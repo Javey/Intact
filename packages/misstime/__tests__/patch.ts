@@ -16,10 +16,10 @@ describe('Patch', () => {
         document.body.appendChild(container);
     });
 
-    afterEach(() => {
-        _render(null, container);
-        document.body.removeChild(container);
-    });
+    // afterEach(() => {
+        // _render(null, container);
+        // document.body.removeChild(container);
+    // });
 
     function render(vNode: VNode) {
         _render(vNode, container);
@@ -456,6 +456,11 @@ describe('Patch', () => {
                 '<div style="color: red;"></div>'
             );
             patchTest(
+                h('div', {style: {color: 'red'}}),
+                h('div', {style: {color: 'red', fontSize: '20px'}}),
+                '<div style="color: red; font-size: 20px;"></div>'
+            );
+            patchTest(
                 h('div', {style: {color: 'blue', fontSize: '20px'}}),
                 h('div', {style: {color: 'red'}}),
                 '<div style="color: red;"></div>'
@@ -465,6 +470,11 @@ describe('Patch', () => {
                 h('div'),
                 '<div></div>'
             );
+            patchTest(
+                h('div', {style: 'color: red;'}),
+                h('div', {style: {fontSize: '20px'}}),
+                '<div style="font-size: 20px;"></div>'
+            )
         });
 
         describe('Event', () => {

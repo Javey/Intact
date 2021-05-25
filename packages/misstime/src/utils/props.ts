@@ -90,8 +90,6 @@ export function patchProp(
             break;
         case 'innerHTML':
             patchInnerHTML(lastValue, nextValue, dom, lastVNode);
-            // TODO: umount children if it has component children
-            // (dom as any).innerHTML = nextValue;
             break;
         case 'style':
             patchStyle(lastValue, nextValue, dom);
@@ -130,35 +128,35 @@ export function patchProp(
 
 function patchStyle(lastValue: any, nextValue: any, dom: Element) {
     if (isNullOrUndefined(nextValue)) {
-        // because we set style by cssText or setProperty,
-        // we must set style attribute before removing it in webkit,
-        // but it does not matter
-        // dom.setAttribute('style', '');
         dom.removeAttribute('style');
     } else {
-        const domStyle = (dom as HTMLElement).style;
+        const domStyle = (dom as HTMLElement).style as any;
         if (isString(nextValue)) {
             domStyle.cssText = nextValue; 
         } else {
             let style;
             let value;
-            if (!isNullOrUndefined(lastValue) && !isString(lastValue)) {
+            const hasLastValue = !isNullOrUndefined(lastValue);
+            if (hasLastValue && !isString(lastValue)) {
                 for (style in nextValue) {
                     value = nextValue[style];
                     if (value !== lastValue[style]) {
-                        domStyle.setProperty(style, value);
+                        domStyle[style] = value;
                     }
                 }
                 for (style in lastValue) {
                     if (isNullOrUndefined(nextValue[style])) {
-                        domStyle.removeProperty(style);
+                        domStyle[style] = ''
                     }
                 }
             } else {
-                // TODO: remove style firstly if lastValue is string
+                if (hasLastValue) {
+                    // remove style firstly if lastValue is string
+                    dom.removeAttribute('style');
+                }
                 for (style in nextValue) {
                     value = nextValue[style];
-                    domStyle.setProperty(style, value);
+                    domStyle[style] = value;
                 }
             }
         }
