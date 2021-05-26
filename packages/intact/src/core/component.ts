@@ -28,6 +28,7 @@ import {
 } from '../utils/componentUtils';
 import {Event} from './event';
 import {Template, compile} from 'vdt';
+import {watch} from './watch';
 
 export let currentInstance: Component<any> | null = null;
 
@@ -59,13 +60,13 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     // private properties
     public $template: Template;
 
-    constructor(props: P | null) {
+    constructor() {
         super();
 
         const constructor = this.constructor as typeof Component;
         const template = constructor.template;
         if (isFunction(template)) {
-            this.$template = template as Template; 
+            this.$template = template as Template;
         } else {
             this.$template = compile(template);
         }
@@ -124,8 +125,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
 
 
     watch<K extends keyof Props<P, this>>(key: K, callback: (newValue: Props<P, this>[K], oldValue: Props<P, this>[K] | undefined) => void) {
-        this.on(`$change:${key}`, callback);
-        this.on(`$receive:${key}`, callback);
+        watch(key, callback, this);
     }
 
     // compute<T>(getter: () => T) {
@@ -185,6 +185,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     $mount(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass) {
         this.$mounted = true;
 
+        this.trigger('$mounted', lastVNode, nextVNode);
         if (isFunction(this.mounted)) {
             this.mounted(lastVNode, nextVNode);
         }
@@ -206,14 +207,15 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     }
 
     $unmount(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null) {
+        this.trigger('$beforeUnmount', vNode, nextVNode);
         if (isFunction(this.beforeUnmount)) {
             this.beforeUnmount(vNode, nextVNode);
         }
 
         unmount(this.$lastInput!); 
         this.$unmounted = true;
+        this.trigger('$unmounted', vNode, nextVNode);
         this.off();
-
         if (isFunction(this.unmounted)) {
             this.unmounted(vNode, nextVNode);
         }

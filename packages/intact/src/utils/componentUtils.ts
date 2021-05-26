@@ -32,9 +32,12 @@ export function renderSyncComponnet<P>(
     mountedQueue: Function[]
 ) {
     component.$blockRender = true;
+
+    component.trigger('$beforeMount', lastVNode, nextVNode);
     if (isFunction(component.beforeMount)) {
         component.beforeMount(lastVNode, nextVNode);
     }
+
     component.$blockRender = false;
 
     const vNode = normalizeRoot(component.$template(EMPTY_OBJ, component.get('$blocks')), nextVNode);
@@ -90,6 +93,8 @@ export function updateSyncComponent<P>(
     if (!force) {
         patchProps(component, lastVNode.props, nextVNode.props, (component.constructor as typeof Component).defaults);
     }
+
+    component.trigger('$beforeUpdate', lastVNode, nextVNode);
     if (isFunction(component.beforeUpdate)) {
         if (process.env.NODE_ENV !== 'production') {
             DEV_callMethod(component, component.beforeUpdate, lastVNode, nextVNode);
@@ -104,6 +109,9 @@ export function updateSyncComponent<P>(
     patch(component.$lastInput!, vNode, parentDom, component, component.$SVG, anchor, mountedQueue);
     component.$lastInput = vNode;
 
+    mountedQueue.push(() => {
+        component.trigger('$updated', lastVNode, nextVNode);
+    });
     if(isFunction(component.updated)) {
         mountedQueue!.push(() => {
             if (process.env.NODE_ENV !== 'production') {
