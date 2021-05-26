@@ -200,4 +200,4 @@ export type TypeObject = {
     validator?: Function,
     required?: boolean | Function,
 }
-export type TypeDefs<T> = {[key in keyof Props<T>]?: TypePrimitive | TypePrimitive[] | TypeObject};
+export type TypeDefs<T> = {[key in keyof T]?: TypePrimitive | TypePrimitive[] | TypeObject};
