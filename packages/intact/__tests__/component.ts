@@ -1,6 +1,7 @@
 import {Component} from '../src/core/component';
 import {render, createVNode as h, Fragment, VNode} from 'misstime';
 import {Template} from 'vdt';
+import {nextTick} from '../../misstime/__tests__/utils';
 
 describe('Component', () => {
     let container: Element;
@@ -164,6 +165,31 @@ describe('Component', () => {
             render(h(Test, {name: 1}), container);
             render(h(Test, {name: 2}), container);
             expect(container.innerHTML).to.equal('<span></span><span></span>');
+        });
+
+        it('update on updating', async () => {
+            const callback = sinon.spy();
+             class Test extends Component<{name: number}> {
+                static template: Template = function(this: Test) {
+                    return h('div', null, this.props.name)
+                };
+
+                mounted() {
+                    this.set('name', 2);
+                }
+
+                beforeUpdate() {
+                    this.props.name = 3;
+                    this.forceUpdate(() => {
+                        expect(container.innerHTML).to.equal('<div>3</div>');
+                        callback();
+                    });
+                }
+            }
+
+            render(h(Test, {name: 1}), container);
+            await nextTick();
+            expect(callback).to.have.callCount(1);
         });
     });
 });

@@ -140,12 +140,8 @@ export function updateAsyncComponent<P>(
     });
 }
 
-export function componentInited<P>(component: Component<P>, triggerReceiveEvents: Function | null) {
+export function componentInited<P>(component: Component<P>) {
     component.$inited = true;
-
-    if (!isNull(triggerReceiveEvents)) {
-        triggerReceiveEvents();
-    }
 
     component.trigger('$inited');
 }
@@ -164,7 +160,7 @@ export function mountProps<P>(component: Component<P>, nextProps: P) {
     } 
 
     // a callback to trigger $receive events
-    return () => triggerReceiveEvents(component, changeTraces);
+    return () => triggerReceiveEvents(component, changeTraces, true);
 }
 
 export function patchProps<P>(component: Component<P>, lastProps: P, nextProps: P, defaultProps: Partial<P>) {
@@ -194,7 +190,7 @@ export function patchProps<P>(component: Component<P>, lastProps: P, nextProps: 
             }
         }
 
-        triggerReceiveEvents(component, changeTraces);
+        triggerReceiveEvents(component, changeTraces, false);
     }
 }
 
@@ -280,10 +276,10 @@ export function forceUpdate<P>(component: Component<P>, callback?: Function) {
     }
 }
 
-function triggerReceiveEvents<P>(component: Component<P>, changeTraces: ChangeTrace[]) {
+function triggerReceiveEvents<P>(component: Component<P>, changeTraces: ChangeTrace[], init: boolean) {
     for (let i = 0; i < changeTraces.length; i++) {
         const {path, newValue, oldValue} = changeTraces[i];
-        component.trigger(`$receive:${path}`, newValue, oldValue);
+        component.trigger(`$receive:${path}`, newValue, oldValue, init);
     }
 }
 
@@ -293,7 +289,7 @@ function rerender() {
 
     while (component = QUEUE.shift()) {
         if (!component.$unmounted) {
-            const mountedQueue: Function[] = [];
+            const mountedQueue: Function[] = component.$mountedQueue = [];
             const vNode = component.$vNode!;
             component.$update(
                 vNode, 

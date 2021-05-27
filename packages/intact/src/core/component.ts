@@ -28,7 +28,7 @@ import {
 } from '../utils/componentUtils';
 import {Event} from './event';
 import {Template, compile} from 'vdt';
-import {watch} from './watch';
+import {watch, WatchOptions} from './watch';
 
 export let currentInstance: Component<any> | null = null;
 
@@ -124,8 +124,12 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     }
 
 
-    watch<K extends keyof Props<P, this>>(key: K, callback: (newValue: Props<P, this>[K], oldValue: Props<P, this>[K] | undefined) => void) {
-        watch(key, callback, this);
+    watch<K extends keyof Props<P, this>>(
+        key: K, 
+        callback: (newValue: Props<P, this>[K], oldValue: Props<P, this>[K] | undefined) => void,
+        options?: WatchOptions 
+    ) {
+        watch(key, callback, options);
     }
 
     // compute<T>(getter: () => T) {
@@ -146,26 +150,39 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
             this.$provides = parent.$provides;
         }
 
-        currentInstance = this;
-        let triggerReceiveEvents: Function | null = null;
-        if (!isNull(props)) {
-            triggerReceiveEvents = mountProps(this, props); 
-        }
-
         if (isFunction(this.init)) {
+            currentInstance = this;
+            let triggerReceiveEvents: Function | null = null;
+            if (!isNull(props)) {
+                triggerReceiveEvents = mountProps(this, props); 
+            }
+
             const ret = this.init(props);
             if (ret && ret.then) {
-                (ret as Promise<any>).then(() => componentInited(this, triggerReceiveEvents), err => {
+                (ret as Promise<any>).then(() => componentInited(this), err => {
                     if (process.env.NODE_ENV !== 'production') {
                         console.error('Unhandled promise rejection in init: ', err);
                     }
-                    componentInited(this, triggerReceiveEvents);
+                    componentInited(this);
                 });
-                return;
+            } else {
+                componentInited(this);
             }
+            triggerReceiveEvents && triggerReceiveEvents();
+            currentInstance = null;
+        } else {
+            // if it does not exist init method, it is unnecessary to trigger $receive events
+            if (!isNull(props)) {
+                const defaults = this.props;
+                for (const key in props) {
+                    const value = props[key];
+                    if (!isUndefined(value)) {
+                        defaults[key] = value;
+                    }
+                }
+            }
+            componentInited(this);
         }
-        componentInited(this, triggerReceiveEvents);
-        currentInstance = null;
     }
 
     $render(
