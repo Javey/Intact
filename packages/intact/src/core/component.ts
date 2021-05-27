@@ -8,13 +8,15 @@ import {
     unmount,
 } from 'misstime';
 import {SetOptions, InjectionKey} from '../utils/types';
-import {get, set, deepFreeze} from '../utils/helpers';
 import {
     isNull,
     isFunction,
     isUndefined,
     isObject,
     EMPTY_OBJ,
+    get,
+    set,
+    deepFreeze,
 } from 'intact-shared';
 import {
     componentInited, 

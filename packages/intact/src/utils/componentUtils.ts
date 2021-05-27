@@ -11,9 +11,17 @@ import {
     findDomFromVNode,
     callAll
 } from 'misstime';
-import {ChangeTrace} from './types';
-import {get, set} from './helpers';
-import {isNull, isFunction, isUndefined, hasOwn, EMPTY_OBJ, isEventProp} from 'intact-shared';
+import {
+    isNull,
+    isFunction,
+    isUndefined,
+    hasOwn,
+    EMPTY_OBJ,
+    isEventProp,
+    get,
+    set,
+    ChangeTrace
+} from 'intact-shared';
 
 export const nextTick = typeof Promise !== 'undefined' ? 
     (callback: Function) => Promise.resolve().then(() => callback()) :

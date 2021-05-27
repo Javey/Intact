@@ -7,4 +7,3 @@ export * from 'vdt';
 export * from './core/inject';
 export * from './core/watch';
 export * from './core/lifecyles';
-export {get, set} from './utils/helpers';

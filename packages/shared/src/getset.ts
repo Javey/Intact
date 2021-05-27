@@ -1,5 +1,6 @@
-import {ChangeTrace} from './types';
-import {hasOwn, isString, isNullOrUndefined, isObject, throwError, isArray} from 'intact-shared';
+import {hasOwn, isString, isNullOrUndefined, isObject, throwError, isArray} from './helpers';
+
+export type ChangeTrace = {path: string, newValue: any, oldValue: any};
 
 export function get<O extends object, K extends keyof O>(object: O, path: K): O[K];
 export function get<O extends object, K extends string | number | symbol>(object: O, path: K extends keyof O ? never : K): any;
