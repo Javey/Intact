@@ -50,7 +50,7 @@ describe('Component', () => {
                         });
                         watch<AProps, 'a'>('a', (newValue, oldValue) => {
                             callback2(newValue, oldValue, container.innerHTML);
-                        }, {ignoreInit: true});
+                        }, {inited: true});
                     }
                 }
 
@@ -68,7 +68,7 @@ describe('Component', () => {
                 expect(callback2).to.have.calledWith('c', 'b', '<div>b</div>');
             });
 
-            it('watch after updated', async () => {
+            it('watch after data has presented', async () => {
                 const callback1 = sinon.spy();
                 const callback2 = sinon.spy();
                 interface AProps {a: string, b?: number}
@@ -79,10 +79,10 @@ describe('Component', () => {
                     init() {
                         watch<AProps, 'a'>('a', (newValue, oldValue) => {
                             callback1(newValue, oldValue, container.innerHTML);
-                        }, {updated: true});
+                        }, {presented: true});
                         watch<AProps, 'a'>('a', (newValue, oldValue) => {
                             callback2(newValue, oldValue, container.innerHTML);
-                        }, {ignoreInit: true, updated: true});
+                        }, {inited: true, presented: true});
                     }
                 }
 

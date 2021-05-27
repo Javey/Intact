@@ -3,8 +3,8 @@ import {throwError} from 'intact-shared';
 import {Props} from 'misstime';
 
 export type WatchOptions = {
-    ignoreInit?: boolean,
-    updated?: boolean,
+    inited?: boolean,
+    presented?: boolean,
 }
 
 export function watch<P, K extends keyof Props<P, Component<P>>>(
@@ -18,9 +18,9 @@ export function watch<P, K extends keyof Props<P, Component<P>>>(
         }
     }
 
-    if (!options || !options.updated) {
+    if (!options || !options.presented) {
         currentInstance!.on(`$change:${key}`, callback);
-        if (!options || !options.ignoreInit) {
+        if (!options || !options.inited) {
             currentInstance!.on(`$receive:${key}`, callback);
         } else {
             currentInstance!.on(`$receive:${key}`, (
@@ -36,7 +36,7 @@ export function watch<P, K extends keyof Props<P, Component<P>>>(
     } else {
         const instance = currentInstance!;
         instance.on(`$changed:${key}`, callback);
-        if (!options.ignoreInit) {
+        if (!options.inited) {
             instance.on(`$receive:${key}`, (
                 newValue: Props<P, Component<P>>[K],
                 oldValue: Props<P, Component<P>>[K] | undefined,
