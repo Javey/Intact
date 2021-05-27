@@ -16,8 +16,9 @@ import {
     EMPTY_OBJ,
     get,
     set,
-    deepFreeze,
+    isNullOrUndefined,
 } from 'intact-shared';
+import {deepFreeze} from '../utils/helpers';
 import {
     componentInited, 
     setProps,
@@ -73,11 +74,24 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
             this.$template = compile(template);
         }
 
-        if (process.env.NODE_ENV !== 'production') {
-            deepFreeze(constructor.defaults);
+        const defaults = constructor.defaults;
+        const props = this.props = {} as P;
+        if (defaults) {
+            for (const key in defaults) {
+                const descriptor = Object.getOwnPropertyDescriptor(defaults, key);
+                if (descriptor) {
+                    if (process.env.NODE_ENV !== 'production') {
+                        // maybe frozen
+                        descriptor.writable = true;
+                    }
+                    Object.defineProperty(props, key, descriptor);
+                }
+            }
         }
 
-        this.props = {...constructor.defaults};
+        if (process.env.NODE_ENV !== 'production') {
+            deepFreeze(defaults);
+        }
     }
 
     set<K extends keyof P>(key: K, value: P[K], options?: SetOptions): void;

@@ -91,17 +91,3 @@ function clone(object: object) {
 
     return {...object};
 }
-
-export function deepFreeze(object: any) {
-    if (!isObject(object)) throwError('static property defaults must be an object.');
-
-    for (const key in object) {
-        const prop = object[key as keyof typeof object];
-
-        if (isObject(prop)) {
-            deepFreeze(prop);
-        }
-    }
-
-    return Object.freeze(object);
-}
