@@ -80,24 +80,25 @@ describe('Component', () => {
             });
 
             it('should mount getter property', () => {
-                class Test extends Component<{a: string, b: string}> {
+                let count = 0;
+                class Test extends Component<{a: number, b: string}> {
                     static template = function(this: Test) {
                         return h('div', null, this.props.a + this.props.b);
                     }
                     static defaults = {
                         get a() {
-                            return 'a'
+                            return count++;
                         },
                         b: 'b'
                     }
                 }
 
                 render(h(Test), container);
-                expect(container.innerHTML).to.equal('<div>ab</div>');
+                expect(container.innerHTML).to.equal('<div>0b</div>');
 
                 // another instance
                 render(h('div', null, h(Test)), container);
-                expect(container.innerHTML).to.equal('<div><div>ab</div></div>');
+                expect(container.innerHTML).to.equal('<div><div>1b</div></div>');
             });
         });
 

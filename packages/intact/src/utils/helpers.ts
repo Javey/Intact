@@ -6,10 +6,13 @@ export function deepFreeze(object: any) {
     if (Object.isFrozen(object)) return object;
 
     for (const key in object) {
-        const prop = object[key as keyof typeof object];
+        const descriptor = Object.getOwnPropertyDescriptor(object, key);
+        if (!descriptor) continue;
+        if (descriptor.get) continue;
 
-        if (isObject(prop)) {
-            deepFreeze(prop);
+        const value = descriptor.value;
+        if (isObject(value)) {
+            deepFreeze(value);
         }
     }
 
