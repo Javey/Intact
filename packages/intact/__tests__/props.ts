@@ -94,6 +94,10 @@ describe('Component', () => {
 
                 render(h(Test), container);
                 expect(container.innerHTML).to.equal('<div>ab</div>');
+
+                // another instance
+                render(h('div', null, h(Test)), container);
+                expect(container.innerHTML).to.equal('<div><div>ab</div></div>');
             });
         });
 
