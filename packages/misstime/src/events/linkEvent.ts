@@ -1,6 +1,8 @@
 import {LinkedEvent} from '../utils/types';
 import {isFunction, isNull} from 'intact-shared';
 
+export function linkEvent<T, E extends Event>(data: T, event: (data: T, event: E) => void): LinkedEvent<T, E>;
+export function linkEvent<T, E extends Event>(data: T, event: any): null;
 export function linkEvent<T, E extends Event>(data: T, event: (data: T, event: E) => void): LinkedEvent<T, E> | null {
     if (isFunction(event)) {
         return {data, event};

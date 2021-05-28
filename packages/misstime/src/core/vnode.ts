@@ -36,7 +36,7 @@ export class VNode<T extends VNodeTag = VNodeTag> implements IVNode<T> {
     public type: Types;
     public tag: T;
     public childrenType: ChildrenTypes;
-    public props?: VNodeProps<T> | null;
+    public props?: Readonly<VNodeProps<T>> | null;
     public children?: VNodeChildren<T> | null;
     public className?: string | null;
     public key: Key | null;

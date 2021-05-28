@@ -5,7 +5,7 @@ export interface VNode<T extends VNodeTag = VNodeTag> {
     type: Types
     tag: T
     childrenType: ChildrenTypes
-    props?: VNodeProps<T> | null
+    props?: Readonly<VNodeProps<T>> | null
     children?: VNodeChildren<T> | null
     className?: string | null
     key: Key | null

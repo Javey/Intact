@@ -12,6 +12,7 @@ export {
     normalizeChildren,
     createFragment,
     createVoidVNode,
+    directClone,
 } from './core/vnode';
 export {linkEvent} from './events/linkEvent';
 export {render} from './core/render';
