@@ -82,7 +82,9 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
                 if (descriptor) {
                     if (process.env.NODE_ENV !== 'production') {
                         // maybe frozen
-                        descriptor.writable = true;
+                        if (!descriptor.get) {
+                            descriptor.writable = true;
+                        }
                     }
                     Object.defineProperty(props, key, descriptor);
                 }

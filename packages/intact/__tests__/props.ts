@@ -78,7 +78,24 @@ describe('Component', () => {
                 expect(component!.props).to.eql({name: 1});
                 expect(onReceiveName).to.have.callCount(0);
             });
-        })
+
+            it('should mount getter property', () => {
+                class Test extends Component<{a: string, b: string}> {
+                    static template = function(this: Test) {
+                        return h('div', null, this.props.a + this.props.b);
+                    }
+                    static defaults = {
+                        get a() {
+                            return 'a'
+                        },
+                        b: 'b'
+                    }
+                }
+
+                render(h(Test), container);
+                expect(container.innerHTML).to.equal('<div>ab</div>');
+            });
+        });
 
         describe('Patch', () => {
             it('should do nothing if props are undefined', () => {
