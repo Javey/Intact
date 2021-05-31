@@ -35,6 +35,10 @@ import {watch, WatchOptions} from './watch';
 
 export let currentInstance: Component<any> | null = null;
 
+export function getCurrentInstance() {
+    return currentInstance;
+}
+
 export abstract class Component<P extends {} = {}> extends Event<P> implements ComponentClass<P> {
     static readonly template: Template | string;
     static readonly defaults = EMPTY_OBJ;
@@ -147,7 +151,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         callback: (newValue: Props<P, this>[K], oldValue: Props<P, this>[K] | undefined) => void,
         options?: WatchOptions 
     ) {
-        watch(key, callback, options);
+        watch(key, callback, options, this);
     }
 
     // compute<T>(getter: () => T) {

@@ -10,20 +10,21 @@ export type WatchOptions = {
 export function watch<P, K extends keyof Props<P, Component<P>>>(
     key: K,
     callback: (newValue: Props<P, Component<P>>[K], oldValue: Props<P, Component<P>>[K] | undefined) => void,
-    options?: WatchOptions
+    options?: WatchOptions,
+    instance = currentInstance
 ) {
     if (process.env.NODE_ENV !== 'production') {
-        if (!currentInstance) {
+        if (!instance) {
             throwError('watch() can only be used inside init()');
         }
     }
 
     if (!options || !options.presented) {
-        currentInstance!.on(`$change:${key}`, callback);
+        instance!.on(`$change:${key}`, callback);
         if (!options || !options.inited) {
-            currentInstance!.on(`$receive:${key}`, callback);
+            instance!.on(`$receive:${key}`, callback);
         } else {
-            currentInstance!.on(`$receive:${key}`, (
+            instance!.on(`$receive:${key}`, (
                 newValue: Props<P, Component<P>>[K],
                 oldValue: Props<P, Component<P>>[K] | undefined,
                 init: boolean
@@ -34,21 +35,20 @@ export function watch<P, K extends keyof Props<P, Component<P>>>(
             });
         }
     } else {
-        const instance = currentInstance!;
-        instance.on(`$changed:${key}`, callback);
+        instance!.on(`$changed:${key}`, callback);
         if (!options.inited) {
-            instance.on(`$receive:${key}`, (
+            instance!.on(`$receive:${key}`, (
                 newValue: Props<P, Component<P>>[K],
                 oldValue: Props<P, Component<P>>[K] | undefined,
-            ) => instance.$mountedQueue!.push(() => callback(newValue, oldValue)));
+            ) => instance!.$mountedQueue!.push(() => callback(newValue, oldValue)));
         } else {
-            instance.on(`$receive:${key}`, (
+            instance!.on(`$receive:${key}`, (
                 newValue: Props<P, Component<P>>[K],
                 oldValue: Props<P, Component<P>>[K] | undefined,
                 init: boolean
             ) => {
                 if (!init) {
-                    instance.$mountedQueue!.push(() => callback(newValue, oldValue));
+                    instance!.$mountedQueue!.push(() => callback(newValue, oldValue));
                 }
             });
         }
