@@ -17,6 +17,7 @@ import {
     get,
     set,
     isNullOrUndefined,
+    throwError,
 } from 'intact-shared';
 import {deepFreeze} from '../utils/helpers';
 import {
@@ -35,7 +36,7 @@ import {watch, WatchOptions} from './watch';
 
 export let currentInstance: Component<any> | null = null;
 
-export function getCurrentInstance() {
+export function useInstance() {
     return currentInstance;
 }
 
@@ -246,12 +247,26 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     }
 
     $unmount(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null) {
+        /* istanbul ignore next */
+        if (process.env.NODE_ENV !== 'production') {
+            if (this.$unmounted) {
+                throwError(
+                    'You are unmounting a component that has already been unmounted. ' + 
+                    'Maybe this is a bug of Intact, open an issue please.'
+                );
+            }
+        }
+
         this.trigger('$beforeUnmount', vNode, nextVNode);
         if (isFunction(this.beforeUnmount)) {
             this.beforeUnmount(vNode, nextVNode);
         }
 
-        unmount(this.$lastInput!); 
+        // if (isNull(nextVNode)) {
+            // if nextVNode exists, we will unmount it on $render
+            unmount(this.$lastInput!);
+        // }
+        
         this.$unmounted = true;
         this.trigger('$unmounted', vNode, nextVNode);
         this.off();

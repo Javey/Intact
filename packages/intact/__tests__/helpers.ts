@@ -36,10 +36,11 @@ describe('Component', () => {
 
         const container = document.createElement('div');
         const error = console.error;
+        let spy: Function;
         beforeEach(() => {
             console.error = function(msg: string) {
                 error.call(console, msg);
-                throw new Error(msg); 
+                spy(msg);
             }
         });
 
@@ -49,10 +50,12 @@ describe('Component', () => {
 
         it('should warn when pass invalid props', () => {
             function test(props: any, msg?: string) {
+                spy = sinon.spy();
+                render(h(A, props), container);
                 if (msg) {
-                    expect(() => render(h(A, props), container)).to.throw(new RegExp(msg));
+                    expect(spy).to.have.calledOnceWith(msg);
                 } else {
-                    expect(() => render(h(A, props), container)).to.not.throw();
+                    expect(spy).to.have.callCount(0);
                 }
             }
 
@@ -63,7 +66,7 @@ describe('Component', () => {
             test({b: 1, c: 1}, 'Invalid type of prop "c" on component "A". Expected String, but got Number.');
             test({b: 1, d: 1}, 'Invalid type of prop "d" on component "A". Expected Array, but got Number.');
             test({b: 1, e: []}, 'Invalid type of prop "e" on component "A". Expected Object, but got Array.');
-            test({b: 1, f: 2}, 'Invalid type of prop "f" on component "A". Expected Date, but got Number');
+            test({b: 1, f: 2}, 'Invalid type of prop "f" on component "A". Expected Date, but got Number.');
             test({b: 1, g: {}}, 'Invalid type of prop "g" on component "A". Expected Function, but got Object.');
             test({b: 1, h: 2}, 'Invalid prop "h" on component "A": custom validator check failed.');
             test({b: 1, i: () => {}}, 'Invalid type of prop "i" on component "A". Expected A, but got Function.');
@@ -100,10 +103,12 @@ describe('Component', () => {
             };
 
             function test(props: any, msg?: string) {
+                spy = sinon.spy();
+                render(h(Test, props), container);
                 if (msg) {
-                    expect(() => render(h(Test, props), container)).to.throw(new RegExp(msg));
+                    expect(spy).to.have.calledOnceWith(msg);
                 } else {
-                    expect(() => render(h(Test, props), container)).to.not.throw();
+                    expect(spy).to.have.callCount(0);
                 }
             }
 

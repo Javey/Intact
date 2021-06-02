@@ -35,8 +35,7 @@ export function unmount(vNode: VNode) {
         }
     } else if (children) {
         if (type & Types.ComponentClass) {
-            (children as ComponentClass).$unmount(vNode as VNodeComponentClass, null);
-            unmountRef(vNode.ref);
+            unmountComponentClass(vNode as VNodeComponentClass, null);
         } else if (type & Types.ComponentFunction) {
             unmount(children as VNode);
         } else if (type & Types.Fragment) {
@@ -45,6 +44,11 @@ export function unmount(vNode: VNode) {
             }
         }
     }
+}
+
+export function unmountComponentClass(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null) {
+    vNode.children!.$unmount(vNode, nextVNode);
+    unmountRef(vNode.ref);
 }
 
 export function unmountAllChildren(children: VNode[]) {

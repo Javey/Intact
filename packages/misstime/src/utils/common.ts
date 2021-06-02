@@ -41,15 +41,17 @@ export const REFERENCE: Reference = {value: false};
 export const Fragment: string = '$F';
 
 export function removeVNodeDom(vNode: VNode, parentDom: Element) {
+    let type: Types;
+    let dom: IntactDom;
     do {
-        const type = vNode.type;
+        type = vNode.type;
         if (type & Types.HtmlElement) {
             const transition = vNode.transition;
             if (isNullOrUndefined(transition)) {
                 removeChild(parentDom, vNode.dom!);
             } else {
-                const dom = vNode.dom;
-                transition.leave(dom as TransitionElement, () => removeChild(parentDom, dom!));
+                dom = vNode.dom!;
+                transition.leave(dom as TransitionElement, () => removeChild(parentDom, dom));
             }
             return;
         }

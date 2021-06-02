@@ -9,7 +9,8 @@ import {
     normalizeRoot,
     createCommentVNode,
     findDomFromVNode,
-    callAll
+    callAll,
+    unmountComponentClass,
 } from 'misstime';
 import {
     isNull,
@@ -52,7 +53,11 @@ export function renderSyncComponnet<P>(
     // reuse the dom even if they are different
     let lastInput: VNode | null = null;
     if (!isNull(lastVNode) && (lastInput = lastVNode.children!.$lastInput)) {
-        patch(lastInput, vNode, parentDom, component, component.$SVG, anchor, mountedQueue);
+        // if (lastVNode !== nextVNode) {
+            // we will set nextVNode to lastVNode on render async component, exclude this case
+            // unmountComponentClass(lastVNode, nextVNode);
+        // }
+        patch(lastInput, vNode, parentDom, component, component.$SVG, anchor, mountedQueue, true);
     } else {
         mount(vNode, parentDom, component, component.$SVG, anchor, mountedQueue);
     }
@@ -114,7 +119,7 @@ export function updateSyncComponent<P>(
     component.$blockRender = false;
 
     const vNode = normalizeRoot(component.$template(EMPTY_OBJ, component.get('$blocks')), nextVNode);
-    patch(component.$lastInput!, vNode, parentDom, component, component.$SVG, anchor, mountedQueue);
+    patch(component.$lastInput!, vNode, parentDom, component, component.$SVG, anchor, mountedQueue, false);
     component.$lastInput = vNode;
 
     mountedQueue.push(() => {

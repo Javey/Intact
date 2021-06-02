@@ -74,7 +74,7 @@ export function render(vNode: VNode | null | undefined, parentDom: IntactElement
             if (vNode.type & Types.InUse) {
                 vNode = directClone(vNode);
             }
-            patch(lastVNode, vNode, parentDom, null, false, null, mountedQueue);
+            patch(lastVNode, vNode, parentDom, null, false, null, mountedQueue, false);
             parentDom.$V = vNode; 
         }
     }
