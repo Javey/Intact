@@ -1,4 +1,5 @@
 import {isNullOrUndefined, isString, hasDocumentAvailable} from 'intact-shared';
+import {TransitionElement} from 'misstime';
 
 export const enum AnimateType {
     Transition,
@@ -165,7 +166,9 @@ export function nextFrame(fn: () => void) {
 }
 
 // @reference Vue
-export function whenTransitionEnds(dom: Element, cb: () => void) {
+let endId = 0;
+export function whenTransitionEnds(dom: TransitionElement, cb: () => void) {
+    const id = dom.$ID = ++endId;
     const {timeout, propCount} = getTransitionInfo(dom);
     let ended = 0;
     const onEnd = (e: Event) => {
@@ -176,7 +179,9 @@ export function whenTransitionEnds(dom: Element, cb: () => void) {
     const end = () => {
         TransitionEvents.off(dom, onEnd);
         clearTimeout(timer); 
-        cb();
+        if (id === dom.$ID) {
+            cb();
+        }
     };
     const timer = setTimeout(() => {
         if (ended < propCount) {

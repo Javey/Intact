@@ -42,7 +42,7 @@ export function useInstance() {
 
 export abstract class Component<P extends {} = {}> extends Event<P> implements ComponentClass<P> {
     static readonly template: Template | string;
-    static readonly defaults = EMPTY_OBJ;
+    static readonly defaults: object = EMPTY_OBJ;
     static readonly typeDefs?: TypeDefs<any>;
     static readonly displayName?: string;
 
@@ -252,7 +252,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
             if (this.$unmounted) {
                 throwError(
                     'You are unmounting a component that has already been unmounted. ' + 
-                    'Maybe this is a bug of Intact, open an issue please.'
+                    'Maybe this is a bug of Intact or it has crashed, open an issue please.'
                 );
             }
         }

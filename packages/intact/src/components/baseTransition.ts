@@ -94,16 +94,19 @@ export class BaseTransition<P extends BaseTransitionProps = BaseTransitionProps>
             setDisplay(el, 'none');
         }
 
-        this.on('$receive:show', (show: boolean) => {
-            if (show) {
-                lastInput.transition!.beforeEnter(el);
-                setDisplay(el, originDisplay);
-                lastInput.transition!.enter(el);
-            } else {
-                lastInput.transition!.leave(el, () => {
-                    setDisplay(el, 'none');
-                });
-            }
+        this.on('$receive:show', show => {
+            this.$mountedQueue!.push(() => {
+                const transition = this.$lastInput!.transition!;
+                if (show) {
+                    transition.beforeEnter(el);
+                    setDisplay(el, originDisplay);
+                    transition.enter(el);
+                } else {
+                    transition.leave(el, () => {
+                        setDisplay(el, 'none');
+                    });
+                }
+            });
         });
     }
 
@@ -175,13 +178,10 @@ export function resolveTransitionHooks(
             let cancelHook = onEnterCancelled;
 
             if (!component.$mounted) {
-                if (appear) {
-                    hook = onAppear || onEnter;
-                    afterHook = onAfterAppear || onAfterEnter;
-                    cancelHook = onAppearCancelled || onEnterCancelled;
-                } else {
-                    return;
-                }
+                if (!appear) return;
+                hook = onAppear || onEnter;
+                afterHook = onAfterAppear || onAfterEnter;
+                cancelHook = onAppearCancelled || onEnterCancelled;
             }
 
             let called = false;

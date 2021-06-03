@@ -34,6 +34,7 @@ export interface TransitionElement extends HTMLElement {
     _moveCb?: (e?: TransitionEvent) => void
     $TC?: Record<string, boolean>
     $TD?: string
+    $ID?: number
 }
 
 export interface TransitionPosition {

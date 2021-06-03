@@ -39,6 +39,7 @@ if (hasDocumentAvailable) {
         // Transtion Element
         prototype.$TC = undefined;
         prototype.$TD = undefined;
+        prototype.$ID = undefined;
         prototype._enterCb = undefined;
         prototype._leaveCb = undefined;
         prototype._moveCb = undefined;

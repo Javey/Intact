@@ -1,7 +1,7 @@
 import {Component} from '../src/core/component';
 import {render, createVNode as h, createTextVNode, TransitionElement, createRef} from 'misstime';
 import {Transition} from '../src/components/transition';
-import {wait, nextFrame, testTransition} from '../../misstime/__tests__/utils';
+import {wait, nextFrame, testTransition, nextTick} from '../../misstime/__tests__/utils';
 import './transition.css';
 
 describe('Component', function() {
@@ -166,6 +166,32 @@ describe('Component', function() {
 
                 await testTransition(dom, 'enter');
                 expect((dom as HTMLElement).style.display).to.equal('');
+            });
+
+            it('should change transition name if name has changed on mounted', async () => {
+                type Props = {name?: string, show?: boolean};
+                class Test extends Component<Props> {
+                    static template(this: Test) {
+                        return h(Transition, {name: this.props.name, show: this.props.show}, h('div', null, 'show'));
+                    }
+
+                    static defaults = {name: 'a', show: false};
+
+                    mounted() {
+                        this.set('name', 'b');
+                    }
+                } 
+
+                let test: Test | null = null;
+                render(h(Test, {ref: i => test = i}), container);
+                test!.set('show', true);
+                const div = container.firstElementChild!;
+
+                await nextTick();
+                expect(div.className).to.equal('b-enter-from b-enter-active');
+                
+                await nextFrame();
+                expect(div.className).to.equal('b-enter-active b-enter-to');
             });
         });
     });

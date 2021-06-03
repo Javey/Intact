@@ -9,6 +9,7 @@ import {
     isFunction,
     isObject,
     error,
+    isEventProp,
 } from 'intact-shared';
 import {
     VNodeElement, 
@@ -183,7 +184,7 @@ export function validateProps(vNode: VNodeComponentClass | VNodeComponentFunctio
 
     if (isNullOrUndefined(props) || isNullOrUndefined(typeDefs)) return;
 
-    for (let prop in typeDefs) {
+    for (let prop in {...props, ...typeDefs}) {
         const value = props[prop];
         let expectedType = typeDefs[prop] as TypeObject;
 
@@ -204,6 +205,9 @@ export function validateProps(vNode: VNodeComponentClass | VNodeComponentFunctio
         }
 
         let type = expectedType.type;
+        if (isNullOrUndefined(type) && isEventProp(prop)) {
+            type = Function;
+        }
         if (!isNullOrUndefined(type)) {
             if (!isArray(type))  {
                 type = [type];

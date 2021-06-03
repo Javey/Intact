@@ -107,7 +107,6 @@ export function resolveTransitionProps(props: TransitionProps): BaseTransitionPr
             } else {
                 removeTransitionClass(el, enterToClass); 
             }
-            removeTransitionClass(el, enterToClass); 
             removeTransitionClass(el, enterActiveClass);
         }
         done && done();
