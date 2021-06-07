@@ -192,110 +192,132 @@ describe('Component', () => {
             expect(callback).to.have.callCount(1);
         });
 
-        it('replace component', async () => {
-            const unmounted = sinon.spy();
-            function createComponentTest() {
-                return class Test extends Component {
-                    static template = function(this: Test) {
+        describe('Reuse dom', () => {
+            it('replace component', async () => {
+                const unmounted = sinon.spy();
+                function createComponentTest() {
+                    return class Test extends Component {
+                        static template = function(this: Test) {
+                            return h('div', null, this.props.children);
+                        }
+
+                        unmounted() {
+                            unmounted();
+                        }
+                    }
+                } 
+
+                render(h(
+                    createComponentTest(),
+                    {children: h(
+                        createComponentTest(),
+                        {children: '1'}
+                    )}
+                ), container);
+                render(h(
+                    createComponentTest(),
+                    {children: h(
+                        createComponentTest(),
+                        {children: '2'}
+                    )}
+                ), container);
+
+                expect(unmounted).to.have.callCount(2);
+            });
+
+            it('should recreate component if parent has receated but reuse dom', async () => {
+                const unmounted = sinon.spy();
+                function createComponentTest() {
+                    return class Test extends Component {
+                        static template = function(this: Test) {
+                            return h('div', null, this.props.children);
+                        }
+
+                        unmounted() {
+                            unmounted();
+                        }
+                    }
+                } 
+
+                const C = createComponentTest();
+
+                render(h(
+                    createComponentTest(),
+                    {children: h(C, {children: '1'})}
+                ), container);
+                
+                const oldNode = container.firstChild;
+                const oldNodeChild = oldNode!.firstChild;
+
+                render(h(
+                    createComponentTest(),
+                    {children: h(C, {children: '2'})}
+                ), container);
+
+                expect(unmounted).to.have.callCount(2);
+                expect(oldNode).to.equal(container.firstChild);
+                expect(oldNodeChild).to.equal(container.firstChild!.firstChild);
+            });
+
+            it('should update ref of element if parent has recreated', async () => {
+                let dom: Element | null = null;
+                const ref: RefFunction<Element> = i => dom = i;
+                function createComponentTest() {
+                    return class Test extends Component {
+                        static template = function(this: Test) {
+                            return h('div', {ref: ref}, this.props.children);
+                        }
+                    }
+                } 
+
+                render(h(createComponentTest()), container);
+                render(h(createComponentTest()), container);
+
+                expect(dom).to.be.exist;
+            });
+
+            it('should not unmounted an unmounted vNode if we are reusing the dom', async () => {
+                class Test1 extends Component {
+                    static template = function(this: Test1) {
                         return h('div', null, this.props.children);
                     }
+                }
 
-                    unmounted() {
-                        unmounted();
+                class Test2 extends Component {
+                    static template = function(this: Test2) {
+                        return h('span', null, this.props.children);
                     }
                 }
-            } 
 
-            render(h(
-                createComponentTest(),
-                {children: h(
-                    createComponentTest(),
-                    {children: '1'}
-                )}
-            ), container);
-            render(h(
-                createComponentTest(),
-                {children: h(
-                    createComponentTest(),
-                    {children: '2'}
-                )}
-            ), container);
+                class Test3 extends Component {
+                    static template = function(this: Test2) {
+                        return h('i', null, 'test3');
+                    }
+                }
 
-            expect(unmounted).to.have.callCount(2);
-        });
+                render(h(Test1, {children: h(Test3)}), container);
+                render(h(Test2, {children: h(Test3)}), container);
+            });
 
-        it('should recreate component if parent has receated but reuse dom', async () => {
-            const unmounted = sinon.spy();
-            function createComponentTest() {
-                return class Test extends Component {
-                    static template = function(this: Test) {
+            it('replace one vNode with multiple vNodes and vice versa', () => {
+                class Test1 extends Component {
+                    static template = function(this: Test1) {
                         return h('div', null, this.props.children);
-                    }
-
-                    unmounted() {
-                        unmounted();
-                    }
+                    } 
                 }
-            } 
 
-            const C = createComponentTest();
-
-            render(h(
-                createComponentTest(),
-                {children: h(C, {children: '1'})}
-            ), container);
-            
-            const oldNode = container.firstChild;
-            const oldNodeChild = oldNode!.firstChild;
-
-            render(h(
-                createComponentTest(),
-                {children: h(C, {children: '2'})}
-            ), container);
-
-            expect(unmounted).to.have.callCount(2);
-            expect(oldNode).to.equal(container.firstChild);
-            expect(oldNodeChild).to.equal(container.firstChild!.firstChild);
-        });
-
-        it('should update ref of element if parent has recreated', async () => {
-            let dom: Element | null = null;
-            const ref: RefFunction<Element> = i => dom = i;
-            function createComponentTest() {
-                return class Test extends Component {
-                    static template = function(this: Test) {
-                        return h('div', {ref: ref}, this.props.children);
+                function createTest2() {
+                    return class Test2 extends Component<{a: boolean}> {
+                        static template = function(this: Test2) {
+                            return h('div', null, this.props.a ? h(Test1) : [h(Test1), h(Test1)]);
+                        }
                     }
                 }
-            } 
 
-            render(h(createComponentTest()), container);
-            render(h(createComponentTest()), container);
-
-            expect(dom).to.be.exist;
-        });
-
-        it('should not unmounted an unmounted vNode if we are reusing the dom', async () => {
-            class Test1 extends Component {
-                static template = function(this: Test1) {
-                    return h('div', null, this.props.children);
-                }
-            }
-
-            class Test2 extends Component {
-                static template = function(this: Test2) {
-                    return h('span', null, this.props.children);
-                }
-            }
-
-            class Test3 extends Component {
-                static template = function(this: Test2) {
-                    return h('i', null, 'test3');
-                }
-            }
-
-            render(h(Test1, {children: h(Test3)}), container);
-            render(h(Test2, {children: h(Test3)}), container);
+                render(h(createTest2(), {a: true}), container);
+                render(h(createTest2(), {a: false}), container);
+                render(h(createTest2(), {a: true}), container);
+            });
         });
     });
 });

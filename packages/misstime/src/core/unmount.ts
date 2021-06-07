@@ -61,8 +61,10 @@ export function clearDom(dom: Element) {
     dom.textContent = '';
 }
 
-export function removeAllChildren(children: VNode[], dom: Element, vNode: VNode) {
-    unmountAllChildren(children);
+export function removeAllChildren(children: VNode[], dom: Element, vNode: VNode, reusing: boolean) {
+    if (!reusing) {
+        unmountAllChildren(children);
+    }
 
     if (vNode.type & Types.Fragment) {
         removeVNodeDom(vNode, dom);

@@ -38,21 +38,21 @@ export function patch(
     isSVG: boolean,
     anchor: IntactDom | null,
     mountedQueue: Function[],
-    hydrate: boolean,
+    reusing: boolean,
 ) {
     const nextType = (nextVNode.type |= Types.InUse);
 
     if (lastVNode.type !== nextType || lastVNode.key !== nextVNode.key) {
-        replaceWithNewNode(lastVNode, nextVNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, hydrate);
+        replaceWithNewNode(lastVNode, nextVNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, reusing);
     } else if (nextType & Types.ComponentClass) {
         // if patch two class components, reuse its dom otherwise replace the dom totally.
-        patchComponentClass(lastVNode as VNodeComponentClass, nextVNode as VNodeComponentClass, parentDom, parentComponent, isSVG, anchor, mountedQueue, hydrate);
+        patchComponentClass(lastVNode as VNodeComponentClass, nextVNode as VNodeComponentClass, parentDom, parentComponent, isSVG, anchor, mountedQueue, reusing);
     } else if (lastVNode.tag !== nextVNode.tag) {
-        replaceWithNewNode(lastVNode, nextVNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, hydrate);
+        replaceWithNewNode(lastVNode, nextVNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, reusing);
     } else if (nextType & Types.Element) {
-        patchElement(lastVNode as VNodeElement, nextVNode as VNodeElement, parentComponent, isSVG, nextType, mountedQueue, hydrate);
+        patchElement(lastVNode as VNodeElement, nextVNode as VNodeElement, parentComponent, isSVG, nextType, mountedQueue, reusing);
     } else if (nextType & Types.ComponentFunction) {
-        patchComponentFunction(lastVNode as VNodeComponentFunction, nextVNode as VNodeComponentFunction, parentDom, parentComponent, isSVG, anchor, mountedQueue, hydrate);
+        patchComponentFunction(lastVNode as VNodeComponentFunction, nextVNode as VNodeComponentFunction, parentDom, parentComponent, isSVG, anchor, mountedQueue, reusing);
     } else if (nextType & Types.Text || nextType & Types.HtmlComment) {
         patchText(lastVNode as VNodeTextElement, nextVNode as VNodeTextElement); 
     } else if (nextType & Types.Fragment) {
@@ -68,7 +68,7 @@ export function patch(
             anchor,
             lastVNode,
             mountedQueue,
-            hydrate,
+            reusing,
         );
     }
 }
@@ -81,10 +81,10 @@ function replaceWithNewNode(
     isSVG: boolean,
     anchor: IntactDom | null,
     mountedQueue: Function[],
-    hydrate: boolean
+    reusing: boolean
 ) {
     if (lastVNode.type & Types.InUse) {
-        if (!hydrate) {
+        if (!reusing) {
             unmount(lastVNode);
         }
         if ((nextVNode.type & lastVNode.type & Types.HtmlElement) && isUndefined(lastVNode.transition)) {
@@ -109,11 +109,11 @@ function patchComponentClass(
     isSVG: boolean,
     anchor: IntactDom | null,
     mountedQueue: Function[],
-    hydrate: boolean,
+    reusing: boolean,
 ) {
     const nextTag = nextVNode.tag;
-    if (lastVNode.tag !== nextTag || hydrate) {
-        if (!hydrate) {
+    if (lastVNode.tag !== nextTag || reusing) {
+        if (!reusing) {
             unmount(lastVNode);
         }
         mountComponentClass(lastVNode, nextVNode, parentDom, parentComponent, isSVG, anchor, mountedQueue); 
@@ -151,7 +151,7 @@ function patchComponentFunction(
     isSVG: boolean,
     anchor: IntactDom | null,
     mountedQueue: Function[],
-    hydrate: boolean,
+    reusing: boolean,
 ) {
     if (process.env.NODE_ENV !== 'production') {
         validateProps(nextVNode);
@@ -159,7 +159,7 @@ function patchComponentFunction(
 
     const nextChildren = normalizeRoot(nextVNode.tag(nextVNode.props || EMPTY_OBJ), nextVNode);
 
-    patch(lastVNode.children!, nextChildren, parentDom, parentComponent, isSVG, anchor, mountedQueue, hydrate);
+    patch(lastVNode.children!, nextChildren, parentDom, parentComponent, isSVG, anchor, mountedQueue, reusing);
     nextVNode.children = nextChildren;
 }
 
@@ -170,7 +170,7 @@ export function patchElement(
     isSVG: boolean,
     nextType: Types,
     mountedQueue: Function[],
-    hydrate: boolean,
+    reusing: boolean,
 ) {
     const dom = nextVNode.dom = lastVNode.dom as Element;
     const lastProps = lastVNode.props || EMPTY_OBJ;
@@ -238,7 +238,7 @@ export function patchElement(
         null,
         lastVNode,
         mountedQueue,
-        hydrate,
+        reusing,
     );
 
     if (isFormElement) {
@@ -246,7 +246,7 @@ export function patchElement(
     }
 
     const nextRef = nextVNode.ref;
-    if (hydrate) {
+    if (reusing) {
         mountRef(nextRef, dom);
     } else {
         const lastRef = lastVNode.ref;
@@ -312,13 +312,13 @@ export function patchChildren(
     anchor: IntactDom | null,
     parentVNode: VNode,
     mountedQueue: Function[],
-    hydrate: boolean,
+    reusing: boolean,
 ) {
     switch (lastChildrenType) {
         case ChildrenTypes.HasVNodeChildren:
             switch (nextChildrenType) {
                 case ChildrenTypes.HasVNodeChildren:
-                    patch(lastChildren as VNode, nextChildren as VNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, hydrate);
+                    patch(lastChildren as VNode, nextChildren as VNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, reusing);
                     break;
                 case ChildrenTypes.HasInvalidChildren:
                     remove(lastChildren as VNode, parentDom);
@@ -328,7 +328,7 @@ export function patchChildren(
                     setTextContent(parentDom, nextChildren as string);
                     break;
                 default:
-                    replaceOneVNodeWithMulipleVNodes(lastChildren as VNode, nextChildren as VNode[], parentDom, parentComponent, isSVG, mountedQueue);
+                    replaceOneVNodeWithMulipleVNodes(lastChildren as VNode, nextChildren as VNode[], parentDom, parentComponent, isSVG, mountedQueue, reusing);
                     break;
             }
             break;
@@ -368,14 +368,14 @@ export function patchChildren(
         default:
             switch (nextChildrenType) {
                 case ChildrenTypes.HasVNodeChildren:
-                    removeAllChildren(lastChildren as VNode[], parentDom, parentVNode);
+                    removeAllChildren(lastChildren as VNode[], parentDom, parentVNode, reusing);
                     mount(nextChildren as VNode, parentDom, parentComponent, isSVG, anchor, mountedQueue);
                     break;
                 case ChildrenTypes.HasInvalidChildren:
-                    removeAllChildren(lastChildren as VNode[], parentDom, parentVNode);
+                    removeAllChildren(lastChildren as VNode[], parentDom, parentVNode, reusing);
                     break;
                 case ChildrenTypes.HasTextChildren:
-                    removeAllChildren(lastChildren as VNode[], parentDom, parentVNode);
+                    removeAllChildren(lastChildren as VNode[], parentDom, parentVNode, reusing);
                     setTextContent(parentDom, nextChildren as string);
                     break;
                 default:
@@ -387,7 +387,7 @@ export function patchChildren(
                             mountArrayChildren(nextChildren as VNode[], parentDom, parentComponent, isSVG, anchor, mountedQueue);
                         }
                     } else if (nextLength === 0) {
-                        removeAllChildren(lastChildren as VNode[], parentDom, parentVNode);
+                        removeAllChildren(lastChildren as VNode[], parentDom, parentVNode, reusing);
                     } else if (
                         nextChildrenType === ChildrenTypes.HasKeyedChildren &&
                         lastChildrenType === ChildrenTypes.HasKeyedChildren
@@ -403,7 +403,7 @@ export function patchChildren(
                             anchor,
                             parentVNode,
                             mountedQueue,
-                            hydrate,
+                            reusing,
                         );
                     } else {
                         patchNonKeyedChildren(
@@ -416,7 +416,7 @@ export function patchChildren(
                             nextLength,
                             anchor,
                             mountedQueue,
-                            hydrate,
+                            reusing,
                         );
                     }
                     break;
@@ -431,9 +431,12 @@ function replaceOneVNodeWithMulipleVNodes(
     parentDom: Element,
     parentComponent: ComponentClass | null,
     isSVG: boolean,
-    mountedQueue: Function[]
+    mountedQueue: Function[],
+    reusing: boolean,
 ) {
-    unmount(lastVNode);
+    if (!reusing) {
+        unmount(lastVNode);
+    }
     mountArrayChildren(nextVNodes, parentDom, parentComponent, isSVG, findDomFromVNode(lastVNode, true),  mountedQueue);
     removeVNodeDom(lastVNode, parentDom);
 }
@@ -458,7 +461,7 @@ function patchNonKeyedChildren(
     nextChildrenLength: number,
     anchor: IntactDom | null,
     mountedQueue: Function[],
-    hydrate: boolean,
+    reusing: boolean,
 ) {
     const commonLength = lastChildrenLength > nextChildrenLength ? nextChildrenLength : lastChildrenLength;
     let i = 0;
@@ -473,7 +476,7 @@ function patchNonKeyedChildren(
             nextChild = nextChildren[i] = directClone(nextChild);
         }
 
-        patch(lastChild, nextChild, parentDom, parentComponent, isSVG, anchor, mountedQueue, hydrate);
+        patch(lastChild, nextChild, parentDom, parentComponent, isSVG, anchor, mountedQueue, reusing);
         // FIXME: why should update last children?
         lastChildren[i] = nextChild;
     }
@@ -507,7 +510,7 @@ function patchKeyedChildren(
     anchor: IntactDom | null,
     parentVNode: VNode,
     mountedQueue: Function[],
-    hydrate: boolean,
+    reusing: boolean,
 ) {
     let aEnd = aLength - 1;
     let bEnd = bLength - 1;
@@ -524,7 +527,7 @@ function patchKeyedChildren(
             if (bNode.type & Types.InUse) {
                 b[j] = bNode = directClone(bNode);
             }
-            patch(aNode, bNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, hydrate);
+            patch(aNode, bNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, reusing);
             a[j] = bNode;
             ++j;
             if (j > aEnd || j > bEnd) {
@@ -542,7 +545,7 @@ function patchKeyedChildren(
             if (bNode.type & Types.InUse) {
                 b[bEnd] = bNode = directClone(bNode);
             }
-            patch(aNode, bNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, hydrate);
+            patch(aNode, bNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, reusing);
             a[aEnd] = bNode;
             --aEnd;
             --bEnd;
@@ -572,7 +575,7 @@ function patchKeyedChildren(
             remove(a[j++], parentDom);
         }
     } else {
-        patchKeyedChildrenComplex(a, b, aLength, bLength, aEnd, bEnd, j, parentDom, parentComponent, isSVG, anchor, parentVNode, mountedQueue, hydrate);
+        patchKeyedChildrenComplex(a, b, aLength, bLength, aEnd, bEnd, j, parentDom, parentComponent, isSVG, anchor, parentVNode, mountedQueue, reusing);
     }
 }
 
@@ -590,7 +593,7 @@ function patchKeyedChildrenComplex(
     anchor: IntactDom | null,
     parentVNode: VNode,
     mountedQueue: Function[],
-    hydrate: boolean,
+    reusing: boolean,
 ) {
     let aNode: VNode;
     let bNode: VNode;
@@ -631,7 +634,7 @@ function patchKeyedChildrenComplex(
                         if (bNode.type & Types.InUse) {
                             b[j] = bNode = directClone(bNode);
                         }
-                        patch(aNode, bNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, hydrate);
+                        patch(aNode, bNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, reusing);
                         ++patched;
                         break;
                     }
@@ -677,7 +680,7 @@ function patchKeyedChildrenComplex(
                     if (bNode.type & Types.InUse) {
                         b[j] = bNode = directClone(bNode);
                     }
-                    patch(aNode, bNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, hydrate);
+                    patch(aNode, bNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, reusing);
                     ++patched;
                 } else if (!canRemoveWholeContent) {
                     remove(aNode, parentDom);
@@ -689,7 +692,7 @@ function patchKeyedChildrenComplex(
     }
     // fast-path: if nothing patched remove all old and add all new
     if (canRemoveWholeContent) {
-        removeAllChildren(a, parentDom, parentVNode);
+        removeAllChildren(a, parentDom, parentVNode, reusing);
         mountArrayChildren(b, parentDom, parentComponent, isSVG, anchor, mountedQueue);
     } else if (moved) {
         const seq = lisAlgorithm(sources);
