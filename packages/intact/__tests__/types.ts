@@ -1,5 +1,6 @@
 import {Component} from '../src/core/component';
 import {UnknownKey, WithUnknownKey} from '../src/utils/types';
+import {Children} from 'misstime';
 
 interface AProps {
     a: string
@@ -51,6 +52,10 @@ class A<T extends AProps> extends Component<T> {
         this.on('$change:a', (v, o) => {
             expectType<string>(v); 
         });
+
+        this.on('$receive:children', vNodes => {
+            expectType<Children>(vNodes);
+        })
     }
 }
 

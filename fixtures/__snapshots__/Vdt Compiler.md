@@ -192,6 +192,19 @@ return function($props, $blocks) {
 };"
 ```
 
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', 'a' in a ? a : b, 0 /* UnknownChildren */);
+};"
+```
+
 ####   `comment children`
 
 ```

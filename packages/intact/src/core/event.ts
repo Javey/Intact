@@ -1,3 +1,4 @@
+import {Props} from 'misstime';
 import {isUndefined, throwError, isFunction} from 'intact-shared';
 
 export class Event<P> {
@@ -10,11 +11,11 @@ export class Event<P> {
     // on<K extends Extract<keyof P, string>>(name: `$change:${K}`, callback: (newValue: P[K], oldValue: P[K]) => void): void;
     // on<K extends Extract<keyof P, string>>(name: `$changed:${K}`, callback: (newValue: P[K], oldValue: P[K]) => void): void;
     // @ts-ignore if we use generic type, we can not get expected type check when use Extract<keyof P, string>
-    on<K extends keyof P>(name: `$receive:${K}`, callback: (newValue: P[K], oldValue: P[K] | undefined) => void): void;
+    on<K extends keyof Props<P>>(name: `$receive:${K}`, callback: (newValue: Props<P>[K], oldValue: Props<P>[K] | undefined) => void): void;
     // @ts-ignore
-    on<K extends keyof P>(name: `$change:${K}`, callback: (newValue: P[K], oldValue: P[K]) => void): void;
+    on<K extends keyof Props<P>>(name: `$change:${K}`, callback: (newValue: Props<P>[K], oldValue: Props<P>[K]) => void): void;
     // @ts-ignore
-    on<K extends keyof P>(name: `$changed:${K}`, callback: (newValue: P[K], oldValue: P[K]) => void): void;
+    on<K extends keyof Props<P>>(name: `$changed:${K}`, callback: (newValue: Props<P>[K], oldValue: Props<P>[K]) => void): void;
     on(name: string, callback: Function): void;
     on(name: string, callback: Function) {
         if (process.env.NODE_ENV !== 'production') {

@@ -64,6 +64,7 @@ describe('Vdt Compiler', () => {
 
         it('expression children', () => {
             test(`<div>{a}</div>`);
+            test(`<div>{'a' in a ? a : b}</div>`);
         });
 
         it('comment children', () => {

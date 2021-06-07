@@ -153,6 +153,7 @@ export class Parser {
             ) {
                 // skip tag(<div>) in quotes
                 this.scanString();
+                newLine = false;
                 continue;
             } else if (this.isTagStart()) {
                 break;
