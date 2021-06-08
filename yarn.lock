@@ -1157,6 +1157,11 @@
   dependencies:
     "@sinonjs/fake-timers" "^7.0.4"
 
+"@types/webpack-env@^1.16.0":
+  version "1.16.0"
+  resolved "https://registry.nlark.com/@types/webpack-env/download/@types/webpack-env-1.16.0.tgz#8c0a9435dfa7b3b1be76562f3070efb3f92637b4"
+  integrity sha1-jAqUNd+ns7G+dlYvMHDvs/kmN7Q=
+
 "@ungap/promise-all-settled@1.1.2":
   version "1.1.2"
   resolved "https://registry.npm.taobao.org/@ungap/promise-all-settled/download/@ungap/promise-all-settled-1.1.2.tgz#aa58042711d6e3275dd37dc597e5d31e8c290a44"

@@ -57,6 +57,7 @@
     "@types/mocha": "^8.2.2",
     "@types/sinon": "^10.0.0",
     "@types/sinon-chai": "^3.2.5",
+    "@types/webpack-env": "^1.16.0",
     "benchmark": "^2.1.4",
     "chai": "^4.3.4",
     "chai-karma-snapshot": "^0.8.0",

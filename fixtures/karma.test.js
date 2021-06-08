@@ -5,10 +5,10 @@ module.exports = function(config) {
     config.set({
         browsers: process.env.UPDATE || process.env.CI || process.env.PRUNE ? ['ChromeHeadless'] : undefined,
         files: [
-            path.resolve(__dirname, 'test.index.js'),
+            path.resolve(__dirname, 'test.index.ts'),
         ],
         preprocessors: {
-            [path.resolve(__dirname, 'test.index.js')]: ['webpack', 'sourcemap'],
+            [path.resolve(__dirname, 'test.index.ts')]: ['webpack', 'sourcemap'],
             '**/__snapshots__/**/*.md': ['snapshot'],
         },
         webpack: {
