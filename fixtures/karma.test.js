@@ -1,9 +1,11 @@
 const webpack = require('webpack');
 const path = require('path');
 
+const isDebug = !(process.env.UPDATE || process.env.CI || process.env.PRUNE);
+
 module.exports = function(config) {
     config.set({
-        browsers: process.env.UPDATE || process.env.CI || process.env.PRUNE ? ['ChromeHeadless'] : undefined,
+        browsers: !isDebug ? ['ChromeHeadless'] : undefined,
         files: [
             path.resolve(__dirname, 'test.index.ts'),
         ],
@@ -77,5 +79,6 @@ module.exports = function(config) {
             dir: path.resolve('./coverage/'),
             fixWebpackSourcePaths: true,
         },
+        singleRun: !isDebug,
     });
 };

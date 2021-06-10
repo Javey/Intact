@@ -40,6 +40,8 @@ export function useInstance() {
     return currentInstance;
 }
 
+type NoInfer<T> = [T][T extends any ? 0 : never];
+
 export abstract class Component<P extends {} = {}> extends Event<P> implements ComponentClass<P> {
     static readonly template: Template | string;
     static readonly defaults: object = EMPTY_OBJ;
@@ -102,9 +104,11 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     }
 
     set<K extends keyof P>(key: K, value: P[K], options?: SetOptions): void;
-    set<K extends string>(key: Exclude<K, keyof P>, value: any, options?: SetOptions): void;
-    set<U extends Partial<P>>(data: U, options?: SetOptions): void;
+    set<T, K extends keyof T = keyof T>(key: K, value: T[K], options?: SetOptions): void;
+    set<T = void>(key: string, value: NoInfer<T>, options?: SetOptions): void;
     set<K extends keyof P>(data: Pick<P, K>, options?: SetOptions): void;
+    set<T = void>(data: Partial<P> & NoInfer<T>, options?: SetOptions): void;
+    set<T = void>(data: NoInfer<T>, options?: SetOptions): void;
     set(key: any, value?: any, options?: SetOptions) {
         if (isObject(key)) {
             options = value as SetOptions;
@@ -124,7 +128,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
 
     get(): Props<P, ComponentClass<P>>;
     get<K extends keyof Props<P, ComponentClass<P>>>(key: K): Props<P, ComponentClass<P>>[K]; 
-    get<K extends string>(key: K): any;
+    get<V = void>(key: V extends void ? never : string): V;
     get(key?: any) {
         if (isUndefined(key)) return this.props;
 

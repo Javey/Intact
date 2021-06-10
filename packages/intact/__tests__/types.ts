@@ -9,12 +9,31 @@ interface AProps {
 
 class AA extends Component<AProps> {
     init() {
+        expectType<number>(this.get<number>('ab'));
+        expectType<string>(this.get<string>('ab'));
+        // @ts-expect-error
+        this.get('ab');
+        // this.get<number>('a')
+        
         this.set('a', 'a');
-        this.set('b', 1);
         // @ts-expect-error
         this.set('a', 1);
+
+        // @ts-expect-error
+        this.set('b', 1);
+        this.set<number>('b', 1);
+        // @ts-expect-error
+        this.set<number>('b', 'a');
+        this.set<{b: number}>('b', 1);
+        // @ts-expect-error
+        this.set<{b: number}>('b', 'b');
+        
         this.set({a: 'a'});
+        // @ts-expect-error
         this.set({a: 'a', b: 1});
+        this.set<{b: number}>({a: 'a', b: 1});
+        // @ts-expect-error
+        this.set<{b: number}>({a: 1, b: 1});
         // @ts-expect-error
         this.set({a: 1});
         // @ts-expect-error
@@ -31,18 +50,23 @@ class A<T extends AProps> extends Component<T> {
         this.set('a', 'a');
         // @ts-expect-error
         this.set('b', 1);
-        this.set('b' as UnknownKey<T>, 1);
+        this.set<{b: number}>('b', 1);
         // @ts-expect-error
         this.set('a', 1);
         this.set({a: 'a'});
-        this.set({a: '1', b: 1} as WithUnknownKey<T, {b: number}>);
+        this.set<Partial<AProps> &{b: number}>({a: 'a', b: 1});
+        this.set<{a: string, b: number}>({a: 'a', b: 1});
         // @ts-expect-error
-        this.set({a: 1, b: 1} as WithUnknownKey<T, {b: number}>);
+        this.set<Partial<AProps> & {b: number}>({a: 'a', b: 'b'});
+        // @ts-expect-error
+        this.set<Partial<AProps> & {b: number}>({a: 1, b: 1});
         // @ts-expect-error
         this.set({a: 1});
 
+        // @ts-expect-error
+        this.get('ab');
         expectType<string>(this.get('a'));
-        expectType<any>(this.get('b'));
+        expectType<number>(this.get<number>('b'));
 
         this.watch('a', (v, o) => {
             expectType<string>(v); 
