@@ -557,7 +557,9 @@ export class Visitor {
         const indentLevel = this.indentLevel;
         let hasElse = false;
 
+        this.append('(');
         this.visitJSXAttributeValue(directive.value);
+        this.append(')');
         this.append(' ?');
         this.indent();
         let childrenFlag = body();

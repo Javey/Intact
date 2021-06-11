@@ -211,6 +211,14 @@ describe('Vdt Runtime', () => {
             `);
         });
 
+        it('render complex v-if', () => {
+            test(stripIndent`
+                <template>
+                    <div v-if={1 ? true : false}>true</div>
+                </template>
+            `);
+        });
+
         it('render v-if without v-else', () => {
             test(stripIndent`
                 <template>
