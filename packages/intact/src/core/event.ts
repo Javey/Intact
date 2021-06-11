@@ -63,7 +63,7 @@ export class Event<P> {
         if (!isUndefined(callbacks)) {
             callbacks = callbacks.slice();
             for (let i = 0; i < callbacks.length; i++) {
-                callbacks[i].apply(this, args);
+                callbacks[i].apply(void 0, args);
             }
         }
     }

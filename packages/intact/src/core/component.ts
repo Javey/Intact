@@ -242,7 +242,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         // call event on props firstly
         const propEvent = (this.props as any)[`ev-${name}`];
         if (isFunction(propEvent) && !this.$unmounted) {
-            propEvent.apply(this, args); 
+            propEvent(...args); 
         }
 
         super.trigger(name, args);
