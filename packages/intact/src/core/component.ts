@@ -44,7 +44,7 @@ type NoInfer<T> = [T][T extends any ? 0 : never];
 
 export abstract class Component<P extends {} = {}> extends Event<P> implements ComponentClass<P> {
     static readonly template: Template | string;
-    static readonly defaults: object = EMPTY_OBJ;
+    static readonly defaults: () => object = () => ({});
     static readonly typeDefs?: TypeDefs<any>;
     static readonly displayName?: string;
 
@@ -67,7 +67,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     public $mounted: boolean = false; 
     public $unmounted: boolean = false;
 
-    // private properties
+    // public properties
     public $template: Template;
 
     constructor() {
@@ -81,95 +81,8 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
             this.$template = compile(template);
         }
 
-        const defaults = constructor.defaults;
-        const props = this.props = {} as P;
-        if (defaults) {
-            for (const key in defaults) {
-                const descriptor = Object.getOwnPropertyDescriptor(defaults, key);
-                if (descriptor) {
-                    if (process.env.NODE_ENV !== 'production') {
-                        // maybe frozen
-                        if (!descriptor.get) {
-                            descriptor.writable = true;
-                        }
-                    }
-                    Object.defineProperty(props, key, descriptor);
-                }
-            }
-        }
-
-        if (process.env.NODE_ENV !== 'production') {
-            deepFreeze(defaults);
-        }
+        this.props = constructor.defaults() as P;
     }
-
-    set<K extends keyof P>(key: K, value: P[K], options?: SetOptions): void;
-    set<T, K extends keyof T = keyof T>(key: K, value: T[K], options?: SetOptions): void;
-    set<T = void>(key: string, value: NoInfer<T>, options?: SetOptions): void;
-    set<K extends keyof P>(data: Pick<P, K>, options?: SetOptions): void;
-    set<T = void>(data: Partial<P> & NoInfer<T>, options?: SetOptions): void;
-    set<T = void>(data: NoInfer<T>, options?: SetOptions): void;
-    set(key: any, value?: any, options?: SetOptions) {
-        if (isObject(key)) {
-            options = value as SetOptions;
-        } else {
-            key = {[key]: value};
-        } 
-
-        if (!isUndefined(options) && options.silent) {
-            for (let propName in key as P) {
-                set(this.props, propName, key[propName]);
-            }
-            return;
-        }
-
-        setProps(this, key);
-    }
-
-    get(): Props<P, ComponentClass<P>>;
-    get<K extends keyof Props<P, ComponentClass<P>>>(key: K): Props<P, ComponentClass<P>>[K]; 
-    get<V = void>(key: V extends void ? never : string): V;
-    get(key?: any) {
-        if (isUndefined(key)) return this.props;
-
-        return get(this.props, key);
-    }
-
-    forceUpdate(callback?: Function) {
-        if (this.$unmounted) return;
-        forceUpdate(this, callback);
-    }
-
-    trigger(name: string, ...args: any[]) {
-        // call event on props firstly
-        const propEvent = (this.props as any)[`ev-${name}`];
-        if (isFunction(propEvent) && !this.$unmounted) {
-            propEvent.apply(this, args); 
-        }
-
-        super.trigger(name, args);
-    }
-
-
-    watch<K extends keyof Props<P, this>>(
-        key: K, 
-        callback: (newValue: Props<P, this>[K], oldValue: Props<P, this>[K] | undefined) => void,
-        options?: WatchOptions 
-    ) {
-        watch(key, callback, options, this);
-    }
-
-    // compute<T>(getter: () => T) {
-        // if ((getter as any)._result) return (getter as any)._result;
-        
-        // const oldGet = this.get;
-        // this.get = (...args: any[]) => {
-            // oldGet.call(this, ...args);
-        // }
-        // const result = getter.call(this);
-        // (getter as any)._result = result;
-        // return result;
-    // }
 
     $init(props: P | null) {
         const parent = this.$parent;
@@ -287,4 +200,72 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     updated?(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass): void;
     beforeUnmount?(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null): void;
     unmounted?(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null): void;
+
+    set<K extends keyof P>(key: K, value: P[K], options?: SetOptions): void;
+    set<T, K extends keyof T = keyof T>(key: K, value: T[K], options?: SetOptions): void;
+    set<T = void>(key: string, value: NoInfer<T>, options?: SetOptions): void;
+    set<K extends keyof P>(data: Pick<P, K>, options?: SetOptions): void;
+    set<T = void>(data: Partial<P> & NoInfer<T>, options?: SetOptions): void;
+    set<T = void>(data: NoInfer<T>, options?: SetOptions): void;
+    set(key: any, value?: any, options?: SetOptions) {
+        if (isObject(key)) {
+            options = value as SetOptions;
+        } else {
+            key = {[key]: value};
+        } 
+
+        if (!isUndefined(options) && options.silent) {
+            for (let propName in key as P) {
+                set(this.props, propName, key[propName]);
+            }
+            return;
+        }
+
+        setProps(this, key);
+    }
+
+    get(): Props<P, ComponentClass<P>>;
+    get<K extends keyof Props<P, ComponentClass<P>>>(key: K): Props<P, ComponentClass<P>>[K]; 
+    get<V = void>(key: V extends void ? never : string): V;
+    get(key?: any) {
+        if (isUndefined(key)) return this.props;
+
+        return get(this.props, key);
+    }
+
+    forceUpdate(callback?: Function) {
+        if (this.$unmounted) return;
+        forceUpdate(this, callback);
+    }
+
+    trigger(name: string, ...args: any[]) {
+        // call event on props firstly
+        const propEvent = (this.props as any)[`ev-${name}`];
+        if (isFunction(propEvent) && !this.$unmounted) {
+            propEvent.apply(this, args); 
+        }
+
+        super.trigger(name, args);
+    }
+
+
+    watch<K extends keyof Props<P, this>>(
+        key: K, 
+        callback: (newValue: Props<P, this>[K], oldValue: Props<P, this>[K] | undefined) => void,
+        options?: WatchOptions 
+    ) {
+        watch(key, callback, options, this);
+    }
+
+    // compute<T>(getter: () => T) {
+        // if ((getter as any)._result) return (getter as any)._result;
+        
+        // const oldGet = this.get;
+        // this.get = (...args: any[]) => {
+            // oldGet.call(this, ...args);
+        // }
+        // const result = getter.call(this);
+        // (getter as any)._result = result;
+        // return result;
+    // }
 }

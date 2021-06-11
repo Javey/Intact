@@ -8,6 +8,10 @@ interface AProps {
 }
 
 class AA extends Component<AProps> {
+    static defaults(): Partial<AProps> {
+        return {a: 'a', aa: true}
+    }
+
     init() {
         expectType<number>(this.get<number>('ab'));
         expectType<string>(this.get<string>('ab'));
@@ -42,8 +46,10 @@ class AA extends Component<AProps> {
 }
 
 class A<T extends AProps> extends Component<T> {
-    static defaults: Partial<AProps> = {
-        a: 'a' 
+    static defaults = (): Partial<AProps> => {
+        return {
+            a: 'a',
+        };
     };
 
     init() {
@@ -87,9 +93,11 @@ interface BProps extends AProps {
     b: number 
 }
 export class B<T extends BProps> extends A<T> {
-    static defaults: Partial<BProps> = {
-        ...A.defaults,
-        b: 1,
+    static defaults(): Partial<BProps> {
+        return {
+            ...A.defaults(),
+            b: 1,
+        }
     }
 
     init() {

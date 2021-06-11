@@ -73,8 +73,8 @@ export class BaseTransition<P extends BaseTransitionProps = BaseTransitionProps>
         return vNode;
     }
 
-    static defaults: Partial<BaseTransitionProps> = {
-        show: true
+    static defaults(): Partial<BaseTransitionProps> {
+        return {show: true};
     };
 
     // private isLeaving: boolean = false;
@@ -179,6 +179,7 @@ export function resolveTransitionHooks(
 
             if (!component.$mounted) {
                 if (!appear) return;
+
                 hook = onAppear || onEnter;
                 afterHook = onAfterAppear || onAfterEnter;
                 cancelHook = onAppearCancelled || onEnterCancelled;

@@ -104,7 +104,7 @@ export function updateSyncComponent<P>(
 ) {
     component.$blockRender = true;
     if (!force) {
-        patchProps(component, lastVNode.props, nextVNode.props, (component.constructor as typeof Component).defaults);
+        patchProps(component, lastVNode.props, nextVNode.props, (component.constructor as typeof Component).defaults());
     }
 
     component.trigger('$beforeUpdate', lastVNode, nextVNode);

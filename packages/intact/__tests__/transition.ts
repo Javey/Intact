@@ -175,7 +175,7 @@ describe('Component', function() {
                         return h(Transition, {name: this.props.name, show: this.props.show}, h('div', null, 'show'));
                     }
 
-                    static defaults = {name: 'a', show: false};
+                    static defaults = () => ({name: 'a', show: false});
 
                     mounted() {
                         this.set('name', 'b');

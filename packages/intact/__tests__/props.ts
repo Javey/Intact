@@ -33,7 +33,7 @@ describe('Component', () => {
                 return h('div', null, this.get('name'));
             }
 
-            static defaults = {name: 1};
+            static defaults = () => ({name: 1});
         }
         
         afterEach(() => render(null, container));
@@ -79,27 +79,50 @@ describe('Component', () => {
                 expect(onReceiveName).to.have.callCount(0);
             });
 
-            it('should mount getter property', () => {
-                let count = 0;
-                class Test extends Component<{a: number, b: string}> {
-                    static template = function(this: Test) {
-                        return h('div', null, this.props.a + this.props.b);
-                    }
-                    static defaults = {
-                        get a() {
-                            return count++;
-                        },
-                        b: 'b'
-                    }
-                }
+            // it('should mount getter property', () => {
+                // let count = 0;
+                // class Test extends Component<{a?: number, b?: string}> {
+                    // static template = function(this: Test) {
+                        // return h('div', null, this.props.a! + this.props.b!);
+                    // }
+                    // static defaults = {
+                        // get a() {
+                            // return count++;
+                        // },
+                        // b: 'b'
+                    // }
+                // }
 
-                render(h(Test), container);
-                expect(container.innerHTML).to.equal('<div>0b</div>');
+                // render(h(Test), container);
+                // expect(container.innerHTML).to.equal('<div>0b</div>');
 
-                // another instance
-                render(h('div', null, h(Test)), container);
-                expect(container.innerHTML).to.equal('<div><div>1b</div></div>');
-            });
+                // // another instance
+                // render(h('div', null, h(Test)), container);
+                // expect(container.innerHTML).to.equal('<div><div>1b</div></div>');
+            // });
+
+            // it('should replace default getter property', () => {
+                // class Test extends Component<{a?: number, b?: string}> {
+                    // static template = function(this: Test) {
+                        // return h('div', null, this.props.a! + this.props.b!);
+                    // }
+                    // static defaults = {
+                        // get a() {
+                            // return 1
+                        // },
+                        // get b() {
+                            // return 'b'
+                        // }
+                    // }
+                // }
+
+                // render(h(Test, {a: 0}), container);
+                // expect(container.innerHTML).to.equal('<div>0b</div>');
+
+                // // update 
+                // render(h(Test, {b: 'c'}), container);
+                // expect(container.innerHTML).to.equal('<div>0c</div>');
+            // });
         });
 
         describe('Patch', () => {

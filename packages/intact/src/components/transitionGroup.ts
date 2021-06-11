@@ -89,8 +89,8 @@ export class TransitionGroup<P extends TransitionGroupProps = TransitionGroupPro
         return vNode;
     };
 
-    static defaults: Partial<TransitionGroupProps> = {
-        move: true,
+    static defaults(): Partial<TransitionGroupProps> {
+        return {move: true};
     };
 
     private lastChildren: VNode[] = [];
