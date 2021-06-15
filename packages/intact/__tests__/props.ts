@@ -1,6 +1,6 @@
 import {Component} from '../src/core/component';
 import {render, createVNode as h, VNode} from 'misstime';
-import {nextTick} from '../../misstime/__tests__/utils';
+import {nextTick, wait} from '../../misstime/__tests__/utils';
 
 describe('Component', () => {
     let container: Element;
@@ -365,6 +365,36 @@ describe('Component', () => {
 
                 await nextTick();
                 expect(dom.innerHTML).to.equal('1');
+            });
+
+            it('set props on beforeMount of a async component', async () => {
+                const onChangedName = sinon.spy();
+                class Test extends Component<{name?: number}> {
+                    static template(this: Test) {
+                        expect(this.get('name')).to.exist;
+                        return h('div', null, this.get('name'));
+                    }
+
+                    init() {
+                        this.on('$changed:name', onChangedName);
+                        return new Promise(resolve => {
+                            setTimeout(resolve, 100);
+                        }).then(() => {
+                            this.set('name', 1);
+                        });
+                    }
+
+                    beforeMount() {
+                        this.set('name', 2);
+                    }
+                }
+
+                render(h(Test), container);
+
+                await wait(200);
+
+                expect(onChangedName.getCalls()[0].args).to.eql([1, undefined]);
+                expect(onChangedName.getCalls()[1].args).to.eql([2, 1]);
             });
         });
     });

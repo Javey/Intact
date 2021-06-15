@@ -64,6 +64,7 @@ export function renderSyncComponnet<P>(
     component.$lastInput = vNode;
 
     mountedQueue.push(() => {
+        callAllQueue(component);
         component.$mount(lastVNode, nextVNode);
     });
 
@@ -178,6 +179,7 @@ export function mountProps<P>(component: Component<P>, nextProps: P) {
 }
 
 export function patchProps<P>(component: Component<P>, lastProps: P, nextProps: P, defaultProps: Partial<P>) {
+    const props = component.props;
     lastProps || (lastProps = EMPTY_OBJ);
     nextProps || (nextProps = EMPTY_OBJ);
 
@@ -187,8 +189,9 @@ export function patchProps<P>(component: Component<P>, lastProps: P, nextProps: 
 
         if (nextProps !== EMPTY_OBJ) {
             for (const prop in nextProps) {
-                const lastValue = rollbackToDefault(prop, lastProps[prop as keyof typeof lastProps], defaultProps);
-                const nextValue = rollbackToDefault(prop, nextProps[prop as keyof typeof nextProps], defaultProps);
+                // const lastValue = rollbackToDefault(prop, lastProps[prop as keyof typeof lastProps], defaultProps);
+                const lastValue = props[prop]; // use actual props instead of
+                const nextValue = rollbackToDefault(prop, nextProps[prop], defaultProps);
 
                 if (lastValue !== nextValue) {
                     patchProp(component, props, prop, lastValue, nextValue, changeTraces);
@@ -198,8 +201,8 @@ export function patchProps<P>(component: Component<P>, lastProps: P, nextProps: 
 
         if (lastProps !== EMPTY_OBJ) {
             for (const prop in lastProps) {
-                if (!isUndefined(lastProps[prop as keyof typeof lastProps]) && !hasOwn.call(nextProps, prop)) {
-                    patchProp(component, props, prop, lastProps[prop as keyof typeof lastProps], defaultProps[prop as keyof typeof defaultProps], null);
+                if (!isUndefined(lastProps[prop]) && !hasOwn.call(nextProps, prop)) {
+                    patchProp(component, props, prop, props[prop], defaultProps[prop], null);
                 }
             }
         }

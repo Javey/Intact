@@ -125,7 +125,7 @@ describe('Component', () => {
                 render(h(MyTest, {name: 2}), container);
 
                 await wait(200);
-                expect(onReceiveName).to.have.been.calledOnceWith(2, undefined);
+                expect(onReceiveName).to.have.been.calledOnceWith(2, 1);
             });
 
             it('should call beforeUpdate and updated correctly', async () => {
@@ -150,27 +150,6 @@ describe('Component', () => {
                 await wait(200);
                 expect(beforeUpdate).to.have.callCount(1);
                 expect(updated).to.have.callCount(1);
-            });
-
-            it('set props on beforeMount of a async component', async () => {
-                const onChangedName = sinon.spy();
-                class MyTest extends Test {
-                    init() {
-                        this.on('$changed:name', onChangedName);
-                        return super.init();
-                    }
-
-                    beforeMount() {
-                        this.set('name', 2);
-                    }
-                }
-
-                render(h(MyTest), container);
-
-                await wait(200);
-
-                expect(onChangedName.getCalls()[0].args).to.eql([1, undefined]);
-                expect(onChangedName.getCalls()[1].args).to.eql([2, 1]);
             });
         });
     });
