@@ -144,6 +144,9 @@ export function callAll(mountedQueue: Function[]) {
     for (let i = 0; i < mountedQueue.length; i++) {
         mountedQueue[i]();
     }
+    if (process.env.NODE_ENV !== 'production') {
+        Object.freeze(mountedQueue);
+    }
 }
 
 const xlinkNS = "http://www.w3.org/1999/xlink";

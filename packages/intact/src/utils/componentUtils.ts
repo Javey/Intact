@@ -65,7 +65,6 @@ export function renderSyncComponnet<P>(
 
     mountedQueue.push(() => {
         component.$mount(lastVNode, nextVNode);
-        callAllQueue(component);
     });
 
     component.$rendered = true;
@@ -87,8 +86,10 @@ export function renderAsyncComponent<P>(
     }
 
     component.on('$inited', () => {
-        mountedQueue = [];
+        mountedQueue = component.$mountedQueue = [];
         renderSyncComponnet(component, lastVNode, nextVNode, parentDom, anchor, mountedQueue);
+        // call queue before mountedQueue, because queue are callbacks set in init
+        callAllQueue(component);
         callAll(mountedQueue);
     });
 }
@@ -147,7 +148,7 @@ export function updateAsyncComponent<P>(
     force: boolean,
 ) {
     component.on('$inited', () => {
-        mountedQueue = [];
+        mountedQueue = component.$mountedQueue = [];
         updateSyncComponent(component, lastVNode, nextVNode, parentDom, anchor, mountedQueue, force);
         callAll(mountedQueue);
     });

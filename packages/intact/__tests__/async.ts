@@ -10,10 +10,10 @@ describe('Component', () => {
         document.body.appendChild(container);
     });
 
-    afterEach(() => {
-        render(null, container);
-        document.body.removeChild(container);
-    });
+    // afterEach(() => {
+        // render(null, container);
+        // document.body.removeChild(container);
+    // });
 
     class Test extends Component<{name?: number}> {
         static template(this: Test) {
@@ -150,6 +150,27 @@ describe('Component', () => {
                 await wait(200);
                 expect(beforeUpdate).to.have.callCount(1);
                 expect(updated).to.have.callCount(1);
+            });
+
+            it('set props on beforeMount of a async component', async () => {
+                const onChangedName = sinon.spy();
+                class MyTest extends Test {
+                    init() {
+                        this.on('$changed:name', onChangedName);
+                        return super.init();
+                    }
+
+                    beforeMount() {
+                        this.set('name', 2);
+                    }
+                }
+
+                render(h(MyTest), container);
+
+                await wait(200);
+
+                expect(onChangedName.getCalls()[0].args).to.eql([1, undefined]);
+                expect(onChangedName.getCalls()[1].args).to.eql([2, 1]);
             });
         });
     });
