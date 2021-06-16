@@ -402,6 +402,14 @@ describe('Vdt Compiler', () => {
                 </t:super>
             `);
         });
+
+        it('super with dynamic props', () => {
+             test(stripIndent`
+                <t:super class={a}>
+                    <b:block>test</b:block>
+                </t:super>
+            `);
+        });
     });
 
     describe('Diretives', () => {

@@ -179,7 +179,6 @@ export function mountProps<P>(component: Component<P>, nextProps: P) {
 }
 
 export function patchProps<P>(component: Component<P>, lastProps: P, nextProps: P, defaultProps: Partial<P>) {
-    const props = component.props;
     lastProps || (lastProps = EMPTY_OBJ);
     nextProps || (nextProps = EMPTY_OBJ);
 

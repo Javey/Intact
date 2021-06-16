@@ -791,6 +791,46 @@ export class Visitor {
     }
 
     private hasDynamicProp(attributes: ASTBaseElement['attributes'], isCommonElement: boolean) {
+        const detect = (name: string, attr: ASTAttribute): boolean => {
+            if (name === 'v-model' || name.substr(0, 8) === 'v-model:') {
+                return true;
+            }
+            const value = attr.value as ASTAttributeTemplateValue;
+            if (value.type === ASTTypes.JSXExpression) {
+                // if value is number / true / false, treat it as static value
+                let tmp: any = value.value;
+                const length = tmp.length;
+                if (!length) return false; // is an empty expresion, it will be generated to null
+                if (
+                    length === 1 &&
+                    (tmp = tmp[0], tmp.type === ASTTypes.JS) &&
+                    (tmp = tmp.value, tmp.length === 1)
+                ) {
+                    const jsValue = tmp[0];
+                    switch (jsValue) {
+                        case 'true':
+                        case 'false':
+                        case 'null':
+                        case 'undefined':
+                            return false;
+                        default:
+                            if (numberRegExp.test(jsValue)) return false;
+                            break;
+                    }
+                }
+                return true;
+            }
+            if (value.type === ASTTypes.JSXStrings) {
+                const values = value.value;
+                for (let i = 0; i < values.length; i++) {
+                    if (values[i].type === ASTTypes.JSXExpression) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        };
         for (let i = 0; i < attributes.length; i++) {
             const attr = attributes[i];
             if (attr.type === ASTTypes.JSXExpression) {
@@ -802,6 +842,7 @@ export class Visitor {
                 case 'className':
                 case 'key':
                     if (isCommonElement) continue;
+                    if (detect(name, attr)) return true;
                     break;
                 case 'ref':
                     if (!isCommonElement) return true;
@@ -810,42 +851,7 @@ export class Visitor {
                 case 'children':
                     return true;
                 default:
-                    if (name === 'v-model' || name.substr(0, 8) === 'v-model:') {
-                        return true;
-                    }
-                    const value = attr.value as ASTAttributeTemplateValue;
-                    if (value.type === ASTTypes.JSXExpression) {
-                        // if value is number / true / false, treat it as static value
-                        let tmp: any = value.value;
-                        const length = tmp.length;
-                        if (!length) return false; // is an empty expresion, it will be generated to null
-                        if (
-                            length === 1 &&
-                            (tmp = tmp[0], tmp.type === ASTTypes.JS) &&
-                            (tmp = tmp.value, tmp.length === 1)
-                        ) {
-                            const jsValue = tmp[0];
-                            switch (jsValue) {
-                                case 'true':
-                                case 'false':
-                                case 'null':
-                                case 'undefined':
-                                    continue;
-                                default:
-                                    if (numberRegExp.test(jsValue)) continue;
-                                    break;
-                            }
-                        }
-                        return true;
-                    }
-                    if (value.type === ASTTypes.JSXStrings) {
-                        const values = value.value;
-                        for (let i = 0; i < values.length; i++) {
-                            if (values[i].type === ASTTypes.JSXExpression) {
-                                return true;
-                            }
-                        }
-                    }
+                    if (detect(name, attr)) return true;
                     break;
             }
         }

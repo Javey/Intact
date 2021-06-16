@@ -88,7 +88,7 @@ export class BaseTransition<P extends BaseTransitionProps = BaseTransitionProps>
 
         const el = this.el = findDomFromVNode(lastInput, true) as TransitionElement;
         const display = el.style.display;
-        const originDisplay = display === 'none' ? '' : display;
+        const originalDisplay = display === 'none' ? '' : display;
 
         if (!this.props.show) {
             setDisplay(el, 'none');
@@ -99,7 +99,7 @@ export class BaseTransition<P extends BaseTransitionProps = BaseTransitionProps>
                 const transition = this.$lastInput!.transition!;
                 if (show) {
                     transition.beforeEnter(el);
-                    setDisplay(el, originDisplay);
+                    setDisplay(el, originalDisplay);
                     transition.enter(el);
                 } else {
                     transition.leave(el, () => {
