@@ -138,6 +138,12 @@
 "<div>true</div>"
 ```
 
+####   `render complex v-if`
+
+```
+"<div>true</div>"
+```
+
 ####   `render v-if without v-else`
 
 ```

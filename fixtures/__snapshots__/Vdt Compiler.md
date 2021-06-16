@@ -1017,7 +1017,7 @@ return function($props, $blocks) {
     var __$blocks = {};
     
     return _$ce(2, 'div', (
-        a ?
+        (a) ?
             (
                 (_$blocks['block'] = function($super) {
                     return (
@@ -1289,6 +1289,45 @@ return function($props, $blocks) {
 };"
 ```
 
+####   `super with dynamic props`
+
+```
+"var Vdt = _$vdt;
+var _$su = Vdt.superCall;
+var _$cn = Vdt.className;
+var _$ex = Vdt.extend;
+var _$em = Vdt.EMPTY_OBJ;
+
+return function($props, $blocks) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$su.call($this, {
+        'className': _$cn(a)
+    }, function($blocks) {
+        var _$blocks = {}, __$blocks = _$ex({}, $blocks);
+        return (
+            (
+                (_$blocks['block'] = function($super) {
+                    return 'test';
+                }),
+                (__$blocks['block'] = function($super, data) {
+                    var block = $blocks['block'];
+                    var callBlock = function() {
+                        return _$blocks['block'].call($this, $super, data);
+                    };
+                    return block ?
+                        block.call($this, callBlock, data) :
+                        callBlock();
+                })
+            ),
+            __$blocks
+        );
+    }.call($this, $blocks));
+};"
+```
+
 ## `Diretives`
 
 ####   `v-if`
@@ -1303,7 +1342,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        a ?
+        (a) ?
             _$ce(2, 'div', 'a', 16 /* HasTextChildren */) :
             b ?
                 _$ce(2, 'div', 'b', 16 /* HasTextChildren */) :
@@ -1368,7 +1407,7 @@ return function($props, $blocks) {
     
     return _$ce(2, 'div', (
         _$ma(a, function($value, $key) {
-            return value ?
+            return (value) ?
                 _$ce(2, 'div') :
                 undefined;
         }, $this)
@@ -1696,7 +1735,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        a ?
+        (a) ?
             _$ce(2, 'div') :
             undefined
     ), 0 /* UnknownChildren */);
@@ -1715,7 +1754,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        a ?
+        (a) ?
             _$ce(2, 'div') :
             _$ce(2, 'span')
     ), 2 /* HasVNodeChildren */);
@@ -1749,7 +1788,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        a ?
+        (a) ?
             'a' :
             'b'
     ), 16 /* HasTextChildren */);
@@ -1768,7 +1807,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        a ?
+        (a) ?
             a :
             'b'
     ), 0 /* UnknownChildren */);
@@ -1787,7 +1826,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        a ?
+        (a) ?
             _$ce(2, 'div', a, 0 /* UnknownChildren */) :
             [
                 _$ce(2, 'div'),
@@ -1809,7 +1848,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', (
-        a ?
+        (a) ?
             [
                 _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'a'),
                 _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'b')
@@ -1947,7 +1986,7 @@ return function($props, $blocks) {
     
     return _$ce(2, 'div', (
         _$ma(a, function($value, $key) {
-            return a ?
+            return (a) ?
                 _$ce(2, 'div') :
                 undefined;
         }, $this)
@@ -1970,7 +2009,7 @@ return function($props, $blocks) {
     return _$ce(2, 'div', (
         _$ma(a, function($value, $key) {
             return (
-                a ?
+                (a) ?
                     _$ce(2, 'div') :
                     _$ce(2, 'div')
             );
@@ -1994,7 +2033,7 @@ return function($props, $blocks) {
     return _$ce(2, 'div', (
         _$ma(a, function($value, $key) {
             return (
-                a ?
+                (a) ?
                     _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'a') :
                     _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'a')
             );
@@ -2499,7 +2538,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', [
-        a ?
+        (a) ?
             _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'a') :
             _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'a'),
         _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'b')
@@ -2519,7 +2558,7 @@ return function($props, $blocks) {
     var $this = this;
     
     return _$ce(2, 'div', [
-        a ?
+        (a) ?
             _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'a') :
             _$ce(2, 'div'),
         _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, null, 'b')
