@@ -116,7 +116,7 @@ export class TransitionGroup<P extends TransitionGroupProps = TransitionGroupPro
 
         for (let i = 0; i < lastChildrenLength; i++) {
             const vNode = lastChildren[i];
-            vNode.newPosition = (vNode.dom as Element).getBoundingClientRect();
+            vNode.newPosition = (findDomFromVNode(vNode, true) as Element).getBoundingClientRect();
         }
 
         const movedChildren = [];
@@ -130,7 +130,7 @@ export class TransitionGroup<P extends TransitionGroupProps = TransitionGroupPro
 
         for (let i = 0; i < movedChildren.length; i++) {
             const vNode = movedChildren[i];
-            const el = vNode.dom as TransitionElement;
+            const el = findDomFromVNode(vNode, true) as TransitionElement;
             const style = el.style; 
             addTransitionClass(el, moveClass);
             style.transform = style.webkitTransform = style.transitionDuration = style.webkitTransitionDuration = ''
@@ -151,7 +151,7 @@ export class TransitionGroup<P extends TransitionGroupProps = TransitionGroupPro
 const transformRegExp = /transform$/
 
 function callPendingCbs(vNode: VNode) {
-    const el = vNode.dom as TransitionElement;
+    const el = findDomFromVNode(vNode, true) as TransitionElement;
 
     if (el._moveCb) {
         el._moveCb();
@@ -168,7 +168,7 @@ function applyTransition(vNode: VNode) {
     const dy = position!.top - newPosition!.top;
 
     if (dx || dy) {
-        const s = (vNode.dom as HTMLElement).style;
+        const s = (findDomFromVNode(vNode, true) as HTMLElement).style;
         s.transform = s.webkitTransform = `translate(${dx}px, ${dy}px)`;
         s.transitionDuration = s.webkitTransitionDuration = '0s';
 

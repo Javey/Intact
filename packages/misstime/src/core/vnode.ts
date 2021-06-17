@@ -322,6 +322,8 @@ export function directClone(vNode: VNode): VNode {
     }
 
     newVNode.transition = vNode.transition;
+    // newVNode.newPosition = vNode.newPosition;
+    // newVNode.position = vNode.position;
     
     return newVNode;
 }

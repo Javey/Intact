@@ -478,7 +478,7 @@ function patchNonKeyedChildren(
 
         patch(lastChild, nextChild, parentDom, parentComponent, isSVG, anchor, mountedQueue, reusing);
         // FIXME: why should update last children?
-        lastChildren[i] = nextChild;
+        // lastChildren[i] = nextChild;
     }
 
     if (lastChildrenLength < nextChildrenLength) {
@@ -528,7 +528,7 @@ function patchKeyedChildren(
                 b[j] = bNode = directClone(bNode);
             }
             patch(aNode, bNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, reusing);
-            a[j] = bNode;
+            // a[j] = bNode;
             ++j;
             if (j > aEnd || j > bEnd) {
                 break outer;
@@ -546,7 +546,7 @@ function patchKeyedChildren(
                 b[bEnd] = bNode = directClone(bNode);
             }
             patch(aNode, bNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, reusing);
-            a[aEnd] = bNode;
+            // a[aEnd] = bNode;
             --aEnd;
             --bEnd;
             if (j > aEnd || j > bEnd) {
