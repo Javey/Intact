@@ -134,10 +134,12 @@ export function createVNode<T extends VNodeTag>(
         ) as VNode<T>;
     }
 
-    if (children || key || ref) {
+    const hasChildren = !isNullOrUndefined(children);
+    const hasKey = !isNullOrUndefined(key);
+    if (hasChildren || hasKey || ref) {
         if (isNullOrUndefined(newProps)) newProps = {} as any;
-        if (children) newProps!.children = children;
-        if (key) newProps!.key = key;
+        if (hasChildren) newProps!.children = children;
+        if (hasKey) newProps!.key = key;
         if (ref) newProps!.ref = ref;
     }
 
