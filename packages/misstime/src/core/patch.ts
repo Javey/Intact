@@ -321,7 +321,7 @@ export function patchChildren(
                     patch(lastChildren as VNode, nextChildren as VNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, reusing);
                     break;
                 case ChildrenTypes.HasInvalidChildren:
-                    remove(lastChildren as VNode, parentDom);
+                    remove(lastChildren as VNode, parentDom, reusing);
                     break;
                 case ChildrenTypes.HasTextChildren:
                     unmount(lastChildren as VNode);
@@ -492,7 +492,7 @@ function patchNonKeyedChildren(
         }
     } else if (lastChildrenLength > nextChildrenLength) {
         for (i = commonLength; i < lastChildrenLength; ++i) {
-            remove(lastChildren[i], parentDom);
+            remove(lastChildren[i], parentDom, reusing);
         }
     }
 }
@@ -572,7 +572,7 @@ function patchKeyedChildren(
         }
     } else if (j > bEnd) {
         while (j <= aEnd) {
-            remove(a[j++], parentDom);
+            remove(a[j++], parentDom, reusing);
         }
     } else {
         patchKeyedChildrenComplex(a, b, aLength, bLength, aEnd, bEnd, j, parentDom, parentComponent, isSVG, anchor, parentVNode, mountedQueue, reusing);
@@ -623,7 +623,7 @@ function patchKeyedChildrenComplex(
                             canRemoveWholeContent = false;
                             // remove nodes before the key
                             while (aStart < i) {
-                                remove(a[aStart++], parentDom);
+                                remove(a[aStart++], parentDom, reusing);
                             }
                         }
                         if (pos > j) {
@@ -641,11 +641,11 @@ function patchKeyedChildrenComplex(
                 } 
                 // remove node if it does not find
                 if (!canRemoveWholeContent && j > bEnd) {
-                    remove(aNode, parentDom);
+                    remove(aNode, parentDom, reusing);
                 }
             } else if (!canRemoveWholeContent) {
                 // remove node that exceeds the length
-                remove(aNode, parentDom);
+                remove(aNode, parentDom, reusing);
             }
         }
     } else {
@@ -667,7 +667,7 @@ function patchKeyedChildrenComplex(
                     if (canRemoveWholeContent) {
                         canRemoveWholeContent = false;
                         while (aStart < i) {
-                            remove(a[aStart++], parentDom);
+                            remove(a[aStart++], parentDom, reusing);
                         }
                     }
                     sources[j - bStart] = i + 1;
@@ -683,10 +683,10 @@ function patchKeyedChildrenComplex(
                     patch(aNode, bNode, parentDom, parentComponent, isSVG, anchor, mountedQueue, reusing);
                     ++patched;
                 } else if (!canRemoveWholeContent) {
-                    remove(aNode, parentDom);
+                    remove(aNode, parentDom, reusing);
                 }
             } else if (!canRemoveWholeContent) {
-                remove(aNode, parentDom);
+                remove(aNode, parentDom, reusing);
             }
         }
     }

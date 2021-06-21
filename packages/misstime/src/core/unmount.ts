@@ -4,8 +4,10 @@ import {isNullOrUndefined} from 'intact-shared';
 import {removeVNodeDom} from '../utils/common';
 import {delegatedEvents, unmountDelegatedEvent} from '../events/delegation';
 
-export function remove(vNode: VNode, parentDom: Element) {
-    unmount(vNode);
+export function remove(vNode: VNode, parentDom: Element, reusing: boolean) {
+    if (!reusing) {
+        unmount(vNode);
+    }
     removeVNodeDom(vNode, parentDom);
 }
 

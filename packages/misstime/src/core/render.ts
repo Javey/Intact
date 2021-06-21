@@ -69,7 +69,7 @@ export function render(vNode: VNode | null | undefined, parentDom: IntactElement
         }
     } else {
         if (isNullOrUndefined(vNode)) {
-            remove(lastVNode, parentDom);
+            remove(lastVNode, parentDom, false);
             parentDom.$V = null;
         } else {
             if (vNode.type & Types.InUse) {

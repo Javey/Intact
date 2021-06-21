@@ -299,6 +299,29 @@ describe('Component', () => {
                 render(h(Test2, {children: h(Test3)}), container);
             });
 
+            it('should not unmounted an unmounted keyed vNode if we are reusing the dom', async () => {
+                class Test1 extends Component {
+                    static template = function(this: Test1) {
+                        return h('div', null, this.props.children);
+                    }
+                }
+
+                class Test2 extends Component {
+                    static template = function(this: Test2) {
+                        return h('div', null, this.props.children);
+                    }
+                }
+
+                class Test3 extends Component {
+                    static template = function(this: Test2) {
+                        return h('i', null, 'test3');
+                    }
+                }
+
+                render(h(Test1, {children: [h('div', {key: 1}), h(Test3, {key: 2})]}), container);
+                render(h(Test2, {children: [h('div', {key: 1}), h(Test3, {key: 3})]}), container);
+            });
+
             it('replace one vNode with multiple vNodes and vice versa', () => {
                 class Test1 extends Component {
                     static template = function(this: Test1) {

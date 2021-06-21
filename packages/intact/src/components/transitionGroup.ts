@@ -99,7 +99,7 @@ export class TransitionGroup<P extends TransitionGroupProps = TransitionGroupPro
     mounted() {  }
 
     updated() {
-        const {children, lastChildren} = this;
+        const {lastChildren} = this;
         if (!lastChildren.length) {
             return;
         }

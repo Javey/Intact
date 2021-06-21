@@ -235,7 +235,9 @@ describe('Patch', () => {
 
         describe('Non-Keyed', () => {
             const map: Record<string, VNode> = {};
-            ['a', 'b', 'c', 'd'].forEach(key => map[key] = h('i', null, key));
+            before(() => {
+                ['a', 'b', 'c', 'd'].forEach(key => map[key] = h('i', null, key));
+            });
 
             it('should remove surplus nodes', () => {
                 patchTest(
@@ -256,8 +258,10 @@ describe('Patch', () => {
 
         describe('Keyed', () => {
             const map: Record<string, VNode> = {};
-            ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'].forEach(key => {
-                map[key] = h('i', {key}, key);
+            before(() => {
+                ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'].forEach(key => {
+                    map[key] = h('i', {key}, key);
+                });
             });
 
             it('should sync nodes with the same key at the end and insert new node', () => {
@@ -338,10 +342,13 @@ describe('Patch', () => {
             });
 
             describe('Long length', () => {
-                const fillVNodes = Array.apply(null, {length: 32} as any).map((v, i) => {
-                    return h('i', {key: i});
-                });
+                const fillVNodes: VNode[] = [];
                 const fillHtml = new Array(32).fill('<i></i>').join('');
+                before(() => {
+                    Array.apply(null, {length: 32} as any).forEach((v, i) => {
+                        fillVNodes.push(h('i', {key: i}));
+                    });
+                });
 
                 it('should remove whole content', () => {
                     patchTest(
