@@ -114,7 +114,8 @@ export function className(obj?: Record<string, any> | string | number | null) {
     return ret.join(' ');
 }
 
-export function map(data: Record<string, any> | Map<any, any> | Set<any> | any[], iter: (key: any, value: any) => any, thisArg: any) {
+export function map(data: Record<string, any> | Map<any, any> | Set<any> | any[] | null | undefined, iter: (key: any, value: any) => any, thisArg: any) {
+    if (isNullOrUndefined(data)) return;
     if (isObject(data)) {
         const ret: any = [];
         const callback = (value: any, key: any) => {
