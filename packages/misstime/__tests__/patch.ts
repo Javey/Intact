@@ -233,6 +233,20 @@ describe('Patch', () => {
             );
         });
 
+        it('should assert children to fragment correctly', () => {
+            patchTest(
+                h('div', null, [h(Fragment, null, h('a')), h('i')]),
+                h('div', null, [h(Fragment, null, [h('a'), h('b')]), h('i')]),
+                '<div><a></a><b></b><i></i></div>'
+            );
+
+            patchTest(
+                h('div', null, [h(Fragment, null, [h('a')]), h('i')]),
+                h('div', null, [h(Fragment, null, [h('a'), h('b')]), h('i')]),
+                '<div><a></a><b></b><i></i></div>'
+            );
+        });
+
         describe('Non-Keyed', () => {
             const map: Record<string, VNode> = {};
             before(() => {
@@ -635,6 +649,20 @@ describe('Patch', () => {
             const select = container.firstElementChild as HTMLSelectElement;
             expect(select.options[0].selected).to.be.true;
             expect(select.options[1].selected).to.be.false;
+        });
+
+        it('should clear value if set value to undefined', () => {
+            patchTest(
+                h('input', {value: 2}),
+                h('input', {value: undefined}),
+            );
+            expect((container.firstElementChild as HTMLInputElement).value).to.equal('');
+
+            patchTest(
+                h('textarea', {value: 2}),
+                h('textarea', {value: undefined}),
+            );
+            expect((container.firstElementChild as HTMLInputElement).value).to.equal('');
         });
     });
 });

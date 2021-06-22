@@ -12,10 +12,10 @@ export function processElement(
     isControlled: boolean,
 ) {
     if (type & Types.InputElement) {
-        applyValueInput(nextProps, dom as HTMLInputElement);
+        applyValueInput(nextProps, dom as HTMLInputElement, isControlled);
     } else if (type & Types.SelectElement) {
         applyValueSelect(nextProps, dom as HTMLSelectElement, mounting, vNode, isControlled);
     } else if (type & Types.TextareaElement) {
-        applyValueTextArea(nextProps, dom as HTMLTextAreaElement, mounting);
+        applyValueTextArea(nextProps, dom as HTMLTextAreaElement, mounting, isControlled);
     }
 }

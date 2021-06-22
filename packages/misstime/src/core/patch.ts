@@ -56,20 +56,7 @@ export function patch(
     } else if (nextType & Types.Text || nextType & Types.HtmlComment) {
         patchText(lastVNode as VNodeTextElement, nextVNode as VNodeTextElement); 
     } else if (nextType & Types.Fragment) {
-        // patchFragment(lastVNode as VNodeElement, nextVNode as VNodeElement, parentDom, isSVG, anchor, mountedQueue);
-        patchChildren(
-            lastVNode.childrenType,
-            nextVNode.childrenType, 
-            (lastVNode as VNodeElement).children,
-            (nextVNode as VNodeElement).children,
-            parentDom,
-            parentComponent,
-            isSVG,
-            anchor,
-            lastVNode,
-            mountedQueue,
-            reusing,
-        );
+        patchFragment(lastVNode as VNodeElement, nextVNode as VNodeElement, parentDom, parentComponent, isSVG, mountedQueue, reusing);
     }
 }
 
@@ -266,40 +253,59 @@ function patchText(lastVNode: VNodeTextElement, nextVNode: VNodeTextElement) {
     }
 }
 
-// function patchFragment(lastVNode: VNodeElement, nextVNode: VNodeElement, parentDom: Element, isSVG: boolean, anchor: IntactDom | null, mountedQueue: Function[]) {
-    // const lastChildren = lastVNode.children as VNode[];
-    // let nextChildren = nextVNode.children;
-    // const lastChildrenType = lastVNode.childrenType;
-    // let nextChildrenType = nextVNode.childrenType;
-    // let anchor: Element | null = null;
+function patchFragment(
+    lastVNode: VNodeElement,
+    nextVNode: VNodeElement,
+    parentDom: Element,
+    parentComponent: ComponentClass | null,
+    isSVG: boolean,
+    mountedQueue: Function[],
+    reusing: boolean,
+) {
+    const lastChildren = lastVNode.children as VNode[];
+    let nextChildren = nextVNode.children;
+    const lastChildrenType = lastVNode.childrenType;
+    let nextChildrenType = nextVNode.childrenType;
+    let anchor: Element | null = null;
 
     // if (nextChildrenType & ChildrenTypes.MultipleChildren && (nextChildren as VNode[]).length === 0) {
         // nextChildrenType = nextVNode.childrenType = ChildrenTypes.HasVNodeChildren;
         // nextChildren = nextVNode.children = createVoidVNode();
     // }
 
-    // const nextIsSingle = (nextChildrenType & ChildrenTypes.HasVNodeChildren) !== 0;
+    const nextIsSingle = (nextChildrenType & ChildrenTypes.HasVNodeChildren) !== 0;
 
-    // if (lastChildrenType & ChildrenTypes.MultipleChildren) {
-        // const lastLen = lastChildren.length;
+    if (lastChildrenType & ChildrenTypes.MultipleChildren) {
+        const lastLen = lastChildren.length;
 
-        // // We need to known Fragment's edge node when
-        // if (
-            // // It uses keyed algorithm
-            // (lastChildrenType & nextChildrenType & ChildrenTypes.HasKeyedChildren) ||
-            // // It transforms from may to signle
-            // nextIsSingle ||
-            // // It will append more nodes
-            // (nextChildren as VNode[]).length > lastLen
-        // ) {
-            // // When Fragment has mutliple children there is always at least one vNode
-            // anchor = (findDomFromVNode(lastChildren[lastLen - 1], false) as Element).nextSibling as Element;
-        // }
-    // }
+        // We need to known Fragment's edge node when
+        if (
+            // It uses keyed algorithm
+            (lastChildrenType & nextChildrenType & ChildrenTypes.HasKeyedChildren) ||
+            // It transforms from may to signle
+            nextIsSingle ||
+            // It will append more nodes
+            (nextChildren as VNode[]).length > lastLen
+        ) {
+            // When Fragment has mutliple children there is always at least one vNode
+            anchor = (findDomFromVNode(lastChildren[lastLen - 1], false) as Element).nextSibling as Element;
+        }
+    }
 
-    // patchChildren(lastChildrenType, nextChildrenType, lastChildren, nextChildren, parentDom, isSVG, anchor, lastVNode, mountedQueue);
-    // patchChildren(lastVNode.childrenType, nextVNode.childrenType, lastVNode.children, nextVNode.children, parentDom, isSVG, anchor, lastVNode, mountedQueue);
-// }
+    patchChildren(
+        lastChildrenType,
+        nextChildrenType,
+        lastChildren,
+        nextChildren,
+        parentDom,
+        parentComponent,
+        isSVG,
+        anchor, 
+        lastVNode, 
+        mountedQueue,
+        reusing
+    );
+}
 
 export function patchChildren(
     lastChildrenType: ChildrenTypes,
@@ -560,7 +566,7 @@ function patchKeyedChildren(
     if (j > aEnd) {
         if (j <= bEnd) {
             nextPos = bEnd + 1;
-            nextNode = nextPos < bLength ? findDomFromVNode(b[nextPos], true) : null;
+            nextNode = nextPos < bLength ? findDomFromVNode(b[nextPos], true) : anchor;
             while (j <= bEnd) {
                 bNode = b[j];
                 if (bNode.type & Types.InUse) {
@@ -705,7 +711,7 @@ function patchKeyedChildrenComplex(
                     b[pos] = bNode = directClone(bNode);
                 }
                 nextPos = pos + 1;
-                mount(bNode, parentDom, parentComponent, isSVG, nextPos < bLength ? findDomFromVNode(b[nextPos], true) : null, mountedQueue);
+                mount(bNode, parentDom, parentComponent, isSVG, nextPos < bLength ? findDomFromVNode(b[nextPos], true) : anchor, mountedQueue);
             } else if (j < 0 || i !== seq[j]) {
                 pos = i + bStart;
                 bNode = b[pos];
