@@ -2,9 +2,9 @@ import {isNullOrUndefined} from 'intact-shared';
 
 export function applyValueInput(nextProps: any, dom: HTMLInputElement, isControlled: boolean) {
     let {type, value, checked, multiple, defaultValue} = nextProps;
-    const hasValue = !isNullOrUndefined(value);
-    if (!hasValue && isControlled) {
-        value = ''
+
+    if (isNullOrUndefined(value)) {
+        value = '';
     }
 
     // FIXME: it seems like it need not handle because patchProp will handle it
@@ -14,7 +14,7 @@ export function applyValueInput(nextProps: any, dom: HTMLInputElement, isControl
     if (!isNullOrUndefined(multiple) && multiple !== dom.multiple) {
         dom.multiple = multiple;
     }
-    if (!isNullOrUndefined(defaultValue) && !hasValue) {
+    if (!isNullOrUndefined(defaultValue) && !isControlled) {
         dom.defaultValue = defaultValue + '';
     }
     if (isCheckedType(type)) {

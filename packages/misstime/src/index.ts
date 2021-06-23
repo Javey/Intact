@@ -22,3 +22,4 @@ export {remove, unmount, unmountComponentClass} from './core/unmount';
 export {findDomFromVNode, callAll, removeVNodeDom} from './utils/common';
 export {createRef} from './utils/ref';
 export {Fragment} from './utils/common';
+export * from './utils/helpers';

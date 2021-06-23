@@ -1,4 +1,4 @@
-import {VNode, ChildrenTypes, Types, Reference} from '../utils/types';
+import {VNode, ChildrenTypes, Types, Reference, ComponentClass} from '../utils/types';
 import {isNullOrUndefined, isNumber, isArray, EMPTY_OBJ} from 'intact-shared';
 import {REFERENCE} from '../utils/common';
 
@@ -49,9 +49,9 @@ function updateChildOptions(vNode: VNode, value: string, flag: Reference) {
         const type = vNode.type;
 
         if (type & Types.ComponentClass) {
-            // TODO
+            updateChildOptions((children as ComponentClass).$lastInput!, value, flag);
         } else if (type & Types.ComponentFunction) {
-            // TODO
+            updateChildOptions(children as VNode, value, flag);
         } else if (vNode.childrenType === ChildrenTypes.HasVNodeChildren) {
             updateChildOptions(children as VNode, value, flag);
         } else if (vNode.childrenType & ChildrenTypes.MultipleChildren) {
