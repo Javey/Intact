@@ -129,11 +129,17 @@ export interface RefObject<T> {
     readonly __is_ref: boolean,
 }
 
+export interface NonNullableRefObject<T> extends RefObject<T> {
+    value: T;
+}
+
 export type RefFunction<T> = { bivarianceHack(i: T | null): any }["bivarianceHack"];
 
 export type Ref<T> = RefFunction<T> | RefObject<T>;
 
-export type Blocks<T = any> = Record<string, (this: T, parent: () => Children, ...args: any[]) => Children>
+export type Block<T> = (this: T, parent: () => Children, ...args: any[]) => Children;
+
+export type Blocks<T = any> = Record<string, Block<T>>
 
 export type Props<P extends {}, T extends Element | ComponentClass = Element | ComponentClass> = {
     children?: Children

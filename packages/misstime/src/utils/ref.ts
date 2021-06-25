@@ -1,13 +1,15 @@
-import {ComponentClass, RefObject, Ref} from './types';
-import {isFunction} from 'intact-shared';
+import {ComponentClass, RefObject, NonNullableRefObject, Ref} from './types';
+import {isFunction, isUndefined} from 'intact-shared';
 
 export function isRef(o: any): o is RefObject<any> {
     return o.__is_ref; 
 }
 
-export function createRef<T = Element>(): RefObject<T> {
+export function createRef<T = Element>(): RefObject<T>;
+export function createRef<T = Element>(defaultValue: T): NonNullableRefObject<T>;
+export function createRef<T = Element>(defaultValue?: T): RefObject<T> {
     return {
-        value: null,
+        value: isUndefined(defaultValue) ? null : defaultValue,
         __is_ref: true,
     }
 }
