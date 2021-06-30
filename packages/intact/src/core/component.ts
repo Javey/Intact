@@ -99,16 +99,15 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
 
             const ret = this.init(props);
             if (ret && ret.then) {
-                (ret as Promise<any>).then(() => componentInited(this), err => {
+                (ret as Promise<any>).then(() => componentInited(this, triggerReceiveEvents), err => {
                     if (process.env.NODE_ENV !== 'production') {
                         console.error('Unhandled promise rejection in init: ', err);
                     }
-                    componentInited(this);
+                    componentInited(this, triggerReceiveEvents);
                 });
             } else {
-                componentInited(this);
+                componentInited(this, triggerReceiveEvents);
             }
-            triggerReceiveEvents && triggerReceiveEvents();
             currentInstance = null;
         } else {
             // if it does not exist init method, it is unnecessary to trigger $receive events
@@ -121,7 +120,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
                     }
                 }
             }
-            componentInited(this);
+            componentInited(this, null);
         }
     }
 

@@ -155,9 +155,10 @@ export function updateAsyncComponent<P>(
     });
 }
 
-export function componentInited<P>(component: Component<P>) {
-    component.$inited = true;
+export function componentInited<P>(component: Component<P>, triggerReceiveEvents: Function | null) {
+    triggerReceiveEvents && triggerReceiveEvents();
 
+    component.$inited = true;
     component.trigger('$inited');
 }
 
