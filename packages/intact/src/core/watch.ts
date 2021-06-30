@@ -40,7 +40,7 @@ export function watch<P, K extends keyof Props<P, Component<P>>>(
             instance!.on(`$receive:${key}`, (
                 newValue: Props<P, Component<P>>[K],
                 oldValue: Props<P, Component<P>>[K] | undefined,
-            ) => instance!.$mountedQueue!.push(() => callback(newValue, oldValue)));
+            ) => instance!.$mountedQueue.push(() => callback(newValue, oldValue)));
         } else {
             instance!.on(`$receive:${key}`, (
                 newValue: Props<P, Component<P>>[K],
@@ -48,7 +48,7 @@ export function watch<P, K extends keyof Props<P, Component<P>>>(
                 init: boolean
             ) => {
                 if (!init) {
-                    instance!.$mountedQueue!.push(() => callback(newValue, oldValue));
+                    instance!.$mountedQueue.push(() => callback(newValue, oldValue));
                 }
             });
         }

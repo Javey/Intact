@@ -32,12 +32,16 @@ describe('Component', () => {
                     return h('div', null, 'b');
                 }
 
+                public number = inject('number');
+
                 init() {
                     expect(inject('number')).to.equal(1);
                 }
             }
 
-            render(h(A, null,  h(B)), container);
+            let b: B | null = null;
+            render(h(A, null,  h(B, {ref: i => b = i})), container);
+            expect(b!.number).to.equal(1);
             render(h(A, null, h('div', null, h(B))), container);
         });
 

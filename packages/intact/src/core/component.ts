@@ -51,14 +51,19 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     public props: Props<P, this>;
     public refs: Record<string, any> = {}; 
 
-    // internal properties
     public $SVG: boolean = false;
-    public $vNode: VNodeComponentClass<this> | null = null;
+    public $vNode: VNodeComponentClass<this>;
+    public $parent: Component<any> | null;
+    public $mountedQueue: Function[];
+
+    // internal properties
+    // public $SVG: boolean = false;
+    // public $vNode: VNodeComponentClass<this> | null = null;
     public $lastInput: VNode | null = null;
-    public $mountedQueue: Function[] | null = null;
+    // public $mountedQueue: Function[] | null = null;
     public $blockRender: boolean = false;
     public $queue: Function[] | null = null;
-    public $parent: Component<any> | null = null;
+    // public $parent: Component<any> | null = null;
     public $provides: Record<InjectionKey, any> | null = null;
 
     // lifecyle states
@@ -70,8 +75,21 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     // public properties
     public $template: Template;
 
-    constructor() {
+    constructor(
+        props: P | null,
+        $vNode: VNodeComponentClass,
+        $SVG: boolean,
+        $mountedQueue: Function[],
+        $parent: ComponentClass | null,
+    ) {
         super();
+
+        currentInstance = this;
+
+        this.$vNode = $vNode as VNodeComponentClass<this>;
+        this.$SVG = $SVG;
+        this.$mountedQueue = $mountedQueue;
+        this.$parent = $parent as Component<any>;
 
         const constructor = this.constructor as typeof Component;
         const template = constructor.template;
@@ -82,16 +100,14 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         }
 
         this.props = constructor.defaults() as P;
+
+        if ($parent !== null) {
+            this.$provides = ($parent as Component<any>).$provides;
+        }
     }
 
     $init(props: P | null) {
-        const parent = this.$parent;
-        if (parent !== null) {
-            this.$provides = parent.$provides;
-        }
-
         if (isFunction(this.init)) {
-            currentInstance = this;
             let triggerReceiveEvents: Function | null = null;
             if (!isNull(props)) {
                 triggerReceiveEvents = mountProps(this, props); 
@@ -108,7 +124,6 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
             } else {
                 componentInited(this, triggerReceiveEvents);
             }
-            currentInstance = null;
         } else {
             // if it does not exist init method, it is unnecessary to trigger $receive events
             if (!isNull(props)) {
@@ -122,6 +137,8 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
             }
             componentInited(this, null);
         }
+
+        currentInstance = null;
     }
 
     $render(

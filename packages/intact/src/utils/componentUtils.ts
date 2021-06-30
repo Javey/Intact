@@ -275,7 +275,7 @@ export function forceUpdate<P>(component: Component<P>, callback?: Function) {
     } else if (component.$blockRender) {
         // component is before rendering or updating
         if (isFunction(callback)) {
-            component.$mountedQueue!.push(callback);
+            component.$mountedQueue.push(callback);
         }
     } else {
         // TODO: if QUEUE.length === 0, update immediately
@@ -307,7 +307,7 @@ function rerender() {
     while (component = QUEUE.shift()) {
         if (!component.$unmounted) {
             const mountedQueue: Function[] = component.$mountedQueue = [];
-            const vNode = component.$vNode!;
+            const vNode = component.$vNode;
             component.$update(
                 vNode, 
                 vNode,

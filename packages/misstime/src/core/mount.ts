@@ -126,12 +126,12 @@ export function mountComponentClass(
     }
 
     const props = vNode.props;
-    const instance = new vNode.tag(props);
+    const instance = new vNode.tag(props, vNode, isSVG, mountedQueue, parentComponent);
 
-    instance.$SVG = isSVG;
-    instance.$vNode = vNode;
-    instance.$mountedQueue = mountedQueue;
-    instance.$parent = parentComponent;
+    // instance.$SVG = isSVG;
+    // instance.$vNode = vNode;
+    // instance.$mountedQueue = mountedQueue;
+    // instance.$parent = parentComponent;
 
     instance.$init(props);
    

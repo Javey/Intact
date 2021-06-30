@@ -150,7 +150,13 @@ export type Props<P extends {}, T extends Element | ComponentClass = Element | C
 } & P;
 
 export interface ComponentConstructor<T extends ComponentClass = ComponentClass> {
-    new (props: T extends ComponentClass<infer P> ? P : null): T
+    new (
+        props: T extends ComponentClass<infer P> ? P : null,
+        $vNode: VNodeComponentClass,
+        $SVG: boolean,
+        $mountedQueue: Function[],
+        $parent: ComponentClass | null,
+    ): T
     displayName?: string
     typeDefs?: TypeDefs<T extends ComponentClass<infer P> ? P : {}>
 }
