@@ -107,36 +107,41 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     }
 
     $init(props: P | null) {
-        if (isFunction(this.init)) {
+        // if (isFunction(this.init)) {
             let triggerReceiveEvents: Function | null = null;
             if (!isNull(props)) {
                 triggerReceiveEvents = mountProps(this, props); 
             }
 
-            const ret = this.init(props);
-            if (ret && ret.then) {
-                (ret as Promise<any>).then(() => componentInited(this, triggerReceiveEvents), err => {
-                    if (process.env.NODE_ENV !== 'production') {
-                        console.error('Unhandled promise rejection in init: ', err);
-                    }
+            if (isFunction(this.init)) {
+                const ret = this.init(props);
+                if (ret && ret.then) {
+                    (ret as Promise<any>).then(() => componentInited(this, triggerReceiveEvents), err => {
+                        if (process.env.NODE_ENV !== 'production') {
+                            console.error('Unhandled promise rejection in init: ', err);
+                        }
+                        componentInited(this, triggerReceiveEvents);
+                    });
+                } else {
                     componentInited(this, triggerReceiveEvents);
-                });
+                }
             } else {
                 componentInited(this, triggerReceiveEvents);
             }
-        } else {
+        // } else {
             // if it does not exist init method, it is unnecessary to trigger $receive events
-            if (!isNull(props)) {
-                const defaults = this.props;
-                for (const key in props) {
-                    const value = props[key];
-                    if (!isUndefined(value)) {
-                        defaults[key] = value;
-                    }
-                }
-            }
-            componentInited(this, null);
-        }
+            // @MODIFY: maybe init in constructor
+            // if (!isNull(props)) {
+                // const defaults = this.props;
+                // for (const key in props) {
+                    // const value = props[key];
+                    // if (!isUndefined(value)) {
+                        // defaults[key] = value;
+                    // }
+                // }
+            // }
+            // componentInited(this, null);
+        // }
 
         currentInstance = null;
     }
