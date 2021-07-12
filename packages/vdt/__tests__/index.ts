@@ -363,11 +363,16 @@ describe('Vdt Runtime', () => {
             }
 
             class C extends B {
-                static template = `<t:super><b:test>{$super()}c</b:test></t:super>`;
+                // static template = `<t:super><b:test>{$super()}c</b:test></t:super>`;
+            }
+
+            class D extends C {
+                static template = `<t:super><b:test>{$super()}d</b:test></t:super>`;
             }
 
             test(`const B = $props.B; <B />`, {B});
             test(`const C = $props.C; <C />`, {C});
+            test(`const D = $props.D; <D />`, {D});
         });
     });
 

@@ -8,6 +8,7 @@ import {
     isStringOrNumber,
     EMPTY_OBJ,
     isString,
+    hasOwn,
 } from 'intact-shared';
 
 export function setTextModel<T extends ComponentWithSetterAndGetter>(component: T, event: Event) {
@@ -150,7 +151,16 @@ export function map(data: Record<string, any> | Map<any, any> | Set<any> | any[]
 const getPrototypeOf = Object.getPrototypeOf;
 export function superCall<T extends ComponentClass>(this: T, props: Props<any>, blocks: Blocks, __proto__: any) {
     if (!__proto__) {
-        __proto__ = getPrototypeOf(getPrototypeOf(this));
+        __proto__ = getPrototypeOf(this);
+        while (!hasOwn.call(__proto__.constructor, 'template')) {
+            // if the component has not template, then get the parent's template
+            __proto__ = getPrototypeOf(__proto__);
+        }
+        __proto__ = getPrototypeOf(__proto__);
+    }
+    while (!hasOwn.call(__proto__.constructor, 'template')) {
+        // if the super component has no template, then get super's super's template
+        __proto__ = getPrototypeOf(__proto__);
     }
     let superTemplate = __proto__.constructor.template;
     if (isString(superTemplate)) {
