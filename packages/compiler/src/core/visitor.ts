@@ -77,7 +77,7 @@ export class Visitor {
 
     constructor(nodes: ASTRootChild[]) {
         this.functionHead = this.pushQueue();
-        this.append(`function($props, $blocks) {`);
+        this.append(`function($props, $blocks, $__proto__) {`);
         this.indent();
         this.append(`$blocks || ($blocks = {});`);
         this.newline();
@@ -458,7 +458,7 @@ export class Visitor {
         } else {
             this.append(isRoot ? '$blocks' : 'null');
         }
-        this.append(')');
+        this.append(', $__proto__)');
 
         return ChildrenFlags.UnknownChildren;
     }
