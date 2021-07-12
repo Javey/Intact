@@ -75,6 +75,9 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     // public properties
     public $template: Template;
 
+    // should trigger recieve events on initializing or not
+    private triggerReceiveEvents: Function | null = null;
+
     constructor(
         props: P | null,
         $vNode: VNodeComponentClass,
@@ -104,14 +107,17 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         if ($parent !== null) {
             this.$provides = ($parent as Component<any>).$provides;
         }
+
+        if (!isNull(props)) {
+            // should mount props in contructor, because we may get props on hooks
+            // that initialize in constructor.
+            this.triggerReceiveEvents = mountProps(this, props); 
+        }
     }
 
     $init(props: P | null) {
         // if (isFunction(this.init)) {
-            let triggerReceiveEvents: Function | null = null;
-            if (!isNull(props)) {
-                triggerReceiveEvents = mountProps(this, props); 
-            }
+            const triggerReceiveEvents = this.triggerReceiveEvents;
 
             if (isFunction(this.init)) {
                 const ret = this.init(props);
