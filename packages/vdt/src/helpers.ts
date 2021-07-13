@@ -1,4 +1,4 @@
-import {IntactElement, ComponentClass, Props, Blocks} from 'misstime';
+import {IntactElement, ComponentClass, Props, Blocks, Children} from 'misstime';
 import {ComponentWithSetterAndGetter, Compile} from './types';
 import {
     isArray, 
@@ -149,7 +149,7 @@ export function map(data: Record<string, any> | Map<any, any> | Set<any> | any[]
 }
 
 const getPrototypeOf = Object.getPrototypeOf;
-export function superCall<T extends ComponentClass>(this: T, props: Props<any>, blocks: Blocks, __proto__: any) {
+export function superCall<T extends ComponentClass>(this: T, props: Props<any>, blocks: Blocks, __proto__: any): Children {
     if (!__proto__) {
         __proto__ = getPrototypeOf(this);
         while (!hasOwn.call(__proto__.constructor, 'template')) {

@@ -664,5 +664,15 @@ describe('Patch', () => {
             );
             expect((container.firstElementChild as HTMLInputElement).value).to.equal('');
         });
+
+        it('should control value', () => {
+            render(h('input', {value: ''}));
+            const input = container.firstElementChild as HTMLInputElement;
+            input.value = 'test';
+
+            // update
+            render(h('input', {value: ''}));
+            expect(input.value).to.equal('');
+        });
     });
 });
