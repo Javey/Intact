@@ -270,6 +270,22 @@ export class Visitor {
 
     private visitJSXCommonElement(node: ASTCommonElement): ChildrenFlags {
         const tag = node.value;
+
+        if (this.hasExpressionProp(node.attributes)) {
+            this.addHelper('_$cv');
+            this.append(`_$cv('${tag}', `);
+            const {key, ref, hasProps} = this.visitJSXAttribute(node, false);
+            this.pushQueue();
+            const childrenFlag = this.visitProps(hasProps, key, ref, false);
+            if (node.children.length) {
+                this.append(', ');
+                this.visitJSXChildren(node.children);
+            }
+            this.append(')');
+
+            return childrenFlag;
+        }
+
         this.addHelper('_$ce');
         this.append(`_$ce(${getTypeForVNodeElement(tag)}, '${tag}'`);
 
@@ -284,7 +300,7 @@ export class Visitor {
 
         const propsQueue = this.pushQueue();
         this.append(', ');
-        const {className, key, ref, hasProps} = this.visitJSXAttribute(node);
+        const {className, key, ref, hasProps} = this.visitJSXAttribute(node, true);
         this.popQueue();
 
         this.append(', ');
@@ -298,7 +314,10 @@ export class Visitor {
 
         this.flush(propsQueue);
 
-        return this.visitProps(hasProps, key, ref, false);
+        const ret = this.visitProps(hasProps, key, ref, false);
+        this.append(')');
+
+        return ret;
     }
 
     private visitJSXComponent(node: ASTComponent): ChildrenFlags {
@@ -330,9 +349,12 @@ export class Visitor {
 
         this.pushQueue();
         this.append(', ');
-        const {className, key, ref, hasProps} = this.visitJSXAttribute(node);
+        const {key, ref, hasProps} = this.visitJSXAttribute(node, false);
 
-        return this.visitProps(hasProps, key, ref, true);
+        const ret = this.visitProps(hasProps, key, ref, true);
+        this.append(')');
+
+        return ret;
     }
 
     private visitJSXExpression(node: ASTExpression): ChildrenFlags {
@@ -451,7 +473,7 @@ export class Visitor {
         }
         
         this.append(`${name}.call($this, `);
-        this.visitJSXAttribute(node);
+        this.visitJSXAttribute(node, false);
         this.append(`, `);
         if (blocks.length) {
             this.visitJSXBlocks(blocks, isRoot);
@@ -651,7 +673,7 @@ export class Visitor {
         return childrenFlag!;
     }
 
-    private visitJSXAttribute(node: ASTElement): 
+    private visitJSXAttribute(node: ASTElement, isCommonElement: boolean): 
         {
             className: ASTAttributeTemplateNoneValue | null,
             key: ASTAttributeTemplateNoneValue | null,
@@ -671,7 +693,7 @@ export class Visitor {
         
         // use a queue to save props, so we can extract it when there isn't dynamic prop
         const propsQueue = this.pushQueue();
-        const isCommonElement = node.type === ASTTypes.JSXCommonElement;
+        // const isCommonElement = node.type === ASTTypes.JSXCommonElement;
         const modelMeta: ModelMeta = {};
         const models: Model[] = [];
         const hasDynamicProp = this.hasDynamicProp(attributes, isCommonElement);
@@ -788,6 +810,16 @@ export class Visitor {
         }
 
         return {className, key, ref, hasProps: !isFirstAttr};
+    }
+
+    private hasExpressionProp(attributes: ASTBaseElement['attributes']) {
+        for (let i = 0; i < attributes.length; i++) {
+            const attr = attributes[i];
+            if (attr.type === ASTTypes.JSXExpression) {
+                return true;
+            } 
+        }
+        return false;
     }
 
     private hasDynamicProp(attributes: ASTBaseElement['attributes'], isCommonElement: boolean) {
@@ -1099,7 +1131,6 @@ export class Visitor {
         }
 
         this.popQueue();
-        this.append(')');
 
         return childrenFlag;
     }
