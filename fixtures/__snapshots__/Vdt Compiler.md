@@ -8,7 +8,7 @@
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -23,7 +23,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -41,7 +41,7 @@ var _$tmp0 = {
     'id': '1'
 };
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -56,7 +56,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -72,7 +72,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$cn = Vdt.className;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -87,7 +87,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -102,7 +102,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -117,7 +117,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -133,7 +133,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -148,7 +148,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -165,7 +165,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -183,7 +183,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -196,7 +196,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -212,7 +212,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ccv = Vdt.createCommentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -228,7 +228,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$cu = Vdt.createUnescapeTextVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -243,7 +243,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -261,7 +261,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -282,7 +282,7 @@ var _$tmp0 = {
     'a': null
 };
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -298,7 +298,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ct = Vdt.createTextVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -316,7 +316,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -334,7 +334,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ct = Vdt.createTextVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -353,7 +353,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$cn = Vdt.className;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -372,7 +372,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -394,7 +394,7 @@ b`;
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -414,7 +414,7 @@ var _$tmp0 = {
     'b': 'a\\'a'
 };
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -433,7 +433,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ccv = Vdt.createCommentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -448,7 +448,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -466,7 +466,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -486,7 +486,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -502,7 +502,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -521,7 +521,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -538,7 +538,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$cc = Vdt.createUnknownComponentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -553,7 +553,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$cc = Vdt.createUnknownComponentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -570,7 +570,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$cc = Vdt.createUnknownComponentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -588,7 +588,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$cc = Vdt.createUnknownComponentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -607,7 +607,7 @@ return function($props, $blocks) {
 var _$cc = Vdt.createUnknownComponentVNode;
 var _$cn = Vdt.className;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -625,7 +625,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$cc = Vdt.createUnknownComponentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -643,7 +643,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$cc = Vdt.createUnknownComponentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -661,7 +661,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$cc = Vdt.createUnknownComponentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -681,7 +681,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$cc = Vdt.createUnknownComponentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -700,7 +700,7 @@ return function($props, $blocks) {
 var _$cc = Vdt.createUnknownComponentVNode;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -720,7 +720,7 @@ return function($props, $blocks) {
 var _$cc = Vdt.createUnknownComponentVNode;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -740,7 +740,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$cc = Vdt.createUnknownComponentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -757,7 +757,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$cc = Vdt.createUnknownComponentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -778,7 +778,7 @@ var _$cc = Vdt.createUnknownComponentVNode;
 var _$ex = Vdt.extend;
 var _$em = Vdt.EMPTY_OBJ;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -820,7 +820,7 @@ var _$cc = Vdt.createUnknownComponentVNode;
 var _$ex = Vdt.extend;
 var _$em = Vdt.EMPTY_OBJ;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -875,7 +875,7 @@ return function($props, $blocks) {
 var _$cc = Vdt.createUnknownComponentVNode;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -901,7 +901,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$no = Vdt.noop;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -937,7 +937,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$no = Vdt.noop;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -973,7 +973,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$no = Vdt.noop;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1009,7 +1009,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$no = Vdt.noop;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1048,7 +1048,7 @@ var _$ce = Vdt.createElementVNode;
 var _$ma = Vdt.map;
 var _$no = Vdt.noop;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1086,12 +1086,12 @@ return function($props, $blocks) {
 ```
 "var Vdt = _$vdt;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
     
-    return template.call($this, null, $blocks);
+    return template.call($this, null, $blocks, $__proto__);
 };"
 ```
 
@@ -1102,7 +1102,7 @@ return function($props, $blocks) {
 var _$ex = Vdt.extend;
 var _$em = Vdt.EMPTY_OBJ;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1126,7 +1126,7 @@ return function($props, $blocks) {
             ),
             __$blocks
         );
-    }.call($this, $blocks));
+    }.call($this, $blocks), $__proto__);
 };"
 ```
 
@@ -1140,7 +1140,7 @@ var _$tmp0 = {
     'className': 'a'
 };
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1164,7 +1164,7 @@ return function($props, $blocks) {
             ),
             __$blocks
         );
-    }.call($this, $blocks));
+    }.call($this, $blocks), $__proto__);
 };"
 ```
 
@@ -1179,7 +1179,7 @@ var _$tmp0 = {
     'className': 'a'
 };
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1204,7 +1204,7 @@ return function($props, $blocks) {
                 ),
                 __$blocks
             );
-        }.call($this, _$em))
+        }.call($this, _$em), $__proto__)
     ), 0 /* UnknownChildren */);
 };"
 ```
@@ -1216,7 +1216,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$no = Vdt.noop;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1245,7 +1245,7 @@ return function($props, $blocks) {
                     )
                 ), 0 /* UnknownChildren */)
             )
-        }, null)
+        }, null, $__proto__)
     ), 0 /* UnknownChildren */);
 };"
 ```
@@ -1261,7 +1261,7 @@ var _$tmp0 = {
     'className': 'a'
 };
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1285,7 +1285,7 @@ return function($props, $blocks) {
             ),
             __$blocks
         );
-    }.call($this, $blocks));
+    }.call($this, $blocks), $__proto__);
 };"
 ```
 
@@ -1298,7 +1298,7 @@ var _$cn = Vdt.className;
 var _$ex = Vdt.extend;
 var _$em = Vdt.EMPTY_OBJ;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1324,7 +1324,7 @@ return function($props, $blocks) {
             ),
             __$blocks
         );
-    }.call($this, $blocks));
+    }.call($this, $blocks), $__proto__);
 };"
 ```
 
@@ -1336,7 +1336,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1360,7 +1360,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ma = Vdt.map;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1380,7 +1380,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ma = Vdt.map;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1400,7 +1400,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ma = Vdt.map;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1421,7 +1421,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1440,7 +1440,7 @@ var _$ce = Vdt.createElementVNode;
 var _$le = Vdt.linkEvent;
 var _$srm = Vdt.setRadioModel;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1462,7 +1462,7 @@ var _$ce = Vdt.createElementVNode;
 var _$le = Vdt.linkEvent;
 var _$srm = Vdt.setRadioModel;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1486,7 +1486,7 @@ var _$isc = Vdt.isChecked;
 var _$le = Vdt.linkEvent;
 var _$scm = Vdt.setCheckboxModel;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1509,7 +1509,7 @@ var _$isc = Vdt.isChecked;
 var _$le = Vdt.linkEvent;
 var _$scm = Vdt.setCheckboxModel;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1533,7 +1533,7 @@ var _$isc = Vdt.isChecked;
 var _$le = Vdt.linkEvent;
 var _$scm = Vdt.setCheckboxModel;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1557,7 +1557,7 @@ var _$ce = Vdt.createElementVNode;
 var _$le = Vdt.linkEvent;
 var _$ssm = Vdt.setSelectModel;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1578,7 +1578,7 @@ var _$ce = Vdt.createElementVNode;
 var _$le = Vdt.linkEvent;
 var _$stm = Vdt.setTextModel;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1597,7 +1597,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$cc = Vdt.createUnknownComponentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1617,7 +1617,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$cc = Vdt.createUnknownComponentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1643,7 +1643,7 @@ var _$ce = Vdt.createElementVNode;
 var _$le = Vdt.linkEvent;
 var _$stm = Vdt.setTextModel;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1665,7 +1665,7 @@ var _$ce = Vdt.createElementVNode;
 var _$le = Vdt.linkEvent;
 var _$stm = Vdt.setTextModel;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1686,7 +1686,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1709,7 +1709,7 @@ import x from 'x';
 var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1729,7 +1729,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1748,7 +1748,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1767,7 +1767,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1782,7 +1782,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1801,7 +1801,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1820,7 +1820,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1842,7 +1842,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1870,7 +1870,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ma = Vdt.map;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1890,7 +1890,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ma = Vdt.map;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1910,7 +1910,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ma = Vdt.map;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1933,7 +1933,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ma = Vdt.map;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1956,7 +1956,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ma = Vdt.map;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -1979,7 +1979,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ma = Vdt.map;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2001,7 +2001,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ma = Vdt.map;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2025,7 +2025,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ma = Vdt.map;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2050,7 +2050,7 @@ var _$ce = Vdt.createElementVNode;
 var _$ma = Vdt.map;
 var _$ct = Vdt.createTextVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2071,7 +2071,7 @@ var _$ce = Vdt.createElementVNode;
 var _$ma = Vdt.map;
 var _$ct = Vdt.createTextVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2095,7 +2095,7 @@ var _$ce = Vdt.createElementVNode;
 var _$ma = Vdt.map;
 var _$ct = Vdt.createTextVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2118,7 +2118,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2133,7 +2133,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2148,7 +2148,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2165,7 +2165,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2183,7 +2183,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$cc = Vdt.createUnknownComponentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2201,7 +2201,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ccv = Vdt.createCommentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2217,7 +2217,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$cu = Vdt.createUnescapeTextVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2233,7 +2233,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$no = Vdt.noop;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2266,13 +2266,13 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
     
     return _$ce(2, 'div', (
-        vdt.call($this, null, null)
+        vdt.call($this, null, null, $__proto__)
     ), 0 /* UnknownChildren */);
 };"
 ```
@@ -2283,7 +2283,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2302,7 +2302,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2320,7 +2320,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2339,7 +2339,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2357,7 +2357,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2376,7 +2376,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2394,7 +2394,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2414,7 +2414,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2434,7 +2434,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2455,7 +2455,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2476,7 +2476,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2495,7 +2495,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ct = Vdt.createTextVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2514,7 +2514,7 @@ return function($props, $blocks) {
 var _$ce = Vdt.createElementVNode;
 var _$ct = Vdt.createTextVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2532,7 +2532,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2552,7 +2552,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2594,7 +2594,7 @@ var _$tmp4 = {
     'className': 'c'
 };
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2633,7 +2633,7 @@ var _$tmp5 = {
     'a': undefined
 };
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2658,7 +2658,7 @@ var _$le = Vdt.linkEvent;
 var _$stm = Vdt.setTextModel;
 var _$cc = Vdt.createUnknownComponentVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2697,7 +2697,7 @@ var _$tmp0 = {
     'a': '1'
 };
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2758,7 +2758,7 @@ var _$tmp0 = {
     'value': '<div>aaa</div>'
 };
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2778,7 +2778,7 @@ return function($props, $blocks) {
 } from 'vdt/runtime';
 import a from 'b';
 
-export default function($props, $blocks) {
+export default function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2801,7 +2801,7 @@ export default function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2818,7 +2818,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2838,7 +2838,7 @@ return function($props, $blocks) {
 "var Vdt = _$vdt;
 var _$ce = Vdt.createElementVNode;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2857,7 +2857,7 @@ var _$ce = Vdt.createElementVNode;
 var _$ct = Vdt.createTextVNode;
 var _$cn = Vdt.className;
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
@@ -2905,7 +2905,7 @@ var _$tmp1 = {
     'a': 'a'
 };
 
-return function($props, $blocks) {
+return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;

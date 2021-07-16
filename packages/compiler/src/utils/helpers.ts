@@ -200,6 +200,7 @@ export function childrenFlagToChildrenType(flag: ChildrenFlags): ChildrenTypes |
 }
 
 export const helpersMap = {
+    '_$cv': 'createVNode',
     '_$ce': 'createElementVNode',
     '_$cc': 'createUnknownComponentVNode',
     '_$ct': 'createTextVNode',

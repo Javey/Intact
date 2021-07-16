@@ -280,7 +280,7 @@ export function createFragment(children: Children, childrenType: ChildrenTypes, 
     return fragment;
 }
 
-export function directClone(vNode: VNode): VNode {
+export function directClone<T extends VNode>(vNode: T): T{
     const type = vNode.type & Types.ClearInUse;
     let props = vNode.props;
 
@@ -295,7 +295,7 @@ export function directClone(vNode: VNode): VNode {
         // }
     // }
 
-    let newVNode: VNode;
+    let newVNode: T;
     if ((type & Types.Fragment) === 0) {
         newVNode = new VNode(
             type,
@@ -306,7 +306,7 @@ export function directClone(vNode: VNode): VNode {
             props,
             vNode.key,
             vNode.ref
-        );
+        ) as T;
     } else {
         const childrenType = vNode.childrenType;
         newVNode = new VNode(
@@ -320,7 +320,7 @@ export function directClone(vNode: VNode): VNode {
             null,
             vNode.key,
             null
-        );
+        ) as T;
     }
 
     newVNode.transition = vNode.transition;
