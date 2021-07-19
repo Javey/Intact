@@ -83,6 +83,10 @@ describe('Vdt Compiler', () => {
             test(`<div style="a" {...a} a="1" class="a">a</div>`);
         });
 
+        it('expression attribute with children, ref and key', () => {
+            test(`<div style="a" {...a} a="1" class="a" ref="ref" key="key">a</div>`);
+        });
+
         it('ignore empty expression attribute', () => {
             test(`<div {...a} {/*test*/} a="1"></div>`);
         });

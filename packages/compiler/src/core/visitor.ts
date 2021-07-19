@@ -274,16 +274,14 @@ export class Visitor {
         if (this.hasExpressionProp(node.attributes)) {
             this.addHelper('_$cv');
             this.append(`_$cv('${tag}', `);
-            const {key, ref, hasProps} = this.visitJSXAttribute(node, false);
-            this.pushQueue();
-            const childrenFlag = this.visitProps(hasProps, key, ref, false);
+            const {key, hasProps} = this.visitJSXAttribute(node, false);
             if (node.children.length) {
                 this.append(', ');
                 this.visitJSXChildren(node.children);
             }
             this.append(')');
 
-            return childrenFlag;
+            return key ? ChildrenFlags.HasKeyedVNodeChildren : ChildrenFlags.HasNonKeyedVNodeChildren;
         }
 
         this.addHelper('_$ce');
