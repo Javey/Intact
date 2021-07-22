@@ -182,6 +182,7 @@ export function resolveTransitionProps(props: TransitionProps): BaseTransitionPr
                 }
                 cancelNextFrame = null;
             });
+            onLeave && onLeave(el, resolve);
         },
         onLeaveCancelled(el) {
             finishLeave(el);

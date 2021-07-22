@@ -92,7 +92,7 @@ export function mountElement(
             childrenType === ChildrenTypes.HasKeyedChildren ||
             childrenType === ChildrenTypes.HasNonKeyedChildren
         ) {
-            mountArrayChildren(children as VNode[], dom, parentComponent, childrenIsSVG, null, mountedQueue);
+            mountArrayChildren(children as VNode[], vNode, dom, parentComponent, childrenIsSVG, null, mountedQueue);
         }
     }
 
@@ -184,7 +184,7 @@ export function mountFragment(
     if (vNode.childrenType === ChildrenTypes.HasVNodeChildren) {
         mount(vNode.children as VNode, parentDom, parentComponent, isSVG, anchor, mountedQueue);
     } else {
-        mountArrayChildren(vNode.children as VNode[], parentDom, parentComponent, isSVG, anchor, mountedQueue);
+        mountArrayChildren(vNode.children as VNode[], vNode, parentDom, parentComponent, isSVG, anchor, mountedQueue);
     }
 }
 
@@ -198,16 +198,22 @@ export function mountComment(vNode: VNodeTextElement, parentDom: Element | null,
 
 export function mountArrayChildren(
     children: VNode[],
+    parentVNode: VNode,
     parentDom: Element | null,
     parentComponent: ComponentClass | null,
     isSVG: boolean, 
     anchor: IntactDom | null,
     mountedQueue: Function[]
 ) {
+    let cloned = false;
     for (let i = 0; i < children.length; i++) {
         let vNode = children[i];
 
         if (vNode.type & Types.InUse) {
+            if (!cloned) {
+                parentVNode.children = children = children.slice();
+                cloned = true;
+            }
             children[i] = vNode = directClone(vNode);
         }
         mount(vNode, parentDom, parentComponent, isSVG, anchor, mountedQueue);

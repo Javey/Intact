@@ -334,7 +334,7 @@ export function patchChildren(
                     setTextContent(parentDom, nextChildren as string);
                     break;
                 default:
-                    replaceOneVNodeWithMulipleVNodes(lastChildren as VNode, nextChildren as VNode[], parentDom, parentComponent, isSVG, mountedQueue, reusing);
+                    replaceOneVNodeWithMulipleVNodes(lastChildren as VNode, nextChildren as VNode[], parentVNode, parentDom, parentComponent, isSVG, mountedQueue, reusing);
                     break;
             }
             break;
@@ -349,7 +349,7 @@ export function patchChildren(
                     setTextContent(parentDom, nextChildren as string);
                     break;
                 default:
-                    mountArrayChildren(nextChildren as VNode[], parentDom, parentComponent, isSVG, anchor, mountedQueue);
+                    mountArrayChildren(nextChildren as VNode[], parentVNode, parentDom, parentComponent, isSVG, anchor, mountedQueue);
                     break;
             }
             break;
@@ -367,7 +367,7 @@ export function patchChildren(
                     break;
                 default:
                     clearDom(parentDom);
-                    mountArrayChildren(nextChildren as VNode[], parentDom, parentComponent, isSVG, anchor, mountedQueue);
+                    mountArrayChildren(nextChildren as VNode[], parentVNode, parentDom, parentComponent, isSVG, anchor, mountedQueue);
                     break;
             }
             break;
@@ -390,7 +390,7 @@ export function patchChildren(
 
                     if (lastLength === 0) {
                         if (nextLength > 0) {
-                            mountArrayChildren(nextChildren as VNode[], parentDom, parentComponent, isSVG, anchor, mountedQueue);
+                            mountArrayChildren(nextChildren as VNode[], parentVNode, parentDom, parentComponent, isSVG, anchor, mountedQueue);
                         }
                     } else if (nextLength === 0) {
                         removeAllChildren(lastChildren as VNode[], parentDom, parentVNode, reusing);
@@ -434,6 +434,7 @@ export function patchChildren(
 function replaceOneVNodeWithMulipleVNodes(
     lastVNode: VNode, 
     nextVNodes: VNode[],
+    parentVNode: VNode,
     parentDom: Element,
     parentComponent: ComponentClass | null,
     isSVG: boolean,
@@ -443,7 +444,7 @@ function replaceOneVNodeWithMulipleVNodes(
     if (!reusing) {
         unmount(lastVNode);
     }
-    mountArrayChildren(nextVNodes, parentDom, parentComponent, isSVG, findDomFromVNode(lastVNode, true),  mountedQueue);
+    mountArrayChildren(nextVNodes, parentVNode, parentDom, parentComponent, isSVG, findDomFromVNode(lastVNode, true), mountedQueue);
     removeVNodeDom(lastVNode, parentDom);
 }
 
@@ -699,7 +700,7 @@ function patchKeyedChildrenComplex(
     // fast-path: if nothing patched remove all old and add all new
     if (canRemoveWholeContent) {
         removeAllChildren(a, parentDom, parentVNode, reusing);
-        mountArrayChildren(b, parentDom, parentComponent, isSVG, anchor, mountedQueue);
+        mountArrayChildren(b, parentVNode, parentDom, parentComponent, isSVG, anchor, mountedQueue);
     } else if (moved) {
         const seq = lisAlgorithm(sources);
         j = seq.length - 1;

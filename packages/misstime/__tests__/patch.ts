@@ -353,6 +353,16 @@ describe('Patch', () => {
                         '<div><i>a</i><i>b</i></div>'
                     );
                 });
+
+                it('should clone vNode if in use ant has nested in-used children', () => {
+                    const vNode1 = createElementVNode(Types.CommonElement, 'div', [map.a, map.b], ChildrenTypes.HasKeyedChildren);
+                    const vNode2 = createElementVNode(Types.CommonElement, 'div', [map.b], ChildrenTypes.HasKeyedChildren);
+                    patchTest(
+                        createElementVNode(Types.CommonElement, 'div', [vNode1, vNode1], ChildrenTypes.HasNonKeyedChildren),
+                        createElementVNode(Types.CommonElement, 'div', [vNode2, vNode2], ChildrenTypes.HasNonKeyedChildren),
+                        '<div><div><i>b</i></div><div><i>b</i></div></div>'
+                    );
+                });
             });
 
             describe('Long length', () => {

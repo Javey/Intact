@@ -435,7 +435,7 @@ function _normalizeVNodes(vNodes: any[], result: VNode[], index: number, referen
                         n = directClone(n);
                     }
 
-                    n.type |= n.Normalized;
+                    n.type |= Types.Normalized;
 
                     if (isNullOrUndefined(n.key) || isPrefixed) {
                         applyKey(n, reference);
