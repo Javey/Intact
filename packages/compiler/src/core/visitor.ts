@@ -695,9 +695,11 @@ export class Visitor {
         const modelMeta: ModelMeta = {};
         const models: Model[] = [];
         const hasDynamicProp = this.hasDynamicProp(attributes, isCommonElement);
-        let indentLevel = this.indentLevel;
+        const indentLevel = this.indentLevel;
+        const spaces = this.spaces; 
         if (!hasDynamicProp) {
             this.indentLevel = 0;
+            this.spaces = '';
         }
 
         let isFirstAttr: boolean = true;
@@ -799,6 +801,7 @@ export class Visitor {
         }
 
         this.indentLevel = indentLevel;
+        this.spaces = spaces;
         this.popQueue();
 
         if (isFirstAttr || hasDynamicProp) {

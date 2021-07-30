@@ -1098,5 +1098,15 @@ describe('Vdt Compiler', () => {
                 <div a="a"></div>
             `);
         });
+
+        it('extract props', () => {
+            test(stripIndent`
+                <TableContext.Consumer>
+                    {() => {
+                        return <Icon class="ion-android-arrow-dropup k-asc" />
+                    }}
+                </TableContext.Consumer>
+            `);
+        });
     });
 });
