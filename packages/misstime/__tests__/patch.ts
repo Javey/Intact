@@ -354,13 +354,29 @@ describe('Patch', () => {
                     );
                 });
 
-                it('should clone vNode if in use ant has nested in-used children', () => {
-                    const vNode1 = createElementVNode(Types.CommonElement, 'div', [map.a, map.b], ChildrenTypes.HasKeyedChildren);
-                    const vNode2 = createElementVNode(Types.CommonElement, 'div', [map.b], ChildrenTypes.HasKeyedChildren);
+                it('should clone vNode if in use and has nested in-used children', () => {
+                    let vNode1 = createElementVNode(Types.CommonElement, 'div', [map.a, map.b], ChildrenTypes.HasKeyedChildren);
+                    let vNode2 = createElementVNode(Types.CommonElement, 'div', [map.b], ChildrenTypes.HasKeyedChildren);
                     patchTest(
                         createElementVNode(Types.CommonElement, 'div', [vNode1, vNode1], ChildrenTypes.HasNonKeyedChildren),
                         createElementVNode(Types.CommonElement, 'div', [vNode2, vNode2], ChildrenTypes.HasNonKeyedChildren),
                         '<div><div><i>b</i></div><div><i>b</i></div></div>'
+                    );
+
+                    vNode1 = createElementVNode(Types.CommonElement, 'div', [
+                        createElementVNode(Types.CommonElement, 'div', [
+                            createElementVNode(Types.CommonElement, 'div', 'a', ChildrenTypes.HasTextChildren)
+                        ], ChildrenTypes.HasNonKeyedChildren)
+                    ], ChildrenTypes.HasNonKeyedChildren);
+                    vNode2 = createElementVNode(Types.CommonElement, 'div', [
+                        createElementVNode(Types.CommonElement, 'div', [
+                            createElementVNode(Types.CommonElement, 'div', 'b', ChildrenTypes.HasTextChildren)
+                        ], ChildrenTypes.HasNonKeyedChildren)
+                    ], ChildrenTypes.HasNonKeyedChildren);
+                    patchTest(
+                        createElementVNode(Types.CommonElement, 'div', [vNode1, vNode1], ChildrenTypes.HasNonKeyedChildren),
+                        createElementVNode(Types.CommonElement, 'div', [vNode2, vNode2], ChildrenTypes.HasNonKeyedChildren),
+                        '<div><div><div><div>b</div></div></div><div><div><div>b</div></div></div></div>'
                     );
                 });
             });

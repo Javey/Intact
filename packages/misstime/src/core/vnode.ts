@@ -296,18 +296,7 @@ export function directClone<T extends VNode>(vNode: T): T{
     // }
 
     let newVNode: T;
-    if ((type & Types.Fragment) === 0) {
-        newVNode = new VNode(
-            type,
-            vNode.tag,
-            vNode.childrenType,
-            vNode.children,
-            vNode.className,
-            props,
-            vNode.key,
-            vNode.ref
-        ) as T;
-    } else {
+    if (type & Types.Fragment) {
         const childrenType = vNode.childrenType;
         newVNode = new VNode(
             type,
@@ -320,6 +309,24 @@ export function directClone<T extends VNode>(vNode: T): T{
             null,
             vNode.key,
             null
+        ) as T;
+    } else {
+        const children = vNode.children;
+        const childrenType = vNode.childrenType;
+        newVNode = new VNode(
+            type,
+            vNode.tag,
+            childrenType,
+            // should slice children array, if it is a element,
+            // because we will asign new cloned vNode to the array
+            // if the child vNode should be cloned
+            type & Types.Element && childrenType & ChildrenTypes.MultipleChildren ?
+                (vNode.children as VNode[]).slice() :
+                children,
+            vNode.className,
+            props,
+            vNode.key,
+            vNode.ref
         ) as T;
     }
 

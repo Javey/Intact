@@ -210,10 +210,10 @@ export function mountArrayChildren(
         let vNode = children[i];
 
         if (vNode.type & Types.InUse) {
-            if (!cloned) {
-                parentVNode.children = children = children.slice();
-                cloned = true;
-            }
+            // if (!cloned) {
+                // parentVNode.children = children = children.slice();
+                // cloned = true;
+            // }
             children[i] = vNode = directClone(vNode);
         }
         mount(vNode, parentDom, parentComponent, isSVG, anchor, mountedQueue);
