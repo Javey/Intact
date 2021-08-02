@@ -471,12 +471,13 @@ export function normalizeRoot(vNode: Children, parentVNode: VNode): VNode {
 
     const transition = parentVNode.transition;
     if (!isNullOrUndefined(transition)) {
-        if (process.env.NODE_ENV !== 'production') {
-            const type = root.type;
-            if (!(type & Types.Component || type & Types.Element)) {
-                throwError(`Component inside <Transtion> must render a single elememt node.`);
-            }
-        }
+        // if it has multipe vNodes, only transition on the first vNode
+        // if (process.env.NODE_ENV !== 'production') {
+            // const type = root.type;
+            // if (!(type & Types.Component || type & Types.Element)) {
+                // throwError(`Component inside <Transtion> must render a single elememt node.`);
+            // }
+        // }
         root.transition = transition;
     }
 
