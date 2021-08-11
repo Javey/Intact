@@ -22,6 +22,7 @@ function getDelegatedEventObject<T>(v: T): Record<string, T> {
         'ev-touchend': v,
         'ev-touchmove': v,
         'ev-touchstart': v,
+        'ev-contextmenu': v,
     };
 }
 
