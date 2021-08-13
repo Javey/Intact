@@ -157,9 +157,19 @@ function callPendingCbs(vNode: VNode) {
         el._moveCb();
     }
 
-    if (el._enterCb) {
-        el._enterCb();
-    }
+    // if we call enterCb, it will call onAfterEnter, maybe we set
+    // style in next frame, but the transition has been ended.
+    // e.g.
+    // onEnter(el) => {
+    //     el.style.height = 0; 
+    //     nextFrame(() => el.style.heigth = '100px');
+    // },
+    // onAfterEnter(el) {
+    //     el.style.height = '';
+    // }
+    // if (el._enterCb) {
+        // el._enterCb();
+    // }
 }
 
 function applyTransition(vNode: VNode) {

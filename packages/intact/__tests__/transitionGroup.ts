@@ -106,6 +106,24 @@ describe('Component', function() {
                 testMoveTransition(container.children[1]!),
             ]);
         });
+
+        it('should move an enter element conrrectly', async () => {
+            render(h(TransitionGroup, null, [
+                h('div', {key: '1'}, '1'),
+            ]), container);
+            render(h(TransitionGroup, null, [
+                h('div', {key: '1'}, '1'),
+                h('div', {key: '2'}, '2'),
+            ]), container);
+            render(h(TransitionGroup, null, [
+                h('div', {key: '2'}, '2'),
+                h('div', {key: '1'}, '1'),
+            ]), container);
+
+            // await Promise.all([
+
+            // ]);
+        });
     });
 });
 

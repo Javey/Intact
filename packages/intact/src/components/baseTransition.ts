@@ -5,6 +5,7 @@ import {
     error,
     isStringOrNumber,
     throwError,
+    EMPTY_OBJ,
 } from 'intact-shared';
 import {
     VNode,
@@ -80,6 +81,7 @@ export class BaseTransition<P extends BaseTransitionProps = BaseTransitionProps>
     // private isLeaving: boolean = false;
     public leavingVNodesCache: Record<string, VNode> = {};
     public el: TransitionElement | null = null;
+    public originalDisplay: string = '';
 
     mounted() {
         const lastInput = this.$lastInput!;
@@ -88,26 +90,32 @@ export class BaseTransition<P extends BaseTransitionProps = BaseTransitionProps>
 
         const el = this.el = findDomFromVNode(lastInput, true) as TransitionElement;
         const display = el.style.display;
-        const originalDisplay = display === 'none' ? '' : display;
+        this.originalDisplay = display === 'none' ? '' : display;
 
         if (!this.props.show) {
             setDisplay(el, 'none');
         }
+    }
 
-        this.on('$receive:show', show => {
-            this.$mountedQueue!.push(() => {
-                const transition = this.$lastInput!.transition!;
-                if (show) {
-                    transition.beforeEnter(el);
-                    setDisplay(el, originalDisplay);
-                    transition.enter(el);
-                } else {
-                    transition.leave(el, () => {
-                        setDisplay(el, 'none');
-                    });
-                }
-            });
-        });
+    updated(
+        lastVNode: VNodeComponentClass<BaseTransition<P>>,
+        nextVNode: VNodeComponentClass<BaseTransition<P>>
+    ) {
+        const lastValue = (lastVNode.props || EMPTY_OBJ).show;
+        const nextValue = (nextVNode.props || EMPTY_OBJ).show;
+        if (lastValue !== nextValue) {
+            const el = this.el!;
+            const transition = this.$lastInput!.transition!;
+            if (nextValue) {
+                transition.beforeEnter(el);
+                setDisplay(el, this.originalDisplay);
+                transition.enter(el);
+            } else {
+                transition.leave(el, () => {
+                    setDisplay(el, 'none');
+                });
+            }
+        }
     }
 
     unmounted() {

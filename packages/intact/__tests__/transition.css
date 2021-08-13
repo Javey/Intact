@@ -8,5 +8,5 @@
 }
 
 .transition-move {
-    transition: transform 2s
+    transition: all 2s
 }
