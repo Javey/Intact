@@ -76,7 +76,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     public $template: Template;
 
     // should trigger recieve events on initializing or not
-    private triggerReceiveEvents: Function | null = null;
+    // private triggerReceiveEvents: Function | null = null;
 
     constructor(
         props: P | null,
@@ -108,49 +108,67 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
             this.$provides = ($parent as Component<any>).$provides;
         }
 
+        let triggerReceiveEvents: Function | null = null;
         if (!isNull(props)) {
             // should mount props in contructor, because we may get props on hooks
             // that initialize in constructor.
-            this.triggerReceiveEvents = mountProps(this, props); 
+            triggerReceiveEvents = mountProps(this, props); 
         }
-    }
 
-    $init(props: P | null) {
-        // if (isFunction(this.init)) {
-            const triggerReceiveEvents = this.triggerReceiveEvents;
-
-            if (isFunction(this.init)) {
-                const ret = this.init(props);
-                if (ret && ret.then) {
-                    (ret as Promise<any>).then(() => componentInited(this, triggerReceiveEvents), err => {
-                        if (process.env.NODE_ENV !== 'production') {
-                            console.error('Unhandled promise rejection in init: ', err);
-                        }
-                        componentInited(this, triggerReceiveEvents);
-                    });
-                } else {
+        if (isFunction(this.init)) {
+            const ret = this.init(props);
+            if (ret && ret.then) {
+                (ret as Promise<any>).then(() => componentInited(this, triggerReceiveEvents), err => {
+                    if (process.env.NODE_ENV !== 'production') {
+                        console.error('Unhandled promise rejection in init: ', err);
+                    }
                     componentInited(this, triggerReceiveEvents);
-                }
+                });
             } else {
                 componentInited(this, triggerReceiveEvents);
             }
-        // } else {
-            // if it does not exist init method, it is unnecessary to trigger $receive events
-            // @MODIFY: maybe init in constructor
-            // if (!isNull(props)) {
-                // const defaults = this.props;
-                // for (const key in props) {
-                    // const value = props[key];
-                    // if (!isUndefined(value)) {
-                        // defaults[key] = value;
-                    // }
-                // }
-            // }
-            // componentInited(this, null);
-        // }
+        } else {
+            componentInited(this, triggerReceiveEvents);
+        }
 
-        currentInstance = null;
     }
+
+    // $init(props: P | null) {
+    //     // if (isFunction(this.init)) {
+    //         const triggerReceiveEvents = this.triggerReceiveEvents;
+
+    //         if (isFunction(this.init)) {
+    //             const ret = this.init(props);
+    //             if (ret && ret.then) {
+    //                 (ret as Promise<any>).then(() => componentInited(this, triggerReceiveEvents), err => {
+    //                     if (process.env.NODE_ENV !== 'production') {
+    //                         console.error('Unhandled promise rejection in init: ', err);
+    //                     }
+    //                     componentInited(this, triggerReceiveEvents);
+    //                 });
+    //             } else {
+    //                 componentInited(this, triggerReceiveEvents);
+    //             }
+    //         } else {
+    //             componentInited(this, triggerReceiveEvents);
+    //         }
+    //     // } else {
+    //         // if it does not exist init method, it is unnecessary to trigger $receive events
+    //         // @MODIFY: maybe init in constructor
+    //         // if (!isNull(props)) {
+    //             // const defaults = this.props;
+    //             // for (const key in props) {
+    //                 // const value = props[key];
+    //                 // if (!isUndefined(value)) {
+    //                     // defaults[key] = value;
+    //                 // }
+    //             // }
+    //         // }
+    //         // componentInited(this, null);
+    //     // }
+
+    //     currentInstance = null;
+    // }
 
     $render(
         lastVNode: VNodeComponentClass | null,
@@ -159,6 +177,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         anchor: IntactDom | null,
         mountedQueue: Function[]
     ) {
+        currentInstance = null;
         if (this.$inited) {
             renderSyncComponnet(this, lastVNode, nextVNode, parentDom, anchor, mountedQueue);
         } else {
