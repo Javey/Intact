@@ -72,7 +72,7 @@ function replaceWithNewNode(
 ) {
     if (lastVNode.type & Types.InUse) {
         if (!reusing) {
-            unmount(lastVNode);
+            unmount(lastVNode, null);
         }
         if ((nextVNode.type & lastVNode.type & Types.HtmlElement) && isUndefined(lastVNode.transition)) {
             // single dom
@@ -101,7 +101,7 @@ function patchComponentClass(
     const nextTag = nextVNode.tag;
     if (lastVNode.tag !== nextTag || reusing) {
         if (!reusing) {
-            unmount(lastVNode);
+            unmount(lastVNode, nextVNode);
         }
         mountComponentClass(lastVNode, nextVNode, parentDom, parentComponent, isSVG, anchor, mountedQueue); 
     } else {
@@ -330,7 +330,7 @@ export function patchChildren(
                     remove(lastChildren as VNode, parentDom, reusing);
                     break;
                 case ChildrenTypes.HasTextChildren:
-                    unmount(lastChildren as VNode);
+                    unmount(lastChildren as VNode, null);
                     setTextContent(parentDom, nextChildren as string);
                     break;
                 default:
@@ -442,7 +442,7 @@ function replaceOneVNodeWithMulipleVNodes(
     reusing: boolean,
 ) {
     if (!reusing) {
-        unmount(lastVNode);
+        unmount(lastVNode, null);
     }
     mountArrayChildren(nextVNodes, parentVNode, parentDom, parentComponent, isSVG, findDomFromVNode(lastVNode, true), mountedQueue);
     removeVNodeDom(lastVNode, parentDom);

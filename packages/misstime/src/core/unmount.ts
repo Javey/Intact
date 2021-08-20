@@ -6,12 +6,12 @@ import {delegatedEvents, unmountDelegatedEvent} from '../events/delegation';
 
 export function remove(vNode: VNode, parentDom: Element, reusing: boolean) {
     if (!reusing) {
-        unmount(vNode);
+        unmount(vNode, null);
     }
     removeVNodeDom(vNode, parentDom);
 }
 
-export function unmount(vNode: VNode) {
+export function unmount(vNode: VNode, nextVNode: VNode | null) {
     const type = vNode.type;
     const children = vNode.children;
 
@@ -33,13 +33,13 @@ export function unmount(vNode: VNode) {
         if (childrenType & ChildrenTypes.MultipleChildren) {
             unmountAllChildren(children as VNode[]);
         } else if (childrenType === ChildrenTypes.HasVNodeChildren) {
-            unmount(children as VNode);
+            unmount(children as VNode, null);
         }
     } else if (children) {
         if (type & Types.ComponentClass) {
-            unmountComponentClass(vNode as VNodeComponentClass, null);
+            unmountComponentClass(vNode as VNodeComponentClass, nextVNode as VNodeComponentClass);
         } else if (type & Types.ComponentFunction) {
-            unmount(children as VNode);
+            unmount(children as VNode, null);
         } else if (type & Types.Fragment) {
             if (vNode.childrenType & ChildrenTypes.MultipleChildren) {
                 unmountAllChildren(children as VNode[]);
@@ -55,7 +55,7 @@ export function unmountComponentClass(vNode: VNodeComponentClass, nextVNode: VNo
 
 export function unmountAllChildren(children: VNode[]) {
     for (let i = 0, len = children.length; i < len; ++i) {
-        unmount(children[i]);
+        unmount(children[i], null);
     }
 }
 

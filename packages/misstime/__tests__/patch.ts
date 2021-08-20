@@ -590,7 +590,7 @@ describe('Patch', () => {
                     expect(click).to.have.callCount(2);
                     expect(childClick).to.have.callCount(1);
 
-                    unmount(vNode2);
+                    unmount(vNode2, null);
                 });
 
                 it('should detach event', () => {
@@ -602,7 +602,7 @@ describe('Patch', () => {
 
                     dispatchEvent(container.firstElementChild!, 'mouseenter');
                     expect(click).to.have.callCount(0);
-                    unmount(vNode);
+                    unmount(vNode, null);
                 });
 
                 it('should change event handler', () => {
@@ -616,7 +616,7 @@ describe('Patch', () => {
                     dispatchEvent(container.firstElementChild!, 'click');
                     expect(click1).to.have.callCount(0);
                     expect(click2).to.have.callCount(1);
-                    unmount(vNode);
+                    unmount(vNode, null);
                 });
             });
         });

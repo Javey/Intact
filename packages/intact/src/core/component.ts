@@ -79,7 +79,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     // private triggerReceiveEvents: Function | null = null;
 
     constructor(
-        props: P | null,
+        props: Props<P, Component<P>> | null | undefined,
         $vNode: VNodeComponentClass,
         $SVG: boolean,
         $mountedQueue: Function[],
@@ -130,7 +130,6 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         } else {
             componentInited(this, triggerReceiveEvents);
         }
-
     }
 
     // $init(props: P | null) {
@@ -227,7 +226,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
 
         // if (isNull(nextVNode)) {
             // if nextVNode exists, we will unmount it on $render
-            unmount(this.$lastInput!);
+            unmount(this.$lastInput!, null);
         // }
         
         this.$unmounted = true;
@@ -239,7 +238,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     }
 
     // lifecycle methods
-    init?(props: P | null): any;
+    init?(props: Props<P, Component<P>> | null | undefined): any;
     beforeMount?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass): void;
     mounted?(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass): void;
     beforeUpdate?(lastVNode: VNodeComponentClass, nextVNode: VNodeComponentClass): void;

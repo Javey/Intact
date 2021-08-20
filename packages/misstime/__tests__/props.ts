@@ -571,7 +571,7 @@ describe('Props', () => {
 
                 $unmount() {
                     _unmount();
-                    unmount(this.$lastInput!);
+                    unmount(this.$lastInput!, null);
                 }
             } 
 

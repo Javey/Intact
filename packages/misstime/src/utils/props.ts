@@ -201,7 +201,7 @@ function patchInnerHTML(lastValue: string | undefined | null, nextValue: string 
             if (lastVNode.childrenType & ChildrenTypes.MultipleChildren) {
                 unmountAllChildren(lastVNode.children as VNode[]);
             } else if (lastVNode.childrenType === ChildrenTypes.HasVNodeChildren) {
-                unmount(lastVNode.children as VNode);
+                unmount(lastVNode.children as VNode, null);
             }
             lastVNode.children = null;
             lastVNode.childrenType = ChildrenTypes.HasInvalidChildren;
