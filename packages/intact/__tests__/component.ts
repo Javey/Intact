@@ -26,6 +26,25 @@ describe('Component', () => {
     }
 
     describe('Mount', () => {
+        it('should initialize component correctly', () => {
+            class Test extends Component {
+                static template(this: Test) {
+                    return h('div', null, this.a! + this.b);
+                }
+
+                private a: number | null = null;
+                private b: number = 1; 
+
+                init() {
+                    this.a = 1;
+                }
+            }
+
+            render(h(Test), container);
+            expect(container.innerHTML).to.equal('<div>2</div>');
+
+        });
+
         it('should mount component which return HtmlElement vNode', () => {
             class Test extends Component {
                 static template = () => {

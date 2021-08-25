@@ -133,7 +133,7 @@ export function mountComponentClass(
     // instance.$mountedQueue = mountedQueue;
     // instance.$parent = parentComponent;
 
-    // instance.$init(props);
+    instance.$init(props);
    
     vNode.children = instance;
 
