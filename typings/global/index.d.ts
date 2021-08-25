@@ -13,3 +13,12 @@ declare module "*.vue" {
     const component: ReturnType<typeof defineComponent>;
     export default component;
 }
+
+// declare global {
+//     namespace JSX {
+//         interface ElementClass extends React.Component<any> {
+//             render(): React.ReactNode;
+//             a: boolean;
+//         }
+//     }
+// }

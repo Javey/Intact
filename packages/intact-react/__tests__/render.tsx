@@ -16,8 +16,9 @@ class ChildrenIntactComponent extends Component {
 //         return <div></div>
 //     }
 // }
-
 class SimpleReactComponent extends ReactComponent {
+    // FIXME: Vue JSX need this
+    $props: any;
     render() {
         return <div>{this.props.children}</div>
     }

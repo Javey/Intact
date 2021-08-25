@@ -18,6 +18,7 @@ import {
     RefObject,
     ReactNode,
 } from 'react';
+import {normalizeProps} from './normalize';
 
 type IntactReactProps<P> = {
     children?: Children | ReactNode
@@ -27,17 +28,10 @@ type IntactReactProps<P> = {
 export class Component<P = any> extends IntactComponent<P> implements ReactComponent {
     public context!: any;
     public state!: any;
-
-    // public props: any;
+    public props!: Readonly<P> & Readonly<{children?: ReactNode | undefined}>;
 
     // React use prototype.isReactComponent to detect it's a ClassComponent or not
     public isReactComponent!: boolean;
-
-    // React will check the props has been mutated or not,
-    // but Intact will assign a copy props to this.props,
-    // so we assign this.props to this.$props
-    // and assign the original props to this.props
-    // private $props!: Props<P, Component<P>>;
 
     private $elementRef!: RefObject<HTMLElement>;
     private $isReact!: boolean;
@@ -52,36 +46,39 @@ export class Component<P = any> extends IntactComponent<P> implements ReactCompo
     );
     constructor(
         props: Props<P, Component<P>> | null,
-        $vNode: VNodeComponentClass,
+        $vNodeOrContext: VNodeComponentClass,
         $SVG?: boolean,
         $mountedQueue?: Function[],
         $parent?: ComponentClass | null
     ) {
-        if (isComponentClass($vNode)) {
-            super(props as Props<P, Component<P>>, $vNode, $SVG!, $mountedQueue!, $parent!);
+        if (isComponentClass($vNodeOrContext)) {
+            super(props as Props<P, Component<P>>, $vNodeOrContext, $SVG!, $mountedQueue!, $parent!);
             return;
         }
 
+        const normalizedProps = normalizeProps(props, $vNodeOrContext);
         // Intact component in React
         const mountedQueue: Function[] = [];
-        super(props, $vNode, false, mountedQueue, null);
+        super(normalizedProps, $vNodeOrContext, false, mountedQueue, null);
 
         // create $vNode
-        this.$vNode = createComponentVNode(4, this.constructor as typeof Component, props) as unknown as VNodeComponentClass<this>;
-
-        // this.$props = this.props;
-        // this.props = props as any;
+        this.$vNode = createComponentVNode(
+            4,
+            this.constructor as typeof Component,
+            normalizedProps
+        ) as unknown as VNodeComponentClass<this>;
 
         this.$elementRef = createRef<HTMLElement>();
         this.$isReact = true;
     }
 
-    setState() { }
-
     render() {
         if (!this.$mounted) {
             const vNode = this.$vNode;
-            mount(vNode, null, null, false, null, []);
+            // mount(vNode, null, null, false, null, []);
+            this.$init({} as any);
+            vNode.children = this;
+            this.$render(null, vNode, null as any, null, []);
 
             // hack the createElement of React to create the real dom instead of the placeholder 'template'
             const element = findDomFromVNode(vNode, true) as IntactDom;
@@ -96,6 +93,8 @@ export class Component<P = any> extends IntactComponent<P> implements ReactCompo
             ref: this.$elementRef
         });
     }
+
+    setState() { }
 } 
 
 Component.prototype.isReactComponent = true;

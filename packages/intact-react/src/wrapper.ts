@@ -1,5 +1,6 @@
 import {ComponentClass, createVNode, VNode, VNodeComponentClass, Props, removeVNodeDom, IntactDom} from 'intact';
-import {ReactNode} from 'react';
+import {ReactNode, ReactElement, Component as ReactComponent} from 'react';
+import {unstable_renderSubtreeIntoContainer} from 'react-dom';
 
 export interface WrapperProps {
     vnode: ReactNode
@@ -10,7 +11,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
     public $lastInput: VNode = createVNode('div');
 
     constructor(
-        public props: Props<WrapperProps, ComponentClass<WrapperProps>>,
+        public $props: Props<WrapperProps, ComponentClass<WrapperProps>>,
         public $vNode: VNodeComponentClass<ComponentClass<WrapperProps>>,
         public $SVG: boolean,
         public $mountedQueue: Function[],
@@ -32,6 +33,12 @@ export class Wrapper implements ComponentClass<WrapperProps> {
             parentDom = document.createDocumentFragment() as any; 
         }
         const {vnode} = vNode.props!;
+        const container = document.createElement('div');
+        unstable_renderSubtreeIntoContainer(
+            this.$parent as unknown as ReactComponent,
+            vnode as ReactElement,
+            container,
+        );
         // patch(null, vnode, parentDom, anchor, getParent(this), null, this.$SVG);
 
         // add dom to the $lastInput for findDomFromVNode
@@ -39,7 +46,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
     }
 
     $update(
-        lastVNode: VNodeComponentClass,
+        lastVNode: VNodeComponentClass<Wrapper>,
         vNode: VNodeComponentClass<Wrapper>,
         parentDom: Element,
         anchor: IntactDom | null,
