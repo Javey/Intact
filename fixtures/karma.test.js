@@ -1,5 +1,6 @@
 const webpack = require('webpack');
 const path = require('path');
+const {VueLoaderPlugin} = require('vue-loader');
 
 const isDebug = !(process.env.UPDATE || process.env.CI || process.env.PRUNE);
 
@@ -18,11 +19,14 @@ module.exports = function(config) {
             module: {
                 rules: [
                     {
-                        test: /\.ts/,
+                        test: /\.tsx?/,
                         loader: 'ts-loader',
+                        options: {
+                            appendTsSuffixTo: [/.vue$/]
+                        }
                     },
                     {
-                        test: /\.ts$/,
+                        test: /\.tsx?$/,
                         include: /packages\/\w+\/src\/.*\.ts$/,
                         // include: /packages\/vdt\/src\/.*\.ts$/,
                         enforce: 'post',
@@ -34,20 +38,29 @@ module.exports = function(config) {
                     {
                         test: /\.css$/,
                         use: ['style-loader', 'css-loader'],
-                    }
+                    },
+                    {
+                        test: /\.vue$/,
+                        loader: 'vue-loader'
+                    },
                 ]
             },
             resolve: {
-                extensions: ['.ts', '.js'],
+                extensions: ['.ts', '.tsx', '.js'],
                 alias: {
                     'intact-shared': path.resolve(__dirname, '../packages/shared/src/index.ts'),
                     'misstime': path.resolve(__dirname, '../packages/misstime/src/index.ts'),
                     'intact': path.resolve(__dirname, '../packages/intact/src/index.ts'),
                     'vdt': path.resolve(__dirname, '../packages/vdt/src/index.ts'),
                     'vdt-compiler': path.resolve(__dirname, '../packages/compiler/src/index.ts'),
+                    'intact-vue-next': path.resolve(__dirname, '../packages/intact-vue-next/src/index.ts'),
+                    'vue$': 'vue/dist/vue.esm-bundler.js',
                 }
             },
             devtool: 'inline-source-map',
+            plugins: [
+                new VueLoaderPlugin(),
+            ],
         },
         frameworks: [
             // 'jasmine',

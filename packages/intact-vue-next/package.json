@@ -1,0 +1,36 @@
+{
+  "name": "intact-vue-next",
+  "version": "0.0.1",
+  "description": "A compatibility layer for running intact component in vue3.0",
+  "main": "index.js",
+  "module": "dist/index.esm.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "index.js"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Javey/Intact.git",
+    "directory": "packages/intact-vue-next"
+  },
+  "keywords": [
+    "intact",
+    "vue",
+    "intact-vue",
+    "intact-vue-next"
+  ],
+  "author": "Javey",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Javey/Intact/issues"
+  },
+  "homepage": "https://github.com/Javey/Intact/packages/intact-vue-next#readme",
+  "peerDependencies": {
+    "vue": "^3.0.0"
+  },
+  "dependencies": {
+    "intact": "^3.0.0-beta.11",
+    "tslib": "^2.3.1"
+  }
+}
