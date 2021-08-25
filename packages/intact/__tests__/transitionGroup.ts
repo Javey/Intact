@@ -88,7 +88,7 @@ describe('Component', function() {
         it('should move component', async () => {
             class Test extends Component {
                 static template(this: Test) {
-                    return h('div', null, this.props.children);
+                    return h('div', null, this.$props.children);
                 }
             }
 

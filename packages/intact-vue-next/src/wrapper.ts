@@ -61,7 +61,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
     public $lastInput: VNode = createVNode('div');
 
     constructor(
-        public props: Props<WrapperProps, ComponentClass<WrapperProps>>,
+        public $props: Props<WrapperProps, ComponentClass<WrapperProps>>,
         public $vNode: VNodeComponentClass<ComponentClass<WrapperProps>>,
         public $SVG: boolean,
         public $mountedQueue: Function[],

@@ -163,7 +163,7 @@ export function componentInited<P>(component: Component<P>, triggerReceiveEvents
 }
 
 export function mountProps<P>(component: Component<P>, nextProps: P) {
-    const props = component.props;
+    const props = component.$props;
     const changeTraces: ChangeTrace[] = [];
     for (let prop in nextProps) {
         const nextValue = nextProps[prop];
@@ -185,7 +185,7 @@ export function patchProps<P>(component: Component<P>, lastProps: P, nextProps: 
 
     if (lastProps !== nextProps) {
         const changeTraces: ChangeTrace[] = [];
-        const props = component.props;
+        const props = component.$props;
 
         if (nextProps !== EMPTY_OBJ) {
             for (const prop in nextProps) {
@@ -219,7 +219,7 @@ export function patchProp<P>(component: Component<P>, props: P, prop: keyof P, l
 }
 
 export function setProps<P>(component: Component<P>, newProps: P) {
-    const props = component.props;
+    const props = component.$props;
     const changeTracesGroup: ChangeTrace[][] = [];
 
     for (let propName in newProps) {
@@ -261,7 +261,7 @@ export function setProps<P>(component: Component<P>, newProps: P) {
 }
 
 function callModelEvent<P>(component: Component<P>, path: string, newValue: any) {
-    const modelEvent = (component.props as any)[`ev-$model:${path}`];
+    const modelEvent = (component.$props as any)[`ev-$model:${path}`];
     if (modelEvent) {
         modelEvent(newValue);
     }

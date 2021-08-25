@@ -42,7 +42,7 @@ describe('Component', () => {
                 interface AProps {a: string, b?: number}
                 class A<T extends AProps = AProps> extends Component<T> {
                     static template = function(this: A) {
-                        return h('div', null, this.props.a);
+                        return h('div', null, this.$props.a);
                     };
                     init() {
                         watch<AProps, 'a'>('a', (newValue, oldValue) => {
@@ -74,7 +74,7 @@ describe('Component', () => {
                 interface AProps {a: string, b?: number}
                 class A<T extends AProps = AProps> extends Component<T> {
                     static template = function(this: A) {
-                        return h('div', null, this.props.a);
+                        return h('div', null, this.$props.a);
                     };
                     init() {
                         watch<AProps, 'a'>('a', (newValue, oldValue) => {

@@ -50,7 +50,7 @@ describe('Component', () => {
 
             class Test extends Component<{name: string}> {
                 static template(this: Test) {
-                    return h('div', null, this.props.name);
+                    return h('div', null, this.$props.name);
                 }
                 beforeUpdate() {
                     const dom = findDomFromVNode(this.$lastInput!, true);
@@ -76,7 +76,7 @@ describe('Component', () => {
 
             class Test extends Component<{name: string}> {
                 static template(this: Test) {
-                    return h('div', null, this.props.name);
+                    return h('div', null, this.$props.name);
                 }
                 beforeUnmount() {
                     expect(this.$unmounted).to.be.false;

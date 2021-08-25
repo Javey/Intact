@@ -42,7 +42,7 @@ describe('Component', () => {
             it('should set value to default when render undefined prop', () => {
                 render(h(Test, {name: undefined}), container);
 
-                expect(component!.props).to.eql({name: 1});
+                expect(component!.$props).to.eql({name: 1});
             });
 
             it('should update prop and trigger $receive event', () => {
@@ -60,7 +60,7 @@ describe('Component', () => {
 
                 render(h(MyTest, {name: 2, age: 1}), container);
 
-                expect((component as MyTest).props).to.eql({name: 2, age: 1});
+                expect((component as MyTest).$props).to.eql({name: 2, age: 1});
                 expect(onReceiveName).to.have.been.calledOnceWith(2, 1);
                 expect(onReceiveAge).to.have.been.calledOnceWith(1, undefined);
             });
@@ -75,7 +75,7 @@ describe('Component', () => {
 
                 render(h(MyTest, {name: 1}), container);
 
-                expect(component!.props).to.eql({name: 1});
+                expect(component!.$props).to.eql({name: 1});
                 expect(onReceiveName).to.have.callCount(0);
             });
 
@@ -83,7 +83,7 @@ describe('Component', () => {
                 // let count = 0;
                 // class Test extends Component<{a?: number, b?: string}> {
                     // static template = function(this: Test) {
-                        // return h('div', null, this.props.a! + this.props.b!);
+                        // return h('div', null, this.$props.a! + this.$props.b!);
                     // }
                     // static defaults = {
                         // get a() {
@@ -104,7 +104,7 @@ describe('Component', () => {
             // it('should replace default getter property', () => {
                 // class Test extends Component<{a?: number, b?: string}> {
                     // static template = function(this: Test) {
-                        // return h('div', null, this.props.a! + this.props.b!);
+                        // return h('div', null, this.$props.a! + this.$props.b!);
                     // }
                     // static defaults = {
                         // get a() {
@@ -130,28 +130,28 @@ describe('Component', () => {
                 render(h(Test), container);
                 render(h(Test), container);
 
-                expect(component!.props).to.eql({name: 1});
+                expect(component!.$props).to.eql({name: 1});
             });
 
             it('should set prop to default value if next value is undefined', () => {
                 render(h(Test, {name: 2}), container);
                 render(h(Test, {name: undefined}), container);
 
-                expect(component!.props).to.eql({name: 1});
+                expect(component!.$props).to.eql({name: 1});
             });
 
             it('should set prop to default value if next value does not exist', () => {
                 render(h(Test, {name: 2}), container);
                 render(h(Test), container);
 
-                expect(component!.props).to.eql({name: 1});
+                expect(component!.$props).to.eql({name: 1});
             });
 
             it('should do nothing if next value does not exist but last value is undefined', () => {
                 render(h(Test, {name: undefined}), container);
                 render(h(Test), container);
 
-                expect(component!.props).to.eql({name: 1});
+                expect(component!.$props).to.eql({name: 1});
             });
         });
 

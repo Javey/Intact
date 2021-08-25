@@ -162,7 +162,7 @@ export interface ComponentConstructor<T extends ComponentClass = ComponentClass>
 }
 
 export interface ComponentClass<P = any> {
-    props: Props<P, ComponentClass<P>>;
+    $props: Props<P, ComponentClass<P>>;
 
     $inited: boolean;
     $SVG: boolean;

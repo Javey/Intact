@@ -17,7 +17,7 @@ describe('Component', () => {
             class Test extends Component<{name: string}> {
                 static template(this: Test) {
                     template();
-                    return h('div', null, this.props.name);
+                    return h('div', null, this.$props.name);
                 }
 
                 init() {

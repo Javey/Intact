@@ -33,7 +33,7 @@ export interface TransitionGroupProps extends Omit<TransitionProps, 'show'> {
 
 export class TransitionGroup<P extends TransitionGroupProps = TransitionGroupProps> extends BaseTransition<P> {
     static template(this: TransitionGroup) {
-        const props = this.props;
+        const props = this.$props;
 
         const {tag, children} = props;
         let vNode: VNode;
@@ -104,7 +104,7 @@ export class TransitionGroup<P extends TransitionGroupProps = TransitionGroupPro
             return;
         }
 
-        const props = this.props;
+        const props = this.$props;
         if (!props.move) return;
 
         const moveClass = props.moveClass || `${props.name || 'transition'}-move`;

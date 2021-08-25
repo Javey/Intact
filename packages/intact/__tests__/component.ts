@@ -161,7 +161,7 @@ describe('Component', () => {
         it('should update component which return HtmlElement vNode', () => {
             class Test extends Component<{name: number}> {
                 static template: Template = function(this: Test) {
-                    return h('div', null, this.props.name)
+                    return h('div', null, this.$props.name)
                 }
             }
 
@@ -173,7 +173,7 @@ describe('Component', () => {
         it('should replace dom', () => {
             class Test extends Component<{name: number}> {
                 static template: Template = function(this: Test) {
-                    if (this.props.name === 1) {
+                    if (this.$props.name === 1) {
                         return h('div'); 
                     } else {
                         return [h('span'), h('span')];
@@ -190,7 +190,7 @@ describe('Component', () => {
             const callback = sinon.spy();
             class Test extends Component<{name: number}> {
                 static template: Template = function(this: Test) {
-                    return h('div', null, this.props.name)
+                    return h('div', null, this.$props.name)
                 };
 
                 mounted() {
@@ -198,7 +198,7 @@ describe('Component', () => {
                 }
 
                 beforeUpdate() {
-                    this.props.name = 3;
+                    this.$props.name = 3;
                     this.forceUpdate(() => {
                         expect(container.innerHTML).to.equal('<div>3</div>');
                         callback();
@@ -217,7 +217,7 @@ describe('Component', () => {
                 function createComponentTest() {
                     return class Test extends Component {
                         static template = function(this: Test) {
-                            return h('div', null, this.props.children);
+                            return h('div', null, this.$props.children);
                         }
 
                         unmounted() {
@@ -249,7 +249,7 @@ describe('Component', () => {
                 function createComponentTest() {
                     return class Test extends Component {
                         static template = function(this: Test) {
-                            return h('div', null, this.props.children);
+                            return h('div', null, this.$props.children);
                         }
 
                         unmounted() {
@@ -284,7 +284,7 @@ describe('Component', () => {
                 function createComponentTest() {
                     return class Test extends Component {
                         static template = function(this: Test) {
-                            return h('div', {ref: ref}, this.props.children);
+                            return h('div', {ref: ref}, this.$props.children);
                         }
                     }
                 } 
@@ -298,13 +298,13 @@ describe('Component', () => {
             it('should not unmounted an unmounted vNode if we are reusing the dom', async () => {
                 class Test1 extends Component {
                     static template = function(this: Test1) {
-                        return h('div', null, this.props.children);
+                        return h('div', null, this.$props.children);
                     }
                 }
 
                 class Test2 extends Component {
                     static template = function(this: Test2) {
-                        return h('span', null, this.props.children);
+                        return h('span', null, this.$props.children);
                     }
                 }
 
@@ -321,13 +321,13 @@ describe('Component', () => {
             it('should not unmounted an unmounted keyed vNode if we are reusing the dom', async () => {
                 class Test1 extends Component {
                     static template = function(this: Test1) {
-                        return h('div', null, this.props.children);
+                        return h('div', null, this.$props.children);
                     }
                 }
 
                 class Test2 extends Component {
                     static template = function(this: Test2) {
-                        return h('div', null, this.props.children);
+                        return h('div', null, this.$props.children);
                     }
                 }
 
@@ -344,14 +344,14 @@ describe('Component', () => {
             it('replace one vNode with multiple vNodes and vice versa', () => {
                 class Test1 extends Component {
                     static template = function(this: Test1) {
-                        return h('div', null, this.props.children);
+                        return h('div', null, this.$props.children);
                     } 
                 }
 
                 function createTest2() {
                     return class Test2 extends Component<{a: boolean}> {
                         static template = function(this: Test2) {
-                            return h('div', null, this.props.a ? h(Test1) : [h(Test1), h(Test1)]);
+                            return h('div', null, this.$props.a ? h(Test1) : [h(Test1), h(Test1)]);
                         }
                     }
                 }

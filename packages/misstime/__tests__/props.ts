@@ -543,7 +543,7 @@ describe('Props', () => {
         describe('InnerHTML', () => {
             const _unmount = sinon.spy();
             class A implements ComponentClass {
-                props = {};
+                $props = {};
                 $inited = true;
                 $SVG = false;
                 $vNode = null;

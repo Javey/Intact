@@ -48,9 +48,9 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     static readonly typeDefs?: TypeDefs<any>;
     static readonly displayName?: string;
 
-    public props: Props<P, this>;
     public refs: Record<string, any> = {}; 
 
+    public $props: Props<P, this>;
     public $SVG: boolean = false;
     public $vNode: VNodeComponentClass<this>;
     public $parent: Component<any> | null;
@@ -102,7 +102,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
             this.$template = compile(template);
         }
 
-        this.props = constructor.defaults() as P;
+        this.$props = constructor.defaults() as P;
 
         if ($parent !== null) {
             this.$provides = ($parent as Component<any>).$provides;
@@ -259,7 +259,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
 
         if (!isUndefined(options) && options.silent) {
             for (let propName in key as P) {
-                set(this.props, propName, key[propName]);
+                set(this.$props, propName, key[propName]);
             }
             return;
         }
@@ -271,9 +271,9 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     get<K extends keyof Props<P, ComponentClass<P>>>(key: K): Props<P, ComponentClass<P>>[K]; 
     get<V = void>(key: V extends void ? never : string): V;
     get(key?: any) {
-        if (isUndefined(key)) return this.props;
+        if (isUndefined(key)) return this.$props;
 
-        return get(this.props, key);
+        return get(this.$props, key);
     }
 
     forceUpdate(callback?: Function) {
@@ -283,7 +283,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
 
     trigger(name: string, ...args: any[]) {
         // call event on props firstly
-        const propEvent = (this.props as any)[`ev-${name}`];
+        const propEvent = (this.$props as any)[`ev-${name}`];
         if (isFunction(propEvent) && !this.$unmounted) {
             propEvent(...args); 
         }

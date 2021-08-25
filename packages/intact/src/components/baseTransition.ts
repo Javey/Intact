@@ -46,7 +46,7 @@ export interface BaseTransitionProps {
 
 export class BaseTransition<P extends BaseTransitionProps = BaseTransitionProps> extends Component<P> {
     static template(this: BaseTransition) {
-        const props = this.props;
+        const props = this.$props;
         const children = props.children;
 
         if (isNullOrUndefined(children)) return null;
@@ -92,7 +92,7 @@ export class BaseTransition<P extends BaseTransitionProps = BaseTransitionProps>
         const display = el.style.display;
         this.originalDisplay = display === 'none' ? '' : display;
 
-        if (!this.props.show) {
+        if (!this.$props.show) {
             setDisplay(el, 'none');
         }
     }

@@ -50,7 +50,7 @@ describe('Component', function() {
             class Test extends Component<{show: boolean}> {
                 static template(this: Test) {
                     test = this;
-                    return h('div', {className: this.props.show ? 'show' : 'hidden'}, 'show');
+                    return h('div', {className: this.$props.show ? 'show' : 'hidden'}, 'show');
                 }
             }
             render(h(Transition, {appear: true}, h(Test)), container);
@@ -144,7 +144,7 @@ describe('Component', function() {
                 class Test extends Component<{style?: string}> {
                     static template(this: Test) {
                         test = this;
-                        return h('div', {style: this.props.style}, 'show');
+                        return h('div', {style: this.$props.style}, 'show');
                     }
                 }
                 render(h(Transition, {show: false}, h(Test)), container);
@@ -172,7 +172,7 @@ describe('Component', function() {
                 type Props = {name?: string, show?: boolean};
                 class Test extends Component<Props> {
                     static template(this: Test) {
-                        return h(Transition, {name: this.props.name, show: this.props.show}, h('div', null, 'show'));
+                        return h(Transition, {name: this.$props.name, show: this.$props.show}, h('div', null, 'show'));
                     }
 
                     static defaults = () => ({name: 'a', show: false});
