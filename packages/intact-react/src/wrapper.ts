@@ -1,6 +1,6 @@
 import {ComponentClass, createVNode, VNode, VNodeComponentClass, Props, removeVNodeDom, IntactDom} from 'intact';
 import {ReactNode, ReactElement, Component as ReactComponent} from 'react';
-import {unstable_renderSubtreeIntoContainer} from 'react-dom';
+import {unstable_renderSubtreeIntoContainer, render, getExecutionContext, setExecutionContext} from 'react-dom';
 
 export interface WrapperProps {
     vnode: ReactNode
@@ -34,10 +34,18 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         }
         const {vnode} = vNode.props!;
         const container = document.createElement('div');
+        // console.log(getExecutionContext());
+        // const context = getExecutionContext();
+        // setExecutionContext(0);
+        // render(vnode as ReactElement, parentDom);
+        // setExecutionContext(context);
         unstable_renderSubtreeIntoContainer(
             this.$parent as unknown as ReactComponent,
             vnode as ReactElement,
-            container,
+            parentDom,
+            () => {
+                console.log(parentDom);
+            } 
         );
         // patch(null, vnode, parentDom, anchor, getParent(this), null, this.$SVG);
 

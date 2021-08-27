@@ -78,7 +78,11 @@ export class Component<P = any> extends IntactComponent<P> implements ReactCompo
             // mount(vNode, null, null, false, null, []);
             this.$init({} as any);
             vNode.children = this;
+            const flags = (this as any)._reactInternals.flags;
+            (this as any)._reactInternals.flags = flags & ~2;
             this.$render(null, vNode, null as any, null, []);
+            (this as any)._reactInternals.flags = flags;
+
 
             // hack the createElement of React to create the real dom instead of the placeholder 'template'
             const element = findDomFromVNode(vNode, true) as IntactDom;
@@ -92,6 +96,24 @@ export class Component<P = any> extends IntactComponent<P> implements ReactCompo
         return createElement('template', {
             ref: this.$elementRef
         });
+    }
+
+    componentDidMount() {
+        return;
+        const vNode = this.$vNode;
+        // mount(vNode, null, null, false, null, []);
+        this.$init({} as any);
+        vNode.children = this;
+        this.$render(null, vNode, null as any, null, []);
+
+        // hack the createElement of React to create the real dom instead of the placeholder 'template'
+        const element = findDomFromVNode(vNode, true) as IntactDom;
+        console.log(element.outerHTML);
+        // const documentCreateElement = document.createElement;
+        // document.createElement = (type: string) => {
+            // document.createElement = documentCreateElement;
+            // return element as HTMLElement;
+        // };
     }
 
     setState() { }

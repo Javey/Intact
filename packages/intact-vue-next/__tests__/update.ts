@@ -43,10 +43,7 @@ describe('Intact Vue Next', () => {
         it('insert keyed vue element before non-keyed element in Intact component', async () => {
             class IntactComponent extends Component {
                 static template = `const C = this.C; <div>{this.get('children')}<C ref="c" /></div>`;
-                private C!: typeof SimpleIntactComponent;
-                init() {
-                    this.C = SimpleIntactComponent;
-                } 
+                private C = SimpleIntactComponent;
             }
             render(`
                 <C ref="c">
@@ -61,6 +58,23 @@ describe('Intact Vue Next', () => {
 
             await nextTick();
             expect(vm.$refs.c.refs.c.test).to.be.true;
+        });
+
+        it('insert keyed intact component that returns vue element directly', async () => {
+            render(`
+                <C ref="c">
+                    <D key="a" v-if="show"><span>test1</span></D>
+                    <D key="b"><span>test2</span></D>
+                </C>
+            `, {
+                C: ChildrenIntactComponent,
+                D: WrapperComponent,
+            }, {show: false});
+
+            vm.show = true;
+
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div><span>test1</span><span>test2</span></div>')
         });
 
         it('update keyed functional component children', async () => {
