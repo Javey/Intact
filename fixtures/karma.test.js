@@ -20,11 +20,36 @@ module.exports = function(config) {
                 rules: [
                     {
                         test: /\.tsx?/,
+                        // exclude: [
+                            // path.resolve(__dirname, '../packages/intact-vue-next'),
+                        // ],
                         loader: 'ts-loader',
                         options: {
-                            appendTsSuffixTo: [/.vue$/]
+                            configFile: path.resolve(__dirname, '../tsconfig.json'),
+                            appendTsSuffixTo: [/.vue$/],
                         }
                     },
+                    // {
+                        // test: /packages\/intact-vue-next\/.*\.tsx?/,
+                        // include: [
+                            // path.resolve(__dirname, '../packages/intact-vue-next'),
+                        // ],
+                        // loader: 'ts-loader',
+                        // options: {
+                            // appendTsSuffixTo: [/.vue$/],
+                            // configFile: path.resolve(__dirname, '../packages/intact-vue-next/tsconfig.json'),
+                        // }
+                    // },
+                    // {
+                        // test: /packages\/intact-react\/.*\.tsx?/,
+                        // include: [
+                            // path.resolve(__dirname, '../packages/intact-react'),
+                        // ],
+                        // loader: 'ts-loader',
+                        // options: {
+                            // configFile: path.resolve(__dirname, '../packages/intact-react/tsconfig.json'),
+                        // }
+                    // },
                     {
                         test: /\.tsx?$/,
                         include: /packages\/\w+\/src\/.*\.ts$/,

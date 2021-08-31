@@ -95,8 +95,5 @@
     "packages/*/src",
     "packages/*/__tests__",
     "typings/global/index.d.ts"
-  ],
-  "exclude": [
-    "packages/intact-vue-next/**/*"
   ]
 }

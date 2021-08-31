@@ -8,17 +8,20 @@ namespace Chai {
     }
 }
 
-// declare module "*.vue" {
-    // import {defineComponent} from 'vue';
-    // const component: ReturnType<typeof defineComponent>;
-    // export default component;
-// }
+declare module "*.vue" {
+    import {defineComponent} from 'vue';
+    const component: ReturnType<typeof defineComponent>;
+    export default component;
+}
 
-// declare global {
-//     namespace JSX {
-//         interface ElementClass extends React.Component<any> {
-//             render(): React.ReactNode;
-//             a: boolean;
-//         }
-//     }
-// }
+namespace JSX {
+    type Element = Exclude<Element, keyof Element>
+    interface Element extends React.ReactElement<any, any> {}
+
+    interface ElementClass {
+        $props?: {}
+    }
+    interface ElementAttributesProperty {
+        $props?: {}
+    }
+}
