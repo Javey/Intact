@@ -18,14 +18,22 @@ import {
     RefObject,
     ReactNode,
 } from 'react';
-import {normalizeProps} from './normalize';
+import {normalizeProps, normalizeChildren} from './normalize';
+import {precacheFiberNode, updateFiberProps} from './helpers';
+import {functionalWrapper} from './functionalWrapper';
 
 type IntactReactProps<P> = {
     children?: Children | ReactNode
     className?: string
 } & P
 
-export class Component<P = any> extends IntactComponent<P> implements ReactComponent {
+export * from 'intact';
+
+export class Component<P = {}> extends IntactComponent<P> implements ReactComponent {
+    static $cid = 'IntactReact';
+    static normalize = normalizeChildren;
+    static functionalWrapper = functionalWrapper;
+
     public context!: any;
     public state!: any;
     public props!: Readonly<P> & Readonly<{children?: ReactNode | undefined}>;
@@ -36,7 +44,7 @@ export class Component<P = any> extends IntactComponent<P> implements ReactCompo
     private $elementRef!: RefObject<HTMLElement>;
     private $isReact!: boolean;
 
-    constructor(props: P, context: any);
+    constructor(props: Readonly<P> & Readonly<{children?: ReactNode | undefined}>, context: any);
     constructor(
         props: Props<P, Component<P>> | null,
         $vNode: VNodeComponentClass,
@@ -73,25 +81,25 @@ export class Component<P = any> extends IntactComponent<P> implements ReactCompo
     }
 
     render() {
-        if (!this.$mounted) {
-            const vNode = this.$vNode;
-            // mount(vNode, null, null, false, null, []);
-            this.$init({} as any);
-            vNode.children = this;
-            const flags = (this as any)._reactInternals.flags;
-            (this as any)._reactInternals.flags = flags & ~2;
-            this.$render(null, vNode, null as any, null, []);
-            (this as any)._reactInternals.flags = flags;
+        // if (!this.$mounted) {
+            // const vNode = this.$vNode;
+            // // mount(vNode, null, null, false, null, []);
+            // this.$init({} as any);
+            // vNode.children = this;
+            // const flags = (this as any)._reactInternals.flags;
+            // (this as any)._reactInternals.flags = flags & ~2;
+            // this.$render(null, vNode, null as any, null, []);
+            // (this as any)._reactInternals.flags = flags;
 
 
-            // hack the createElement of React to create the real dom instead of the placeholder 'template'
-            const element = findDomFromVNode(vNode, true) as IntactDom;
-            const documentCreateElement = document.createElement;
-            document.createElement = (type: string) => {
-                document.createElement = documentCreateElement;
-                return element as HTMLElement;
-            };
-        } 
+            // // hack the createElement of React to create the real dom instead of the placeholder 'template'
+            // const element = findDomFromVNode(vNode, true) as IntactDom;
+            // const documentCreateElement = document.createElement;
+            // document.createElement = (type: string) => {
+                // document.createElement = documentCreateElement;
+                // return element as HTMLElement;
+            // };
+        // } 
 
         return createElement('template', {
             ref: this.$elementRef
@@ -99,7 +107,6 @@ export class Component<P = any> extends IntactComponent<P> implements ReactCompo
     }
 
     componentDidMount() {
-        return;
         const vNode = this.$vNode;
         // mount(vNode, null, null, false, null, []);
         this.$init({} as any);
@@ -107,13 +114,15 @@ export class Component<P = any> extends IntactComponent<P> implements ReactCompo
         this.$render(null, vNode, null as any, null, []);
 
         // hack the createElement of React to create the real dom instead of the placeholder 'template'
-        const element = findDomFromVNode(vNode, true) as IntactDom;
-        console.log(element.outerHTML);
-        // const documentCreateElement = document.createElement;
-        // document.createElement = (type: string) => {
-            // document.createElement = documentCreateElement;
-            // return element as HTMLElement;
-        // };
+        const element = findDomFromVNode(vNode, true) as Element;
+        const placeholder = this.$elementRef.current!
+        const parentElement = placeholder.parentElement!;
+        parentElement.replaceChild(element, placeholder);
+
+        // replace some properties like React do
+        const fiber = precacheFiberNode(element, placeholder);
+        updateFiberProps(element, placeholder);
+        fiber.stateNode = element;
     }
 
     setState() { }

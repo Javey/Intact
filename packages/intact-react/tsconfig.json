@@ -1,0 +1,6 @@
+{
+    "extends": "../../tsconfig.json",
+    "files": [
+        "typings/index.d.ts"
+    ]
+}

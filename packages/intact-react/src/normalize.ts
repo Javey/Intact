@@ -1,12 +1,23 @@
-import {createVNode as h, VNode} from 'intact';
-import {ReactNode} from 'react';
-import {isNullOrUndefined, isArray} from 'intact-shared';
+import {createVNode as h, VNode, Block, Blocks} from 'intact';
+import {ReactNode, ReactElement, Fragment} from 'react';
+import {isNullOrUndefined, isArray, isStringOrNumber, isInvalid, isFunction} from 'intact-shared';
 import {Wrapper} from './wrapper';
+import type {Component} from './';
 
 export type VNodeAtom = VNode | null | undefined | string | number;
 
 export function normalize(vNode: ReactNode): VNodeAtom {
-    if (isNullOrUndefined(vNode)) return null;
+    if (isInvalid(vNode)) return null;
+    if (isStringOrNumber(vNode)) return vNode;
+
+    if (isIntactComponent(vNode)) {
+        const props = normalizeProps(vNode.props, {});
+        return h(
+            vNode.type as unknown as typeof Component,
+            props,
+            vNode.key,
+        );
+    }
 
     return h(Wrapper, {vnode: vNode});
 }
@@ -26,16 +37,60 @@ export function normalizeChildren(vNodes: ReactNode) {
     return normalize(vNodes);
 }
 
-export function normalizeProps<P>(props: P, context: any) {
-    if (!props) return null;
+export function normalizeProps<P>(props: P, context: any): P {
+    // if (!props) return null;
 
+    let blocks: Blocks | null = null;
     const normalizedProps: P = {} as P;
+    let tmp;
     for (const key in props) {
         const value = props[key];
         if (key === 'children') {
             normalizedProps[key] = normalizeChildren(value) as unknown as P[typeof key];
+        } else if (tmp = getEventName(key)) {
+            normalizedProps[tmp as keyof P] = value;
+        } else if (key.startsWith('slot-')) {
+            if (!blocks) blocks = (normalizedProps as any).$blocks = {};
+            blocks[key.substring(5)] = normalizeBlock(value);
+        } else {
+            normalizedProps[key] = value;
         }
     }
 
     return normalizedProps;
+}
+
+function isIntactComponent(vNode: any): vNode is ReactElement {
+    const type = vNode.type as typeof Component;
+    return !!type.$cid;
+}
+
+function getEventName(propName: string) {
+    const third = propName[2];
+    if (!third) return;
+
+    const first = propName[0];
+    const second = propName[1];
+
+    let tmp;
+    if (first === 'o' && second === 'n') {
+        if (third === '$') {
+            // e.g. on$change-value
+            return `ev-$${propName.substring(3).replace(/\-/g, ':')}`;
+        } else if ((tmp = third.charCodeAt(0)) && tmp >= 65 && tmp <= 90) {
+            // e.g. onClick
+            return `ev-${third.toLowerCase()}${propName.substring(3).replace(/\-/g, ':')}`;
+        }
+    }
+}
+
+function normalizeBlock(block: Function | ReactNode): Block<any> {
+    if (isFunction(block)) {
+        return function(parent, ...args) {
+            return normalizeChildren(block(...args));
+        } 
+    }
+    return function() {
+        return normalizeChildren(block); 
+    }
 }
