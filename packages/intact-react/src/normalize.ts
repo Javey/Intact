@@ -10,6 +10,11 @@ export function normalize(vNode: ReactNode): VNodeAtom {
     if (isInvalid(vNode)) return null;
     if (isStringOrNumber(vNode)) return vNode;
 
+    // maybe return by functional component, see unit test: `render intact functional component`
+    if ((vNode as VNode).tag) {
+        return vNode as VNode;
+    }
+
     if (isIntactComponent(vNode)) {
         const props = normalizeProps(vNode.props, {});
         return h(
@@ -52,6 +57,8 @@ export function normalizeProps<P>(props: P, context: any): P {
         } else if (key.startsWith('slot-')) {
             if (!blocks) blocks = (normalizedProps as any).$blocks = {};
             blocks[key.substring(5)] = normalizeBlock(value);
+        } else if (key === 'forwardRef') {
+            (normalizedProps as any).ref = value;
         } else {
             normalizedProps[key] = value;
         }

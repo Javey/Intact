@@ -1,5 +1,6 @@
-import React, {Component, ReactElement} from 'react'
-import ReactDOM from 'react-dom'
+import React, {ReactElement} from 'react';
+import ReactDOM from 'react-dom';
+import {Component} from '../src';
 
 export let container: HTMLDivElement;
 export function render(vNode: ReactElement) {
@@ -9,3 +10,8 @@ export function render(vNode: ReactElement) {
     ReactDOM.render(vNode, container);
 }
 
+export function createIntactComponent(template: string) {
+    return class extends Component {
+        static template = template;
+    }
+}

@@ -40,6 +40,10 @@ export function useInstance() {
     return currentInstance;
 }
 
+export function setInstance(instance: Component<any> | null) {
+    currentInstance = instance;
+}
+
 type NoInfer<T> = [T][T extends any ? 0 : never];
 
 export abstract class Component<P extends {} = {}> extends Event<P> implements ComponentClass<P> {

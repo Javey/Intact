@@ -242,6 +242,11 @@ export function createUnknownComponentVNode<T extends ComponentFunction | Compon
     key?: Key | null,
     ref?: VNodeRef<T> | null
 ): VNode<T> { 
+    // for react forwardRef element, see intact-react 
+    const type = (tag as any)._$type;
+    if (type) {
+        tag = type as T;
+    }
     return createComponentVNode(Types.ComponentUnknown, tag, props, key, ref);
 }
 

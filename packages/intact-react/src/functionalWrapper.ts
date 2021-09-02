@@ -1,10 +1,10 @@
 import {normalizeProps} from './normalize';
-import {ComponentFunction, NormalizedChildren, VNodeComponentClass} from 'intact';
+import {ComponentFunction, NormalizedChildren, VNodeComponentClass, Props} from 'intact';
 import {createElement, ForwardedRef, FunctionComponent, forwardRef, ReactElement, Fragment, ReactNode, PropsWithChildren} from 'react';
 import {isArray} from 'intact-shared';
 
-export type ComponentFunctionForIntact<P = {}> = ComponentFunction & {
-     (props: PropsWithChildren<P>, isReact?: boolean): VNodeComponentClass | VNodeComponentClass[] 
+export type ComponentFunctionForIntact<P = {}> = Pick<ComponentFunction, 'displayName' | 'typeDefs'> & {
+     (props: Props<P, any>, isReact?: boolean): VNodeComponentClass | VNodeComponentClass[] 
 }
 
 export function functionalWrapper<P = {}>(Component: ComponentFunctionForIntact<P>) {
@@ -24,15 +24,14 @@ export function functionalWrapper<P = {}>(Component: ComponentFunctionForIntact<
         }
     }
 
-    const ret = forwardRef<{}, P & {forwardRef?: ForwardedRef<any>, children?: ReactNode | null}>((props, ref) => {
+    const element = forwardRef<{}, P & {forwardRef?: ForwardedRef<any>, children?: ReactNode | null}>((props, ref) => {
         if (ref) props = {...props, forwardRef: ref};
         return createElement<P>(Ctor, props);
     });
 
-    // ret.$cid = 'IntactFunction';
-    // ret.$$type = Ctor;
+    (element as any)._$type = Ctor;
 
-    return ret;
+    return element;
 }
 
 export function normalizeIntactVNodeToReactVNode(vNode: VNodeComponentClass | null, key: number) {
