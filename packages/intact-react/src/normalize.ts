@@ -1,5 +1,5 @@
-import {createVNode as h, VNode, Block, Blocks} from 'intact';
-import {ReactNode, ReactElement, Fragment} from 'react';
+import {createVNode as h, VNode, Block, Blocks, createComponentVNode, Ref, Children} from 'intact';
+import {ReactNode, ReactElement, Fragment, JSXElementConstructor} from 'react';
 import {isNullOrUndefined, isArray, isStringOrNumber, isInvalid, isFunction} from 'intact-shared';
 import {Wrapper} from './wrapper';
 import type {Component} from './';
@@ -17,14 +17,16 @@ export function normalize(vNode: ReactNode): VNodeAtom {
 
     if (isIntactComponent(vNode)) {
         const props = normalizeProps(vNode.props, {});
-        return h(
+        return createComponentVNode(
+            4,
             vNode.type as unknown as typeof Component,
             props,
             vNode.key,
+            (vNode as any).ref,
         );
     }
 
-    return h(Wrapper, {vnode: vNode});
+    return createComponentVNode(4, Wrapper, {vnode: vNode}, (vNode as any).key);
 }
 
 export function normalizeChildren(vNodes: ReactNode) {
@@ -67,7 +69,7 @@ export function normalizeProps<P>(props: P, context: any): P {
     return normalizedProps;
 }
 
-function isIntactComponent(vNode: any): vNode is ReactElement {
+function isIntactComponent(vNode: any): vNode is ReactElement<any, JSXElementConstructor<any>> {
     const type = vNode.type as typeof Component;
     return !!type.$cid;
 }

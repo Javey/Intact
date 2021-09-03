@@ -14,6 +14,7 @@ import {
     inject,
     useInstance,
     setInstance,
+    callAll,
 } from 'intact';
 import {
     Component as ReactComponent,
@@ -52,6 +53,7 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
     private $parentPromises!: FakePromises | null;
     private $elementRef!: RefObject<HTMLElement>;
     private $isReact!: boolean;
+    private $parentElement!: HTMLElement;
 
     constructor(props: Readonly<P> & Readonly<{children?: ReactNode | undefined}>, context: any);
     constructor(
@@ -76,8 +78,10 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
         const normalizedProps = normalizeProps(props, $vNodeOrContext);
         const parent = useInstance();
         // Intact component in React
-        const mountedQueue: Function[] = [];
+        const mountedQueue: Function[] = parent ? parent.$mountedQueue : [];
         super(normalizedProps, $vNodeOrContext, false, mountedQueue, parent);
+
+        this.$inited = true;
 
         // create $vNode
         this.$vNode = createComponentVNode(
@@ -94,26 +98,6 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
     }
 
     render() {
-        // if (!this.$mounted) {
-            // const vNode = this.$vNode;
-            // // mount(vNode, null, null, false, null, []);
-            // this.$init({} as any);
-            // vNode.children = this;
-            // const flags = (this as any)._reactInternals.flags;
-            // (this as any)._reactInternals.flags = flags & ~2;
-            // this.$render(null, vNode, null as any, null, []);
-            // (this as any)._reactInternals.flags = flags;
-
-
-            // // hack the createElement of React to create the real dom instead of the placeholder 'template'
-            // const element = findDomFromVNode(vNode, true) as IntactDom;
-            // const documentCreateElement = document.createElement;
-            // document.createElement = (type: string) => {
-                // document.createElement = documentCreateElement;
-                // return element as HTMLElement;
-            // };
-        // } 
-
         return createElement('template', {
             ref: this.$elementRef
         });
@@ -122,36 +106,61 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
     componentDidMount() {
         const vNode = this.$vNode;
         const placeholder = this.$elementRef.current!
-        const parentElement = placeholder.parentElement!;
+        const parentElement = this.$parentElement = placeholder.parentElement!;
+
+        // React will assign a emptyObject which is frozen to refs on mountClassInstance
+        // we have to re-assign it
+        this.refs = {};
 
         this.$init(vNode.props as Props<P, this>);
         setInstance(this);
         vNode.children = this;
-        this.$render(null, vNode, parentElement, null, []);
+        this.$render(null, vNode, parentElement, placeholder.nextElementSibling, this.$mountedQueue);
 
-        const all = () => {
-            return FakePromise.all(this.$promises).then(() => {
-                // hack the createElement of React to create the real dom instead of the placeholder 'template'
-                const element = findDomFromVNode(vNode, true) as Element;
-                parentElement.replaceChild(element, placeholder);
+        this.$done(() => {
+            const element = findDomFromVNode(vNode, true) as Element;
+            // parentElement.replaceChild(element, placeholder);
+            parentElement.removeChild(placeholder);
 
-                // replace some properties like React do
-                const fiber = precacheFiberNode(element, placeholder);
-                updateFiberProps(element, placeholder);
-                fiber.stateNode = element;
+            // replace some properties like React do
+            const fiber = precacheFiberNode(element, placeholder);
+            updateFiberProps(element, placeholder);
+            fiber.stateNode = element;
 
-                setInstance(null);
-            });
-        }
+            setInstance(null);
+        });
+    }
+
+    componentDidUpdate() {
+        const normalizedProps = normalizeProps(this.props, this.context) as Omit<P, 'children'> & {children?: Children};
+        const vNode = createComponentVNode(
+            4,
+            this.constructor as typeof Component,
+            normalizedProps,
+        ) as unknown as VNodeComponentClass<this>;
+
+        vNode.children = this;
+        const lastVNode = this.$vNode;
+        this.$vNode = vNode;
+
+        this.$update(lastVNode, vNode, this.$parentElement, null, [], false); 
+    }
+
+    private $done(callback: () => void) {
+        const done = () => {
+            return FakePromise.all(this.$promises).then(callback);
+        };
 
         const $parentPromises = this.$parentPromises;
         if ($parentPromises) {
             const promise = new FakePromise(resolve => {
-                all().then(resolve);
+                done().then(resolve);
             });
             $parentPromises.add(promise);
         } else {
-            all();
+            done().then(() => {
+                callAll(this.$mountedQueue);
+            });
         }
     }
 

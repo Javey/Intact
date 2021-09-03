@@ -1,31 +1,16 @@
-import {render, container, createIntactComponent} from './helpers';
-import {Component, createVNode as h} from '../src';
+import {
+    render,
+    container,
+    createIntactComponent, 
+    SimpleIntactComponent,
+    ChildrenIntactComponent,
+    SimpleReactComponent,
+    PropsIntactComponent,
+    expect,
+} from './helpers';
+import {Component, createVNode as h, findDomFromVNode} from '../src';
 import {Component as ReactComponent, ReactNode, Fragment} from 'react';
 import ReactDOM from 'react-dom';
-
-class SimpleIntactComponent extends Component {
-    static template = `<div>Intact Component</div>`;
-}
-
-class ChildrenIntactComponent extends Component {
-    static template = `<div>{this.get('children')}</div>`
-}
-
-// class ChildrenIntactComponent extends ReactComponent<{a: number}> {
-//     // static template = `<div>{this.get('children')}</div>`
-//     render() {
-//         return <div></div>
-//     }
-// }
-class SimpleReactComponent extends ReactComponent {
-    render() {
-        return <div>{this.props.children}</div>
-    }
-}
-
-class PropsIntactComponent extends Component<{a?: string | number, b?: string | number}> {
-    static template = `<div>a: {this.get('a')} b: {this.get('b')}</div>`;
-}
 
 describe('Intact React', () => {
     describe('Render', () => {
@@ -133,6 +118,19 @@ describe('Intact React', () => {
                     </section>
                 </ChildrenIntactComponent>
             );
+        });
+
+        it('render async inatct component', () => {
+            class Test extends Component {
+                static template = `<div>test</div>`;
+                init() {
+                    return new Promise<void>(resolve => {
+                        resolve();
+                    });
+                }
+            }
+            render(<Test />);
+            expect(container.innerHTML).to.eql('<div>test</div>');
         });
 
         describe('Normalize', () => {
@@ -268,8 +266,8 @@ describe('Intact React', () => {
 
             it('render intact component which return the react children directly', () => {
                 const C = createIntactComponent(`<template>{this.get('children')}</template>`);
-                let instance1;
-                let instance2;
+                let instance1: any;
+                let instance2: any;
                 render(
                     <C ref={(i: any) => {instance1 = i}}>
                         <C ref={(i: any) => {instance2 = i}}>
@@ -277,8 +275,10 @@ describe('Intact React', () => {
                         </C>
                     </C>
                 );
-                // expect(instance1.element.outerHTML).to.eql('<div>test</div>');
-                // expect(instance1.element).to.eql(instance2.element);
+                const element1 = findDomFromVNode(instance1.$vNode, true) as HTMLElement;
+                const element2 = findDomFromVNode(instance2.$vNode, true) as HTMLElement;
+                expect(element1.outerHTML).to.eql('<div>test</div>');
+                expect(element1).to.eql(element2);
             });
         });
     });

@@ -19,9 +19,7 @@ describe('Intact Vue Next', () => {
         describe('Lifecycle', () => {
             it('lifecycle of intact in vue', async () => {
                 const beforeMount = sinon.spy(() => console.log('beforeMount'));
-                const mounted = sinon.spy(() => {
-                    console.log('mounted');
-                });
+                const mounted = sinon.spy(() => console.log('mounted'));
                 const beforeUpdate = sinon.spy(() => console.log('beforeUpdate'));
                 const updated = sinon.spy(() => console.log('updated'));
                 const beforeUnmount = sinon.spy(() => console.log('beforeUnmount'));

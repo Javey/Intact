@@ -1,6 +1,6 @@
 import {ComponentClass, createVNode, VNode, VNodeComponentClass, Props, removeVNodeDom, IntactDom} from 'intact';
 import {ReactNode, ReactElement, Component as ReactComponent} from 'react';
-import {unstable_renderSubtreeIntoContainer, render} from 'react-dom';
+import {unstable_renderSubtreeIntoContainer, render, findDOMNode} from 'react-dom';
 import {markRootHasListened, rootHasListened} from './helpers';
 import type {Component} from './';
 import {FakePromise} from './fakePromise';
@@ -12,6 +12,7 @@ export interface WrapperProps {
 export class Wrapper implements ComponentClass<WrapperProps> {
     public $inited: boolean = true;
     public $lastInput: VNode = createVNode('div');
+    private container = document.createComment(' react-mount-point-unstable ') as unknown as HTMLElement;
 
     constructor(
         public $props: Props<WrapperProps, ComponentClass<WrapperProps>>,
@@ -33,40 +34,39 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         if (lastVNode) {
             removeVNodeDom(lastVNode, parentDom);
         }
-        const {vnode} = vNode.props!;
-        const container = document.createDocumentFragment() as any; 
-        // if the parent dom has listened events, avoid listening events to this container again
-        if (rootHasListened(parentDom)) {
-            markRootHasListened(container, parentDom);
+        const container = this.container;
+        // React will insert child before container, if container is a comment node.
+        // So we should insert the container into the corresponding position
+        if (anchor) {
+            parentDom.insertBefore(container, anchor);
+        } else {
+            parentDom.appendChild(container);
         }
-        // make React add event listener to parent dom instead of fragment
-        container.addEventListener = (eventType: string, listener: EventListener, options: boolean) => {
-            parentDom.addEventListener(eventType, listener, options);
-        };
 
-        const parentComponent = getParent(this)!;
-        const promise = new FakePromise(resolve => {
-            unstable_renderSubtreeIntoContainer(
-                parentComponent,
-                vnode as ReactElement,
-                container,
-                () => {
-                    // add dom to the $lastInput for findDomFromVNode
-                    this.$lastInput.dom = container.firstElementChild;
+        this.render(vNode);
+        // const parentComponent = getParent(this)!;
+        // const promise = new FakePromise(resolve => {
+            // unstable_renderSubtreeIntoContainer(
+                // parentComponent,
+                // vnode as ReactElement,
+                // container,
+                // function(this: any) {
+                    // console.log(this);
+                    // // parentDom.removeChild(container);
+                    // // add dom to the $lastInput for findDomFromVNode
+                    // // this.$lastInput.dom = container.firstElementChild;
 
-                    if (anchor) {
-                        parentDom.insertBefore(container, anchor);
-                    } else {
-                        parentDom.appendChild(container);
-                    }
-                    resolve();
-                } 
-            );
-        })
+                    // // if (anchor) {
+                        // // parentDom.insertBefore(container, anchor);
+                    // // } else {
+                        // // parentDom.appendChild(container);
+                    // // }
+                    // resolve();
+                // } 
+            // );
+        // })
 
-        markRootHasListened(parentDom, container);
-        parentComponent.$promises.value.push(promise);
-
+        // parentComponent.$promises.value.push(promise);
     }
 
     $update(
@@ -77,11 +77,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         // mountedQueue: Function[],
         // force: boolean
     ): void {
-        const {vnode: lastVnode} = lastVNode.props!;
-        const {vnode: nextVnode} = vNode.props!;
-        // patch(lastVnode, nextVnode, parentDom, anchor, getParent(this), null, this.$SVG);
-
-        // this.$lastInput.dom = nextVnode.el;
+        this.render(vNode);
     }
 
     $unmount(
@@ -89,6 +85,36 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         nextVNode: VNodeComponentClass | null
     ): void  {
         // unmount(vNode.props!.vnode, getParent(this), null, !!nextVNode);
+    }
+
+    private render(vNode: VNodeComponentClass<Wrapper>) {
+        const vnode = vNode.props!.vnode;
+        const parentComponent = getParent(this)!;
+        const instance = this;
+        const promise = new FakePromise(resolve => {
+            unstable_renderSubtreeIntoContainer(
+                parentComponent,
+                vnode as ReactElement,
+                this.container,
+                function(this: Element | ReactComponent) {
+                    // add dom to the $lastInput for findDomFromVNode
+                    instance.$lastInput.dom = this instanceof ReactComponent ?
+                        findDOMNode(this) :
+                        this;
+
+                    console.log(instance.$lastInput.dom);
+
+                    // if (anchor) {
+                        // parentDom.insertBefore(container, anchor);
+                    // } else {
+                        // parentDom.appendChild(container);
+                    // }
+                    resolve();
+                } 
+            );
+        });
+
+        parentComponent.$promises.value.push(promise);
     }
 }
 
