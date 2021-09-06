@@ -1,5 +1,5 @@
 import {ComponentClass, createVNode, VNode, VNodeComponentClass, Props, removeVNodeDom, IntactDom} from 'intact';
-import {ReactNode, ReactElement, Component as ReactComponent} from 'react';
+import {ReactNode, ReactElement, Component as ReactComponent, createContext, createElement} from 'react';
 import {unstable_renderSubtreeIntoContainer, render, findDOMNode} from 'react-dom';
 import {markRootHasListened, rootHasListened} from './helpers';
 import type {Component} from './';
@@ -8,6 +8,8 @@ import {FakePromise} from './fakePromise';
 export interface WrapperProps {
     vnode: ReactNode
 }
+
+export const Context = createContext<Component | null>(null);
 
 export class Wrapper implements ComponentClass<WrapperProps> {
     public $inited: boolean = true;
@@ -44,29 +46,6 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         }
 
         this.render(vNode);
-        // const parentComponent = getParent(this)!;
-        // const promise = new FakePromise(resolve => {
-            // unstable_renderSubtreeIntoContainer(
-                // parentComponent,
-                // vnode as ReactElement,
-                // container,
-                // function(this: any) {
-                    // console.log(this);
-                    // // parentDom.removeChild(container);
-                    // // add dom to the $lastInput for findDomFromVNode
-                    // // this.$lastInput.dom = container.firstElementChild;
-
-                    // // if (anchor) {
-                        // // parentDom.insertBefore(container, anchor);
-                    // // } else {
-                        // // parentDom.appendChild(container);
-                    // // }
-                    // resolve();
-                // } 
-            // );
-        // })
-
-        // parentComponent.$promises.value.push(promise);
     }
 
     $update(
@@ -89,12 +68,18 @@ export class Wrapper implements ComponentClass<WrapperProps> {
 
     private render(vNode: VNodeComponentClass<Wrapper>) {
         const vnode = vNode.props!.vnode;
+        const parent = this.$parent as Component;
         const parentComponent = getParent(this)!;
         const instance = this;
+
         const promise = new FakePromise(resolve => {
             unstable_renderSubtreeIntoContainer(
                 parentComponent,
-                vnode as ReactElement,
+                // pass the $parent as value instead of parentComponent
+                // because parentComponent is the the toplevel component and
+                // not always equal to the $parent 
+                // e.g. <A><B><div><C /></B></A>
+                createElement(Context.Provider, {value: parent}, vnode as ReactElement),
                 this.container,
                 function(this: Element | ReactComponent) {
                     // add dom to the $lastInput for findDomFromVNode
@@ -102,7 +87,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
                         findDOMNode(this) :
                         this;
 
-                    console.log(instance.$lastInput.dom);
+                    // console.log(instance.$lastInput.dom);
 
                     // if (anchor) {
                         // parentDom.insertBefore(container, anchor);
@@ -114,7 +99,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
             );
         });
 
-        parentComponent.$promises.value.push(promise);
+        parent.$promises.value.push(promise);
     }
 }
 

@@ -16,7 +16,7 @@ export function normalize(vNode: ReactNode): VNodeAtom {
     }
 
     if (isIntactComponent(vNode)) {
-        const props = normalizeProps(vNode.props, {});
+        const props = normalizeProps(vNode.props);
         return createComponentVNode(
             4,
             vNode.type as unknown as typeof Component,
@@ -44,7 +44,7 @@ export function normalizeChildren(vNodes: ReactNode) {
     return normalize(vNodes);
 }
 
-export function normalizeProps<P>(props: P, context: any): P {
+export function normalizeProps<P>(props: P): P {
     // if (!props) return null;
 
     let blocks: Blocks | null = null;

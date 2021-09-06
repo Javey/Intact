@@ -13,7 +13,7 @@ import {
     provide,
     inject,
     useInstance,
-    setInstance,
+    // setInstance,
     callAll,
 } from 'intact';
 import {
@@ -27,6 +27,7 @@ import {normalizeProps, normalizeChildren} from './normalize';
 import {precacheFiberNode, updateFiberProps} from './helpers';
 import {functionalWrapper} from './functionalWrapper';
 import {FakePromise, FakePromises} from './fakePromise';
+import {Context} from './wrapper';
 
 type IntactReactProps<P> = {
     children?: Children | ReactNode
@@ -41,6 +42,7 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
     static $cid = 'IntactReact';
     static normalize = normalizeChildren;
     static functionalWrapper = functionalWrapper;
+    static contextType = Context;
 
     public context!: any;
     public state!: any;
@@ -65,21 +67,21 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
     );
     constructor(
         props: Props<P, Component<P>> | null,
-        $vNodeOrContext: VNodeComponentClass,
+        $vNodeOrContext: VNodeComponentClass | null,
         $SVG?: boolean,
         $mountedQueue?: Function[],
         $parent?: ComponentClass | null
     ) {
-        if (isComponentClass($vNodeOrContext)) {
+        if ($vNodeOrContext && isComponentClass($vNodeOrContext)) {
             super(props as Props<P, Component<P>>, $vNodeOrContext, $SVG!, $mountedQueue!, $parent!);
             return;
         }
-
-        const normalizedProps = normalizeProps(props, $vNodeOrContext);
-        const parent = useInstance();
         // Intact component in React
-        const mountedQueue: Function[] = parent ? parent.$mountedQueue : [];
-        super(normalizedProps, $vNodeOrContext, false, mountedQueue, parent);
+
+        const normalizedProps = normalizeProps(props);
+        const parent = $vNodeOrContext as ComponentClass | null;
+        const mountedQueue: Function[] = parent ? parent.$mountedQueue! : [];
+        super(normalizedProps, null as any, false, mountedQueue, parent);
 
         this.$inited = true;
 
@@ -92,9 +94,10 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
 
         this.$elementRef = createRef<HTMLElement>();
         this.$isReact = true;
-        this.$promises = new FakePromises();
-        this.$parentPromises = inject(PROMISES, null);
-        provide(PROMISES, this.$promises);
+        const promises = this.$promises = inject(PROMISES, null) || new FakePromises();
+        // this.$promises = new FakePromises();
+        // this.$parentPromises = inject(PROMISES, null);
+        provide(PROMISES, promises);
     }
 
     render() {
@@ -113,7 +116,7 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
         this.refs = {};
 
         this.$init(vNode.props as Props<P, this>);
-        setInstance(this);
+        // setInstance(this);
         vNode.children = this;
         this.$render(null, vNode, parentElement, placeholder.nextElementSibling, this.$mountedQueue);
 
@@ -127,12 +130,12 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
             updateFiberProps(element, placeholder);
             fiber.stateNode = element;
 
-            setInstance(null);
+            // setInstance(null);
         });
     }
 
     componentDidUpdate() {
-        const normalizedProps = normalizeProps(this.props, this.context) as Omit<P, 'children'> & {children?: Children};
+        const normalizedProps = normalizeProps(this.props) as Omit<P, 'children'> & {children?: Children};
         const vNode = createComponentVNode(
             4,
             this.constructor as typeof Component,
@@ -153,10 +156,9 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
 
         const $parentPromises = this.$parentPromises;
         if ($parentPromises) {
-            const promise = new FakePromise(resolve => {
+            $parentPromises.add(new FakePromise(resolve => {
                 done().then(resolve);
-            });
-            $parentPromises.add(promise);
+            }));
         } else {
             done().then(() => {
                 callAll(this.$mountedQueue);
