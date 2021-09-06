@@ -18,6 +18,7 @@ export class FakePromise {
             while (cb = callbacks.shift()) {
                 cb();
             }
+            promises.done = true;
         }
 
         function isAllPromisesResolved() {
@@ -66,8 +67,15 @@ export class FakePromise {
 export class FakePromises {
     public value: FakePromise[] = [];
     public then!: Callback;
+    public done: boolean = false;
 
     public add(promise: FakePromise) {
+        if (process.env.NODE_ENV !== 'production') {
+            if (this.done) {
+                throw new Error('The FakePromises has done and cannot add new promise.');
+            }
+        }
+
         this.value.push(promise);
         promise.then(this.then);
     }

@@ -37,6 +37,10 @@ type IntactReactProps<P> = {
 export * from 'intact';
 
 const PROMISES = '_$IntactReactPromises';
+const EMPTY_ARRAY: any[] = [];
+if (process.env.NODE_ENV !== 'production') {
+    Object.freeze(EMPTY_ARRAY);
+}
 
 export class Component<P = {}> extends IntactComponent<P> implements ReactComponent {
     static $cid = 'IntactReact';
@@ -72,16 +76,18 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
         $mountedQueue?: Function[],
         $parent?: ComponentClass | null
     ) {
+        // Intact component in intact
         if ($vNodeOrContext && isComponentClass($vNodeOrContext)) {
             super(props as Props<P, Component<P>>, $vNodeOrContext, $SVG!, $mountedQueue!, $parent!);
             return;
         }
+        
         // Intact component in React
 
         const normalizedProps = normalizeProps(props);
         const parent = $vNodeOrContext as ComponentClass | null;
-        const mountedQueue: Function[] = parent ? parent.$mountedQueue! : [];
-        super(normalizedProps, null as any, false, mountedQueue, parent);
+        // const mountedQueue: Function[] = parent ? parent.$mountedQueue! : [];
+        super(normalizedProps, null as any, false, EMPTY_ARRAY, parent);
 
         this.$inited = true;
 
@@ -94,9 +100,17 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
 
         this.$elementRef = createRef<HTMLElement>();
         this.$isReact = true;
-        const promises = this.$promises = inject(PROMISES, null) || new FakePromises();
-        // this.$promises = new FakePromises();
-        // this.$parentPromises = inject(PROMISES, null);
+
+        // let promises = inject<FakePromises | null>(PROMISES, null);
+        // if (!promises) {
+            // promises = new FakePromises(); 
+        // } else if (promises.done) {
+            // promises = new FakePromises(); 
+            // this.$mountedQueue = [];
+        // }
+        // const promises = this.$promises = inject(PROMISES, null) || new FakePromises();
+        const promises = this.$promises = new FakePromises();
+        this.$parentPromises = inject(PROMISES, null);
         provide(PROMISES, promises);
     }
 
@@ -155,7 +169,7 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
         };
 
         const $parentPromises = this.$parentPromises;
-        if ($parentPromises) {
+        if ($parentPromises && !$parentPromises.done) {
             $parentPromises.add(new FakePromise(resolve => {
                 done().then(resolve);
             }));
@@ -163,6 +177,13 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
             done().then(() => {
                 callAll(this.$mountedQueue);
             });
+        }
+    }
+
+    private checkPromises() {
+        if (this.$promises.done) {
+            this.$promises = new FakePromises();
+            this.$mountedQueue = [];
         }
     }
 
