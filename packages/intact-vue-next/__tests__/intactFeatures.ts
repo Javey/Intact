@@ -243,7 +243,7 @@ describe('Intact Vue Next', () => {
                 });
             });
 
-            it('should get parentVNode after updating', async () => {
+            it('should get $parent after updating', async () => {
                 const C = createIntactComponent(`<div>{this.get('children')}</div>`);
                 const mounted = sinon.spy();
                 const updated = sinon.spy();
@@ -313,6 +313,30 @@ describe('Intact Vue Next', () => {
                     D: Test,
                 }, {show: false});
                 vm.show = true;
+            });
+
+            it('should get $parent when mount intact component on vue component updating', (done) => {
+                // let count = 0;
+                class Test extends Component {
+                    static template = `<span>test</span>`;
+                    mounted() {
+                        // console.log(this.$parent);
+                        expect(this.$parent).instanceof(ChildrenIntactComponent);
+                        done();
+                    }
+                }
+                render('<C><VueComponent ref="i" /></C>', {
+                    C: ChildrenIntactComponent,
+                    VueComponent: {
+                        template: `<div><Test v-if="show" /></div>`,
+                        components: {Test},
+                        data() {
+                            return {show: false}
+                        }
+                    },
+                });
+
+                vm.$refs.i.show = true;
             });
         });
 

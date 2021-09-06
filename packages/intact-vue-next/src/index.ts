@@ -104,7 +104,7 @@ export class Component<P = {}> extends IntactComponent<P> {
 
                 const mountedQueue = pushMountedQueue([]);
                 const subTree = createVNode(Comment);
-                const parentComponent = currentInstance;
+                const parentComponent = getIntactParent(vueInstance.parent);
                 const isSVG = parentComponent ? parentComponent.$SVG : false;
 
                 if (!vueInstance.isMounted) {
@@ -245,4 +245,21 @@ function callMountedQueue() {
     }
 
     callAll(mountedQueue!);
+}
+
+function getIntactParent(parent: ComponentInternalInstance | null) {
+    if (currentInstance) {
+        return currentInstance;
+    }
+    // maybe we mount/update a intact component in Vue component
+    // let parent: ComponentInternalInstance | null = instance;
+    while (parent) {
+        const instance = (parent as any).setupState.instance;
+        if (instance instanceof Component) {
+            return instance;
+        }
+        parent = parent.parent;
+    }
+
+    return null;
 }
