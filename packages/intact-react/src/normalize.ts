@@ -1,6 +1,6 @@
-import {createVNode as h, VNode, Block, Blocks, createComponentVNode, Ref, Children} from 'intact';
+import {createVNode as h, VNode, Block, Blocks, createComponentVNode, Ref, Children, TransitionHooks, createTextVNode} from 'intact';
 import {ReactNode, ReactElement, Fragment, JSXElementConstructor} from 'react';
-import {isNullOrUndefined, isArray, isStringOrNumber, isInvalid, isFunction} from 'intact-shared';
+import {isNullOrUndefined, isArray, isStringOrNumber, isInvalid, isFunction, noop, isNumber} from 'intact-shared';
 import {Wrapper} from './wrapper';
 import type {Component} from './';
 
@@ -8,10 +8,18 @@ export type VNodeAtom = VNode | null | undefined | string | number;
 
 export function normalize(vNode: ReactNode): VNodeAtom {
     if (isInvalid(vNode)) return null;
-    if (isStringOrNumber(vNode)) return vNode;
+    // if a element has one child which is string or number
+    // intact will set text content directly to update its children
+    // this will lead to that the container which return
+    // by Wrapper has been removed.
+    // so we should convert string or number child
+    // to VNode to let intact update it one by one
+    if (isStringOrNumber(vNode)) {
+        return createTextVNode(vNode);
+    }
 
     // maybe return by functional component, see unit test: `render intact functional component`
-    if ((vNode as VNode).tag) {
+    if (isNumber((vNode as VNode).type)) {
         return vNode as VNode;
     }
 
@@ -26,7 +34,18 @@ export function normalize(vNode: ReactNode): VNodeAtom {
         );
     }
 
-    return createComponentVNode(4, Wrapper, {vnode: vNode}, (vNode as any).key);
+    const ret = createComponentVNode(4, Wrapper, {vnode: vNode}, (vNode as any).key);
+
+    // transition has two functions
+    // 1. prevent Intact from removing the real dom,
+    //    because it will be removed by React.
+    // 2. let intact never call clearDom method to remove all children
+    //    because it will cause `react-mount-point-unstable` to be missing
+    ret.transition = {
+        leave: noop,
+    } as unknown as TransitionHooks;
+
+    return ret;
 }
 
 export function normalizeChildren(vNodes: ReactNode) {

@@ -1,9 +1,10 @@
-import {ComponentClass, createVNode, VNode, VNodeComponentClass, Props, removeVNodeDom, IntactDom} from 'intact';
+import {ComponentClass, createVNode, VNode, VNodeComponentClass, Props, removeVNodeDom, IntactDom, TransitionHooks} from 'intact';
 import {ReactNode, ReactElement, Component as ReactComponent, createContext, createElement} from 'react';
 import {unstable_renderSubtreeIntoContainer, render, findDOMNode} from 'react-dom';
 import {markRootHasListened, rootHasListened} from './helpers';
 import type {Component} from './';
 import {FakePromise} from './fakePromise';
+import {noop} from 'intact-shared';
 
 export interface WrapperProps {
     vnode: ReactNode
@@ -13,7 +14,7 @@ export const Context = createContext<Component | null>(null);
 
 export class Wrapper implements ComponentClass<WrapperProps> {
     public $inited: boolean = true;
-    public $lastInput: VNode = createVNode('div');
+    public $lastInput: VNode;
     private container = document.createComment(' react-mount-point-unstable ') as unknown as HTMLElement;
 
     constructor(
@@ -22,7 +23,15 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         public $SVG: boolean,
         public $mountedQueue: Function[],
         public $parent: ComponentClass | null,
-    ) { }
+    ) { 
+        const fakeInput = this.$lastInput = createVNode('div');
+        fakeInput.transition = $vNode.transition;
+        // fakeInput.transition = {
+            // // only need leave hook to prevent Intact from removing the real dom,
+            // // because it will be removed by React.
+            // leave: noop
+        // } as unknown as TransitionHooks;
+    }
 
     $init(props: WrapperProps | null): void { }
 
@@ -62,8 +71,11 @@ export class Wrapper implements ComponentClass<WrapperProps> {
     $unmount(
         vNode: VNodeComponentClass,
         nextVNode: VNodeComponentClass | null
-    ): void  {
-        // unmount(vNode.props!.vnode, getParent(this), null, !!nextVNode);
+    ): void {
+        const container = this.container;
+        render(null as any, container, () => {
+            container.parentElement!.removeChild(container);
+        });
     }
 
     private render(vNode: VNodeComponentClass<Wrapper>) {
@@ -71,6 +83,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         const parent = this.$parent as Component;
         const parentComponent = getParent(this)!;
         const instance = this;
+        const container = this.container;
 
         const promise = new FakePromise(resolve => {
             unstable_renderSubtreeIntoContainer(
@@ -80,12 +93,14 @@ export class Wrapper implements ComponentClass<WrapperProps> {
                 // not always equal to the $parent 
                 // e.g. <A><B><div><C /></B></A>
                 createElement(Context.Provider, {value: parent}, vnode as ReactElement),
-                this.container,
+                container,
                 function(this: Element | ReactComponent) {
                     // add dom to the $lastInput for findDomFromVNode
-                    instance.$lastInput.dom = this instanceof ReactComponent ?
-                        findDOMNode(this) :
-                        this;
+                    // the real dom will be inserted before the container
+                    instance.$lastInput.dom = container.previousSibling as IntactDom;
+                    // instance.$lastInput.dom = this instanceof ReactComponent ?
+                        // findDOMNode(this) :
+                        // this;
 
                     // console.log(instance.$lastInput.dom);
 
@@ -99,7 +114,8 @@ export class Wrapper implements ComponentClass<WrapperProps> {
             );
         });
 
-        parent.$promises.value.push(promise);
+        // parent.$promises.value.push(promise);
+        parentComponent.$promises.value.push(promise);
     }
 }
 

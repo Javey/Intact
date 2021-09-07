@@ -64,19 +64,33 @@ export class FakePromise {
     }
 }
 
+// let id = 0;
 export class FakePromises {
     public value: FakePromise[] = [];
-    public then!: Callback;
+    public then: Callback | null = null;
     public done: boolean = false;
+    // public id = id++;
 
     public add(promise: FakePromise) {
         if (process.env.NODE_ENV !== 'production') {
             if (this.done) {
-                throw new Error('The FakePromises has done and cannot add new promise.');
+                throw new Error(
+                    'The FakePromises has done and cannot add new promise. ' +
+                    'Maybe it is a bug of IntactReact'
+                );
             }
         }
 
         this.value.push(promise);
-        promise.then(this.then);
+        const then = this.then;
+        if (then) {
+            promise.then(then);
+        }
+    }
+
+    public reset() {
+        this.value = [];
+        this.then = null;
+        this.done = false;
     }
 }

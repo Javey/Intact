@@ -71,6 +71,9 @@ export function removeAllChildren(children: VNode[], dom: Element, vNode: VNode,
     if (vNode.type & Types.Fragment) {
         removeVNodeDom(vNode, dom);
     } else {
-        clearDom(dom);
+        for (let i = 0; i < children.length; i++) {
+            removeVNodeDom(children[i], dom);
+        }
+        // clearDom(dom);
     }
 }

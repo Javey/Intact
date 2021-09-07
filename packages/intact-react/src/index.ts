@@ -67,51 +67,42 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
         $vNode: VNodeComponentClass,
         $SVG: boolean,
         $mountedQueue: Function[],
-        $parent: ComponentClass | null
+        $parent: Component | null
     );
     constructor(
         props: Props<P, Component<P>> | null,
         $vNodeOrContext: VNodeComponentClass | null,
         $SVG?: boolean,
         $mountedQueue?: Function[],
-        $parent?: ComponentClass | null
+        $parent?: Component | null
     ) {
-        // Intact component in intact
         if ($vNodeOrContext && isComponentClass($vNodeOrContext)) {
+            // Intact component in intact
             super(props as Props<P, Component<P>>, $vNodeOrContext, $SVG!, $mountedQueue!, $parent!);
-            return;
+        } else {
+            // Intact component in React
+            const normalizedProps = normalizeProps(props);
+            const parent = $vNodeOrContext as Component | null;
+            // const mountedQueue: Function[] = parent ? parent.$mountedQueue! : [];
+            const mountedQueue = getMountedQueue(parent);
+            super(normalizedProps, null as any, false, mountedQueue, parent);
+
+            this.$inited = true;
+
+            // create $vNode
+            this.$vNode = createComponentVNode(
+                4,
+                this.constructor as typeof Component,
+                normalizedProps
+            ) as unknown as VNodeComponentClass<this>;
+
+            this.$elementRef = createRef<HTMLElement>();
+            this.$isReact = true;
+
+            const promises = this.$promises = new FakePromises();
+            this.$parentPromises = inject(PROMISES, null);
+            provide(PROMISES, promises);
         }
-        
-        // Intact component in React
-
-        const normalizedProps = normalizeProps(props);
-        const parent = $vNodeOrContext as ComponentClass | null;
-        // const mountedQueue: Function[] = parent ? parent.$mountedQueue! : [];
-        super(normalizedProps, null as any, false, EMPTY_ARRAY, parent);
-
-        this.$inited = true;
-
-        // create $vNode
-        this.$vNode = createComponentVNode(
-            4,
-            this.constructor as typeof Component,
-            normalizedProps
-        ) as unknown as VNodeComponentClass<this>;
-
-        this.$elementRef = createRef<HTMLElement>();
-        this.$isReact = true;
-
-        // let promises = inject<FakePromises | null>(PROMISES, null);
-        // if (!promises) {
-            // promises = new FakePromises(); 
-        // } else if (promises.done) {
-            // promises = new FakePromises(); 
-            // this.$mountedQueue = [];
-        // }
-        // const promises = this.$promises = inject(PROMISES, null) || new FakePromises();
-        const promises = this.$promises = new FakePromises();
-        this.$parentPromises = inject(PROMISES, null);
-        provide(PROMISES, promises);
     }
 
     render() {
@@ -130,7 +121,6 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
         this.refs = {};
 
         this.$init(vNode.props as Props<P, this>);
-        // setInstance(this);
         vNode.children = this;
         this.$render(null, vNode, parentElement, placeholder.nextElementSibling, this.$mountedQueue);
 
@@ -143,8 +133,6 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
             const fiber = precacheFiberNode(element, placeholder);
             updateFiberProps(element, placeholder);
             fiber.stateNode = element;
-
-            // setInstance(null);
         });
     }
 
@@ -160,7 +148,18 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
         const lastVNode = this.$vNode;
         this.$vNode = vNode;
 
-        this.$update(lastVNode, vNode, this.$parentElement, null, [], false); 
+        this.$promises.reset();
+        const mountedQueue = this.$mountedQueue = getMountedQueue(this.$parent as Component);
+
+        this.$update(lastVNode, vNode, this.$parentElement, null, mountedQueue, false); 
+
+        this.$done(() => {
+            // console.log('did updated');
+        });
+    }
+
+    componentWillUnmount() {
+        this.$unmount(this.$vNode, null);
     }
 
     private $done(callback: () => void) {
@@ -180,14 +179,18 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
         }
     }
 
-    private checkPromises() {
-        if (this.$promises.done) {
-            this.$promises = new FakePromises();
-            this.$mountedQueue = [];
-        }
-    }
-
     setState() { }
 } 
 
 Component.prototype.isReactComponent = true;
+
+function getMountedQueue(parent: Component | null): Function[] {
+    if (parent) {
+        const mountedQueue = parent.$mountedQueue!;
+        const parentPromises = parent.$provides![PROMISES] as FakePromises;
+        if (!parentPromises.done) {
+            return parent.$mountedQueue!;
+        }
+    }
+    return [];
+}
