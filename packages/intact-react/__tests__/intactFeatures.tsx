@@ -11,7 +11,7 @@ import {
     wait,
     renderApp,
 } from './helpers';
-import {Component, createVNode as h, findDomFromVNode} from '../src';
+import {Component, createVNode as h, findDomFromVNode, createRef} from '../src';
 
 describe('Intact React', () => {
     describe('Intact Features', () => {
@@ -112,9 +112,206 @@ describe('Intact React', () => {
 
                 // destroy
                 instance.setState({a: 3});
-                // expect(componentWillUnmount.callCount).to.eql(1);
+                expect(componentWillUnmount.callCount).to.eql(1);
             });
 
+            it('lifecycle of mount of nested intact component', () => {
+                const mount1 = sinon.spy(function(this: C) {
+                    console.log(1);
+                    expect(document.body.contains(this.elementRef.value)).to.eql(true);
+                    expect(this.elementRef.value!.outerHTML).to.eql('<div><div><div>test</div></div></div>');
+                });
+                const mount2 = sinon.spy(function(this: D) {
+                    console.log(2);
+                    expect(document.body.contains(this.elementRef.value)).to.eql(true);
+                    expect(this.elementRef.value!.outerHTML).to.eql('<div>test</div>');
+                });
+                class C extends Component {
+                    static template = `<div ref={this.elementRef}>{this.get('children')}</div>`;
+                    public elementRef = createRef<HTMLElement>();
+                    mounted() {
+                        mount1.call(this);
+                    }
+                }
+                class D extends Component {
+                    static template = `<div ref={this.elementRef}>test</div>`;
+                    public elementRef = createRef<HTMLElement>();
+                    mounted() {
+                        mount2.call(this);
+                    }
+                }
+                const instance = renderApp(function() {
+                    return (
+                        <div className="a">
+                            <C>
+                                <div>
+                                    <D />
+                                </div>
+                            </C>
+                        </div>
+                    )
+                });
+                expect(mount1.callCount).to.eql(1);
+                expect(mount2.callCount).to.eql(1);
+                // order is unnecessary
+                // expect(mount2.calledAfter(mount1)).be.true;
+            });
+
+            // order may be unnecessary
+            // it('the order of mounted', () => {
+                // function test(childrenA?: ReactNode | null, childrenB?: ReactNode | null) {
+                    // const mount1 = sinon.spy(() => console.log('1'));
+                    // const mount2 = sinon.spy(() => console.log('2'));
+                    // class A extends Component {
+                        // static template = `<div>{this.get('children')}</div>`;
+                        // mounted() {
+                            // mount1();
+                        // }
+                    // }
+                    // class B extends Component {
+                        // static template = `<div>{this.get('children')}</div>`;
+                        // mounted() {
+                            // mount2();
+                        // }
+                    // }
+
+                    // const instance = renderApp(function() {
+                        // return (
+                            // <div>
+                                // <A>{childrenA}</A>
+                                // <B>{childrenB}</B>
+                            // </div>
+                        // )
+                    // });
+                    // expect(mount1.calledBefore(mount2)).be.true;
+                // }
+
+                // test();
+                // test(<a>1</a>);
+                // test(null, <b>2</b>);
+                // test(<a>1</a>, <b>2</b>);
+            // });
+
+            it('lifecycle of mount of existing firsthand intact component', () => {
+                const mount = sinon.spy(function() {
+                    console.log('mount');
+                });
+                class C extends Component<{show?: boolean}> {
+                    static template = `<div>{this.get('show') ? this.get('children') : null}</div>`
+                    mounted() {
+                        mount();
+                    }
+                }
+                const instance = renderApp(function() {
+                    return (
+                        <div>
+                            <ChildrenIntactComponent>
+                                <C ref={(i: any) => this.c = i} show={this.state.show}>
+                                    <div>
+                                        <C show={true}>
+                                            <span>test</span>
+                                        </C>
+                                    </div>
+                                </C>
+                            </ChildrenIntactComponent>
+                        </div>
+                    )
+                }, {show: false});
+                expect(mount.callCount).to.eql(1);
+                instance.setState({show: true});
+                expect(mount.callCount).to.eql(2);
+            });
+
+            it('lifecycle of componentDidMount of nested react component in intact component', () => {
+                const componentDidMount = sinon.spy(function(this: Test) {
+                    expect(document.body.contains(this.dom)).to.be.true;
+                });
+                class Test extends ReactComponent {
+                    public dom: HTMLElement | null = null;
+                    render() {
+                        return <div ref={(i: HTMLDivElement) => this.dom = i}>test</div>
+                    }
+                }
+                Test.prototype.componentDidMount = componentDidMount;
+                const instance = renderApp(function() {
+                    return (
+                        <ChildrenIntactComponent>
+                            <div>
+                                <Test />
+                            </div>
+                        </ChildrenIntactComponent>
+                    )
+                });
+                expect(componentDidMount.callCount).to.eql(1);
+            });
+
+            it('mounted lifecycle of intact in intact template', () => {
+                const mount = sinon.spy(function(this: D) {
+                    expect(document.body.contains(this.elementRef.value)).to.be.true;
+                });
+                class C extends Component {
+                    static template = `const D = this.D; <D />`;
+                    D = D;
+                }
+                class D extends Component {
+                    static template = `<div ref={this.elementRef}>test</div>`;
+                    public elementRef = createRef<HTMLElement>();
+                    mounted() {
+                        mount.call(this);
+                    }
+                }
+                const instance = renderApp(function() {
+                    return <C />
+                });
+                expect(mount.callCount).to.eql(1);
+            });
+
+            it('mounted lifycycle of intact in react render method', () => {
+                const mount = sinon.spy(function(this: D) {
+                    expect(document.body.contains(this.elementRef.value)).to.be.true;
+                });
+                class C extends ReactComponent {
+                    render() {
+                        return <D />
+                    }
+                }
+                class D extends Component {
+                    static template = `<div ref={this.elementRef}>test</div>`;
+                    public elementRef = createRef<HTMLElement>();
+                    mounted() {
+                        mount.call(this);
+                    }
+                }
+                const instance = renderApp(function() {
+                    return <C />
+                });
+                expect(mount.callCount).to.eql(1);
+            });
+
+            it('componentWillUnmount will be called when remove the element by parent', () => {
+                const componentWillUnmount = sinon.spy(() => {
+                    console.log('unmount')
+                });
+                class C extends ReactComponent {
+                    render() {
+                        return <div>react</div>
+                    }
+                }
+                Object.assign(C.prototype, {
+                    componentWillUnmount,
+                });
+
+                const instance = renderApp(function() {
+                    return <div>
+                        {this.state.a === 1 ?
+                            <ChildrenIntactComponent><C /></ChildrenIntactComponent> :
+                            <div>test</div>
+                        }
+                    </div>
+                }, {a: 1});
+                instance.setState({a: 2});
+                expect(componentWillUnmount.callCount).to.eql(1);
+            });
         });
 
         describe('vNode', () => {

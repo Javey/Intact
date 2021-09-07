@@ -219,7 +219,7 @@ describe('Intact React', () => {
             d.forceUpdate();
             await wait();
             expect(container.innerHTML).to.eql('<div></div>');
-            // expect(mounted.callCount).to.eql(1);
+            expect(mounted.callCount).to.eql(1);
         });
     });
 });
