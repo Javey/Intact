@@ -20,15 +20,3 @@ export function precacheFiberNode(node: Element, placeholder: Element): Fiber {
 export function updateFiberProps(node: Element, placeholder: Element) {
     (node as any)[internalPropsKey] = (placeholder as any)[internalPropsKey];
 }
-
-export function markRootHasListened(node: Element, placeholder: Element) {
-    if (!listeningMarker) {
-        const keys = Object.keys(placeholder);
-        listeningMarker = keys.find(key => key.startsWith('_reactListening'))!;
-    }
-    (node as any)[listeningMarker] = true;
-}
-
-export function rootHasListened(node: Element) {
-    return (node as any)[listeningMarker];
-}

@@ -50,16 +50,16 @@ module.exports = function(config) {
                             // configFile: path.resolve(__dirname, '../packages/intact-react/tsconfig.json'),
                         // }
                     // },
-                    // {
-                        // test: /\.tsx?$/,
-                        // include: /packages\/\w+\/src\/.*\.ts$/,
-                        // // include: /packages\/vdt\/src\/.*\.ts$/,
-                        // enforce: 'post',
-                        // use: {
-                            // loader: 'istanbul-instrumenter-loader',
-                            // options: {esModules: true}
-                        // }
-                    // },
+                    {
+                        test: /\.tsx?$/,
+                        include: /packages\/[\w\-]+\/src\/.*\.ts$/,
+                        // include: /packages\/vdt\/src\/.*\.ts$/,
+                        enforce: 'post',
+                        use: {
+                            loader: 'istanbul-instrumenter-loader',
+                            options: {esModules: true}
+                        }
+                    },
                     {
                         test: /\.css$/,
                         use: ['style-loader', 'css-loader'],

@@ -245,6 +245,10 @@ class IntactReact extends Intact {
                 const type = returnFiber.type;
                 this.__providers.set(type, type._context._currentValue);
             } else if (tag === 3) { // HostRoot
+                // React will update from root and if root has pendingContext, it will compare
+                // the last value and the current value to change `didPerformWorkStatckCursor`,
+                // if the cursor is true, all children will be updated
+                //
                 // always let hasContextChanged return true to make React update the component,
                 // even if it props has not changed
                 // see unit test: `shuold update children when provider's children...`

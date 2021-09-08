@@ -24,4 +24,7 @@ namespace JSX {
     interface ElementAttributesProperty {
         $props?: {}
     }
+    interface IntrinsicAttributes {
+        ref?: React.LegacyRef<any> | undefined;
+    }
 }

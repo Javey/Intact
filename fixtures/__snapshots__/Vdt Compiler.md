@@ -241,17 +241,61 @@ return function($props, $blocks, $__proto__) {
 
 ```
 "var Vdt = _$vdt;
-var _$ce = Vdt.createElementVNode;
+var _$cv = Vdt.createVNode;
 
 return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
     
-    return _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, {
+    return _$cv('div', {
         ...a,
         'a': '1'
     });
+};"
+```
+
+####   `expression attribute with children`
+
+```
+"var Vdt = _$vdt;
+var _$cv = Vdt.createVNode;
+
+return function($props, $blocks, $__proto__) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$cv('div', {
+        'style': 'a',
+        ...a,
+        'a': '1',
+        'className': 'a'
+    }, 'a');
+};"
+```
+
+####   `expression attribute with children, ref and key`
+
+```
+"var Vdt = _$vdt;
+var _$cv = Vdt.createVNode;
+
+return function($props, $blocks, $__proto__) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    var _$refs = this.refs;
+    var _$ref_ref = function(i) {_$refs['ref'] = i};
+    
+    return _$cv('div', {
+        'style': 'a',
+        ...a,
+        'a': '1',
+        'className': 'a',
+        'ref': _$ref_ref,
+        'key': 'key'
+    }, 'a');
 };"
 ```
 
@@ -259,14 +303,14 @@ return function($props, $blocks, $__proto__) {
 
 ```
 "var Vdt = _$vdt;
-var _$ce = Vdt.createElementVNode;
+var _$cv = Vdt.createVNode;
 
 return function($props, $blocks, $__proto__) {
     $blocks || ($blocks = {});
     $props || ($props = {});
     var $this = this;
     
-    return _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, {
+    return _$cv('div', {
         ...a,
         'a': '1'
     });
@@ -2915,6 +2959,28 @@ return function($props, $blocks, $__proto__) {
     }
     _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, _$tmp0)
     return _$ce(2, 'div', null, 1 /* HasInvalidChildren */, null, _$tmp1);
+};"
+```
+
+####   `extract props`
+
+```
+"var Vdt = _$vdt;
+var _$cc = Vdt.createUnknownComponentVNode;
+var _$tmp0 = {
+    'className': 'ion-android-arrow-dropup k-asc'
+};
+
+return function($props, $blocks, $__proto__) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$cc(TableContext.Consumer, {
+        'children': () => {
+            return _$cc(Icon, _$tmp0)
+        }
+    });
 };"
 ```
 

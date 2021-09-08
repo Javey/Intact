@@ -367,5 +367,35 @@ describe('Intact Vue Next', () => {
                 expect(vm.$el.outerHTML).to.eql('<div><div>1</div></div>');
             });
         });
+
+        describe('Validate', () => {
+            it('should validate props', () => {
+                const error = console.error;
+                const spyError = sinon.spy((...args: any[]) => {
+                    error.apply(console, args);
+                });
+                console.error = spyError 
+                class IntactComponent extends Component<{show?: any}> {
+                    static template = `<div>{this.get('children')}</div>`
+                    static typeDefs = {
+                        show: Boolean,
+                    }
+                }
+                class IntactComponent2 extends IntactComponent {
+
+                }
+                render(`
+                    <div>
+                        <IntactComponent show="1">
+                            <IntactComponent2 show="1" />
+                        </IntactComponent>
+                    </div>
+                `, {IntactComponent, IntactComponent2});
+
+                expect(spyError.callCount).to.eql(2);
+
+                console.error = error;
+            });
+        });
     });
 });

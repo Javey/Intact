@@ -893,29 +893,29 @@ describe('Unit test', function() {
             // expect(mount2.calledAfter(mount1)).be.true;
         });
 
-        // it('lifecycle of mount\'s order', () => {
-            // function test(childrenA, childrenB) {
-                // const mount1 = sinon.spy(() => console.log('1'));
-                // const mount2 = sinon.spy(() => console.log('2'));
-                // const A = createIntactComponent(`<div>{self.get('children')}</div>`, {_mount: mount1});
-                // const B = createIntactComponent(`<div>{self.get('children')}</div>`, {_mount: mount2});
+        it('lifecycle of mount\'s order', () => {
+            function test(childrenA, childrenB) {
+                const mount1 = sinon.spy(() => console.log('1'));
+                const mount2 = sinon.spy(() => console.log('2'));
+                const A = createIntactComponent(`<div>{self.get('children')}</div>`, {_mount: mount1});
+                const B = createIntactComponent(`<div>{self.get('children')}</div>`, {_mount: mount2});
 
-                // const instance = renderApp(function() {
-                    // return (
-                        // <div>
-                            // <A>{childrenA}</A>
-                            // <B>{childrenB}</B>
-                        // </div>
-                    // )
-                // });
-                // expect(mount1.calledBefore(mount2)).be.true;
-            // }
+                const instance = renderApp(function() {
+                    return (
+                        <div>
+                            <A>{childrenA}</A>
+                            <B>{childrenB}</B>
+                        </div>
+                    )
+                });
+                expect(mount1.calledBefore(mount2)).be.true;
+            }
 
-            // test();
-            // test(<a>1</a>);
-            // test(null, <b>2</b>);
-            // test(<a>1</a>, <b>2</b>);
-        // });
+            test();
+            test(<a>1</a>);
+            test(null, <b>2</b>);
+            test(<a>1</a>, <b>2</b>);
+        });
 
         it('lifecycle of mount of existing firsthand intact component', () => {
             const mount = sinon.spy(function() {

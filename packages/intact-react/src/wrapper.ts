@@ -1,7 +1,6 @@
 import {ComponentClass, createVNode, VNode, VNodeComponentClass, Props, removeVNodeDom, IntactDom, TransitionHooks} from 'intact';
 import {ReactNode, ReactElement, Component as ReactComponent, createContext, createElement} from 'react';
 import {unstable_renderSubtreeIntoContainer, render, findDOMNode} from 'react-dom';
-import {markRootHasListened, rootHasListened} from './helpers';
 import type {Component} from './';
 import {FakePromise} from './fakePromise';
 import {noop} from 'intact-shared';
@@ -54,6 +53,8 @@ export class Wrapper implements ComponentClass<WrapperProps> {
             parentDom.appendChild(container);
         }
 
+        rewriteParentElementApi(parentDom);
+
         this.render(vNode);
     }
 
@@ -74,16 +75,37 @@ export class Wrapper implements ComponentClass<WrapperProps> {
     ): void {
         const container = this.container;
         render(null as any, container, () => {
-            container.parentElement!.removeChild(container);
+            // if (!nextVNode) {
+                // // if does not exits nextVNode, then Intact only unmount this component
+                // // but not remove the dom
+                // // so we should not remove the container 
+                // const lastInput = this.$lastInput;
+                // lastInput.dom = container;
+                // lastInput.transition = null;
+                // return;
+            // }
+            // container.parentElement!.removeChild(container);
         });
     }
 
     private render(vNode: VNodeComponentClass<Wrapper>) {
-        const vnode = vNode.props!.vnode;
         const parent = this.$parent as Component;
         const parentComponent = getParent(this)!;
         const instance = this;
         const container = this.container;
+
+        let vnode = vNode.props!.vnode as ReactElement;
+        // pass the $parent as value instead of parentComponent
+        // because parentComponent is the the toplevel component and
+        // not always equal to the $parent 
+        // e.g. <A><B><div><C /></B></A>
+        vnode = createElement(Context.Provider, {value: parent}, vnode);
+
+        // if the parent component has providers, pass them to subtree
+        const providers = parentComponent.$reactProviders;
+        providers.forEach((value, provider) => {
+            vnode = createElement(provider, {value}, vnode);    
+        });
 
         const promise = new FakePromise(resolve => {
             unstable_renderSubtreeIntoContainer(
@@ -92,23 +114,15 @@ export class Wrapper implements ComponentClass<WrapperProps> {
                 // because parentComponent is the the toplevel component and
                 // not always equal to the $parent 
                 // e.g. <A><B><div><C /></B></A>
-                createElement(Context.Provider, {value: parent}, vnode as ReactElement),
+                vnode,
                 container,
                 function(this: Element | ReactComponent) {
                     // add dom to the $lastInput for findDomFromVNode
                     // the real dom will be inserted before the container
-                    instance.$lastInput.dom = container.previousSibling as IntactDom;
-                    // instance.$lastInput.dom = this instanceof ReactComponent ?
-                        // findDOMNode(this) :
-                        // this;
-
-                    // console.log(instance.$lastInput.dom);
-
-                    // if (anchor) {
-                        // parentDom.insertBefore(container, anchor);
-                    // } else {
-                        // parentDom.appendChild(container);
-                    // }
+                    const dom = instance.$lastInput.dom = container.previousSibling as IntactDom | null;
+                    if (dom) {
+                        (dom as any)._mountPoint = container;
+                    }
                     resolve();
                 } 
             );
@@ -131,4 +145,26 @@ function getParent(instance: Wrapper): Component | null {
     // should not hit this
     /* istanbul ignore next */
     return null
+}
+
+function rewriteParentElementApi(parentElement: Element & {_hasRewrite?: boolean}) {
+    if (!parentElement._hasRewrite) {
+        const removeChild = parentElement.removeChild;
+        parentElement.removeChild = function(child: Node & {_mountPoint: Node | null}) {
+            if (child.parentNode) {
+                removeChild.call(parentElement, child);
+            } else {
+                if (process.env.NODE_ENV !== 'production') {
+                    if (!child._mountPoint) {
+                        throw new Error('Cannot remove the node. Maybe it is a bug of intact-react.');
+                    }
+                }
+                // if the node has been removed, then remove the mount point
+                removeChild.call(parentElement, child._mountPoint!);
+                child._mountPoint = null;
+            }
+        } as any;
+
+        parentElement._hasRewrite = true;
+    }
 }

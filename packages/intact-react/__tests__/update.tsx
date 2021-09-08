@@ -12,6 +12,7 @@ import {
     renderApp
 } from './helpers';
 import {Component, createVNode as h, findDomFromVNode} from '../src';
+import ReactDOM from 'react-dom';
 
 describe('Intact React', () => {
     describe('Update', () => {
@@ -34,7 +35,7 @@ describe('Intact React', () => {
             instance.setState({a: 2});
             expect(container.innerHTML).to.eql('<div>b</div>');
             instance.setState({a: 1});
-            expect(container.innerHTML).to.eql('<div><div>a</div></div>');
+            expect(container.innerHTML).to.eql('<div><div>a</div>#</div>');
         });
 
         it('update react element in intact component', () => {
@@ -46,7 +47,7 @@ describe('Intact React', () => {
                 )
             }, {a: 1});
             instance.setState({a: 2});
-            expect(container.innerHTML).to.eql('<div><div>2</div></div>');
+            expect(container.innerHTML).to.eql('<div><div>2</div>#</div>');
         });
 
         it('insert and append intact component in react element', () => {
@@ -82,11 +83,11 @@ describe('Intact React', () => {
             }, {list: [1, 2]});
             const node2 = container.firstElementChild!.children[1]!
             instance.setState({list: [2]});
-            expect(container.innerHTML).to.eql('<div><div>2</div></div>')
+            expect(container.innerHTML).to.eql('<div><div>2</div>#</div>')
             expect(container.firstElementChild!.children[0]).to.eql(node2);
 
             instance.setState({list: [1, 2, 3]});
-            expect(container.innerHTML).to.eql('<div><div>1</div><div>2</div><div>3</div></div>')
+            expect(container.innerHTML).to.eql('<div><div>1</div>#<div>2</div>#<div>3</div>#</div>')
             expect(container.firstElementChild!.children[1]).to.eql(node2);
         });
 
@@ -118,7 +119,7 @@ describe('Intact React', () => {
             }, {loading: false});
 
             instance.setState({loading: true});
-            expect(container.innerHTML).to.eql('<div><div>Loading...</div><span>test</span></div>');
+            expect(container.innerHTML).to.eql('<div><div>Loading...</div><span>test</span>#</div>');
         });
 
         it('insert keyed react element before non-keyed element in Intact component', () => {
@@ -140,8 +141,7 @@ describe('Intact React', () => {
             expect((instance.refs.c as any).refs.c.test).to.be.true;
         });
 
-        it('the updated lifecycle of intact should be called after all children has updated when call its update method directly', () => {
-            return;
+        it('the updated lifecycle of intact should be called after all children has updated when call its update method directly', async () => {
             const updated = sinon.spy();
             class Test extends Component {
                 static template = `<div ref="a"><b:test params={[this.get('v')]} /></div>`;
@@ -168,6 +168,7 @@ describe('Intact React', () => {
                 );
             });
             (instance as any).i.set('v', 2);
+            await wait();
             expect(updated.callCount).to.eql(1);
         });
 
@@ -183,7 +184,7 @@ describe('Intact React', () => {
             });
             (container.firstElementChild as HTMLElement).click();
             (container.firstElementChild as HTMLElement).click();
-            expect(container.innerHTML).to.eql('<div><div><div>react</div></div></div>');
+            expect(container.innerHTML).to.eql('<div><div><div>react</div>#</div></div>');
         });
 
         it('update intact component which children is react element', async () => {
@@ -193,7 +194,7 @@ describe('Intact React', () => {
                 mounted() {
                     mounted();
                     const element = findDomFromVNode(this.$vNode, true) as HTMLElement;
-                    expect(element.outerHTML).to.eql('<div>react</div>');
+                    expect(element.outerHTML).to.eql('<div>react</div>#');
                 }
             }
             class D extends Component {
@@ -209,7 +210,7 @@ describe('Intact React', () => {
             });
             d.set('show', true);
             await wait();
-            expect(container.innerHTML).to.eql('<div><div>react</div></div>');
+            expect(container.innerHTML).to.eql('<div><div>react</div>#</div>');
 
             // destroy
             d.set('show', false);
@@ -220,6 +221,146 @@ describe('Intact React', () => {
             await wait();
             expect(container.innerHTML).to.eql('<div></div>');
             expect(mounted.callCount).to.eql(1);
+        });
+
+        it('update block', async () => {
+            const C = createIntactComponent(`<div><b:test /></div>`);
+            let c: Component;
+            const instance = renderApp(function() {
+                return <C ref={(i: any) => c = i}
+                    slot-test={<Fragment><SimpleIntactComponent /></Fragment>}
+                ></C>
+            });
+
+            c!.forceUpdate();
+            await wait();
+            expect(container.innerHTML).to.eql('<div><div>Intact Component</div></div>');
+
+            c!.forceUpdate();
+            await wait();
+            expect(container.innerHTML).to.eql('<div><div>Intact Component</div></div>');
+
+            instance.forceUpdate();
+            expect(container.innerHTML).to.eql('<div><div>Intact Component</div></div>');
+            instance.forceUpdate();
+            expect(container.innerHTML).to.eql('<div><div>Intact Component</div></div>');
+        });
+
+        it('update in receive props', () => {
+            class C extends Component<{count: number}> {
+                static template = `<div>{this.get('count')}</div>`;
+                init() {
+                    this.on('$receive:count', (v) => {
+                        if (v === 1) {
+                            this.set('count', 0);
+                        }
+                    });
+                }
+            }
+            const instance = renderApp(function() {
+                return <ChildrenIntactComponent>
+                    <C count={this.state.count} />
+                </ChildrenIntactComponent>
+            }, {count: 0});
+            instance.setState({count: 1});
+            expect(container.innerHTML).to.eql('<div><div>0</div></div>');
+            instance.setState({count: 2});
+            expect(container.innerHTML).to.eql('<div><div>2</div></div>');
+        });
+
+        it('update react children with wrapper element', async () => {
+            class C extends Component<{wrapper?: boolean}> {
+                static template = `
+                    <div>
+                        {this.get('wrapper') ?
+                            <div>{this.get('children')}</div> :
+                            this.get('children')
+                        }
+                    </div>
+                `
+                static defaults() {
+                    return {wrapper: false}
+                }
+            }
+
+            let c: C;
+            const instance = renderApp(function() {
+                return <C ref={(i: any) => c = i}><div>test</div></C>
+            });
+
+            c!.set('wrapper', false);
+            await wait();
+            expect(container.innerHTML).to.eql('<div><div>test</div></div>');
+
+            c!.set('wrapper', true);
+            await wait();
+            expect(container.innerHTML).to.eql('<div><div><div>test</div></div></div>');
+        });
+
+        it('should remove intact functional component that return element directly', () => {
+            const DirectComponent = createIntactComponent(
+                `<template>{this.get('children')}</template>`
+            );
+            const Test = Component.functionalWrapper(function(props) {
+                return h(DirectComponent, props);
+            });
+
+            render(
+                <div>
+                    <Test>
+                        <span>test</span>
+                    </Test>
+                </div>
+            );
+
+            expect(container.innerHTML).to.eql('<div><span>test</span></div>');
+
+            ReactDOM.render(null as any, container);
+            expect(container.innerHTML).to.eql('');
+        });
+
+        it('update intact component that return different dom', () => {
+            class Test extends Component<{show?: boolean}> {
+                static template = `if (!this.get('show')) { return null } <template>{this.get('children')}</template>`;
+            }
+
+            const instance = renderApp(function() {
+                return <div><Test show={this.state.show}><span>show</span></Test></div>
+            }, {show: false});
+
+            instance.setState({show: true});
+            expect(container.innerHTML).to.eql('<div><span>show</span></div>');
+        });
+
+        it('replace component that return react element directly with react element', () => {
+            class C extends Component {
+                static template = `<template>{this.get('children')}</template>`
+            }
+            class D extends ReactComponent {
+                state = {
+                    show: true,
+                }
+
+                render() {
+                    return <div>
+                        {this.state.show ?
+                            <C>
+                                <div>a</div>
+                            </C> :
+                            <div>b</div>
+                        }
+                    </div>
+                }
+            }
+
+            let ref: D;
+            render(<D ref={(i: any) => ref = i}/>);
+
+            ref!.setState({show: false});
+            expect(container.innerHTML).to.eql('<div><div>b</div></div>');
+
+            ref!.setState({show: true});
+            expect(container.innerHTML).to.eql('<div><div>a</div></div>');
         });
     });
 });

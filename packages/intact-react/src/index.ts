@@ -13,8 +13,8 @@ import {
     provide,
     inject,
     useInstance,
-    // setInstance,
     callAll,
+    validateProps,
 } from 'intact';
 import {
     Component as ReactComponent,
@@ -22,6 +22,8 @@ import {
     createRef,
     RefObject,
     ReactNode,
+    Ref as ReactRef,
+    Provider,
 } from 'react';
 import {normalizeProps, normalizeChildren} from './normalize';
 import {precacheFiberNode, updateFiberProps} from './helpers';
@@ -56,6 +58,7 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
     public isReactComponent!: boolean;
 
     public $promises!: FakePromises;
+    public $reactProviders!: Map<Provider<any>, any>;
     private $parentPromises!: FakePromises | null;
     private $elementRef!: RefObject<HTMLElement>;
     private $isReact!: boolean;
@@ -83,7 +86,6 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
             // Intact component in React
             const normalizedProps = normalizeProps(props);
             const parent = $vNodeOrContext as Component | null;
-            // const mountedQueue: Function[] = parent ? parent.$mountedQueue! : [];
             const mountedQueue = getMountedQueue(parent);
             super(normalizedProps, null as any, false, mountedQueue, parent);
 
@@ -96,6 +98,10 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
                 normalizedProps
             ) as unknown as VNodeComponentClass<this>;
 
+            if (process.env.NODE_ENV !== 'production') {
+                validateProps(this.$vNode);
+            }
+
             this.$elementRef = createRef<HTMLElement>();
             this.$isReact = true;
 
@@ -106,6 +112,45 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
     }
 
     render() {
+        // save all Context.Proiver, because React will clear the value
+        // on commit phase, and we cannot get it when we render react element
+        // in Wrapper
+        const providers = this.$reactProviders = new Map();
+        let returnFiber = (this as any)._reactInternals;
+        while (returnFiber = returnFiber.return) {
+            const tag = returnFiber.tag;
+            if (tag === 10) { // is ContextProiver
+                const type = returnFiber.type;
+                providers.set(type, type._context._currentValue);
+            } else if (tag === 3) { // HostRoot
+                /**
+                 * React will update from root and if root has pendingContext, it will compare
+                 * the last value and the current value to change `didPerformWorkStatckCursor`,
+                 * if the cursor is true, all children will be updated
+                 * @FIXME: Maybe we can add all Consumer to wrap the placeholder element
+                 * 
+                 * always let hasContextChanged return true to make React update the component,
+                 * even if it props has not changed
+                 * see unit test: `shuold update children when provider's children...`
+                 * issue: https://github.com/ksc-fe/kpc/issues/533
+                 **/
+                const stateNode = returnFiber.stateNode;
+                if (!stateNode.__intactReactDefinedProperty) {
+                    let context: any;
+                    Object.defineProperty(stateNode, 'pendingContext', {
+                        get() {
+                            return context || (returnFiber.context ? {...returnFiber.context} : Object.create(null));
+                        },
+                        set(v) {
+                            context = v;
+                        }
+                    });
+                    stateNode.__intactReactDefinedProperty = true;
+                }
+                break;
+            }
+        }
+
         return createElement('template', {
             ref: this.$elementRef
         });
@@ -144,6 +189,10 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
             normalizedProps,
         ) as unknown as VNodeComponentClass<this>;
 
+        if (process.env.NODE_ENV !== 'production') {
+            validateProps(vNode);
+        }
+
         vNode.children = this;
         const lastVNode = this.$vNode;
         this.$vNode = vNode;
@@ -153,18 +202,20 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
 
         this.$update(lastVNode, vNode, this.$parentElement, null, mountedQueue, false); 
 
-        this.$done(() => {
-            // console.log('did updated');
-        });
+        this.$done(null);
     }
 
     componentWillUnmount() {
         this.$unmount(this.$vNode, null);
     }
 
-    private $done(callback: () => void) {
+    private $done(callback: (() => void) | null) {
         const done = () => {
-            return FakePromise.all(this.$promises).then(callback);
+            const p = FakePromise.all(this.$promises);
+            if (callback) {
+                return p.then(callback);
+            }
+            return p;
         };
 
         const $parentPromises = this.$parentPromises;

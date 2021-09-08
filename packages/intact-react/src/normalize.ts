@@ -1,6 +1,6 @@
 import {createVNode as h, VNode, Block, Blocks, createComponentVNode, Ref, Children, TransitionHooks, createTextVNode} from 'intact';
-import {ReactNode, ReactElement, Fragment, JSXElementConstructor} from 'react';
-import {isNullOrUndefined, isArray, isStringOrNumber, isInvalid, isFunction, noop, isNumber} from 'intact-shared';
+import {ReactNode, ReactElement, Fragment, JSXElementConstructor, Ref as ReactRef} from 'react';
+import {isNullOrUndefined, isArray, isStringOrNumber, isInvalid, isFunction, noop, isNumber, isObject} from 'intact-shared';
 import {Wrapper} from './wrapper';
 import type {Component} from './';
 
@@ -24,13 +24,17 @@ export function normalize(vNode: ReactNode): VNodeAtom {
     }
 
     if (isIntactComponent(vNode)) {
+        const key = vNode.key;
         const props = normalizeProps(vNode.props);
+        if (!isNullOrUndefined(key)) {
+            props.key = key;
+        }
         return createComponentVNode(
             4,
             vNode.type as unknown as typeof Component,
             props,
-            vNode.key,
-            (vNode as any).ref,
+            key,
+            normalizeRef((vNode as any).ref),
         );
     }
 
@@ -39,11 +43,11 @@ export function normalize(vNode: ReactNode): VNodeAtom {
     // transition has two functions
     // 1. prevent Intact from removing the real dom,
     //    because it will be removed by React.
-    // 2. let intact never call clearDom method to remove all children
+    // TODO: 2. let intact never call clearDom method to remove all children
     //    because it will cause `react-mount-point-unstable` to be missing
-    ret.transition = {
-        leave: noop,
-    } as unknown as TransitionHooks;
+    // ret.transition = {
+        // leave: noop,
+    // } as unknown as TransitionHooks;
 
     return ret;
 }
@@ -86,6 +90,10 @@ export function normalizeProps<P>(props: P): P {
     }
 
     return normalizedProps;
+}
+
+export function normalizeRef(ref: ReactRef<any>) {
+    return isObject(ref) ? (i: any) => {(ref as any).current = i} : ref;
 }
 
 function isIntactComponent(vNode: any): vNode is ReactElement<any, JSXElementConstructor<any>> {

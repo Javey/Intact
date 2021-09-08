@@ -30,7 +30,7 @@ export class ChildrenIntactComponent extends Component {
 //         return <div></div>
 //     }
 // }
-export class SimpleReactComponent extends React.Component {
+export class SimpleReactComponent extends React.Component<{children?: ReactNode | undefined}> {
     render() {
         return <div>{this.props.children}</div>
     }
@@ -42,7 +42,7 @@ export class PropsIntactComponent extends Component<{a?: string | number, b?: st
 
 export function expect(input: any) {
     if (typeof input === 'string') {
-        input = input.replace(/<!-- react-mount-point-unstable -->/g, '');
+        input = input.replace(/<!-- react-mount-point-unstable -->/g, '#');
     }
     return (window as any).expect(input);
 }

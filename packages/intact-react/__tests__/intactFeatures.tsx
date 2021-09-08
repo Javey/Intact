@@ -11,7 +11,7 @@ import {
     wait,
     renderApp,
 } from './helpers';
-import {Component, createVNode as h, findDomFromVNode, createRef} from '../src';
+import {Component, createVNode as h, findDomFromVNode, createRef, VNode} from '../src';
 
 describe('Intact React', () => {
     describe('Intact Features', () => {
@@ -440,6 +440,118 @@ describe('Intact React', () => {
                     )
                 });
                 e!.set('show', true);
+            });
+
+            it('should get $parent in template & update', () => {
+                const mount = sinon.spy();
+                const update = sinon.spy();
+
+                class C extends Component {
+                    static template = `<div>{this.get('children')}</div>`
+                }
+                class D extends Component {
+                    static template = `<i>{this.get('children')}</i>`;
+                    mounted() {
+                        mount();
+                        expect(this.$parent).to.be.instanceof(E);
+                        expect(this.$parent!.$parent).to.be.instanceof(C);
+                        expect(this.$parent!.$parent!.$parent).to.be.instanceof(F);
+                    }
+                    updated() {
+                        update();
+                        expect(this.$parent).to.be.instanceof(E);
+                        expect(this.$parent!.$parent).to.be.instanceof(C);
+                        expect(this.$parent!.$parent!.$parent).to.be.instanceof(F);
+                    }
+                }
+                class E extends Component {
+                    static template = `const D = this.D; <D>{this.get('children')}</D>`;
+                    D = D;
+                }
+                class F extends Component {
+                    static template = `const C = this.C; <C>{this.get('children')}</C>`;
+                    C = C;
+                }
+
+                const instance = renderApp(function() {
+                    return (
+                        <div>
+                            {this.state.count}
+                            <F>
+                                <p>
+                                    {this.state.count}
+                                    <E>
+                                        test{this.state.count}
+                                    </E>
+                                </p>
+                            </F>
+                        </div>
+                    );
+                }, {count: 1});
+
+                instance.setState({count: 2});
+                expect(mount.callCount).to.eql(1);
+                expect(update.callCount).to.eql(1);
+            });
+
+            it('should get children in intact component', () => {
+                class C extends Component<{first?: boolean}> {
+                    static template = `<div>{this.get('children')}</div>`;
+                    init() {
+                        const {children, first} = this.get();
+                        if (first) {
+                            expect((children as VNode).tag === C).to.be.true;
+                        }
+                    }
+                }
+                const instance = renderApp(function() {
+                    return <C first={true}><C>test</C></C>
+                });
+            });
+
+            it('should get key', () => {
+                class C extends Component<{first?: boolean}> {
+                    static template = `<div>{this.get('children')}</div>`;
+                    init() {
+                        const {key, first} = this.get();
+                        if (!first) {
+                            expect(key).to.eql('a');
+                        }
+                    }
+                }
+                const instance = renderApp(function() {
+                    return <C first={true}><C key="a">test</C></C>
+                });
+            })
+        });
+
+        describe('Validate', () => {
+            it('should validate props', () => {
+                const error = console.error;
+                const spyError = sinon.spy((...args: any[]) => {
+                    error.apply(console, args);
+                });
+                console.error = spyError 
+                class IntactComponent extends Component<{show?: any}> {
+                    static template = `<div>{this.get('children')}</div>`
+                    static typeDefs = {
+                        show: Boolean,
+                    }
+                }
+                class IntactComponent2 extends IntactComponent {
+
+                }
+                render(
+                    <div>
+                        <IntactComponent show={1}>
+                            <IntactComponent2 show={1} />
+                        </IntactComponent>
+                    </div>
+                );
+
+                expect(spyError.callCount).to.eql(2);
+
+                console.error = error;
             });
         });
     });
