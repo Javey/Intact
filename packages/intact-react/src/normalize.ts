@@ -6,7 +6,7 @@ import type {Component} from './';
 
 export type VNodeAtom = VNode | null | undefined | string | number;
 
-export function normalize(vNode: ReactNode): VNodeAtom {
+export function normalize(vNode: ReactNode): VNodeAtom | VNodeAtom[] {
     if (isInvalid(vNode)) return null;
     // if a element has one child which is string or number
     // intact will set text content directly to update its children
@@ -38,6 +38,10 @@ export function normalize(vNode: ReactNode): VNodeAtom {
         );
     }
 
+    if ((vNode as ReactElement).type === Fragment) {
+        return normalizeChildren((vNode as ReactElement).props.children);
+    }
+
     const ret = createComponentVNode(4, Wrapper, {vnode: vNode}, (vNode as any).key);
 
     // transition has two functions
@@ -59,7 +63,7 @@ export function normalizeChildren(vNodes: ReactNode) {
             if (isArray(vNode)) {
                 ret.push(...normalizeChildren(vNode) as VNodeAtom[]);
             } else {
-                ret.push(normalize(vNode));
+                ret.push(normalize(vNode) as VNodeAtom);
             }
         }); 
         return ret;

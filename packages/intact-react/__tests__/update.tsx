@@ -290,11 +290,11 @@ describe('Intact React', () => {
 
             c!.set('wrapper', false);
             await wait();
-            expect(container.innerHTML).to.eql('<div><div>test</div></div>');
+            expect(container.innerHTML).to.eql('<div><div>test</div>#</div>');
 
             c!.set('wrapper', true);
             await wait();
-            expect(container.innerHTML).to.eql('<div><div><div>test</div></div></div>');
+            expect(container.innerHTML).to.eql('<div><div><div>test</div>#</div></div>');
         });
 
         it('should remove intact functional component that return element directly', () => {

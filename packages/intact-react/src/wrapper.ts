@@ -75,15 +75,15 @@ export class Wrapper implements ComponentClass<WrapperProps> {
     ): void {
         const container = this.container;
         render(null as any, container, () => {
-            // if (!nextVNode) {
-                // // if does not exits nextVNode, then Intact only unmount this component
-                // // but not remove the dom
-                // // so we should not remove the container 
-                // const lastInput = this.$lastInput;
-                // lastInput.dom = container;
+            if (!nextVNode) {
+                // if does not exits nextVNode, then Intact only unmount this component
+                // but not remove the dom
+                // so we should not remove the container 
+                const lastInput = this.$lastInput;
+                lastInput.dom = container;
                 // lastInput.transition = null;
-                // return;
-            // }
+                return;
+            }
             // container.parentElement!.removeChild(container);
         });
     }
