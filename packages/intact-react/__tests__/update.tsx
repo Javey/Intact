@@ -150,7 +150,7 @@ describe('Intact React', () => {
                 }
                 updated() {
                     updated();
-                    expect(this.refs.a.innerHTML).to.eql('<i>2</i>');
+                    expect(this.refs.a.innerHTML).to.eql('<i>2</i>#');
                 }
             }
             const instance = renderApp(function() {
@@ -189,22 +189,28 @@ describe('Intact React', () => {
 
         it('update intact component which children is react element', async () => {
             const mounted = sinon.spy();
+            let isNull = false;
             class C extends Component {
                 static template = `<template>{this.get('children')}</template>`;
                 mounted() {
                     mounted();
                     const element = findDomFromVNode(this.$vNode, true) as HTMLElement;
-                    expect(element.outerHTML).to.eql('<div>react</div>#');
+                    if (isNull) {
+                        // Text
+                        expect(element.nodeType).to.eql(3);
+                    } else {
+                        expect(element.outerHTML).to.eql('<div>react</div>');
+                    }
                 }
             }
-            class D extends Component {
+            class D extends Component<{show?: boolean}> {
                 static template = `
                     const {C} = this;
                     <div><C v-if={this.get('show')}>{this.get('children')}</C></div>
                 `;
                 C = C;
             }
-            let d: any;
+            let d!: D;
             const instance = renderApp(function() {
                 return <D ref={(i: any) => d = i}><div>react</div></D>
             });
@@ -221,6 +227,24 @@ describe('Intact React', () => {
             await wait();
             expect(container.innerHTML).to.eql('<div></div>');
             expect(mounted.callCount).to.eql(1);
+
+            // empty react component
+            isNull = true;
+            function Null() {
+                return null
+            }
+            const instance1 = renderApp(function() {
+                return <D ref={(i: any) => d = i}><Null /></D>
+            });
+
+            d.set('show', true);
+            await wait();
+            expect(container.innerHTML).to.eql('<div>#</div>');
+
+            // destroy
+            d.set('show', false);
+            await wait();
+            expect(container.innerHTML).to.eql('<div></div>');
         });
 
         it('update block', async () => {
@@ -313,7 +337,7 @@ describe('Intact React', () => {
                 </div>
             );
 
-            expect(container.innerHTML).to.eql('<div><span>test</span></div>');
+            expect(container.innerHTML).to.eql('<div><span>test</span>#</div>');
 
             ReactDOM.render(null as any, container);
             expect(container.innerHTML).to.eql('');
@@ -329,7 +353,7 @@ describe('Intact React', () => {
             }, {show: false});
 
             instance.setState({show: true});
-            expect(container.innerHTML).to.eql('<div><span>show</span></div>');
+            expect(container.innerHTML).to.eql('<div><span>show</span>#</div>');
         });
 
         it('replace component that return react element directly with react element', () => {
@@ -360,7 +384,47 @@ describe('Intact React', () => {
             expect(container.innerHTML).to.eql('<div><div>b</div></div>');
 
             ref!.setState({show: true});
-            expect(container.innerHTML).to.eql('<div><div>a</div></div>');
+            expect(container.innerHTML).to.eql('<div><div>a</div>#</div>');
+        });
+
+        it('unmount react component that returns intact component directly', () => {
+            function Hoc(props: {children: ReactNode}) {
+                // return <div>{props.children}</div>;
+                return props.children || null;
+            }
+            class HocComponent extends Component {
+                static template = `<template>{this.get('children')}</template>`;
+                // mounted() {
+                    // console.log(findDomFromVNode(this.$vNode, true));
+                // }
+            }
+
+            render(
+                <HocComponent>
+                    <Hoc>
+                        <HocComponent>
+                            <div>test</div>
+                        </HocComponent>
+                    </Hoc>
+                </HocComponent>
+            );
+            expect(container.innerHTML).to.eql('#<div>test</div>#');
+
+            ReactDOM.render(
+                <HocComponent>
+                    <Hoc>
+                    </Hoc>
+                </HocComponent>,
+                container
+            );
+            expect(container.innerHTML).to.eql('#');
+
+            ReactDOM.render(
+                <HocComponent>
+                </HocComponent>,
+                container
+            );
+            expect(container.innerHTML).to.eql('');
         });
     });
 });

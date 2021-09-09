@@ -152,7 +152,8 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
         }
 
         return createElement('template', {
-            ref: this.$elementRef
+            ref: this.$elementRef,
+            'data-intact-react': '',
         });
     }
 

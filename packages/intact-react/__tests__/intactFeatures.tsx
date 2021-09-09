@@ -119,7 +119,9 @@ describe('Intact React', () => {
                 const mount1 = sinon.spy(function(this: C) {
                     console.log(1);
                     expect(document.body.contains(this.elementRef.value)).to.eql(true);
-                    expect(this.elementRef.value!.outerHTML).to.eql('<div><div><div>test</div></div></div>');
+                    expect(this.elementRef.value!.outerHTML).to.eql(
+                        '<div><div><div>test</div></div>#</div>'
+                    );
                 });
                 const mount2 = sinon.spy(function(this: D) {
                     console.log(2);

@@ -27,7 +27,7 @@ describe('Intact React', () => {
                 </SimpleReactComponent>
             </div>);
 
-            expect((ReactDOM.findDOMNode(refs.a) as HTMLElement).outerHTML).to.eql('<div><div>test</div></div>');
+            expect((ReactDOM.findDOMNode(refs.a) as HTMLElement).outerHTML).to.eql('<div><div>test</div>#</div>');
             expect((ReactDOM.findDOMNode(refs.b) as HTMLElement).outerHTML).to.eql('<div><div>test</div></div>');
             expect((ReactDOM.findDOMNode(refs.c) as HTMLElement).outerHTML).to.eql('<div>test</div>');
         });
@@ -91,12 +91,12 @@ describe('Intact React', () => {
                     );
                 }
                 render(<Parent value="a" />);
-                expect(container.innerHTML).to.eq('<div><div><div>a</div><header><div></div></header><div>hello</div></div><div></div></div>');
+                expect(container.innerHTML).to.eq('<div><div><div>a</div>#<header><div></div></header>#<div>hello</div>#</div><div></div></div>');
                 ReactDOM.render(<Parent value="b" />, container);
-                expect(container.innerHTML).to.eq('<div><div><div>b</div><header><div></div></header><div>hello</div></div><div></div></div>');
+                expect(container.innerHTML).to.eq('<div><div><div>b</div>#<header><div></div></header>#<div>hello</div>#</div><div></div></div>');
                 test!.set('show', true);
                 await wait();
-                expect(container.innerHTML).to.eq('<div><div><div>b</div><header><div><div>b</div></div></header><div>hello</div></div><div></div></div>');
+                expect(container.innerHTML).to.eq('<div><div><div>b</div>#<header><div><div>b</div>#</div></header>#<div>hello</div>#</div><div></div></div>');
             });
 
             it('nested new context api should keep order', () => {
@@ -116,7 +116,7 @@ describe('Intact React', () => {
                         </ChildrenIntactComponent>
                     </Context.Provider>
                 );
-                expect(container.innerHTML).to.eq('<div><div><div>c</div></div></div>');
+                expect(container.innerHTML).to.eq('<div>#<div><div>c</div>#</div></div>');
             });
 
             it('should get element that element nested new context api', () => {
@@ -175,7 +175,7 @@ describe('Intact React', () => {
                 );
                 instance!.click();
 
-                expect(container.innerHTML).to.eq('<div><div>b</div></div>');
+                expect(container.innerHTML).to.eq('<div><div>b</div>#</div>');
             });
         });
     });

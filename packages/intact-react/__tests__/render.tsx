@@ -31,7 +31,7 @@ describe('Intact React', () => {
 
         it('render react element in intact component', () => {
             render(<ChildrenIntactComponent><div>test</div></ChildrenIntactComponent>);
-            expect(container.innerHTML).to.eql('<div><div>test</div></div>');
+            expect(container.innerHTML).to.eql('<div><div>test</div>#</div>');
         });
 
         it('render react component in intact component', () => {
@@ -41,7 +41,7 @@ describe('Intact React', () => {
                     <SimpleReactComponent>test2</SimpleReactComponent>
                 </ChildrenIntactComponent>
             );
-            expect(container.innerHTML).to.eql('<div><div>test1</div><div>test2</div></div>');
+            expect(container.innerHTML).to.eql('<div><div>test1</div>#<div>test2</div>#</div>');
         });
 
         it('render nested react and intact component', () => {
@@ -52,7 +52,7 @@ describe('Intact React', () => {
                     </SimpleReactComponent>
                 </ChildrenIntactComponent>
             );
-            expect(container.innerHTML).to.eql('<div><div><div>test</div></div></div>');
+            expect(container.innerHTML).to.eql('<div><div><div>test</div></div>#</div>');
         });
 
         it('render with props', () => {
@@ -72,8 +72,8 @@ describe('Intact React', () => {
                 </ChildrenIntactComponent>
             );
 
-            // (container.firstElementChild!.firstElementChild! as HTMLElement).click();
-            // expect(click.callCount).to.eql(1);
+            (container.firstElementChild!.firstElementChild! as HTMLElement).click();
+            expect(click.callCount).to.eql(1);
         });
 
         it('render nested array children', () => {
@@ -83,7 +83,7 @@ describe('Intact React', () => {
                     <div>3</div>
                 </ChildrenIntactComponent>
             );
-            expect(container.innerHTML).to.eql('<div><div>1</div><div>2</div><div>3</div></div>');
+            expect(container.innerHTML).to.eql('<div><div>1</div>#<div>2</div>#<div>3</div>#</div>');
         });
 
         it('render react component which return null', () => {
@@ -93,19 +93,39 @@ describe('Intact React', () => {
             function NotNull() {
                 return <div>test</div>
             }
+
             render(
                 <ChildrenIntactComponent>
-                    <Null />
                     <NotNull />
+                    <Null />
                 </ChildrenIntactComponent>
             );
+            expect(container.innerHTML).to.eql('<div><div>test</div>##</div>');
+
             ReactDOM.render(
                 <ChildrenIntactComponent>
                     <NotNull />
                 </ChildrenIntactComponent>,
                 container
             );
-            expect(container.innerHTML).to.eql('<div><div>test</div></div>');
+            expect(container.innerHTML).to.eql('<div><div>test</div>#</div>');
+
+            ReactDOM.render(
+                <ChildrenIntactComponent>
+                    <Null />
+                    <NotNull />
+                </ChildrenIntactComponent>,
+                container
+            );
+            expect(container.innerHTML).to.eql('<div>#<div>test</div>#</div>');
+
+            ReactDOM.render(
+                <ChildrenIntactComponent>
+                    <NotNull />
+                </ChildrenIntactComponent>,
+                container
+            );
+            expect(container.innerHTML).to.eql('<div><div>test</div>#</div>');
         });
 
         it('render nested intact component in react element', () => {
@@ -160,7 +180,7 @@ describe('Intact React', () => {
                 }
 
                 render(<C slot-footer={<span>footer</span>}>children</C>);
-                expect(container.innerHTML).to.eql('<div>children<span>footer</span></div>');
+                expect(container.innerHTML).to.eql('<div>children<span>footer</span>#</div>');
 
                 render(<C slot-footer={'footer'}>children</C>);
                 expect(container.innerHTML).to.eql('<div>childrenfooter</div>');
@@ -172,7 +192,7 @@ describe('Intact React', () => {
                 }
                 render(<C slot-footer={(i: number) => <span>footer{i}</span>}>children</C>);
 
-                expect(container.innerHTML).to.eql('<div>children<span>footer1</span></div>');
+                expect(container.innerHTML).to.eql('<div>children<span>footer1</span>#</div>');
             });
 
             it('normalize the property which value is vNodes', () => {
@@ -182,7 +202,7 @@ describe('Intact React', () => {
                 }
                 render(<C test={<div>test</div>} />);
 
-                expect(container.innerHTML).to.eql('<div><div>test</div></div>');
+                expect(container.innerHTML).to.eql('<div><div>test</div>#</div>');
             });
 
             it('normalize React.Fragment', () => {
@@ -208,7 +228,7 @@ describe('Intact React', () => {
                     ];
                 });
                 render(<Tests>test<i>test</i></Tests>);
-                expect(container.innerHTML).to.eql('<div>test<i>test</i></div><div>test<i>test</i></div>');
+                expect(container.innerHTML).to.eql('<div>test<i>test</i>#</div><div>test<i>test</i>#</div>');
 
                 render(<div><Tests>test1</Tests><Tests>test2</Tests></div>);
                 expect(container.innerHTML).to.eql('<div><div>test1</div><div>test1</div><div>test2</div><div>test2</div></div>');
@@ -231,7 +251,7 @@ describe('Intact React', () => {
                     return h(Demo, props);
                 });
                 render(<Test slot-test={<span>test</span>} />);
-                expect(container.innerHTML).to.eql('<div><span>test</span></div>');
+                expect(container.innerHTML).to.eql('<div><span>test</span>#</div>');
             });
 
             it('render block to firsthand intact component', () => {
@@ -243,7 +263,7 @@ describe('Intact React', () => {
                         </C>
                     </ChildrenIntactComponent>
                 );
-                expect(container.innerHTML).to.eql('<div><div><div>1</div><div>2</div></div></div>');
+                expect(container.innerHTML).to.eql('<div><div><div>1</div>#<div>2</div>#</div></div>');
             });
 
             it('render block witch value is text node', () => {

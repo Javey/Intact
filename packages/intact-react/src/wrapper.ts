@@ -11,10 +11,13 @@ export interface WrapperProps {
 
 export const Context = createContext<Component | null>(null);
 
+const containerComment = ' react-mount-point-unstable ';
+
 export class Wrapper implements ComponentClass<WrapperProps> {
     public $inited: boolean = true;
     public $lastInput: VNode;
-    private container = document.createComment(' react-mount-point-unstable ') as unknown as HTMLElement;
+    private container = document.createComment(containerComment) as unknown as HTMLElement;
+    private isEmptyReactComponent = false;
 
     constructor(
         public $props: Props<WrapperProps, ComponentClass<WrapperProps>>,
@@ -24,7 +27,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         public $parent: ComponentClass | null,
     ) { 
         const fakeInput = this.$lastInput = createVNode('div');
-        fakeInput.transition = $vNode.transition;
+        // fakeInput.transition = $vNode.transition;
         // fakeInput.transition = {
             // // only need leave hook to prevent Intact from removing the real dom,
             // // because it will be removed by React.
@@ -45,8 +48,10 @@ export class Wrapper implements ComponentClass<WrapperProps> {
             removeVNodeDom(lastVNode, parentDom);
         }
         const container = this.container;
-        // React will insert child before container, if container is a comment node.
-        // So we should insert the container into the corresponding position
+        /**
+         * React will insert child before container, if container is a comment node.
+         * So we should insert the container into the corresponding position
+         */
         if (anchor) {
             parentDom.insertBefore(container, anchor);
         } else {
@@ -55,7 +60,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
 
         rewriteParentElementApi(parentDom);
 
-        this.render(vNode);
+        this.render(vNode, parentDom);
     }
 
     $update(
@@ -66,7 +71,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         // mountedQueue: Function[],
         // force: boolean
     ): void {
-        this.render(vNode);
+        this.render(vNode, parentDom);
     }
 
     $unmount(
@@ -74,31 +79,40 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         nextVNode: VNodeComponentClass | null
     ): void {
         const container = this.container;
+        /**
+         * If we update intact component lead to this unmountion,
+         * the dom will be removed by react immediately,
+         * so we set a flag `hasRemoved` to indicate this case.
+         * But maybe the wrapped element returns null, and react
+         * will not remove the void text node that we created in render method.
+         * So if it is in this case, we should remove the void text node manually.
+         */
+        const dom = this.$lastInput.dom!;
+        let hasRemoved = false;
         render(null as any, container, () => {
-            if (!nextVNode) {
-                // if does not exits nextVNode, then Intact only unmount this component
-                // but not remove the dom
-                // so we should not remove the container 
-                const lastInput = this.$lastInput;
-                lastInput.dom = container;
-                // lastInput.transition = null;
-                return;
+            hasRemoved = true;
+            if (this.isEmptyReactComponent) {
+                container.parentNode!.removeChild(dom);
             }
-            // container.parentElement!.removeChild(container);
         });
+        if (hasRemoved) {
+            this.$lastInput.dom = container;
+        }
     }
 
-    private render(vNode: VNodeComponentClass<Wrapper>) {
+    private render(vNode: VNodeComponentClass<Wrapper>, parentDom: Element) {
         const parent = this.$parent as Component;
         const parentComponent = getParent(this)!;
         const instance = this;
         const container = this.container;
 
         let vnode = vNode.props!.vnode as ReactElement;
-        // pass the $parent as value instead of parentComponent
-        // because parentComponent is the the toplevel component and
-        // not always equal to the $parent 
-        // e.g. <A><B><div><C /></B></A>
+        /**
+         * pass the $parent as value instead of parentComponent
+         * because parentComponent is the the toplevel component and
+         * not always equal to the $parent 
+         * e.g. <A><B><div><C /></B></A>
+         */
         vnode = createElement(Context.Provider, {value: parent}, vnode);
 
         // if the parent component has providers, pass them to subtree
@@ -107,22 +121,50 @@ export class Wrapper implements ComponentClass<WrapperProps> {
             vnode = createElement(provider, {value}, vnode);    
         });
 
+        this.isEmptyReactComponent = false;
         const promise = new FakePromise(resolve => {
             unstable_renderSubtreeIntoContainer(
                 parentComponent,
-                // pass the $parent as value instead of parentComponent
-                // because parentComponent is the the toplevel component and
-                // not always equal to the $parent 
-                // e.g. <A><B><div><C /></B></A>
+                /**
+                 * pass the $parent as value instead of parentComponent
+                 * because parentComponent is the the toplevel component and
+                 * not always equal to the $parent 
+                 * e.g. <A><B><div><C /></B></A>
+                 */
                 vnode,
                 container,
                 function(this: Element | ReactComponent) {
-                    // add dom to the $lastInput for findDomFromVNode
-                    // the real dom will be inserted before the container
-                    const dom = instance.$lastInput.dom = container.previousSibling as IntactDom | null;
-                    if (dom) {
-                        (dom as any)._mountPoint = container;
+                    /**
+                     * add dom to the $lastInput for findDomFromVNode
+                     * the real dom will be inserted before the container
+                     * but the react component may return null,
+                     * so we can't get the previousSibling
+                     * 
+                     * We will add the real element to the container
+                     * by rewriting the parentNode.insertBefore api
+                     *
+                     * If we wrap an React component that returns Intact component directly
+                     * e.g. <A><Context.Provider><B /><Context.Provider></A>
+                     * the realElement will be the <template>
+                     */
+                    let dom = (container as any)._realElement as IntactDom | null;
+                    if (
+                        !dom ||
+                        (dom as Element).tagName === 'TEMPLATE' &&
+                        (dom as Element).getAttribute('data-intact-react') !== null
+                    ) {
+                        // maybe this react component return null,
+                        // we create a text as the dom
+                        dom = document.createTextNode('');
+                        parentDom.insertBefore(dom, container);
+                        (dom as any)._isEmpty = true;
                     }
+                    if ((dom as any)._isEmpty) {
+                        instance.isEmptyReactComponent = true;
+                    }
+                    (dom as any)._mountPoint = container;
+                    instance.$lastInput.dom = dom;
+
                     resolve();
                 } 
             );
@@ -153,6 +195,11 @@ function rewriteParentElementApi(parentElement: Element & {_hasRewrite?: boolean
         parentElement.removeChild = function(child: Node & {_mountPoint: Node | null}) {
             if (child.parentNode) {
                 removeChild.call(parentElement, child);
+                const realElement = (child as any)._realElement
+                if (realElement) {
+                    (child as any)._realElement = null;
+                    realElement._mountPoint = null;
+                }
             } else {
                 if (process.env.NODE_ENV !== 'production') {
                     if (!child._mountPoint) {
@@ -160,9 +207,20 @@ function rewriteParentElementApi(parentElement: Element & {_hasRewrite?: boolean
                     }
                 }
                 // if the node has been removed, then remove the mount point
-                removeChild.call(parentElement, child._mountPoint!);
+                const container = child._mountPoint!;
+                removeChild.call(parentElement, container);
                 child._mountPoint = null;
+                (container as any)._realElement = null;
             }
+        } as any;
+
+        const insertBefore = parentElement.insertBefore;
+        parentElement.insertBefore = function(child: Node, beforeChild: Node & {_realElement?: Node}) {
+            if (beforeChild.nodeType === 8 && beforeChild.nodeValue === containerComment) {
+                // it's the wrapper container, we add the real element to it
+                beforeChild._realElement = child;
+            }
+            insertBefore.call(parentElement, child, beforeChild);
         } as any;
 
         parentElement._hasRewrite = true;
