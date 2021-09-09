@@ -201,6 +201,7 @@ function rewriteParentElementApi(parentElement: Element & {_hasRewrite?: boolean
                     realElement._mountPoint = null;
                 }
             } else {
+                /* istanbul ignore next */
                 if (process.env.NODE_ENV !== 'production') {
                     if (!child._mountPoint) {
                         throw new Error('Cannot remove the node. Maybe it is a bug of intact-react.');

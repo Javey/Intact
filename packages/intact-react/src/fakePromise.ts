@@ -72,6 +72,7 @@ export class FakePromises {
     // public id = id++;
 
     public add(promise: FakePromise) {
+        /* istanbul ignore next */
         if (process.env.NODE_ENV !== 'production') {
             if (this.done) {
                 throw new Error(

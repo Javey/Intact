@@ -426,5 +426,19 @@ describe('Intact React', () => {
             );
             expect(container.innerHTML).to.eql('');
         });
+
+        it('replace intact component with react element', async () => {
+            const instance = renderApp(function() {
+                return <ChildrenIntactComponent>
+                    {this.state.show ?
+                        <ChildrenIntactComponent>1</ChildrenIntactComponent> :
+                        <div>2</div>
+                    }
+                </ChildrenIntactComponent>
+            }, {show: true});
+            
+            instance.setState({show: false});
+            expect(container.innerHTML).to.eql('<div><div>2</div>#</div>');
+        });
     });
 });

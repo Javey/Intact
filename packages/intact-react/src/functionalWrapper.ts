@@ -34,17 +34,10 @@ export function functionalWrapper<P = {}>(Component: ComponentFunctionForIntact<
     return element;
 }
 
-export function normalizeIntactVNodeToReactVNode(vNode: VNodeComponentClass | null, key: number) {
-    // if (isStringOrNumber(vNode)) {
-        // return vNode;
-    // } else if (vNode) {
-    if (vNode) {
-        const props = vNode.props;
-        return createElement(
-            vNode.tag as any,
-            props ? {key, ...props} : {key},
-        );
-    }
-
-    return null
+export function normalizeIntactVNodeToReactVNode(vNode: VNodeComponentClass, key: number) {
+    const props = vNode.props;
+    return createElement(
+        vNode.tag as any,
+        props ? {key, ...props} : {key},
+    );
 }
