@@ -78,6 +78,10 @@ export function mountElement(
 
     let children = vNode.children;
 
+    // We should mount Ref firstly, because we may get parent ref in children component
+    // on $render method, e.g. Portal of KPC
+    mountRef(vNode.ref, dom);
+
     if (childrenType === ChildrenTypes.HasTextChildren) {
         setTextContent(dom, children as string);
     } else if (childrenType !== ChildrenTypes.HasInvalidChildren) {
@@ -108,8 +112,6 @@ export function mountElement(
         transition.beforeEnter(dom as TransitionElement); 
         mountedQueue.push(() => transition.enter(dom as TransitionElement));
     }
-
-    mountRef(vNode.ref, dom);
 }
 
 export function mountComponentClass(

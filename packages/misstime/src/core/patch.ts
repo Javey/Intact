@@ -79,7 +79,16 @@ function replaceWithNewNode(
             mount(nextVNode, null, parentComponent, isSVG, null, mountedQueue); 
             replaceChild(parentDom, nextVNode.dom as Element, lastVNode.dom as Element);
         } else {
-            mount(nextVNode, parentDom, parentComponent, isSVG, findDomFromVNode(lastVNode, true), mountedQueue);
+            mount(
+                nextVNode,
+                parentDom,
+                parentComponent,
+                isSVG,
+                // we must insert the dom after the old dom, because it may has Transition
+                // Inserting it after the old one to make the old dom's position don't change
+                findDomFromVNode(lastVNode, true)!.nextSibling as IntactDom,
+                mountedQueue
+            );
             removeVNodeDom(lastVNode, parentDom); 
         }
     } else {
