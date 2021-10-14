@@ -45,6 +45,11 @@ export function useInstance() {
 // }
 
 type NoInfer<T> = [T][T extends any ? 0 : never];
+// type HasDefault<P, U = Partial<P>> = {
+    // [K in keyof P]: K extends keyof U ?
+        // Exclude<P[K], undefined> :
+        // P[K]
+// };
 
 export abstract class Component<P extends {} = {}> extends Event<P> implements ComponentClass<P> {
     static readonly template: Template | string;
