@@ -93,7 +93,7 @@ describe('Component', function() {
             render(h(Transition, null, h('div', null, 'show')), container);
             const dom1 = container.firstElementChild!;
             render(h(Transition, null, h('p', null, 'show')), container);
-            const dom2 = container.firstElementChild!;
+            const dom2 = container.firstElementChild!.nextElementSibling!;
 
             expect(dom1.className).to.equal('transition-leave-from transition-leave-active');
             expect(dom2.className).to.equal('transition-enter-from transition-enter-active');

@@ -126,32 +126,55 @@ describe('Component', () => {
         });
 
         describe('Patch', () => {
+            let onReceiveName: any;
+            let MyTest: typeof Test;
+            beforeEach(() => {
+                onReceiveName = sinon.spy();
+                MyTest = class extends Test {
+                    init() {
+                        this.on('$receive:name', onReceiveName);
+                    }
+                } as any;
+            });
+
             it('should do nothing if props are undefined', () => {
-                render(h(Test), container);
-                render(h(Test), container);
+                render(h(MyTest), container);
+                render(h(MyTest), container);
 
                 expect(component!.$props).to.eql({name: 1});
+                expect(onReceiveName).to.have.callCount(0);
             });
 
             it('should set prop to default value if next value is undefined', () => {
-                render(h(Test, {name: 2}), container);
-                render(h(Test, {name: undefined}), container);
+                render(h(MyTest, {name: 2}), container);
+                render(h(MyTest, {name: undefined}), container);
 
                 expect(component!.$props).to.eql({name: 1});
+                expect(onReceiveName).to.have.callCount(2);
             });
 
             it('should set prop to default value if next value does not exist', () => {
-                render(h(Test, {name: 2}), container);
-                render(h(Test), container);
+                render(h(MyTest, {name: 2}), container);
+                render(h(MyTest), container);
 
                 expect(component!.$props).to.eql({name: 1});
+                expect(onReceiveName).to.have.callCount(2);
             });
 
             it('should do nothing if next value does not exist but last value is undefined', () => {
-                render(h(Test, {name: undefined}), container);
-                render(h(Test), container);
+                render(h(MyTest, {name: undefined}), container);
+                render(h(MyTest), container);
 
                 expect(component!.$props).to.eql({name: 1});
+                expect(onReceiveName).to.have.callCount(0);
+            });
+
+            it('should not trigger receive event if the prop value is equal to the default value', () => {
+                render(h(MyTest, {name: 1}), container);
+                render(h(MyTest), container);
+
+                expect(component!.$props).to.eql({name: 1});
+                expect(onReceiveName).to.have.callCount(0);
             });
         });
 

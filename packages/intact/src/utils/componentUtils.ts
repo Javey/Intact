@@ -169,10 +169,7 @@ export function mountProps<P>(component: Component<P>, nextProps: P) {
         const nextValue = nextProps[prop];
         if (isUndefined(nextValue)) continue;
 
-        const lastValue = props[prop];
-        if (lastValue !== nextValue) {
-            patchProp(component, props, prop, lastValue, nextValue, changeTraces);
-        }
+        patchProp(component, props, prop, props[prop], nextValue, changeTraces);
     } 
 
     // a callback to trigger $receive events
@@ -193,16 +190,14 @@ export function patchProps<P>(component: Component<P>, lastProps: P, nextProps: 
                 const lastValue = props[prop]; // use actual props instead of
                 const nextValue = rollbackToDefault(prop, nextProps[prop], defaultProps);
 
-                if (lastValue !== nextValue) {
-                    patchProp(component, props, prop, lastValue, nextValue, changeTraces);
-                }
+                patchProp(component, props, prop, lastValue, nextValue, changeTraces);
             }             
         }
 
         if (lastProps !== EMPTY_OBJ) {
             for (const prop in lastProps) {
                 if (!isUndefined(lastProps[prop]) && !hasOwn.call(nextProps, prop)) {
-                    patchProp(component, props, prop, props[prop], defaultProps[prop], null);
+                    patchProp(component, props, prop, props[prop], defaultProps[prop], changeTraces);
                 }
             }
         }
@@ -211,9 +206,11 @@ export function patchProps<P>(component: Component<P>, lastProps: P, nextProps: 
     }
 }
 
-export function patchProp<P>(component: Component<P>, props: P, prop: keyof P, lastValue: any, nextValue: any, changeTraces: ChangeTrace[] | null) {
+export function patchProp<P>(component: Component<P>, props: P, prop: keyof P, lastValue: any, nextValue: any, changeTraces: ChangeTrace[]) {
+    if (lastValue === nextValue) return;
+
     props[prop] = nextValue;
-    if (!isEventProp(prop as string) && !isNull(changeTraces)) {
+    if (!isEventProp(prop as string)) {
         changeTraces.push({path: prop as string, newValue: nextValue, oldValue: lastValue});
     }
 }
