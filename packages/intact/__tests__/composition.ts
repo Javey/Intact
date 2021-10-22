@@ -78,6 +78,7 @@ describe('Component', () => {
                     };
                     init() {
                         watch<AProps, 'a'>('a', (newValue, oldValue) => {
+                            console.log('xxx');
                             callback1(newValue, oldValue, container.innerHTML);
                         }, {presented: true});
                         watch<AProps, 'a'>('a', (newValue, oldValue) => {
@@ -87,17 +88,22 @@ describe('Component', () => {
                 }
 
                 render(h(A, {a: 'a'}), container);
+                expect(callback1).to.have.callCount(1);
                 expect(callback1).to.have.calledWith('a', undefined, '<div>a</div>');
                 expect(callback2).to.have.callCount(0);
 
                 let component: A | null;
                 render(h(A, {a: 'b', ref: i => component = i}), container);
+                expect(callback1).to.have.callCount(2);
                 expect(callback1).to.have.calledWith('b', 'a', '<div>b</div>');
+                expect(callback2).to.have.callCount(1);
                 expect(callback2).to.have.calledWith('b', 'a', '<div>b</div>');
 
                 component!.set('a', 'c');
                 await nextTick();
+                expect(callback1).to.have.callCount(3);
                 expect(callback1).to.have.calledWith('c', 'b', '<div>c</div>');
+                expect(callback2).to.have.callCount(2);
                 expect(callback2).to.have.calledWith('c', 'b', '<div>c</div>');
             });
         });

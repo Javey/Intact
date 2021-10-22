@@ -40,7 +40,15 @@ export function watch<P, K extends keyof Props<P, Component<P>>>(
             instance!.on(`$receive:${key}`, (
                 newValue: Props<P, Component<P>>[K],
                 oldValue: Props<P, Component<P>>[K] | undefined,
-            ) => instance!.$mountedQueue.push(() => callback(newValue, oldValue)));
+                init: boolean
+            ) => {
+                let lifecycle = init ? '$mounted' : '$updated';
+                const fn = () => {
+                    instance!.off(lifecycle, fn);
+                    callback(newValue, oldValue);
+                };
+                instance!.on(lifecycle, fn);
+            });
         } else {
             instance!.on(`$receive:${key}`, (
                 newValue: Props<P, Component<P>>[K],
@@ -48,7 +56,11 @@ export function watch<P, K extends keyof Props<P, Component<P>>>(
                 init: boolean
             ) => {
                 if (!init) {
-                    instance!.$mountedQueue.push(() => callback(newValue, oldValue));
+                    const fn = () => {
+                        instance!.off('$updated', fn);
+                        callback(newValue, oldValue);
+                    };
+                    instance!.on('$updated', fn); 
                 }
             });
         }
