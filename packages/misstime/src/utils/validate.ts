@@ -210,7 +210,7 @@ export function validateProps(vNode: VNodeComponentClass | VNodeComponentFunctio
         }
         if (!isNullOrUndefined(type)) {
             if (!isArray(type))  {
-                type = [type];
+                type = [type as TypePrimitive];
             }
 
             let _valid = false;

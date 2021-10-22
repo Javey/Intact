@@ -208,8 +208,8 @@ export type Reference = {
 
 export type TypePrimitive = Function | string | number | null | undefined; 
 export type TypeObject = {
-    type?: TypePrimitive | TypePrimitive[],
+    type?: TypePrimitive | readonly TypePrimitive[],
     validator?: Function,
     required?: boolean | Function,
 }
-export type TypeDefs<T> = {[key in keyof T]?: TypePrimitive | TypePrimitive[] | TypeObject};
+export type TypeDefs<T> = {[key in keyof T]?: TypePrimitive | readonly TypePrimitive[] | TypeObject};
