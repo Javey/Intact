@@ -181,6 +181,9 @@ export function patchElement(
             isFormElement = (nextType & Types.FormElement) > 0;
             
             for (const prop in nextProps) {
+                // maybe the lastProps is the same as nextProps, we can't go to patchProp
+                if (prop === 'value') REFERENCE.value = true;
+
                 const lastValue = lastProps[prop];
                 const nextValue = nextProps[prop];
                 if (lastValue !== nextValue) {

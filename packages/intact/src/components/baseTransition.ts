@@ -104,8 +104,14 @@ export class BaseTransition<P extends BaseTransitionProps = BaseTransitionProps>
         const lastValue = (lastVNode.props || EMPTY_OBJ).show;
         const nextValue = (nextVNode.props || EMPTY_OBJ).show;
         if (lastValue !== nextValue) {
-            const el = this.el!;
-            const transition = this.$lastInput!.transition!;
+            const lastInput = this.$lastInput!;
+            const transition = lastInput.transition;
+            // maybe the element has been removed
+            if (!transition) return;
+
+            // maybe the element has changed
+            const el = this.el = findDomFromVNode(lastInput, true) as TransitionElement;
+
             if (nextValue) {
                 transition.beforeEnter(el);
                 setDisplay(el, this.originalDisplay);
