@@ -118,10 +118,23 @@ function getEventName(propName: string) {
             // e.g. on$change-value
             return `ev-$${propName.substring(3).replace(/\-/g, ':')}`;
         } else if ((tmp = third.charCodeAt(0)) && tmp >= 65 && tmp <= 90) {
-            // e.g. onClick
-            return `ev-${third.toLowerCase()}${propName.substring(3).replace(/\-/g, ':')}`;
+            const eventName = propName.substring(2);
+            if (eventName === 'Change') {
+                // i.e onChange -> ev-change
+                return `ev-change`;
+            } else if (eventName.startsWith('Change')) {
+                // e.g. onChangeValue -> ev-$change:value
+                return `ev-$change:${lowerFirst(eventName.substring(6))}`;
+            } else {
+                // e.g. onClick
+                return `ev-${lowerFirst(eventName.replace(/-/g, ':'))}`;
+            }
         }
     }
+}
+
+function lowerFirst(str: string) {
+    return str[0].toLowerCase() + str.substring(1);
 }
 
 function normalizeBlock(block: Function | ReactNode): Block<any> {

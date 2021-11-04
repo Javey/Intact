@@ -11,7 +11,7 @@ import {
     wait,
     renderApp,
 } from './helpers';
-import {Component, createVNode as h, findDomFromVNode, createRef, VNode} from '../src';
+import {Component, createVNode as h, findDomFromVNode, createRef, VNode, provide, inject} from '../src';
 
 describe('Intact React', () => {
     describe('Intact Features', () => {
@@ -554,6 +554,40 @@ describe('Intact React', () => {
                 expect(spyError.callCount).to.eql(2);
 
                 console.error = error;
+            });
+        });
+
+        describe('Provide & Inject', () => {
+            it('should inject conrrectly', () => {
+                class A extends Component {
+                    static template(this: A) {
+                        return h('div', null, this.get('children'));
+                    }
+
+                    init() {
+                        provide('number', 1);
+                    }
+                }
+
+                class B extends Component {
+                    static template = () => {
+                        return h('div', null, 'b');
+                    }
+
+                    public number = inject('number');
+
+                    init() {
+                        expect(inject('number')).to.equal(1);
+                    }
+                }
+
+                render(
+                    <div>
+                        <A />
+                        <A><B /></A>
+                        <A><div><B /></div></A>
+                    </div>
+                );
             });
         });
     });

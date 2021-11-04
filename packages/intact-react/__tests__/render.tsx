@@ -155,23 +155,43 @@ describe('Intact React', () => {
 
         describe('Normalize', () => {
             it('normalize events', () => {
-                class C extends Component<{onClick: Function, value?: number, on: string}> {
-                    static template = `<div ev-click={this.onClick.bind(this)}>click {this.get('on')}</div>`;
+                type Props = {value: number};
+                class C<T extends Props> extends Component<T> {
+                    static template = `<div ev-click={this.onClick.bind(this)}>click {this.get('value')}</div>`;
 
                     onClick() {
-                        this.set('value', 1);
+                        this.set('value', this.get('value') + 1);
                         this.trigger('click');
+                        this.trigger('change');
+                        this.trigger('click:value');
+                        this.trigger('clickValue');
                     }
                 }
 
                 const click = sinon.spy(() => console.log('click'));
+                const changeValue = sinon.spy(() => console.log('changeValue'));
                 const change = sinon.spy(() => console.log('change'));
-                render(<div><C onClick={click} on$change-value={change} on="1"/></div>);
 
+                render(<div><C onClick={click} on$change-value={changeValue} value={0} /></div>);
                 (container.firstElementChild!.firstElementChild! as HTMLElement).click();
-                expect(container.innerHTML).to.eql('<div><div>click 1</div></div>');
                 expect(click.callCount).to.eql(1);
+                expect(changeValue.callCount).to.eql(1);
+
+                render(
+                    <div>
+                        <C 
+                            onChangeValue={changeValue}
+                            onChange={change}
+                            onClick-value={click}
+                            onClickValue={click}
+                            value={0}
+                        />
+                    </div>
+                );
+                (container.firstElementChild!.firstElementChild! as HTMLElement).click();
+                expect(changeValue.callCount).to.eql(2);
                 expect(change.callCount).to.eql(1);
+                expect(click.callCount).to.eql(3);
             });
 
             it('normalize bloks', () => {

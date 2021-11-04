@@ -120,8 +120,11 @@ export function normalizeProps(vnode: VueVNode) {
                 }
                 if (propTypes) {
                     const camelizedKey = camelize(key);
-                    value = normalizeBoolean(propTypes, key, camelizedKey, value);
-                    key = camelizedKey;
+
+                    if (hasOwn.call(propTypes, camelizedKey)) {
+                        value = normalizeBoolean(propTypes, key, camelizedKey, value);
+                        key = camelizedKey;
+                    }
                 }
                 props[key] = value;
                 break;
@@ -181,27 +184,25 @@ function normalizeBoolean(
     camelizedKey: string,
     value: any
 ) {
-    if (hasOwn.call(propTypes, camelizedKey)) {
-        let tmp;
-        if (
-            (
-                // value is Boolean
-                (tmp = propTypes[camelizedKey]) === Boolean ||
-                tmp && (
-                    // value contains Boolean
-                    isArray(tmp) && tmp.indexOf(Boolean) > -1 ||
-                    (tmp = (tmp as TypeObject).type) && (
-                        // value.type is Boolean
-                        tmp === Boolean ||
-                        // value.type contains Boolean
-                        isArray(tmp) && tmp.indexOf(Boolean) > -1
-                    )
+    let tmp;
+    if (
+        (
+            // value is Boolean
+            (tmp = propTypes[camelizedKey]) === Boolean ||
+            tmp && (
+                // value contains Boolean
+                isArray(tmp) && tmp.indexOf(Boolean) > -1 ||
+                (tmp = (tmp as TypeObject).type) && (
+                    // value.type is Boolean
+                    tmp === Boolean ||
+                    // value.type contains Boolean
+                    isArray(tmp) && tmp.indexOf(Boolean) > -1
                 )
-            ) &&
-            (value === '' || value === key)
-        ) {
-            value = true;
-        }
+            )
+        ) &&
+        (value === '' || value === key)
+    ) {
+        value = true;
     }
 
     return value;

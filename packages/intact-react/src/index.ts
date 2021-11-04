@@ -13,6 +13,7 @@ import {
     provide,
     inject,
     useInstance,
+    setInstance,
     callAll,
     validateProps,
 } from 'intact';
@@ -31,10 +32,14 @@ import {functionalWrapper} from './functionalWrapper';
 import {FakePromise, FakePromises} from './fakePromise';
 import {Context} from './wrapper';
 
-type IntactReactProps<P> = {
-    children?: Children | ReactNode
+type IntactReactProps<P> = Readonly<P> & Readonly<{
+    children?: ReactNode | undefined 
     className?: string
-} & P
+    style?: string | Record<string, string | number>
+}> & Readonly<{
+    [K in keyof P as `onChange${Capitalize<string & K>}` | `on$change-${string & K}`]:
+        (oldValue: P[K], newValue: P[K]) => void
+}>
 
 export * from 'intact';
 
@@ -52,7 +57,7 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
 
     public context!: any;
     public state!: any;
-    public props!: Readonly<P> & Readonly<{children?: ReactNode | undefined}>;
+    public props!: IntactReactProps<P>;
 
     // React use prototype.isReactComponent to detect it's a ClassComponent or not
     public isReactComponent!: boolean;
@@ -64,7 +69,7 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
     private $isReact!: boolean;
     private $parentElement!: HTMLElement;
 
-    constructor(props: Readonly<P> & Readonly<{children?: ReactNode | undefined}>, context: any);
+    constructor(props: IntactReactProps<P>, context: any);
     constructor(
         props: Props<P, Component<P>> | null,
         $vNode: VNodeComponentClass,
@@ -166,7 +171,11 @@ export class Component<P = {}> extends IntactComponent<P> implements ReactCompon
         // we have to re-assign it
         this.refs = {};
 
+        // we may call hooks in init lifecycle, so set instance here,
+        // $init method will set it to null
+        setInstance(this);
         this.$init(vNode.props as Props<P, this>);
+
         vNode.children = this;
         this.$render(null, vNode, parentElement, placeholder.nextElementSibling, this.$mountedQueue);
 
