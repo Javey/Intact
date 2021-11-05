@@ -38,9 +38,9 @@ type VNodeComponentClassMaybeWithVueInstance = VNodeComponentClass<ComponentClas
 
 let currentInstance: Component | null = null;
 const [pushMountedQueue, popMountedQueue] = createStack<Function[]>();
-const [pushInstance, popInstance] = createStack<Component>();
+const [pushInstance, popInstance] = createStack<Component<any, any>>();
 
-export class Component<P = {}> extends IntactComponent<P> {
+export class Component<P = {}, E extends Record<string, (...args: any[]) => void> = {}> extends IntactComponent<P, E> {
     static __cache: IntactComponentOptions | null = null;
 
     static get __vccOpts(): IntactComponentOptions {
@@ -187,8 +187,8 @@ export class Component<P = {}> extends IntactComponent<P> {
     }
 
     $render(
-        lastVNode: VNodeComponentClass | null,
-        nextVNode: VNodeComponentClass,
+        lastVNode: VNodeComponentClass<this> | null,
+        nextVNode: VNodeComponentClass<this>,
         parentDom: Element,
         anchor: IntactDom | null,
         mountedQueue: Function[]
@@ -203,8 +203,8 @@ export class Component<P = {}> extends IntactComponent<P> {
     }
 
     $update(
-        lastVNode: VNodeComponentClass,
-        nextVNode: VNodeComponentClass,
+        lastVNode: VNodeComponentClass<this>,
+        nextVNode: VNodeComponentClass<this>,
         parentDom: Element,
         anchor: IntactDom | null,
         mountedQueue: Function[],

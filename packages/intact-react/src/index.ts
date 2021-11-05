@@ -50,7 +50,7 @@ if (process.env.NODE_ENV !== 'production') {
     Object.freeze(EMPTY_ARRAY);
 }
 
-export class Component<P = {}> extends IntactComponent<P> implements ReactComponent {
+export class Component<P = {}, E extends Record<string, (...args: any[]) => void> = {}> extends IntactComponent<P, E> implements ReactComponent {
     static $cid = 'IntactReact';
     static normalize = normalizeChildren;
     static functionalWrapper = functionalWrapper;

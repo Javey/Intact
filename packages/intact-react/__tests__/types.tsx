@@ -16,3 +16,4 @@ const g = <A value={1} onChangeValue={() => {}} />
 const h = <A value={1} onChangeValue={() => {}} onChangeA={() => {}} />
 const i = <A on$change-value={(a, b) => {}} />
 const j = <A onClick={() => {}} />
+const k = <A onEvent={() => {}} />

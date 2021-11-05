@@ -237,7 +237,7 @@ describe('Intact Vue Next', () => {
         });
 
         it('should update vNode.el of Vue if Intact component updated and return the different dom', async () => {
-            class Test extends Component<{show: boolean}> {
+            class Test extends Component<{show: boolean}, {hide: () => void}> {
                 static template = `
                     const show = this.get('show');
                     if (!show) return;

@@ -1,19 +1,50 @@
+import type {Component} from './component';
 import {Props} from 'misstime';
 import {isUndefined, throwError, isFunction} from 'intact-shared';
 
-export class Event<P> {
-    private $events: Record<string, Function[] | undefined> = {}; 
+type ChangeCallback<P, K extends keyof P> = (newValue: P[K], oldValue: P[K]) => void
+type ReceiveCallback<P, K extends keyof P> = (newValue: P[K], oldValue: P[K], init: boolean) => void
+type EventCallback = (...args: any[]) => void
+type Events<P, E> = {
+    [Key in keyof Props<P> as 
+        | `$change:${string & Key}`
+        | `$changed:${string & Key}`
+    ]?: ChangeCallback<Props<P>, Key>[]
+} & {
+    [Key in keyof Props<P> as
+        | `$receive:${string & Key}`
+    ]?: ReceiveCallback<Props<P>, Key>[]
+} & {
+    [Key in keyof E]?: E[Key][]
+};
+// type Events<P, E> = {
+//     [Key in Exclude<keyof Props<P>, keyof E> as 
+//         | `$change:${string & Key}`
+//         | `$receive:${string & Key}`
+//         | `$changed:${string & Key}`
+//     ]?: ChangeCallback<Props<P>, Key>[] | undefined
+// } & {
+//     [Key in Exclude<keyof E, keyof Props<P>>]?: E[Key][] | undefined
+// };
+// type ArrayElement<ArrayType extends readonly unknown[]> = 
+//   ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
+
+export class Event<
+    P,
+    E extends Record<string, EventCallback>,
+    L extends Record<string, EventCallback>
+> {
+    private $events: Events<P, E> = {} as any;
 
     // internal properties
     public $blockAddEvent: boolean = false;
 
-    // on<K extends Extract<keyof P, string>>(name: `$receive:${K}`, callback: (newValue: P[K], oldValue: P[K] | undefined) => void): void;
-    // on<K extends Extract<keyof P, string>>(name: `$change:${K}`, callback: (newValue: P[K], oldValue: P[K]) => void): void;
-    // on<K extends Extract<keyof P, string>>(name: `$changed:${K}`, callback: (newValue: P[K], oldValue: P[K]) => void): void;
-    on<K extends keyof Props<P>>(name: `$receive:${string & K}`, callback: (newValue: Props<P>[K], oldValue: Props<P>[K] | undefined) => void): void;
-    on<K extends keyof Props<P>>(name: `$change:${string & K}`, callback: (newValue: Props<P>[K], oldValue: Props<P>[K]) => void): void;
-    on<K extends keyof Props<P>>(name: `$changed:${string & K}`, callback: (newValue: Props<P>[K], oldValue: Props<P>[K]) => void): void;
-    on(name: string, callback: Function): void;
+    // props
+    on<K extends keyof Props<P>>(name: `$receive:${string & K}`, callback: ReceiveCallback<Props<P>, K>): void;
+    on<K extends keyof Props<P>>(name: `$change:${string & K}`, callback: ChangeCallback<Props<P>, K>): void;
+    on<K extends keyof Props<P>>(name: `$changed:${string & K}`, callback: ChangeCallback<Props<P>, K>): void;
+    // events
+    on<K extends keyof (E & L)>(name: K, callback: (E & L)[K]): void;
     on(name: string, callback: Function) {
         if (process.env.NODE_ENV !== 'production') {
             if (this.$blockAddEvent) {
@@ -27,22 +58,22 @@ export class Event<P> {
                 throwError('Expect a function, but got ' + JSON.stringify(callback));
             }
         }
-        const events = this.$events;
+        const events = this.$events as any;
         (events[name] || (events[name] = [])).push(callback);
     }
 
-    off(name?: string, callback?: Function) {
+    off<K extends keyof Events<P, E>>(name?: K, callback?: Function) {
         if (isUndefined(name)) {
             this.$events = {};
             return;
         }
 
-        const callbacks = this.$events[name];
+        const callbacks = this.$events[name] as any;
 
         if (isUndefined(callbacks)) return;
 
         if (isUndefined(callback)) {
-            this.$events[name] = undefined;
+            (this.$events as any)[name] = undefined;
             return;
         }
 
@@ -54,8 +85,9 @@ export class Event<P> {
         }
     }
 
-    trigger(name: string, args: any[]) {
-        let callbacks = this.$events[name];
+    // trigger<N = void, T extends (...args: any[]) => void = any>(name: NoInfer<N>, ...args: Parameters<T>): void;
+    trigger<K extends keyof E>(name: K, ...args: Parameters<E[K]>) {
+        let callbacks = this.$events[name] as any;
 
         if (!isUndefined(callbacks)) {
             callbacks = callbacks.slice();

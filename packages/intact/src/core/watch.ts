@@ -1,15 +1,16 @@
 import {currentInstance, Component} from './component';
 import {throwError} from 'intact-shared';
 import {Props} from 'misstime';
+import { LifecycleEvents } from '../utils/types';
 
 export type WatchOptions = {
     inited?: boolean,
     presented?: boolean,
 }
 
-export function watch<P, K extends keyof Props<P, Component<P>>>(
+export function watch<P, K extends keyof Props<P>>(
     key: K,
-    callback: (newValue: Props<P, Component<P>>[K], oldValue: Props<P, Component<P>>[K] | undefined) => void,
+    callback: (newValue: Props<P>[K], oldValue: Props<P>[K]) => void,
     options?: WatchOptions,
     instance = currentInstance
 ) {
@@ -26,7 +27,7 @@ export function watch<P, K extends keyof Props<P, Component<P>>>(
         } else {
             instance!.on(`$receive:${key}`, (
                 newValue: Props<P, Component<P>>[K],
-                oldValue: Props<P, Component<P>>[K] | undefined,
+                oldValue: Props<P, Component<P>>[K],
                 init: boolean
             ) => {
                 if (!init) {
@@ -39,12 +40,12 @@ export function watch<P, K extends keyof Props<P, Component<P>>>(
         if (!options.inited) {
             instance!.on(`$receive:${key}`, (
                 newValue: Props<P, Component<P>>[K],
-                oldValue: Props<P, Component<P>>[K] | undefined,
+                oldValue: Props<P, Component<P>>[K],
                 init: boolean
             ) => {
-                let lifecycle = init ? '$mounted' : '$updated';
+                let lifecycle: keyof LifecycleEvents<any> = init ? '$mounted' : '$updated';
                 const fn = () => {
-                    instance!.off(lifecycle, fn);
+                    (instance!.off as Function)(lifecycle, fn);
                     callback(newValue, oldValue);
                 };
                 instance!.on(lifecycle, fn);
@@ -52,12 +53,12 @@ export function watch<P, K extends keyof Props<P, Component<P>>>(
         } else {
             instance!.on(`$receive:${key}`, (
                 newValue: Props<P, Component<P>>[K],
-                oldValue: Props<P, Component<P>>[K] | undefined,
+                oldValue: Props<P, Component<P>>[K],
                 init: boolean
             ) => {
                 if (!init) {
                     const fn = () => {
-                        instance!.off('$updated', fn);
+                        (instance!.off as Function)('$updated', fn);
                         callback(newValue, oldValue);
                     };
                     instance!.on('$updated', fn); 

@@ -85,7 +85,12 @@ class A<T extends AProps> extends Component<T> {
 
         this.on('$receive:children', vNodes => {
             expectType<Children>(vNodes);
-        })
+        });
+        
+        // @ts-expect-error
+        this.on('$change:xx', (v, o) => {
+
+        });
     }
 }
 

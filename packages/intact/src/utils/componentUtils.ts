@@ -23,6 +23,12 @@ import {
     set,
     ChangeTrace
 } from 'intact-shared';
+import {LifecycleEvents} from '../utils/types';
+
+export type InternalLifecycleTrigger<
+    K extends keyof LifecycleEvents<T>,
+    T extends Component<any, any>
+> = (name: K, ...args: Parameters<LifecycleEvents<T>[K]>) => void;
 
 export const nextTick = typeof Promise !== 'undefined' ? 
     (callback: Function) => Promise.resolve().then(() => callback()) :
@@ -34,15 +40,15 @@ const QUEUE: Component<any>[] = [];
 
 export function renderSyncComponnet<P>(
     component: Component<P>,
-    lastVNode: VNodeComponentClass | null,
-    nextVNode: VNodeComponentClass,
+    lastVNode: VNodeComponentClass<Component<P>> | null,
+    nextVNode: VNodeComponentClass<Component<P>>,
     parentDom: Element,
     anchor: IntactDom | null,
     mountedQueue: Function[]
 ) {
     component.$blockRender = true;
 
-    component.trigger('$beforeMount', lastVNode, nextVNode);
+    (component.trigger as Function as InternalLifecycleTrigger<'$beforeMount', Component<P>>)('$beforeMount', lastVNode, nextVNode);
     if (isFunction(component.beforeMount)) {
         component.beforeMount(lastVNode, nextVNode);
     }
@@ -73,8 +79,8 @@ export function renderSyncComponnet<P>(
 
 export function renderAsyncComponent<P>(
     component: Component<P>,
-    lastVNode: VNodeComponentClass | null,
-    nextVNode: VNodeComponentClass,
+    lastVNode: VNodeComponentClass<Component<P>> | null,
+    nextVNode: VNodeComponentClass<Component<P>>,
     parentDom: Element,
     anchor: IntactDom | null,
     mountedQueue: Function[]
@@ -86,7 +92,7 @@ export function renderAsyncComponent<P>(
         mount(vNode, parentDom, component, component.$SVG, anchor, mountedQueue);
     }
 
-    component.on('$inited', () => {
+    (component.on as Function)('$inited', () => {
         mountedQueue = component.$mountedQueue = [];
         renderSyncComponnet(component, lastVNode, nextVNode, parentDom, anchor, mountedQueue);
         // call queue before mountedQueue, because queue are callbacks set in init
@@ -97,8 +103,8 @@ export function renderAsyncComponent<P>(
 
 export function updateSyncComponent<P>(
     component: Component<P>,
-    lastVNode: VNodeComponentClass,
-    nextVNode: VNodeComponentClass,
+    lastVNode: VNodeComponentClass<Component<P>>,
+    nextVNode: VNodeComponentClass<Component<P>>,
     parentDom: Element, 
     anchor: IntactDom | null,
     mountedQueue: Function[],
@@ -109,7 +115,7 @@ export function updateSyncComponent<P>(
         patchProps(component, lastVNode.props, nextVNode.props, (component.constructor as typeof Component).defaults());
     }
 
-    component.trigger('$beforeUpdate', lastVNode, nextVNode);
+    (component.trigger as Function as InternalLifecycleTrigger<'$beforeUpdate', Component<P>>)('$beforeUpdate', lastVNode, nextVNode);
     if (isFunction(component.beforeUpdate)) {
         if (process.env.NODE_ENV !== 'production') {
             DEV_callMethod(component, component.beforeUpdate, lastVNode, nextVNode);
@@ -125,7 +131,7 @@ export function updateSyncComponent<P>(
     component.$lastInput = vNode;
 
     mountedQueue.push(() => {
-        component.trigger('$updated', lastVNode, nextVNode);
+        (component.trigger as Function as InternalLifecycleTrigger<'$updated', Component<P>>)('$updated', lastVNode, nextVNode);
     });
     if(isFunction(component.updated)) {
         mountedQueue!.push(() => {
@@ -141,14 +147,14 @@ export function updateSyncComponent<P>(
 
 export function updateAsyncComponent<P>(
     component: Component<P>,
-    lastVNode: VNodeComponentClass,
-    nextVNode: VNodeComponentClass,
+    lastVNode: VNodeComponentClass<Component<P>>,
+    nextVNode: VNodeComponentClass<Component<P>>,
     parentDom: Element, 
     anchor: IntactDom | null,
     mountedQueue: Function[],
     force: boolean,
 ) {
-    component.on('$inited', () => {
+    (component.on as Function)('$inited', () => {
         mountedQueue = component.$mountedQueue = [];
         updateSyncComponent(component, lastVNode, nextVNode, parentDom, anchor, mountedQueue, force);
         callAll(mountedQueue);
@@ -159,7 +165,7 @@ export function componentInited<P>(component: Component<P>, triggerReceiveEvents
     triggerReceiveEvents && triggerReceiveEvents();
 
     component.$inited = true;
-    component.trigger('$inited');
+    (component.trigger as Function as InternalLifecycleTrigger<'$inited', Component<P>>)('$inited');
 }
 
 export function mountProps<P>(component: Component<P>, nextProps: P) {
@@ -238,7 +244,7 @@ export function setProps<P>(component: Component<P>, newProps: P) {
                 const {path, newValue, oldValue} = changeTraces[j];
 
                 callModelEvent(component, path, newValue);
-                component.trigger(`$change:${path}`, newValue, oldValue);
+                (component.trigger as Function)(`$change:${path}`, newValue, oldValue);
             }
         }
 
@@ -250,7 +256,7 @@ export function setProps<P>(component: Component<P>, newProps: P) {
                 for (let j = changeTraces.length - 1; j > -1; j--) {
                     const {path, newValue, oldValue} = changeTraces[j];
 
-                    component.trigger(`$changed:${path}`, newValue, oldValue);
+                    (component.trigger as Function)(`$changed:${path}`, newValue, oldValue);
                 }
             }
         });
@@ -293,7 +299,7 @@ export function forceUpdate<P>(component: Component<P>, callback?: Function) {
 function triggerReceiveEvents<P>(component: Component<P>, changeTraces: ChangeTrace[], init: boolean) {
     for (let i = 0; i < changeTraces.length; i++) {
         const {path, newValue, oldValue} = changeTraces[i];
-        component.trigger(`$receive:${path}`, newValue, oldValue, init);
+        (component.trigger as Function)(`$receive:${path}`, newValue, oldValue, init);
     }
 }
 

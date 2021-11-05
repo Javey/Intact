@@ -15,7 +15,7 @@ describe('Component', () => {
         document.body.removeChild(container);
     });
 
-    class Test extends Component<{'ev-click'?: Function}> {
+    class Test extends Component<{'ev-click'?: Function}, {click: () => void}> {
         static template = function(this: Test) {
             return h('div', {'ev-click': this.onClick}, 'click');
         }
@@ -56,7 +56,7 @@ describe('Component', () => {
         });
 
         it('should not add event listener on beforeUpdate lifecycle', () => {
-            class Test extends Component {
+            class Test extends Component<{}, {click: () => void}> {
                 static template = () => {
                     return h('div');
                 }
@@ -71,7 +71,7 @@ describe('Component', () => {
         });
 
         it('should not add event listener on updated lifecycle', () => {
-            class Test extends Component {
+            class Test extends Component<{}, {click: () => void}> {
                 static template = () => {
                     return h('div');
                 }
@@ -86,7 +86,7 @@ describe('Component', () => {
         });
 
         it('should throw error if callback is not a function', () => {
-             class Test extends Component {
+            class Test extends Component<{}, {click: () => void}> {
                 static template = () => {
                     return h('div');
                 }
@@ -104,7 +104,7 @@ describe('Component', () => {
             const move1 = sinon.spy();
             const move2 = sinon.spy();
             let component: Test;
-            class Test extends Component {
+            class Test extends Component<{}, {click: () => void, move: () => void, noop: () => void}> {
                 static template(this: Test) {
                     component = this;
                     return h('div');

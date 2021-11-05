@@ -116,7 +116,7 @@ describe('Intact Vue Next', () => {
             });
 
             it('handle mountedQueue', async () => {
-                class Test extends Component {
+                class Test extends Component<{a: number}> {
                     static template = '<div>test</div>';
                     init() {
                         this.on('$receive:a', () => {

@@ -7,19 +7,16 @@ import {
     TypeDefs,
     unmount,
 } from 'misstime';
-import {SetOptions, InjectionKey} from '../utils/types';
+import {SetOptions, InjectionKey, LifecycleEvents} from '../utils/types';
 import {
-    isNull,
     isFunction,
     isUndefined,
     isObject,
-    EMPTY_OBJ,
     get,
     set,
     isNullOrUndefined,
     throwError,
 } from 'intact-shared';
-import {deepFreeze} from '../utils/helpers';
 import {
     componentInited, 
     setProps,
@@ -50,8 +47,15 @@ type NoInfer<T> = [T][T extends any ? 0 : never];
         // Exclude<P[K], undefined> :
         // P[K]
 // };
+type InternalLifecycleTrigger<
+    K extends keyof LifecycleEvents<T>,
+    T extends Component<any, any>
+> = (name: K, ...args: Parameters<LifecycleEvents<T>[K]>) => void;
 
-export abstract class Component<P extends {} = {}> extends Event<P> implements ComponentClass<P> {
+export abstract class Component<
+    P extends {} = {},
+    E extends Record<string, (...args: any[]) => void> = {}
+> extends Event<P, E, LifecycleEvents<Component<P, E>>> implements ComponentClass<P> {
     static readonly template: Template | string;
     static readonly defaults: () => object = () => ({});
     static readonly typeDefs?: TypeDefs<any>;
@@ -66,13 +70,9 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     public $mountedQueue: Function[];
 
     // internal properties
-    // public $SVG: boolean = false;
-    // public $vNode: VNodeComponentClass<this> | null = null;
     public $lastInput: VNode | null = null;
-    // public $mountedQueue: Function[] | null = null;
     public $blockRender: boolean = false;
     public $queue: Function[] | null = null;
-    // public $parent: Component<any> | null = null;
     public $provides: Record<InjectionKey, any> | null = null;
 
     // lifecyle states
@@ -178,8 +178,8 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
     }
 
     $render(
-        lastVNode: VNodeComponentClass | null,
-        nextVNode: VNodeComponentClass,
+        lastVNode: VNodeComponentClass<this> | null,
+        nextVNode: VNodeComponentClass<this>,
         parentDom: Element,
         anchor: IntactDom | null,
         mountedQueue: Function[]
@@ -191,18 +191,18 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         }
     }
 
-    $mount(lastVNode: VNodeComponentClass | null, nextVNode: VNodeComponentClass) {
+    $mount(lastVNode: VNodeComponentClass<this> | null, nextVNode: VNodeComponentClass<this>) {
         this.$mounted = true;
 
-        this.trigger('$mounted', lastVNode, nextVNode);
+        (this.trigger as unknown as InternalLifecycleTrigger<'$mounted', Component<P, E>>)('$mounted', lastVNode, nextVNode);
         if (isFunction(this.mounted)) {
             this.mounted(lastVNode, nextVNode);
         }
     }
 
     $update(
-        lastVNode: VNodeComponentClass,
-        nextVNode: VNodeComponentClass,
+        lastVNode: VNodeComponentClass<this>,
+        nextVNode: VNodeComponentClass<this>,
         parentDom: Element, 
         anchor: IntactDom | null,
         mountedQueue: Function[],
@@ -215,7 +215,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         }
     }
 
-    $unmount(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null) {
+    $unmount(vNode: VNodeComponentClass<this>, nextVNode: VNodeComponentClass<this> | null) {
         /* istanbul ignore next */
         if (process.env.NODE_ENV !== 'production') {
             if (this.$unmounted) {
@@ -226,7 +226,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
             }
         }
 
-        this.trigger('$beforeUnmount', vNode, nextVNode);
+        (this.trigger as unknown as InternalLifecycleTrigger<'$beforeUnmount', Component<P, E>>)('$beforeUnmount', vNode, nextVNode);
         if (isFunction(this.beforeUnmount)) {
             this.beforeUnmount(vNode, nextVNode);
         }
@@ -237,7 +237,7 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         // }
         
         this.$unmounted = true;
-        this.trigger('$unmounted', vNode, nextVNode);
+        (this.trigger as unknown as InternalLifecycleTrigger<'$unmounted', Component<P, E>>)('$unmounted', vNode, nextVNode);
         this.off();
         if (isFunction(this.unmounted)) {
             this.unmounted(vNode, nextVNode);
@@ -276,8 +276,8 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         setProps(this, key);
     }
 
-    get(): Props<P, ComponentClass<P>>;
-    get<K extends keyof Props<P, ComponentClass<P>>>(key: K): Props<P, ComponentClass<P>>[K]; 
+    get(): Props<P, this>;
+    get<K extends keyof Props<P, this>>(key: K): Props<P, this>[K]; 
     get<V = void>(key: V extends void ? never : string): V;
     get(key?: any) {
         if (isUndefined(key)) return this.$props;
@@ -290,14 +290,15 @@ export abstract class Component<P extends {} = {}> extends Event<P> implements C
         forceUpdate(this, callback);
     }
 
-    trigger(name: string, ...args: any[]) {
+    // trigger<N = void, T extends (...args: any[]) => void = any>(name: NoInfer<N>, ...args: Parameters<T>): void;
+    trigger<K extends keyof E>(name: K & string, ...args: Parameters<E[K]>) {
         // call event on props firstly
         const propEvent = (this.$props as any)[`ev-${name}`];
         if (isFunction(propEvent) && !this.$unmounted) {
             propEvent(...args); 
         }
 
-        super.trigger(name, args);
+        super.trigger(name, ...args);
     }
 
 
