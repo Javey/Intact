@@ -25,6 +25,7 @@ import {
     ReactNode,
     Ref as ReactRef,
     Provider,
+    HTMLAttributes,
 } from 'react';
 import {normalizeProps, normalizeChildren} from './normalize';
 import {precacheFiberNode, updateFiberProps} from './helpers';
@@ -37,9 +38,9 @@ type IntactReactProps<P> = Readonly<P> & Readonly<{
     className?: string
     style?: string | Record<string, string | number>
 }> & Readonly<{
-    [K in keyof P as `onChange${Capitalize<string & K>}` | `on$change-${string & K}`]:
+    [K in keyof P as `onChange${Capitalize<string & K>}` | `on$change-${string & K}`]?:
         (oldValue: P[K], newValue: P[K]) => void
-}>
+}> & Readonly<Omit<HTMLAttributes<any>, keyof P | 'style'>>
 
 export * from 'intact';
 

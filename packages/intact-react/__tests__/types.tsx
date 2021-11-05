@@ -15,3 +15,4 @@ const g = <A value={1} onChangeValue={() => {}} />
 // @ts-expect-error
 const h = <A value={1} onChangeValue={() => {}} onChangeA={() => {}} />
 const i = <A on$change-value={(a, b) => {}} />
+const j = <A onClick={() => {}} />

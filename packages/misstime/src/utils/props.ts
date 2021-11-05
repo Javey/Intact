@@ -62,7 +62,12 @@ export function patchProp(
         case 'scoped':
         case 'seamless':
         case 'selected':
+        case 'spellcheck':
             (dom as any)[prop] = !!nextValue;
+            break;
+        // special bool value
+        case 'formnovalidate':
+            (dom as any).formNoValidate = !!nextValue;
             break;
         case 'defaultChecked':
         case 'value':
