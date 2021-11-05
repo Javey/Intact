@@ -1,7 +1,8 @@
 import {currentInstance, Component} from './component';
 import {throwError} from 'intact-shared';
 import {Props} from 'misstime';
-import { LifecycleEvents } from '../utils/types';
+import {LifecycleEvents} from '../utils/types';
+import type {ChangeCallback} from './event';
 
 export type WatchOptions = {
     inited?: boolean,
@@ -10,9 +11,9 @@ export type WatchOptions = {
 
 export function watch<P, K extends keyof Props<P>>(
     key: K,
-    callback: (newValue: Props<P>[K], oldValue: Props<P>[K]) => void,
+    callback: ChangeCallback<Props<P>, K>,
     options?: WatchOptions,
-    instance = currentInstance
+    instance: Component<P> | null = currentInstance 
 ) {
     if (process.env.NODE_ENV !== 'production') {
         if (!instance) {
@@ -21,28 +22,20 @@ export function watch<P, K extends keyof Props<P>>(
     }
 
     if (!options || !options.presented) {
-        instance!.on(`$change:${key}`, callback);
+        instance!.on(`$change:${key}` as `$change:${string & K}`, callback);
         if (!options || !options.inited) {
-            instance!.on(`$receive:${key}`, callback);
+            instance!.on(`$receive:${key}` as `$receive:${string & K}`, callback);
         } else {
-            instance!.on(`$receive:${key}`, (
-                newValue: Props<P, Component<P>>[K],
-                oldValue: Props<P, Component<P>>[K],
-                init: boolean
-            ) => {
+            instance!.on(`$receive:${key}` as `$receive:${string & K}`, (newValue, oldValue, init) => {
                 if (!init) {
                     callback(newValue, oldValue);
                 }
             });
         }
     } else {
-        instance!.on(`$changed:${key}`, callback);
+        instance!.on(`$changed:${key}` as `$changed:${string & K}`, callback);
         if (!options.inited) {
-            instance!.on(`$receive:${key}`, (
-                newValue: Props<P, Component<P>>[K],
-                oldValue: Props<P, Component<P>>[K],
-                init: boolean
-            ) => {
+            instance!.on(`$receive:${key}` as `$receive:${string & K}`, (newValue, oldValue, init) => {
                 let lifecycle: keyof LifecycleEvents<any> = init ? '$mounted' : '$updated';
                 const fn = () => {
                     (instance!.off as Function)(lifecycle, fn);
@@ -51,11 +44,7 @@ export function watch<P, K extends keyof Props<P>>(
                 instance!.on(lifecycle, fn);
             });
         } else {
-            instance!.on(`$receive:${key}`, (
-                newValue: Props<P, Component<P>>[K],
-                oldValue: Props<P, Component<P>>[K],
-                init: boolean
-            ) => {
+            instance!.on(`$receive:${key}` as `$receive:${string & K}`, (newValue, oldValue, init) => {
                 if (!init) {
                     const fn = () => {
                         (instance!.off as Function)('$updated', fn);

@@ -2,7 +2,7 @@ import type {Component} from './component';
 import {Props} from 'misstime';
 import {isUndefined, throwError, isFunction} from 'intact-shared';
 
-type ChangeCallback<P, K extends keyof P> = (newValue: P[K], oldValue: P[K]) => void
+export type ChangeCallback<P, K extends keyof P> = (newValue: P[K], oldValue: P[K]) => void
 type ReceiveCallback<P, K extends keyof P> = (newValue: P[K], oldValue: P[K], init: boolean) => void
 type EventCallback = (...args: any[]) => void
 type Events<P, E> = {
@@ -17,17 +17,6 @@ type Events<P, E> = {
 } & {
     [Key in keyof E]?: E[Key][]
 };
-// type Events<P, E> = {
-//     [Key in Exclude<keyof Props<P>, keyof E> as 
-//         | `$change:${string & Key}`
-//         | `$receive:${string & Key}`
-//         | `$changed:${string & Key}`
-//     ]?: ChangeCallback<Props<P>, Key>[] | undefined
-// } & {
-//     [Key in Exclude<keyof E, keyof Props<P>>]?: E[Key][] | undefined
-// };
-// type ArrayElement<ArrayType extends readonly unknown[]> = 
-//   ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
 
 export class Event<
     P,
