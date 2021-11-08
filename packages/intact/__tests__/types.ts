@@ -87,9 +87,9 @@ class A<T extends AProps> extends Component<T> {
             expectType<Children>(vNodes);
         });
 
-        (['a'] as const).forEach(name => {
-            this.on(`$receive:${name}`, () => { });
-        })
+        (['a', 'aa'] as const).forEach(name => {
+            this.on(`$change:${name}` as const, () => { });
+        });
         
         // @ts-expect-error
         this.on('$change:xx', (v, o) => { });

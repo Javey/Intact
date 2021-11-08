@@ -3,8 +3,8 @@ import {Props} from 'misstime';
 import {isUndefined, throwError, isFunction} from 'intact-shared';
 
 export type ChangeCallback<P, K extends keyof P> = (newValue: P[K], oldValue: P[K]) => void
-type ReceiveCallback<P, K extends keyof P> = (newValue: P[K], oldValue: P[K], init: boolean) => void
-type EventCallback = (...args: any[]) => void
+export type ReceiveCallback<P, K extends keyof P> = (newValue: P[K], oldValue: P[K], init: boolean) => void
+export type EventCallback = (...args: any[]) => void
 type Events<P, E> = {
     [Key in keyof Props<P> as 
         | `$change:${string & Key}`

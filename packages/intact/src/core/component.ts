@@ -26,8 +26,9 @@ import {
     renderAsyncComponent,
     updateSyncComponent,
     updateAsyncComponent,
+    InternalLifecycleTrigger,
 } from '../utils/componentUtils';
-import {Event} from './event';
+import {Event, EventCallback} from './event';
 import {Template, compile} from 'vdt';
 import {watch, WatchOptions} from './watch';
 
@@ -47,14 +48,10 @@ type NoInfer<T> = [T][T extends any ? 0 : never];
         // Exclude<P[K], undefined> :
         // P[K]
 // };
-type InternalLifecycleTrigger<
-    K extends keyof LifecycleEvents<T>,
-    T extends Component<any, any>
-> = (name: K, ...args: Parameters<LifecycleEvents<T>[K]>) => void;
 
 export abstract class Component<
     P extends {} = {},
-    E extends Record<string, (...args: any[]) => void> = {}
+    E extends Record<string, EventCallback> = {}
 > extends Event<P, E, LifecycleEvents<Component<P, E>>> implements ComponentClass<P> {
     static readonly template: Template | string;
     static readonly defaults: () => object = () => ({});
