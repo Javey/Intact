@@ -16,6 +16,8 @@ import {
     setInstance,
     callAll,
     validateProps,
+    EventCallback,
+    Blocks,
 } from 'intact';
 import {
     Component as ReactComponent,
@@ -26,6 +28,7 @@ import {
     Ref as ReactRef,
     Provider,
     HTMLAttributes,
+    ReactChild,
 } from 'react';
 import {normalizeProps, normalizeChildren} from './normalize';
 import {precacheFiberNode, updateFiberProps} from './helpers';
@@ -33,16 +36,23 @@ import {functionalWrapper} from './functionalWrapper';
 import {FakePromise, FakePromises} from './fakePromise';
 import {Context} from './wrapper';
 
-type IntactReactProps<P> = Readonly<P> & Readonly<{
+export * from 'intact';
+
+type ValidReactNode = ReactChild | null | undefined;
+
+type IntactReactProps<P, B> = Readonly<P> & Readonly<{
     children?: ReactNode | undefined 
     className?: string
     style?: string | Record<string, string | number>
 }> & Readonly<{
     [K in keyof P as `onChange${Capitalize<string & K>}` | `on$change-${string & K}`]?:
         (oldValue: P[K], newValue: P[K]) => void
+}> & Readonly<{
+    [K in keyof B as `slot${Capitalize<string & K>}`]?: 
+        B[K] extends null ?
+            ValidReactNode :
+            (data: B[K]) => ValidReactNode
 }> & Readonly<Omit<HTMLAttributes<any>, keyof P | 'style'>>
-
-export * from 'intact';
 
 const PROMISES = '_$IntactReactPromises';
 const EMPTY_ARRAY: any[] = [];
@@ -50,7 +60,11 @@ if (process.env.NODE_ENV !== 'production') {
     Object.freeze(EMPTY_ARRAY);
 }
 
-export class Component<P = {}, E extends Record<string, (...args: any[]) => void> = {}> extends IntactComponent<P, E> implements ReactComponent {
+export class Component<
+    P = {},
+    E extends Record<string, EventCallback> = {},
+    B extends Record<string, any> = {},
+> extends IntactComponent<P, E, B> implements ReactComponent {
     static $cid = 'IntactReact';
     static normalize = normalizeChildren;
     static functionalWrapper = functionalWrapper;
@@ -58,7 +72,7 @@ export class Component<P = {}, E extends Record<string, (...args: any[]) => void
 
     public context!: any;
     public state!: any;
-    public props!: IntactReactProps<P>;
+    public props!: IntactReactProps<P, B>;
 
     // React use prototype.isReactComponent to detect it's a ClassComponent or not
     public isReactComponent!: boolean;
@@ -70,7 +84,7 @@ export class Component<P = {}, E extends Record<string, (...args: any[]) => void
     private $isReact!: boolean;
     private $parentElement!: HTMLElement;
 
-    constructor(props: IntactReactProps<P>, context: any);
+    constructor(props: IntactReactProps<P, B>, context: any);
     constructor(
         props: Props<P, Component<P>> | null,
         $vNode: VNodeComponentClass,

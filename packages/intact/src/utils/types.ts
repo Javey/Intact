@@ -32,3 +32,7 @@ export type LifecycleEvents<T extends ComponentClass> = {
     $beforeUnmount: UnmountLifecycleCallback<T>
     $unmounted: UnmountLifecycleCallback<T>
 }
+
+export type ChangeCallback<P, K extends keyof P> = (newValue: P[K], oldValue: P[K]) => void
+export type ReceiveCallback<P, K extends keyof P> = (newValue: P[K], oldValue: P[K], init: boolean) => void
+export type EventCallback = (...args: any[]) => void

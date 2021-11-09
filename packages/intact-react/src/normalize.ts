@@ -83,9 +83,9 @@ export function normalizeProps<P>(props: P): P {
             normalizedProps[key] = normalizeChildren(value) as unknown as P[typeof key];
         } else if (tmp = getEventName(key)) {
             normalizedProps[tmp as keyof P] = value;
-        } else if (key.startsWith('slot-')) {
+        } else if (key.startsWith('slot')) {
             if (!blocks) blocks = (normalizedProps as any).$blocks = {};
-            blocks[key.substring(5)] = normalizeBlock(value);
+            blocks[hyphenate(key.substring(4))] = normalizeBlock(value);
         } else if (key === 'forwardRef') {
             (normalizedProps as any).ref = value;
         } else {
@@ -133,9 +133,21 @@ function getEventName(propName: string) {
     }
 }
 
-function capitalize(str: string) {
-    return str[0].toLowerCase() + str.substring(1);
+function cache(fn: (str: string) => string) {
+    const cache = Object.create(null);
+    return (str: string) => {
+        return cache[str] || (cache[str] = fn(str));
+    }
 }
+
+const capitalize = cache((str: string) => {
+    return str.charAt(0).toLowerCase() + str.slice(1);
+});
+
+const hyphenateRE = /\B([A-Z])/g;
+const hyphenate = cache((str: string) => {
+    return (str.charAt(0) + str.slice(1).replace(hyphenateRE, '-$1')).toLowerCase();
+});
 
 function normalizeBlock(block: Function | ReactNode): Block<any> {
     if (isFunction(block)) {

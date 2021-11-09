@@ -8,14 +8,16 @@ import {
     IntactDom,
     Props,
     ComponentClass,
-    callAll
+    callAll,
+    EventCallback,
 } from 'intact';
 import {
     ComponentOptions,
     ComponentPublicInstance,
     createVNode,
     Comment,
-    ComponentInternalInstance
+    ComponentInternalInstance,
+    HTMLAttributes,
 } from 'vue';
 import {normalize, normalizeChildren} from './normalize';
 import {functionalWrapper} from './functionalWrapper';
@@ -36,11 +38,17 @@ type VNodeComponentClassMaybeWithVueInstance = VNodeComponentClass<ComponentClas
     _vueInstance?: ComponentInternalInstance
 }
 
+type IntactVueNextProps<P> = Readonly<P> & Readonly<Omit<HTMLAttributes, keyof P>>
+
 let currentInstance: Component | null = null;
 const [pushMountedQueue, popMountedQueue] = createStack<Function[]>();
 const [pushInstance, popInstance] = createStack<Component<any, any>>();
 
-export class Component<P = {}, E extends Record<string, (...args: any[]) => void> = {}> extends IntactComponent<P, E> {
+export class Component<
+    P = {},
+    E extends Record<string, EventCallback> = {},
+    B extends Record<string, any> = {},
+> extends IntactComponent<P, E, B> {
     static __cache: IntactComponentOptions | null = null;
 
     static get __vccOpts(): IntactComponentOptions {
@@ -165,7 +173,7 @@ export class Component<P = {}, E extends Record<string, (...args: any[]) => void
     private isVue: boolean = false;
 
     // for Vue infers types
-    public $props!: P;
+    public $props!: IntactVueNextProps<P>;
 
     constructor(
         props: Props<P, Component<P>> | null | undefined,

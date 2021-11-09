@@ -1,8 +1,7 @@
 import {currentInstance, Component} from './component';
 import {throwError} from 'intact-shared';
 import {Props} from 'misstime';
-import {LifecycleEvents} from '../utils/types';
-import type {ChangeCallback} from './event';
+import {LifecycleEvents, ChangeCallback} from '../utils/types';
 
 export type WatchOptions = {
     inited?: boolean,

@@ -6,8 +6,9 @@ import {
     VNode,
     TypeDefs,
     unmount,
+    Blocks,
 } from 'misstime';
-import {SetOptions, InjectionKey, LifecycleEvents} from '../utils/types';
+import {SetOptions, InjectionKey, LifecycleEvents, EventCallback} from '../utils/types';
 import {
     isFunction,
     isUndefined,
@@ -28,7 +29,7 @@ import {
     updateAsyncComponent,
     InternalLifecycleTrigger,
 } from '../utils/componentUtils';
-import {Event, EventCallback} from './event';
+import {Event} from './event';
 import {Template, compile} from 'vdt';
 import {watch, WatchOptions} from './watch';
 
@@ -51,7 +52,8 @@ type NoInfer<T> = [T][T extends any ? 0 : never];
 
 export abstract class Component<
     P extends {} = {},
-    E extends Record<string, EventCallback> = {}
+    E extends Record<string, EventCallback> = {},
+    B extends Record<string, any> = {}
 > extends Event<P, E, LifecycleEvents<Component<P, E>>> implements ComponentClass<P> {
     static readonly template: Template | string;
     static readonly defaults: () => object = () => ({});
