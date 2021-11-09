@@ -7,7 +7,19 @@ interface AProps {
     aa: boolean
 }
 
-class AA extends Component<AProps> {
+interface AEvents {
+    a: []
+    b: [number]
+}
+
+// type Test = AEvents & {
+//     a: 1
+// }
+// interface Test extends AEvents {
+    // b: () => void
+// }
+
+class AA extends Component<AProps, AEvents> {
     static defaults(): Partial<AProps> {
         return {a: 'a', aa: true}
     }
@@ -42,10 +54,21 @@ class AA extends Component<AProps> {
         this.set({a: 1});
         // @ts-expect-error
         this.set({a: 1, b: 1});
+
+        // @ts-expect-error
+        this.trigger('error');
+        this.trigger('a');
+        // @ts-expect-error
+        this.trigger('a', 1);
+        // @ts-expect-error
+        this.trigger('b');
+        // @ts-expect-error
+        this.trigger('b', '1');
+        this.trigger('b', 1);
     }
 }
 
-class A<T extends AProps> extends Component<T> {
+class A<T extends AProps, E extends AEvents> extends Component<T, E> {
     static defaults = (): Partial<AProps> => {
         return {
             a: 'a',
@@ -93,13 +116,27 @@ class A<T extends AProps> extends Component<T> {
         
         // @ts-expect-error
         this.on('$change:xx', (v, o) => { });
+
+        // @ts-expect-error
+        this.trigger('error');
+        this.trigger('a');
+        // @ts-expect-error
+        this.trigger('a', 1);
+        // @ts-expect-error
+        this.trigger('b');
+        // @ts-expect-error
+        this.trigger('b', '1');
+        this.trigger('b', 1);
     }
 }
 
 interface BProps extends AProps {
     b: number 
 }
-export class B<T extends BProps> extends A<T> {
+interface BEvents extends AEvents {
+    c: [string, string?]
+}
+export class B<T extends BProps, E extends BEvents> extends A<T, E> {
     static defaults(): Partial<BProps> {
         return {
             ...A.defaults(),
@@ -135,6 +172,23 @@ export class B<T extends BProps> extends A<T> {
         this.on('$change:b', (v, o) => {
             expectType<number>(v); 
         });
+
+        // @ts-expect-error
+        this.trigger('error');
+        this.trigger('a');
+        // @ts-expect-error
+        this.trigger('a', 1);
+        // @ts-expect-error
+        this.trigger('b');
+        // @ts-expect-error
+        this.trigger('b', '1');
+        this.trigger('b', 1);
+        // @ts-expect-error
+        this.trigger('c');
+        // @ts-expect-error
+        this.trigger('c', 1);
+        this.trigger('c', '1');
+        this.trigger('c', '1', '1');
     }
 }
 

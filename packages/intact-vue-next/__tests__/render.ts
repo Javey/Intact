@@ -134,7 +134,7 @@ describe('Intact Vue Next', () => {
         });
 
         it('render with event', async () => {
-            class Test extends Component<{}, {click: () => void}> {
+            class Test extends Component<{}, {click: []}> {
                 static template = `<div ev-click={this.onClick.bind(this)}>click</div>`;
                 onClick() {
                     this.trigger('click')
@@ -157,7 +157,7 @@ describe('Intact Vue Next', () => {
         it('render with multiple events which event names are the same', async () => {
             const click = sinon.spy(() => console.log('click'));
             const changeValue = sinon.spy();
-            class IntactComponent extends Component<{value: string}, {click: () => void}> {
+            class IntactComponent extends Component<{value: string}, {click: []}> {
                 static template = `<div ev-click={this.onClick.bind(this)}>{this.get('value')}</div>`;
                 onClick() {
                     this.set('value', 'click');
@@ -343,7 +343,7 @@ describe('Intact Vue Next', () => {
         });
 
         it('render props which name is hyphenated style', async () => {
-            class Test extends Component<{}, {clickComponent: () => void}> {
+            class Test extends Component<{}, {clickComponent: []}> {
                 static template = `<div ev-click={this.click.bind(this)}>{this.get('userName')}</div>`;
                 static typeDefs = {
                     userName: String

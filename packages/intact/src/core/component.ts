@@ -52,8 +52,8 @@ type NoInfer<T> = [T][T extends any ? 0 : never];
 
 export abstract class Component<
     P extends {} = {},
-    E extends Record<string, EventCallback> = {},
-    B extends Record<string, any> = {}
+    E extends {} = {},
+    B extends {} = {}
 > extends Event<P, E, LifecycleEvents<Component<P, E>>> implements ComponentClass<P> {
     static readonly template: Template | string;
     static readonly defaults: () => object = () => ({});
@@ -290,11 +290,13 @@ export abstract class Component<
     }
 
     // trigger<N = void, T extends (...args: any[]) => void = any>(name: NoInfer<N>, ...args: Parameters<T>): void;
-    trigger<K extends keyof E>(name: K & string, ...args: Parameters<E[K]>) {
+    // trigger<K extends keyof E>(name: K, ...args: Parameters<EventCallback>): void;
+    // trigger<K extends keyof E>(name: K, ...args: E[K] extends (...args: infer P) => any ? P : never) {
+    trigger<K extends keyof E>(name: K, ...args: any[] & E[K]) {
         // call event on props firstly
         const propEvent = (this.$props as any)[`ev-${name}`];
         if (isFunction(propEvent) && !this.$unmounted) {
-            propEvent(...args); 
+            propEvent(...args);
         }
 
         super.trigger(name, ...args);

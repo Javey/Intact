@@ -1,8 +1,12 @@
 import {Component, Children} from '../src';
 
+interface Events {
+    fire: [number] 
+}
+
 class A extends Component<
     {value?: number},
-    {fire: (a: number) => void},
+    Events,
     {
         item: [number, number],
         body: null,
@@ -27,6 +31,7 @@ const i = <A on$change-value={(a, b) => {}} />
 const j = <A onClick={() => {}} />
 // @ts-expect-error
 const k = <A onEvent={() => {}} />
+
 // slot
 // @ts-expect-error
 const l = <A slotBody={(data: any) => console.log(data)}/>
@@ -41,3 +46,8 @@ const n1 = <A slotItem={data => {console.log(data); return true;}}/>
 const o = <A slotItem={1} />
 // @ts-expect-error
 const p = <A slotA={1} />
+
+// event
+const e1 = <A onFire={num => expectType<number>(num)} />;
+
+function expectType<T>(value: T): void { }

@@ -157,10 +157,10 @@ describe('Intact React', () => {
             it('normalize events', () => {
                 type Props = {value: number};
                 type Events = {
-                    click: () => void
-                    change: () => void
-                    'click:value': () => void
-                    clickValue: () => void
+                    click: []
+                    change: []
+                    'click:value': []
+                    clickValue: []
                 }
                 class C<T extends Props> extends Component<T, Events> {
                     static template = `<div ev-click={this.onClick.bind(this)}>click {this.get('value')}</div>`;

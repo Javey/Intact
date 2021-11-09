@@ -9,7 +9,6 @@ import {
     Props,
     ComponentClass,
     callAll,
-    EventCallback,
 } from 'intact';
 import {
     ComponentOptions,
@@ -46,8 +45,8 @@ const [pushInstance, popInstance] = createStack<Component<any, any>>();
 
 export class Component<
     P = {},
-    E extends Record<string, EventCallback> = {},
-    B extends Record<string, any> = {},
+    E = {},
+    B = {},
 > extends IntactComponent<P, E, B> {
     static __cache: IntactComponentOptions | null = null;
 

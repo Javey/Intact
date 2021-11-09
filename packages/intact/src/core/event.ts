@@ -17,9 +17,9 @@ type Events<P, E> = {
 };
 
 export class Event<
-    P,
-    E extends Record<string, EventCallback>,
-    L extends Record<string, EventCallback>
+    P extends {},
+    E extends {},
+    L extends {},
 > {
     private $events: Events<P, E> = {} as any;
 
@@ -73,7 +73,7 @@ export class Event<
     }
 
     // trigger<N = void, T extends (...args: any[]) => void = any>(name: NoInfer<N>, ...args: Parameters<T>): void;
-    trigger<K extends keyof E>(name: K, ...args: Parameters<E[K]>) {
+    trigger<K extends keyof E>(name: K, ...args: any[] & E[K]) {
         let callbacks = this.$events[name] as any;
 
         if (!isUndefined(callbacks)) {

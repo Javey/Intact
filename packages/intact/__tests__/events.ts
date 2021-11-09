@@ -15,7 +15,7 @@ describe('Component', () => {
         document.body.removeChild(container);
     });
 
-    class Test extends Component<{'ev-click'?: Function}, {click: () => void}> {
+    class Test extends Component<{'ev-click'?: Function}, {click: []}> {
         static template = function(this: Test) {
             return h('div', {'ev-click': this.onClick}, 'click');
         }
@@ -104,7 +104,7 @@ describe('Component', () => {
             const move1 = sinon.spy();
             const move2 = sinon.spy();
             let component: Test;
-            class Test extends Component<{}, {click: () => void, move: () => void, noop: () => void}> {
+            class Test extends Component<{}, {click: [], move: [], noop: []}> {
                 static template(this: Test) {
                     component = this;
                     return h('div');

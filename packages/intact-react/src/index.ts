@@ -16,7 +16,6 @@ import {
     setInstance,
     callAll,
     validateProps,
-    EventCallback,
     Blocks,
 } from 'intact';
 import {
@@ -40,7 +39,7 @@ export * from 'intact';
 
 type ValidReactNode = ReactChild | null | undefined;
 
-type IntactReactProps<P, B> = Readonly<P> & Readonly<{
+type IntactReactProps<P, E, B> = Readonly<P> & Readonly<{
     children?: ReactNode | undefined 
     className?: string
     style?: string | Record<string, string | number>
@@ -48,11 +47,14 @@ type IntactReactProps<P, B> = Readonly<P> & Readonly<{
     [K in keyof P as `onChange${Capitalize<string & K>}` | `on$change-${string & K}`]?:
         (oldValue: P[K], newValue: P[K]) => void
 }> & Readonly<{
+    [K in keyof E as `on${Capitalize<string & K>}`]?:
+        (...args: any[] & E[K]) => void
+}> & Readonly<{
     [K in keyof B as `slot${Capitalize<string & K>}`]?: 
         B[K] extends null ?
             ValidReactNode :
             (data: B[K]) => ValidReactNode
-}> & Readonly<Omit<HTMLAttributes<any>, keyof P | 'style'>>
+}> & Readonly<Omit<HTMLAttributes<any>, keyof P | keyof E | 'style'>>
 
 const PROMISES = '_$IntactReactPromises';
 const EMPTY_ARRAY: any[] = [];
@@ -62,8 +64,8 @@ if (process.env.NODE_ENV !== 'production') {
 
 export class Component<
     P = {},
-    E extends Record<string, EventCallback> = {},
-    B extends Record<string, any> = {},
+    E = {},
+    B = {},
 > extends IntactComponent<P, E, B> implements ReactComponent {
     static $cid = 'IntactReact';
     static normalize = normalizeChildren;
@@ -72,7 +74,7 @@ export class Component<
 
     public context!: any;
     public state!: any;
-    public props!: IntactReactProps<P, B>;
+    public props!: IntactReactProps<P, E, B>;
 
     // React use prototype.isReactComponent to detect it's a ClassComponent or not
     public isReactComponent!: boolean;
@@ -84,7 +86,7 @@ export class Component<
     private $isReact!: boolean;
     private $parentElement!: HTMLElement;
 
-    constructor(props: IntactReactProps<P, B>, context: any);
+    constructor(props: IntactReactProps<P, E, B>, context: any);
     constructor(
         props: Props<P, Component<P>> | null,
         $vNode: VNodeComponentClass,
