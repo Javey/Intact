@@ -50,4 +50,20 @@ const p = <A slotA={1} />
 // event
 const e1 = <A onFire={num => expectType<number>(num)} />;
 
+interface BProps {
+    value: number
+}
+
+function _B(props: BProps) {
+    return <A />;
+}
+
+const B = Component.functionalWrapper(_B);
+
+const test1 = <B value={1} />
+// @ts-expect-error
+const test2 = <B a={1} />
+// @ts-expect-error
+const test3 = <B value="1" />
+
 function expectType<T>(value: T): void { }

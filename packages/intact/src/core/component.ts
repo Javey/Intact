@@ -53,7 +53,8 @@ type NoInfer<T> = [T][T extends any ? 0 : never];
 export abstract class Component<
     P extends {} = {},
     E extends {} = {},
-    B extends {} = {}
+    B extends {} = {},
+    S extends {} = {},
 > extends Event<P, E, LifecycleEvents<Component<P, E>>> implements ComponentClass<P> {
     static readonly template: Template | string;
     static readonly defaults: () => object = () => ({});

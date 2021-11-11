@@ -65,6 +65,11 @@ class AA extends Component<AProps, AEvents> {
         // @ts-expect-error
         this.trigger('b', '1');
         this.trigger('b', 1);
+
+        this.on('a', () => { });
+        this.on('b', (data) => {
+            expectType<number>(data);
+        });
     }
 }
 
@@ -105,6 +110,9 @@ class A<T extends AProps, E extends AEvents> extends Component<T, E> {
         this.on('$change:a', (v, o) => {
             expectType<string>(v); 
         });
+        this.on('$receive:a', (v, o) => {
+            expectType<string>(v); 
+        });
 
         this.on('$receive:children', vNodes => {
             expectType<Children>(vNodes);
@@ -127,6 +135,11 @@ class A<T extends AProps, E extends AEvents> extends Component<T, E> {
         // @ts-expect-error
         this.trigger('b', '1');
         this.trigger('b', 1);
+
+        this.on('a', () => { });
+        this.on('b', (data) => {
+            expectType<number>(data);
+        });
     }
 }
 
