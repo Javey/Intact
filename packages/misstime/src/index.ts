@@ -1,5 +1,6 @@
 export * from './utils/types';
 export {
+    VNode,
     getTypeForVNodeElement,
     createVNode,
     createElementVNode,
