@@ -40,6 +40,10 @@ type VNodeComponentClassMaybeWithVueInstance = VNodeComponentClass<ComponentClas
 type IntactVueNextProps<P, E> = Readonly<P>
     & Readonly<Omit<HTMLAttributes, keyof P>>
     & Readonly<{
+        [K in keyof P as `on$change:${string & K}`]?:
+            (oldValue: P[K], newValue: P[K]) => void
+    }>
+    & Readonly<{
         [K in keyof E as `on${Capitalize<string & K>}`]?:
             (...args: any[] & E[K]) => void
     }>

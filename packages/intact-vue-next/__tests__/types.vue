@@ -46,6 +46,9 @@ const Test = defineComponent({
         },
         b(n: number) {
 
+        },
+        c(a: string, b: string) {
+
         }
     },
     render() {
@@ -59,6 +62,9 @@ const Test = defineComponent({
         // @ts-expect-error
         <IntactComponent name="1" a={1} />;
         <IntactComponent name="1" class="a" onClick={this.a} />;
+        // @ts-expect-error
+        <IntactComponent name="1" on$change:name={this.b} />;
+        <IntactComponent name="1" on$change:name={this.c} />;
 
         return <Test onHello={this.$forceUpdate} />
     }
