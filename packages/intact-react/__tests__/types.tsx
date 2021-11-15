@@ -27,7 +27,7 @@ const f = <A value={1} a={1} />
 const g = <A value={1} onChangeValue={() => {}} />
 // @ts-expect-error
 const h = <A value={1} onChangeValue={() => {}} onChangeA={() => {}} />
-const i = <A on$change-value={(a, b) => {}} />
+// const i = <A on$change-value={(a, b) => {}} />
 const j = <A onClick={() => {}} />
 // @ts-expect-error
 const k = <A onEvent={() => {}} />

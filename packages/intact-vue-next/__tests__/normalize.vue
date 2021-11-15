@@ -5,6 +5,10 @@
 import {Component} from '../src';
 import {h, defineComponent} from 'vue';
 
+type Props = {
+    name?: string
+}
+
 class IntactComponent extends Component<Props> {
     static template = `<div>{this.get('test')}{this.get('component')}</div>`;
 }

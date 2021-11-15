@@ -33,14 +33,15 @@ type SetupState = {
     instance: Component | null
 }
 
-type VNodeComponentClassMaybeWithVueInstance = VNodeComponentClass<ComponentClass> & {
-    _vueInstance?: ComponentInternalInstance
-}
+type VNodeComponentClassMaybeWithVueInstance = 
+    & VNodeComponentClass<ComponentClass>
+    & {_vueInstance?: ComponentInternalInstance}
 
-type IntactVueNextProps<P, E> = Readonly<P>
+type IntactVueNextProps<P, E> = 
+    & Readonly<P>
     & Readonly<Omit<HTMLAttributes, keyof P>>
     & Readonly<{
-        [K in keyof P as `on$change:${string & K}`]?:
+        [K in keyof P as `onChange:${string & K}`]?:
             (oldValue: P[K], newValue: P[K]) => void
     }>
     & Readonly<{

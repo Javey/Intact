@@ -154,6 +154,24 @@ describe('Intact Vue Next', () => {
             expect(vm.$el.outerHTML).be.eql('<div><div>click</div>2</div>');
         });
 
+        it('render change event', async () => {
+            const changeValue = sinon.spy();
+            class IntactComponent extends Component<{value: string}> {
+                static template = `<div ev-click={this.onClick.bind(this)}>{this.get('value')}</div>`;
+                onClick() {
+                    this.set('value', 'click');
+                }
+            }
+
+            render('<C @change:value="changeValue" v-model="value" />', {
+                C: IntactComponent 
+            }, {value: "test"}, {changeValue});
+
+            dispatchEvent(vm.$el.firstChild, 'click');
+            await nextTick();
+            expect(changeValue.callCount).to.eql(1);
+        });
+
         it('render with multiple events which event names are the same', async () => {
             const click = sinon.spy(() => console.log('click'));
             const changeValue = sinon.spy();

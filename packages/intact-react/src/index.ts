@@ -44,7 +44,7 @@ type IntactReactProps<P, E, B> = Readonly<P> & Readonly<{
     className?: string
     style?: string | Record<string, string | number>
 }> & Readonly<{
-    [K in keyof P as `onChange${Capitalize<string & K>}` | `on$change-${string & K}`]?:
+    [K in keyof P as `onChange${Capitalize<string & K>}`]?:
         (oldValue: P[K], newValue: P[K]) => void
 }> & Readonly<{
     [K in keyof E as `on${Capitalize<string & K>}`]?:

@@ -167,7 +167,16 @@ function normalizeEvents(props: any, key: string, value: EventValue) {
         cb = changeCallback(propName);
     } else {
         key = key.substring(2);
-        name = key[0].toLowerCase() + key.substring(1);
+        if (key === 'Change') {
+            // onChange -> ev-change
+            name = key;
+        } else if (key.startsWith('Change')) {
+            // onChange:name -> ev-$change:name
+            name = `$change${key.substring(6)}`;
+        } else {
+            // onClick -> ev-click
+            name = key[0].toLowerCase() + key.substring(1);
+        }
         if (_isArray) {
             cb = (...args: any[]) => {
                 (value as Function[]).forEach(value => value(...args))

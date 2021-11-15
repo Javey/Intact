@@ -10,8 +10,8 @@ export function render(vNode: ReactElement) {
     ReactDOM.render(vNode, container);
 }
 
-export function createIntactComponent(template: string) {
-    return class extends Component {
+export function createIntactComponent<P = {}, E = {}, B = {}>(template: string) {
+    return class extends Component<P, E, B> {
         static template = template;
     }
 }

@@ -8,7 +8,7 @@ import {
     PropsIntactComponent,
     expect,
 } from './helpers';
-import {Component, createVNode as h, findDomFromVNode} from '../src';
+import {Component, createVNode as h, findDomFromVNode, Props} from '../src';
 import {Component as ReactComponent, ReactNode, Fragment} from 'react';
 import ReactDOM from 'react-dom';
 
@@ -200,23 +200,23 @@ describe('Intact React', () => {
                 expect(click.callCount).to.eql(3);
             });
 
-            it('normalize bloks', () => {
-                class C extends Component {
+            it('normalize blocks', () => {
+                class C extends Component<{}, {}, {footer: null}> {
                     static template = (`<div>{this.get('children')}<b:footer /></div>`);
                 }
 
-                render(<C slot-footer={<span>footer</span>}>children</C>);
+                render(<C slotFooter={<span>footer</span>}>children</C>);
                 expect(container.innerHTML).to.eql('<div>children<span>footer</span>#</div>');
 
-                render(<C slot-footer={'footer'}>children</C>);
+                render(<C slotFooter={'footer'}>children</C>);
                 expect(container.innerHTML).to.eql('<div>childrenfooter</div>');
             });
 
             it('normalize scope blocks', () => {
-                class C extends Component {
+                class C extends Component<{}, {}, {footer: number}> {
                     static template = (`<div>{this.get('children')}<b:footer params={1} /></div>`);
                 }
-                render(<C slot-footer={(i: number) => <span>footer{i}</span>}>children</C>);
+                render(<C slotFooter={(i: number) => <span>footer{i}</span>}>children</C>);
 
                 expect(container.innerHTML).to.eql('<div>children<span>footer1</span>#</div>');
             });
@@ -270,21 +270,23 @@ describe('Intact React', () => {
             });
 
             it('render block to intact functional component', () => {
-                class Demo extends Component {
+                class Demo extends Component<{}, {}, {test: null}> {
                     static template = `<div><b:test /></div>`;
                 }
-                const Test = Component.functionalWrapper(function(props) {
+                const Test = Component.functionalWrapper(function(props: Props<{slotTest: null}, Demo>) {
                     return h(Demo, props);
                 });
-                render(<Test slot-test={<span>test</span>} />);
+                render(<Test slotTest={<span>test</span>} />);
                 expect(container.innerHTML).to.eql('<div><span>test</span>#</div>');
             });
 
             it('render block to firsthand intact component', () => {
-                const C = createIntactComponent(`<div><b:test params={1} />{this.get('children')}</div>`);
+                const C = createIntactComponent<{}, {}, {test: number}>(
+                    `<div><b:test params={1} />{this.get('children')}</div>`
+                );
                 render(
                     <ChildrenIntactComponent>
-                        <C slot-test={(v: any) => <div>{v}</div>}>
+                        <C slotTest={(v: any) => <div>{v}</div>}>
                             <div>2</div>
                         </C>
                     </ChildrenIntactComponent>
@@ -293,8 +295,10 @@ describe('Intact React', () => {
             });
 
             it('render block witch value is text node', () => {
-                const C = createIntactComponent(`<div><b:test />{this.get('children')}</div>`);
-                render(<C slot-test={<Fragment>test</Fragment>} />);
+                const C = createIntactComponent<{}, {}, {test: null}>(
+                    `<div><b:test />{this.get('children')}</div>`
+                );
+                render(<C slotTest={<Fragment>test</Fragment>} />);
                 expect(container.innerHTML).to.eql('<div>test</div>');
             });
 

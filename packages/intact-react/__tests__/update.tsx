@@ -143,7 +143,7 @@ describe('Intact React', () => {
 
         it('the updated lifecycle of intact should be called after all children has updated when call its update method directly', async () => {
             const updated = sinon.spy();
-            class Test extends Component {
+            class Test extends Component<{}, {}, {test: number}> {
                 static template = `<div ref="a"><b:test params={[this.get('v')]} /></div>`;
                 static defaults() {
                     return {v: 1};
@@ -156,7 +156,7 @@ describe('Intact React', () => {
             const instance = renderApp(function() {
                 return (
                     <Test 
-                        slot-test={(v: number) => {
+                        slotTest={(v: number) => {
                             return v === 1 ?
                                 <SimpleReactComponent>{v}</SimpleReactComponent> :
                                 <i>{v}</i>
@@ -248,11 +248,11 @@ describe('Intact React', () => {
         });
 
         it('update block', async () => {
-            const C = createIntactComponent(`<div><b:test /></div>`);
+            const C = createIntactComponent<{}, {}, {test: null}>(`<div><b:test /></div>`);
             let c: Component;
             const instance = renderApp(function() {
                 return <C ref={(i: any) => c = i}
-                    slot-test={<Fragment><SimpleIntactComponent /></Fragment>}
+                    slotTest={<Fragment><SimpleIntactComponent /></Fragment>}
                 ></C>
             });
 

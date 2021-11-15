@@ -1,7 +1,7 @@
 <template>
     <IntactComponent :test="test" :component="component" :name="1" @xxx="a" />
     <IntactComponent name="1" @hello="b" @test="a" />
-    <Test :name="1" @hello="a">
+    <Test :name="1" @hello="a" @test="b">
         <template v-slot:header="data">
             aaa {{ data.a }}
         </template>
@@ -42,7 +42,7 @@ const Test = defineComponent({
     },
     methods: {
         a() {
-
+            this.$emit('xxx');
         },
         b(n: number) {
 
@@ -63,8 +63,8 @@ const Test = defineComponent({
         <IntactComponent name="1" a={1} />;
         <IntactComponent name="1" class="a" onClick={this.a} />;
         // @ts-expect-error
-        <IntactComponent name="1" on$change:name={this.b} />;
-        <IntactComponent name="1" on$change:name={this.c} />;
+        <IntactComponent name="1" onChange:name={this.b} />;
+        <IntactComponent name="1" onChange:name={this.c} />;
 
         return <Test onHello={this.$forceUpdate} />
     }
