@@ -9,6 +9,8 @@ import {
     Props,
     ComponentClass,
     callAll,
+    isFragment,
+    VNode as IntactVNode,
 } from 'intact';
 import {
     ComponentOptions,
@@ -17,6 +19,8 @@ import {
     Comment,
     ComponentInternalInstance,
     HTMLAttributes,
+    VNode,
+    Fragment,
 } from 'vue';
 import {normalize, normalizeChildren} from './normalize';
 import {functionalWrapper} from './functionalWrapper';
@@ -52,6 +56,7 @@ type IntactVueNextProps<P, E> =
 let currentInstance: Component | null = null;
 const [pushMountedQueue, popMountedQueue] = createStack<Function[]>();
 const [pushInstance, popInstance] = createStack<Component<any, any>>();
+const fakeSubTree = createVNode(Comment);
 
 export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> {
     static __cache: IntactComponentOptions | null = null;
@@ -116,44 +121,57 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                 }
 
                 const mountedQueue = pushMountedQueue([]);
-                const subTree = createVNode(Comment);
+                // const subTree = createVNode(Comment);
                 const parentComponent = getIntactParent(vueInstance.parent);
                 const isSVG = parentComponent ? parentComponent.$SVG : false;
 
                 if (!vueInstance.isMounted) {
-                    vueInstance.subTree = subTree;
-
+                    // use fakeSubTree, because when we mount vue element in intact,
+                    // Vue need the property on calling setScopeId
+                    vueInstance.subTree = fakeSubTree;
                     vNode._vueInstance = vueInstance;
 
                     mount(vNode, null, parentComponent, isSVG, null, mountedQueue);
                     const instance = vNode.children as Component;
                     instance.isVue = true;
 
+                    const [subTree, elements] = createSubTree(instance);
+                    vueInstance.subTree = subTree;
+
                     // hack the nodeOps of Vue to create the real dom instead of a comment
-                    const element = findDomFromVNode(vNode, true) as IntactDom;
+                    let index = 0;
                     const documentCreateComment = document.createComment;
                     document.createComment = () => {
-                        document.createComment = documentCreateComment;
+                        const element = elements[index];
+                        if (++index === elements.length) {
+                            document.createComment = documentCreateComment;
+                        }
+                        // scope id
+                        _setScopeId(element);
                         return element as Comment;
                     };
 
-                    // scope id
-                    _setScopeId(element);
+                    return subTree;
                 } else {
-                    const instance = setupState.instance;
-                    const lastVNode = instance!.$vNode;
+                    const instance = setupState.instance as Component;
+                    const lastVNode = instance.$vNode;
                     patch(lastVNode, vNode, this.$el.parentElement!, parentComponent, isSVG, null, mountedQueue, false);
-                    // element may have chagned
-                    const element = findDomFromVNode(vNode, true) as IntactDom;
-                    const oldSubTree = vueInstance.subTree;
-                    if (oldSubTree.el !== element) {
-                        oldSubTree.el = element;
-                        // set scope id
-                        _setScopeId(element);
-                    }
-                }
 
-                return subTree;
+                    // element may have chagned
+                    // only check if the component returns only one vNode
+                    const [subTree, elements] = createSubTree(instance);
+                    if (elements.length === 1) {
+                        const element = elements[0];
+                        const oldSubTree = vueInstance.subTree;
+                        if (oldSubTree.el !== element) {
+                            oldSubTree.el = element;
+                            // set scope id
+                            _setScopeId(element);
+                        }
+                    }
+
+                    return subTree;
+                }
             },
 
             mounted() {
@@ -275,4 +293,22 @@ function getIntactParent(parent: ComponentInternalInstance | null) {
     }
 
     return null;
+}
+
+function createSubTree(instance: Component) {
+    const lastInput = instance.$lastInput!;
+    const elements: IntactDom[] = [];
+    let subTree: VNode;
+    if (isFragment(lastInput)) {
+        const children = (lastInput.children as IntactVNode[]);
+        subTree = createVNode(Fragment, null, children.map((vNode) => {
+            elements.push(findDomFromVNode(vNode, true) as IntactDom);
+            return createVNode(Comment, {key: vNode.key!});
+        }));
+    } else {
+        elements.push(findDomFromVNode(lastInput, true) as IntactDom);
+        subTree = createVNode(Comment);
+    }
+
+    return [subTree, elements] as const;
 }

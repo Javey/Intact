@@ -440,5 +440,20 @@ describe('Intact React', () => {
             instance.setState({show: false});
             expect(container.innerHTML).to.eql('<div><div>2</div>#</div>');
         });
+
+        describe('Multiple vNodes Component', () => {
+            class Test extends Component {
+                static $doubleVNodes = true;
+                static template = `<template><div>1</div><div>2</div></template>`;
+            }
+
+            it('remove component', () => {
+                const instance = renderApp(function() {
+                    return this.state.show ? <Test /> : null;
+                }, {show: true});;
+
+                instance.setState({show: false});
+            });
+        });
     });
 });

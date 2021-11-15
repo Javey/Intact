@@ -153,6 +153,16 @@ describe('Intact React', () => {
             expect(container.innerHTML).to.eql('<div>test</div>');
         });
 
+        it('render component that returns multipe vNodes', () => {
+            class Test extends Component {
+                static $doubleVNodes = true;
+                static template = `<template><div>1</div><div>2</div></template>`;
+            }
+
+            render(<Test />);
+            expect(container.innerHTML).to.eql('<div>1</div><div>2</div>');
+        });
+
         describe('Normalize', () => {
             it('normalize events', () => {
                 type Props = {value: number};

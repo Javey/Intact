@@ -396,6 +396,16 @@ describe('Intact Vue Next', () => {
             expect(vm.$el.outerHTML).to.eql('<div>test</div>');
         });
 
+        it('render component that returns multiple vNodes', async () => {
+           class Test extends Component {
+                static template = `<template><div>1</div><div>2</div></template>`;
+            }
+
+            render('<div><Test /></div>', {Test});
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div><div>1</div><div>2</div></div>');
+        });
+
         describe('Functional Component', () => {
             it('render functional component which wrap intact component', async () => {
                 const Test = Component.functionalWrapper(function(props: any) {
@@ -449,7 +459,6 @@ describe('Intact Vue Next', () => {
                 await nextTick();
                 expect(vm.$el.outerHTML).to.eql('<div><div>Intact Component</div></div>');
             });
-
         });
     });
 });

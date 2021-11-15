@@ -71,6 +71,9 @@ export class Component<
     static normalize = normalizeChildren;
     static functionalWrapper = functionalWrapper;
     static contextType = Context;
+    // if the flag is true, it indicate the component returns 2 vNodes,
+    // only support two, becasue kpc components don't return vNodes exceed 2.
+    static $doubleVNodes = false;
 
     public context!: any;
     public state!: any;
@@ -83,6 +86,7 @@ export class Component<
     public $reactProviders!: Map<Provider<any>, any>;
     private $parentPromises!: FakePromises | null;
     private $elementRef!: RefObject<HTMLElement>;
+    private $elementAlternateRef!: RefObject<HTMLElement>;
     private $isReact!: boolean;
     private $parentElement!: HTMLElement;
 
@@ -125,6 +129,9 @@ export class Component<
             }
 
             this.$elementRef = createRef<HTMLElement>();
+            if ((this.constructor as typeof Component).$doubleVNodes) {
+                this.$elementAlternateRef = createRef<HTMLElement>();
+            }
             this.$isReact = true;
 
             const promises = this.$promises = new FakePromises();
@@ -146,10 +153,10 @@ export class Component<
                 providers.set(type, type._context._currentValue);
             } else if (tag === 3) { // HostRoot
                 /**
-                 * React will update from root and if root has pendingContext, it will compare
+                 * React will update from root, if root has pendingContext, it will compare
                  * the last value and the current value to change `didPerformWorkStatckCursor`,
                  * if the cursor is true, all children will be updated
-                 * @FIXME: Maybe we can add all Consumer to wrap the placeholder element
+                 * @FIXME: Maybe we can use all Consumer to wrap the placeholder element
                  * 
                  * always let hasContextChanged return true to make React update the component,
                  * even if it props has not changed
@@ -173,10 +180,10 @@ export class Component<
             }
         }
 
-        return createElement('template', {
-            ref: this.$elementRef,
-            'data-intact-react': '',
-        });
+        const vNode = createTemplateVNode(this.$elementRef, '1');
+        return (this.constructor as typeof Component).$doubleVNodes ?
+            [vNode, createTemplateVNode(this.$elementAlternateRef, '2')] :
+            vNode;
     }
 
     componentDidMount() {
@@ -197,14 +204,18 @@ export class Component<
         this.$render(null, vNode, parentElement, placeholder.nextElementSibling, this.$mountedQueue);
 
         this.$done(() => {
-            const element = findDomFromVNode(vNode, true) as Element;
-            // parentElement.replaceChild(element, placeholder);
-            parentElement.removeChild(placeholder);
-
-            // replace some properties like React do
-            const fiber = precacheFiberNode(element, placeholder);
-            updateFiberProps(element, placeholder);
-            fiber.stateNode = element;
+            handleElementOnMounted(
+                parentElement,
+                placeholder,
+                findDomFromVNode(vNode, true) as HTMLElement
+            );
+            if ((this.constructor as typeof Component).$doubleVNodes) {
+                handleElementOnMounted(
+                    parentElement,
+                    this.$elementAlternateRef.current!,
+                    findDomFromVNode(vNode, false) as HTMLElement
+                );
+            }
         });
     }
 
@@ -271,4 +282,21 @@ function getMountedQueue(parent: Component | null): Function[] {
         }
     }
     return [];
+}
+
+function createTemplateVNode(ref: RefObject<HTMLElement>, key: string) {
+    return createElement('template', {
+        ref,
+        key,
+        'data-intact-react': '',
+    });
+}
+
+function handleElementOnMounted(parentElement: HTMLElement, placeholder: HTMLElement, element: HTMLElement) {
+    parentElement.removeChild(placeholder);
+
+    // replace some properties like React do
+    const fiber = precacheFiberNode(element, placeholder);
+    updateFiberProps(element, placeholder);
+    fiber.stateNode = element;
 }
