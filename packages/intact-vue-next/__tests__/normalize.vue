@@ -1,17 +1,17 @@
 <template>
-    <IntactComponent :test="test" :component="component" />
+    <IntactComponent :test="test" :component="component"/>
 </template>
-<script lang="ts">
+<script lang="tsx">
 import {Component} from '../src';
-import {h} from 'vue';
+import {h, defineComponent} from 'vue';
 
-class IntactComponent extends Component {
+class IntactComponent extends Component<Props> {
     static template = `<div>{this.get('test')}{this.get('component')}</div>`;
 }
 
-export default {
+export default defineComponent({
     components: {
-        IntactComponent,
+        IntactComponent
     },
     data() {
         return {
@@ -19,5 +19,5 @@ export default {
             component: Component.normalize(h(IntactComponent))
         }
     }
-}
+});
 </script>

@@ -37,17 +37,18 @@ type VNodeComponentClassMaybeWithVueInstance = VNodeComponentClass<ComponentClas
     _vueInstance?: ComponentInternalInstance
 }
 
-type IntactVueNextProps<P> = Readonly<P> & Readonly<Omit<HTMLAttributes, keyof P>>
+type IntactVueNextProps<P, E> = Readonly<P>
+    & Readonly<Omit<HTMLAttributes, keyof P>>
+    & Readonly<{
+        [K in keyof E as `on${Capitalize<string & K>}`]?:
+            (...args: any[] & E[K]) => void
+    }>
 
 let currentInstance: Component | null = null;
 const [pushMountedQueue, popMountedQueue] = createStack<Function[]>();
 const [pushInstance, popInstance] = createStack<Component<any, any>>();
 
-export class Component<
-    P = {},
-    E = {},
-    B = {},
-> extends IntactComponent<P, E, B> {
+export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> {
     static __cache: IntactComponentOptions | null = null;
 
     static get __vccOpts(): IntactComponentOptions {
@@ -172,7 +173,7 @@ export class Component<
     private isVue: boolean = false;
 
     // for Vue infers types
-    public $props!: IntactVueNextProps<P>;
+    public $props!: IntactVueNextProps<P, E>;
 
     constructor(
         props: Props<P, Component<P>> | null | undefined,
