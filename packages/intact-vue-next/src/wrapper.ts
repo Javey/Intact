@@ -17,6 +17,7 @@ import {
     RendererNode,
     ComponentInternalInstance,
     SuspenseBoundary,
+    cloneVNode,
 } from 'vue';
 import type {Component} from './';
 
@@ -82,7 +83,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         } else if (!parentDom) {
             parentDom = document.createDocumentFragment() as any; 
         }
-        const {vnode} = vNode.props!;
+        const vnode = getVueVNode(vNode);
         patch(null, vnode, parentDom, anchor, getParent(this), null, this.$SVG);
 
         // add dom to the $lastInput for findDomFromVNode
@@ -98,7 +99,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         // force: boolean
     ): void {
         const {vnode: lastVnode} = lastVNode.props!;
-        const {vnode: nextVnode} = vNode.props!;
+        const nextVnode = getVueVNode(vNode);
         patch(lastVnode, nextVnode, parentDom, anchor, getParent(this), null, this.$SVG);
 
         this.$lastInput.dom = nextVnode.el;
@@ -125,4 +126,43 @@ function getParent(instance: Wrapper) {
     // should not hit this
     /* istanbul ignore next */
     return null
+}
+
+function getVueVNode(vNode: VNode) {
+    const props = vNode.props!;
+    let vnode = props.vnode;
+    // if we reuse the vNode, clone it
+    if (vnode.el) {
+        vnode = cloneVNode(vnode);
+    }
+    
+    let shouldAssign = true;
+    for (let key in props) {
+        if (key === 'vnode') continue;
+        let _props = vnode.props;
+        if (shouldAssign) {
+            // props may be a EMPTY_OBJ, but we can not get its reference,
+            // so we use a flag to handle it
+            _props = vnode.props = {..._props};
+            shouldAssign = false;
+            // should change patchFlag to let Vue full diff props
+            vnode.patchFlag |= 16;
+        }
+        const value = props[key];
+        // is event
+        if (key === 'className') {
+            _props.class = value;
+        // } else if (key === 'style') {
+            // _props.style = {..._props.style, ...value};
+        } else if (key.substr(0, 3) === 'ev-') {
+            const name = key.substr(3);
+            _props[`on` + name[0].toUpperCase() + name.substr(1)] = value;
+        } else {
+            _props[key] = value;
+        }
+    }
+
+    vNode.props = {...props, vnode};
+
+    return vnode;
 }

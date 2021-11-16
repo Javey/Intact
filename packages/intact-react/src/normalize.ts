@@ -42,7 +42,7 @@ export function normalize(vNode: ReactNode): VNodeAtom | VNodeAtom[] {
         return normalizeChildren((vNode as ReactElement).props.children);
     }
 
-    const ret = createComponentVNode(4, Wrapper, {vnode: vNode}, (vNode as any).key);
+    const ret = createComponentVNode(4, Wrapper, {vnode: vNode}, (vNode as ReactElement).key);
 
     // transition has two functions
     // 1. prevent Intact from removing the real dom,

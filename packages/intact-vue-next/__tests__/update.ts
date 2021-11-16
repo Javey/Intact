@@ -383,5 +383,24 @@ describe('Intact Vue Next', () => {
             expect(vm.$refs.c.forceUpdate).to.be.exist;
             expect(vm.$refs.d).to.be.null;
         });
+
+        describe('Multiple vNodes Component', () => {
+            class Test extends Component {
+                static $doubleVNodes = true;
+                static template = `<template><div>1</div><div>2</div></template>`;
+            }
+
+            it('remove component', async () => {
+                render('<div><Test v-if="show" /></div>', {Test }, {show: true});
+
+                vm.show = false;
+                await nextTick();
+                expect(vm.$el.innerHTML).to.eql('<!--v-if-->');
+
+                vm.show = true;
+                await nextTick();
+                expect(vm.$el.innerHTML).to.eql('<div>1</div><div>2</div>');
+            });
+        });
     });
 });

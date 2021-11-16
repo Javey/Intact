@@ -297,6 +297,8 @@ function handleElementOnMounted(parentElement: HTMLElement, placeholder: HTMLEle
 
     // replace some properties like React do
     const fiber = precacheFiberNode(element, placeholder);
-    updateFiberProps(element, placeholder);
+    // if we return a React element directly, we can not replace its props by placeholder's props,
+    // otherwise its event props will be removed
+    // updateFiberProps(element, placeholder);
     fiber.stateNode = element;
 }

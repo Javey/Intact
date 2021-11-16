@@ -1,5 +1,5 @@
 import {ComponentClass, createVNode, VNode, VNodeComponentClass, Props, removeVNodeDom, IntactDom, TransitionHooks} from 'intact';
-import {ReactNode, ReactElement, Component as ReactComponent, createContext, createElement} from 'react';
+import {ReactNode, ReactElement, Component as ReactComponent, createContext, createElement, cloneElement} from 'react';
 import {unstable_renderSubtreeIntoContainer, render, findDOMNode} from 'react-dom';
 import type {Component} from './';
 import {FakePromise} from './fakePromise';
@@ -106,31 +106,25 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         const instance = this;
         const container = this.container;
 
-        let vnode = vNode.props!.vnode as ReactElement;
+        let vnode = getReactElement(vNode);
         /**
          * pass the $parent as value instead of parentComponent
          * because parentComponent is the the toplevel component and
          * not always equal to the $parent 
-         * e.g. <A><B><div><C /></B></A>
+         * e.g. <A><B><div><C /></div></B></A>
          */
         vnode = createElement(Context.Provider, {value: parent}, vnode);
 
         // if the parent component has providers, pass them to subtree
         const providers = parentComponent.$reactProviders;
         providers.forEach((value, provider) => {
-            vnode = createElement(provider, {value}, vnode);    
+            vnode = createElement(provider, {value}, vnode); 
         });
 
         this.isEmptyReactComponent = false;
         const promise = new FakePromise(resolve => {
             unstable_renderSubtreeIntoContainer(
                 parentComponent,
-                /**
-                 * pass the $parent as value instead of parentComponent
-                 * because parentComponent is the the toplevel component and
-                 * not always equal to the $parent 
-                 * e.g. <A><B><div><C /></B></A>
-                 */
                 vnode,
                 container,
                 function(this: Element | ReactComponent) {
@@ -227,3 +221,30 @@ function rewriteParentElementApi(parentElement: Element & {_hasRewrite?: boolean
         parentElement._hasRewrite = true;
     }
 }
+
+function getReactElement(vNode: VNode): ReactElement {
+    const props = vNode.props!;
+    const vnode = props.vnode as ReactElement;
+    // react vNode has been frozen, so we must clone it to change
+    let _props: Record<string, any> | null = null;
+    for (let key in props) {
+        if (key === 'vnode') continue;
+        if (!_props) _props = {};
+
+        const value = props[key];
+        if (key.substr(0, 3) === 'ev-') {
+            _props[eventsMap[key as keyof typeof eventsMap]] = value;
+        } else {
+            _props[key] = value;
+        }
+    }
+
+    return _props ? cloneElement(vnode, _props) : vnode;
+}
+
+const eventsMap = {
+    'ev-click': 'onClick',
+    'ev-contextmenu': 'onContextMenu',
+    'ev-mouseenter': 'onMouseEnter',
+    'ev-mouseleave': 'onMouseLeave',
+};

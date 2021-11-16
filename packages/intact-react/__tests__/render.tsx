@@ -8,7 +8,7 @@ import {
     PropsIntactComponent,
     expect,
 } from './helpers';
-import {Component, createVNode as h, findDomFromVNode, Props} from '../src';
+import {Component, createVNode as h, findDomFromVNode, Props, VNode, directClone} from '../src';
 import {Component as ReactComponent, ReactNode, Fragment} from 'react';
 import ReactDOM from 'react-dom';
 
@@ -73,6 +73,20 @@ describe('Intact React', () => {
             );
 
             (container.firstElementChild!.firstElementChild! as HTMLElement).click();
+            expect(click.callCount).to.eql(1);
+        });
+
+        it('render event of react element that return by intact component directly', () => {
+            const click = sinon.spy((event: Event) => {
+                console.log('click', event);
+                expect((event.target as HTMLElement).tagName).to.eql('SPAN');
+            });
+            class Test extends Component {
+                static template = `<template>{this.get('children')}</template>`;
+            }
+            render(<Test><span onClick={click}>click</span></Test>);
+
+            (container.firstElementChild! as HTMLElement).click();
             expect(click.callCount).to.eql(1);
         });
 
@@ -161,6 +175,28 @@ describe('Intact React', () => {
 
             render(<Test />);
             expect(container.innerHTML).to.eql('<div>1</div><div>2</div>');
+        });
+
+        it('should render new props those are added in intact', () => {
+            const onClick = sinon.spy(() => console.log('click'));
+            class Test extends Component {
+                static template(this: Test) {
+                    const children = directClone(this.get('children') as VNode);
+                    const props = {
+                        'ev-click': onClick,
+                        className: 'test',
+                        ...children.props,
+                    };
+                    children.props = props;
+
+                    return children;
+                }
+            }
+            render(<Test><div onClick={(e) => console.log(e)}>click</div></Test>);
+            expect(container.innerHTML).to.eql('<div class="test">click</div>#');
+
+            (container.firstElementChild as HTMLDivElement).click();
+            expect(onClick.callCount).to.eql(1);
         });
 
         describe('Normalize', () => {

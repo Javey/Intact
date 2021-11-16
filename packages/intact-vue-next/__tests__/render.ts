@@ -1,4 +1,10 @@
-import {Component} from '../src';
+import {
+    Component,
+    createVNode as h,
+    ComponentFunction,
+    directClone,
+    VNode
+} from '../src';
 import {
     dispatchEvent,
     createIntactComponent,
@@ -10,7 +16,6 @@ import {
     reset,
     nextTick,
 } from './helpers';
-import {createVNode as h, ComponentFunction} from 'intact';
 import {h as v, DefineComponent} from 'vue';
 import Normalize from './normalize.vue';
 
@@ -399,12 +404,35 @@ describe('Intact Vue Next', () => {
         it('render component that returns multiple vNodes', async () => {
            class Test extends Component {
                 static template = `<template><div>1</div><div>2</div></template>`;
+                static $doubleVNodes = true;
             }
 
             render('<div><Test /></div>', {Test});
-            await nextTick();
             expect(vm.$el.outerHTML).to.eql('<div><div>1</div><div>2</div></div>');
         });
+
+        it('should render new props those are added in intact', () => {
+            const onClick = sinon.spy(() => console.log('click'));
+            class Test extends Component {
+                static template(this: Test) {
+                    const children = directClone(this.get('children') as VNode);
+                    const props = {
+                        'ev-click': onClick,
+                        className: 'test',
+                        ...children.props,
+                    };
+                    children.props = props;
+
+                    return children;
+                }
+            }
+            render('<Test><div>click</div></Test>', {Test});
+            expect(vm.$el.outerHTML).to.eql('<div class="test">click</div>');
+
+            (vm.$el as HTMLDivElement).click();
+            expect(onClick.callCount).to.eql(1);
+        });
+
 
         describe('Functional Component', () => {
             it('render functional component which wrap intact component', async () => {
