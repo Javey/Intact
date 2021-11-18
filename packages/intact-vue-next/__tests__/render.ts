@@ -433,7 +433,6 @@ describe('Intact Vue Next', () => {
             expect(onClick.callCount).to.eql(1);
         });
 
-
         describe('Functional Component', () => {
             it('render functional component which wrap intact component', async () => {
                 const Test = Component.functionalWrapper(function(props: any) {

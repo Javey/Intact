@@ -124,10 +124,10 @@ function getEventName(propName: string) {
                 return `ev-change`;
             } else if (eventName.startsWith('Change')) {
                 // e.g. onChangeValue -> ev-$change:value
-                return `ev-$change:${capitalize(eventName.substring(6))}`;
+                return `ev-$change:${lowerFirst(eventName.substring(6))}`;
             } else {
                 // e.g. onClick
-                return `ev-${capitalize(eventName.replace(/-/g, ':'))}`;
+                return `ev-${lowerFirst(eventName.replace(/-/g, ':'))}`;
             }
         }
     }
@@ -140,7 +140,7 @@ function cache(fn: (str: string) => string) {
     }
 }
 
-const capitalize = cache((str: string) => {
+const lowerFirst = cache((str: string) => {
     return str.charAt(0).toLowerCase() + str.slice(1);
 });
 

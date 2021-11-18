@@ -58,8 +58,9 @@ const [pushMountedQueue, popMountedQueue] = createStack<Function[]>();
 const [pushInstance, popInstance] = createStack<Component<any, any>>();
 
 export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> {
-    static __cache: IntactComponentOptions | null = null;
+    static $cid = 'IntactVueNext';
     static $doubleVNodes = false;
+    static __cache: IntactComponentOptions | null = null;
 
     static get __vccOpts(): IntactComponentOptions {
         const Ctor = this as typeof Component;
@@ -70,6 +71,9 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
         return (Ctor.__cache = {
             name: Ctor.displayName || Ctor.name,
             Component: Ctor,
+            // Don't inherit attributes, becasue kpc component has do it.
+            // https://v3.vuejs.org/guide/component-attrs.html#attribute-inheritance
+            inheritAttrs: false,
 
             setup(props, setupContext) {
                 const setupState: SetupState = {instance: null};
