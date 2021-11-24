@@ -63,7 +63,7 @@ export function normalize(vnode: VNodeChildAtom): VNodeAtom {
         vNode = createComponentVNode(4, Wrapper, {vnode}, vnode.key as Key);
     }
 
-    // tell Vue that this is a read only object, and don't reactive it
+    // tell Vue that this is a read only object, and don't make it reactive
     (vNode as any).__v_isReadonly = true;
 
     return vNode;

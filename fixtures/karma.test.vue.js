@@ -1,6 +1,11 @@
+const moduleAlias = require('module-alias');
 const webpack = require('webpack');
 const path = require('path');
-const {VueLoaderPlugin} = require('vue-loader');
+const {VueLoaderPlugin} = require('vue-legacy-loader');
+
+moduleAlias.addAliases({
+    'vue': path.resolve(__dirname, '../node_modules/vue-legacy'),
+});
 
 const isDebug = !(process.env.UPDATE || process.env.CI || process.env.PRUNE);
 
@@ -8,10 +13,10 @@ module.exports = function(config) {
     config.set({
         browsers: !isDebug ? ['ChromeHeadless'] : undefined,
         files: [
-            path.resolve(__dirname, 'test.index.ts'),
+            path.resolve(__dirname, '../packages/intact-vue/__tests__/index.ts'),
         ],
         preprocessors: {
-            [path.resolve(__dirname, 'test.index.ts')]: ['webpack', 'sourcemap'],
+            [path.resolve(__dirname, '../packages/intact-vue/__tests__/index.ts')]: ['webpack', 'sourcemap'],
             '**/__snapshots__/**/*.md': ['snapshot'],
         },
         webpack: {
@@ -20,40 +25,15 @@ module.exports = function(config) {
                 rules: [
                     {
                         test: /\.tsx?/,
-                        // exclude: [
-                            // path.resolve(__dirname, '../packages/intact-vue-next'),
-                        // ],
                         loader: 'ts-loader',
                         options: {
-                            configFile: path.resolve(__dirname, '../tsconfig.json'),
+                            configFile: path.resolve(__dirname, '../packages/intact-vue/tsconfig.json'),
                             appendTsSuffixTo: [/.vue$/],
                         }
                     },
-                    // {
-                        // test: /packages\/intact-vue-next\/.*\.tsx?/,
-                        // include: [
-                            // path.resolve(__dirname, '../packages/intact-vue-next'),
-                        // ],
-                        // loader: 'ts-loader',
-                        // options: {
-                            // appendTsSuffixTo: [/.vue$/],
-                            // configFile: path.resolve(__dirname, '../packages/intact-vue-next/tsconfig.json'),
-                        // }
-                    // },
-                    // {
-                        // test: /packages\/intact-react\/.*\.tsx?/,
-                        // include: [
-                            // path.resolve(__dirname, '../packages/intact-react'),
-                        // ],
-                        // loader: 'ts-loader',
-                        // options: {
-                            // configFile: path.resolve(__dirname, '../packages/intact-react/tsconfig.json'),
-                        // }
-                    // },
                     {
                         test: /\.tsx?$/,
-                        include: /packages\/[\w\-]+\/src\/.*\.ts$/,
-                        // include: /packages\/vdt\/src\/.*\.ts$/,
+                        include: /packages\/intact-vue\/src\/.*\.ts$/,
                         enforce: 'post',
                         use: {
                             loader: 'istanbul-instrumenter-loader',
@@ -78,9 +58,7 @@ module.exports = function(config) {
                     'intact': path.resolve(__dirname, '../packages/intact/src/index.ts'),
                     'vdt': path.resolve(__dirname, '../packages/vdt/src/index.ts'),
                     'vdt-compiler': path.resolve(__dirname, '../packages/compiler/src/index.ts'),
-                    'intact-vue-next': path.resolve(__dirname, '../packages/intact-vue-next/src/index.ts'),
-                    'vue$': 'vue/dist/vue.esm-bundler.js',
-                    'vue-legacy$': 'vue-legacy/dist/vue.esm.js',
+                    'vue$': 'vue-legacy/dist/vue.esm.js',
                 }
             },
             devtool: 'inline-source-map',

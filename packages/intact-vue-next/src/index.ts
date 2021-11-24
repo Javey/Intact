@@ -197,7 +197,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
     static normalize = normalizeChildren;
 
     public vueInstance: ComponentInternalInstance | undefined;
-    private isVueNext: boolean = false;
+    private $isVueNext: boolean = false;
 
     // for Vue infers types
     public $props!: IntactVueNextProps<P, E>;
@@ -209,14 +209,14 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
         $mountedQueue: Function[],
         $parent: ComponentClass | null
     ) {
-        super(props as any, $vNode, $SVG, $mountedQueue, $parent);
+        super(props, $vNode, $SVG, $mountedQueue, $parent);
         const vuePublicInstance = $vNode._vueInstance;
         this.vueInstance = vuePublicInstance;
         if (vuePublicInstance) {
             // set the instance to the setupState of vueIntance.$
             // ps: setupState is @internal in vue
             (vuePublicInstance as any).setupState.instance = this;
-            this.isVueNext = true;
+            this.$isVueNext = true;
         }
         // disable async component 
         this.$inited = true;
