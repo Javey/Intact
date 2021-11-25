@@ -63,6 +63,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         // mountedQueue: Function[],
         // force: boolean
     ): void {
+        debugger;
         // const {vnode: lastVnode} = lastVNode.props!;
         // const nextVnode = getVueVNode(vNode);
         // patch(lastVnode, nextVnode, parentDom, anchor, getParent(this), null, this.$SVG);

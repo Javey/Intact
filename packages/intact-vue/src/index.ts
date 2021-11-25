@@ -9,14 +9,15 @@ import {
     VNode,
 } from 'intact';
 import Vue, {ComponentOptions} from 'vue';
-import {normalize} from './normalize';
+import {normalize, isBoolean} from './normalize';
+import {noop} from 'intact-shared';
 export * from 'intact';
 
 export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> implements Vue {
     // If cid does not exist, Vue will treat it as an async component 
     static cid = 'IntactVue';
     // Vue will read props from Constructor's options
-    static options = (Vue as any).options;
+    static options = {...(Vue as any).options, inheritAttrs: false};
 
     static $cid = 'IntactVue';
     static $doubleVNodes = false;
@@ -94,14 +95,18 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
     ) {
         const vnode = props && (props as any)._parentVnode;
         if (vnode) {
-            const vNode = normalize(vnode) as VNodeComponentClass;
-            super({} as P, vNode, $SVG, [], $parent || null);
+            const vNode = normalize(vnode) as VNodeComponentClass<this>;
+            super(vNode.props as P, vNode, $SVG, [], $parent || null);
 
             this.$isVue = true;
             this._vnode = {};
             this.$options = props as ComponentOptions<Vue>;
             this.$options.render = h => {
-                mount(vNode, null, null, false, null, []);
+                // debugger;
+                this.$init(vNode.props as Props<P, this>);
+                vNode.children = this;
+                this.$render(null, vNode, null as any, null, []);
+                // mount(vNode, null, null, false, null, [])
 
                 const element = findDomFromVNode(vNode, false) as IntactDom;
                 const nativeCreateComment = document.createComment;
@@ -114,6 +119,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
             };
 
             Vue.prototype._init.call(this, props);
+
             // disable async component 
             this.$inited = true;
         } else {
@@ -132,6 +138,9 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
             // this.$render(null, this.$vNode, null as any, null, this.$mountedQueue); 
             // this.$el = this.$lastInput!.dom;
             Vue.prototype.$mount.call(this, lastVNode, nextVNode);
+            // make it patchable to add native events and setScopeId
+            this._vnode.tag = 'div';
+
             return this;
         } else {
             super.$mount(lastVNode as any, nextVNode);
@@ -143,7 +152,5 @@ const prototype = Component.prototype as any;
 prototype._render = Vue.prototype._render;
 prototype._update = Vue.prototype._update;
 prototype.__patch__ = Vue.prototype.__patch__;
-
-function isBoolean(o: any): o is boolean {
-    return o === true || o === false;
-}
+// mock api
+prototype.$on = noop;

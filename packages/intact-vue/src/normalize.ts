@@ -1,13 +1,26 @@
-import {VNode as VueVNode} from 'vue';
-import {isNullOrUndefined, isStringOrNumber, isArray} from 'intact-shared';
+import {VNode as VueVNode, VNodeData} from 'vue';
+import {isNullOrUndefined, isStringOrNumber, isArray, hasOwn} from 'intact-shared';
 import type {Component} from './';
-import {createComponentVNode, VNode, Key, Blocks} from 'intact';
+import {
+    createComponentVNode,
+    VNode,
+    Key,
+    TypeDefs,
+    TypePrimitive,
+    TypeObject,
+    Blocks,
+} from 'intact';
 import {Wrapper} from './wrapper';
 
 export type VNodeAtom = VNode | null | undefined | string | number;
+type TypeDefValue = TypePrimitive | TypePrimitive[] | TypeObject
+type EventValue = Function | Function[]
+type VueVNodeAtom = VueVNode | null | undefined | string | number | boolean;
+type VueScopedSlotReturnValue = VueVNodeAtom | VueVNodeAtom[] | VueScopedSlotReturnValue[];
 
-export function normalize(vnode: VueVNode | null | undefined): VNodeAtom {
+export function normalize(vnode: VueVNodeAtom): VNodeAtom {
     if (isNullOrUndefined(vnode)) return vnode;
+    if (isBoolean(vnode)) return String(vnode);
     if (isStringOrNumber(vnode)) return vnode;
     if (vnode.text !== undefined) {
         return vnode.text;
@@ -25,8 +38,8 @@ export function normalize(vnode: VueVNode | null | undefined): VNodeAtom {
     return vNode;
 }
 
-export function normalizeChildren(vnodes: VueVNode[]) {
-    const loop = (vnodes: VueVNode[]): VNodeAtom[] | VNodeAtom => {
+export function normalizeChildren(vnodes: VueScopedSlotReturnValue) {
+    const loop = (vnodes: VueScopedSlotReturnValue): VNodeAtom[] | VNodeAtom => {
         if (isArray(vnodes)) {
             const ret: VNodeAtom[] = [];
             vnodes.forEach(vnode => {
@@ -64,23 +77,29 @@ function normalizeProps(vnode: VueVNode) {
             let value = attrs[key];
             if (propTypes) {
                 const camelizedKey = camelize(key);
+                if (hasOwn.call(propTypes, camelizedKey)) {
+                    value = normalizeBoolean(propTypes, key, camelizedKey, value);
+                    key = camelizedKey;
+                }
             }
             
             props[key] = value;
         }
     }
 
-    normalizeClassName(vnode, props);
-    normalizeSlots(vnode, props);
+    normalizeClassName(data, props);
+    normalizeStyle(data, props);
+    normalizeSlots(componentOptions!.children, data!.scopedSlots, props);
+    normalizeEvents(componentOptions!.listeners as Record<string, EventValue>, props);
 
     return props;
 }
 
-function normalizeClassName(vnode: VueVNode, props: any) {
-    const data = vnode.data;
+function normalizeClassName(data: VueVNode['data'], props: any) {
     if (data) {
         if (data.staticClass) {
             props.className = data.staticClass;
+            delete data.staticClass;
         }
         if (data.class) {
             if (!props.className) {
@@ -88,26 +107,138 @@ function normalizeClassName(vnode: VueVNode, props: any) {
             } else {
                 props.className += ' ' + stringifyClass(data.class);
             }
+            delete data.class;
         }
     }
 }
 
-function normalizeSlots(vnode: VueVNode, props: any) {
-    const slots = resolveSlots(vnode.componentOptions!.children); 
-    const {default: _default, ...rest} = slots;
-
-    if (_default) {
-        props.children = normalizeChildren(_default);
+function normalizeStyle(data: VueVNode['data'], props: any) {
+    let style;
+    if (data) {
+        if (data.style) {
+            style = getStyleBinding(data.style);
+            delete data.style;
+        }
+        if (data.staticStyle) {
+            style = {...data.staticStyle, ...style};
+            delete data.staticStyle;
+        }
     }
 
+    if (style) {
+        props.style = style;
+    }
+}
+
+function normalizeBoolean(
+    propTypes: TypeDefs<Record<string, TypeDefValue>>,
+    key: string,
+    camelizedKey: string,
+    value: any
+) {
+    let tmp;
+    if (
+        (
+            // value is Boolean
+            (tmp = propTypes[camelizedKey]) === Boolean ||
+            tmp && (
+                // value contains Boolean
+                isArray(tmp) && tmp.indexOf(Boolean) > -1 ||
+                (tmp = (tmp as TypeObject).type) && (
+                    // value.type is Boolean
+                    tmp === Boolean ||
+                    // value.type contains Boolean
+                    isArray(tmp) && tmp.indexOf(Boolean) > -1
+                )
+            )
+        ) &&
+        (value === '' || value === key)
+    ) {
+        value = true;
+    }
+
+    return value;
+}
+
+function normalizeEvents(listeners: Record<string, EventValue> | undefined, props: any) {
+    if (listeners) {
+        for (let key in listeners) {
+            let name;
+            let value = listeners[key];
+            let cb = value;
+            const _isArray = isArray(value);
+            const changeCallback = (propName: string) => (v: any) => {
+                // const modifiersKey = `${propName === 'value' ? 'model' : propName}Modifiers`;
+                // const {number, trim} = props[modifiersKey] || EMPTY_OBJ;
+                // if (trim) {
+                    // v = String(v).trim();
+                // } else if (number) {
+                    // v = Number(v);
+                // }
+                if (_isArray) {
+                    (value as Function[]).forEach(value => value(v))
+                } else {
+                    (value as Function)(v);
+                }
+            };
+
+            if (key === 'input') {
+                // is a v-model directive of vue
+                name = `$model:value`;
+                cb = changeCallback('value');
+            } else if (key.startsWith('update:')) {
+                // delegate update:prop(sync modifier) to $change:prop
+                // propName has been camelized by Vue, don't do this again
+                // key = `$change:${camelize(key.substr(7))}`;
+                const propName = key.substr(7);
+                // if (name.indexOf('-') > -1) continue;
+                name= `$model:${propName}`;
+                cb = changeCallback(propName);
+            } else {
+                if (key.startsWith('change:')) {
+                    name = `$change:${key.substr(7)}`;
+                } else {
+                    name = key;
+                }
+                if (_isArray) {
+                    cb = (...args: any[]) => {
+                        (value as Function[]).forEach(value => value(...args))
+                    }
+                }
+            }
+
+            props[`ev-${name}`] = cb;
+        }
+    }
+}
+
+function normalizeSlots(children: VueVNode[] | undefined, scopedSlots: VNodeData['scopedSlots'], props: any) {
+    const slots = resolveSlots(children); 
+
     let blocks: Blocks | null = null;
-    if (rest) {
-        blocks = {};
-        for (const key in rest) {
-            blocks[key] = function() {
-                return normalizeChildren(rest[key]);
+    for (const key in slots) {
+        const slot = slots[key];
+        if (key === 'default') {
+            props.children = normalizeChildren(slot);
+            continue;
+        }
+        if (!blocks) blocks = {};
+        blocks[key] = function() {
+            return normalizeChildren(slot);
+        }
+    }
+
+    if (scopedSlots) {
+        for (const key in scopedSlots) {
+            const slot = scopedSlots[key]!;
+            if (!blocks) blocks = {};
+            blocks[key] = function(parent, data: any) {
+                return normalizeChildren(slot(data));
             }
         }
+    }
+
+    if (blocks) {
         props.$blocks = blocks;
     }
 }
@@ -197,7 +328,7 @@ function stringifyObject(value: Record<string, any>) {
     return res;
 }
 
-function cached(fn: (str: string) => string) {
+function cached(fn: (str: string) => any) {
     const cache = Object.create(null);
     return function(str: string) {
         const hit = cache[str];
@@ -211,4 +342,44 @@ function cached(fn: (str: string) => string) {
 const camelizeRE = /-(\w)/g
 const camelize = cached((str) => {
     return str.replace(camelizeRE, (_, c) => c ? c.toUpperCase() : '');
+});
+
+export function isBoolean(o: any): o is boolean {
+    return o === true || o === false;
+}
+
+function getStyleBinding(style: NonNullable<VNodeData['style']>) {
+    if (isArray(style)) {
+        return toObject(style);
+    }
+    if (typeof style === 'string') {
+        return parseStyleText(style);
+    }
+
+    return style;
+}
+
+function toObject(arr: object[]) {
+    const res = {};
+    for (let i = 0; i < arr.length; i++) {
+        if (arr[i]) {
+            Object.assign(res, arr[i]);
+        }
+    }
+
+    return res;
+}
+
+const listDelimiter = /;(?![^(]*\))/g;
+const propertyDelimiter = /:(.+)/;
+const parseStyleText = cached((cssText: string) => {
+    const res: Record<string, string> = {};
+    cssText.split(listDelimiter).forEach(function (item) {
+        if (item) {
+            var tmp = item.split(propertyDelimiter);
+            tmp.length > 1 && (res[tmp[0].trim()] = tmp[1].trim());
+        }
+    });
+
+    return res;
 });

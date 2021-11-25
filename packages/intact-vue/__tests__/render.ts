@@ -121,7 +121,183 @@ describe('Intact Vue Legacy', () => {
             expect(vm.$el.outerHTML).to.eql('<div>{"a":true,"b":true,"c":true,"d":true}</div>');
         });
 
+        it('render with event', async () => {
+            class Test extends Component<{}, {click: []}> {
+                static template = `<div ev-click={this.onClick.bind(this)}>click</div>`;
+                onClick() {
+                    this.trigger('click')
+                }
+            }
+            render('<div><C @click="onClick" />{{ a }}</div>', {
+                C: Test 
+            }, {a: 1}, {
+                onClick(this: any) {
+                    this.a++;
+                }
+            });
+
+            dispatchEvent(vm.$el.firstElementChild!, 'click');
+            await nextTick();
+            expect(vm.$el.outerHTML).be.eql('<div><div>click</div>2</div>');
+        });
+
+        it('render change event', async () => {
+            const changeValue = sinon.spy();
+            class IntactComponent extends Component<{value: string}> {
+                static template = `<div ev-click={this.onClick.bind(this)}>{this.get('value')}</div>`;
+                onClick() {
+                    this.set('value', 'click');
+                }
+            }
+
+            render('<C @change:value="changeValue" v-model="value" />', {
+                C: IntactComponent 
+            }, {value: "test"}, {changeValue});
+
+            dispatchEvent(vm.$el, 'click');
+            await nextTick();
+            expect(changeValue.callCount).to.eql(1);
+            expect((vm as any).value).to.eql('click');
+        });
+
+        it('render with multiple events which event names are the same', async () => {
+            const click = sinon.spy(() => console.log('click'));
+            const changeValue = sinon.spy();
+            class IntactComponent extends Component<{value: string}, {click: []}> {
+                static template = `<div ev-click={this.onClick.bind(this)}>{this.get('value')}</div>`;
+                onClick() {
+                    this.set('value', 'click');
+                    this.trigger('click');
+                }
+            }
+            render('<div><C @click.native="click" v-model="value" />{{ value }}</div>', {
+                C: Vue.extend({
+                    template: `<IntactComponent v-model="value1"
+                        @click="click"
+                        @input="changeValue"
+                        @change:value="changeValue"
+                    />`,
+                    components: {
+                        // IntactComponent: {
+                            // template: `<div>test</div>`,
+                            // // props: {
+                                // // value: {
+                                    // // required: true, 
+                                // // }
+                            // // }
+                        // },
+                        IntactComponent,
+                    },
+                    methods: {click, changeValue},
+                    props: {
+                        value: {
+                            required: true
+                        }
+                    },
+                    data() {
+                        return {
+                            value1: this.value
+                        }
+                    },
+                    watch: {
+                        value1(v) {
+                            this.$emit('input', v);
+                        }
+                    }
+                })
+            }, {value: "test"}, {click});
+
+            dispatchEvent(vm.$el.firstElementChild!, 'click');
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div><div>click</div>click</div>');
+            expect(click.callCount).to.eql(2);
+            expect(changeValue.callCount).to.eql(2);
+        });
+
+        it('render with slots', () => {
+            class Test extends Component {
+                static template = `<div>{this.get('children')}<b:footer></b:footer></div>`;
+            }
+            render('<C><template slot="footer"><div>footer</div></template><div>children</div></C>', {
+                C: Test
+            });
+
+            expect(vm.$el.outerHTML).be.eql('<div><div>children</div><div>footer</div></div>');
+        });
+
+        it('render undefined slot', () => {
+            class Test extends Component {
+                static template = `<div>{this.get('children')}</div>`;
+            }
+            render('<C><template #footer><div><C>test</C></div></template></C>', {
+                C: Test 
+            });
+
+            expect(vm.$el.outerHTML).be.eql('<div></div>');
+            reset();
+
+            render('<C><C><template slot="footer"><div>test</div></template></C></C>', {
+                C: Test
+            });
+
+            expect(vm.$el.outerHTML).be.eql('<div><div></div></div>');
+        });
+
+        it('render with scoped slots', () => {
+            render('<C><template slot-scope="{test}"><div>{{ test }}</div></template></C>', {
+                // C: createIntactComponent(`<div>{self.get('default')('test')}</div>`)
+                C: createIntactComponent(`<div><b:default params={{test: 'test'}} /></div>`)
+            });
+
+            expect(vm.$el.outerHTML).be.eql('<div><div>test</div></div>');
+        });
+
+        it('should silent when we try to treat a default scope slot as children', () => {
+            const consoleWarn = console.warn;
+            const warn = console.warn = sinon.spy();
+
+            render(`<C><template slot-scope="item">{{ item.a }}</template></C>`, {
+                C: createIntactComponent(`<div><b:default params={{a: 1}} /></div>`)
+            });
+
+            expect(vm.$el.outerHTML).to.eql('<div>1</div>');
+            expect(warn.callCount).to.eql(0);
+            console.warn = consoleWarn;
+        });
+
+        it('ignore empty slot in vue, this is the default behavior of vue', () => {
+            render('<C><template slot="slot"></template></C>', {
+                C: createIntactComponent(`<div><b:slot>test</b:slot></div>`)
+            });
+
+            expect(vm.$el.outerHTML).be.eql('<div>test</div>');
+        });
+
+        it('render style and class', () => {
+            render(`<C style="color: red;" :style="{fontSize: '12px'}" class="a" :class="{b: true}"/>`, {
+                C: createIntactComponent(`<div style={{...this.get('style'), fontWeight: "bold"}} class={this.get('className') + ' c'}>test</div>`)
+            });
+
+            expect(vm.$el.outerHTML).be.eql('<div class="a b c" style="color: red; font-size: 12px; font-weight: bold;">test</div>');
+        });
+
+        it('render async intact component', () => {
+            class Test extends Component {
+                static template = `<div>test</div>`;
+                init() {
+                    return new Promise<void>((resolve) => {
+                        resolve();
+                    });
+                }
+            }
+            render('<C />', {
+                C: Test 
+            });
+
+            expect(vm.$el.outerHTML).be.eql('<div>test</div>');
+        });
     });
+
     it('test', () => {
         const TestA = Vue.extend({
             template: '<div>test</div>'
