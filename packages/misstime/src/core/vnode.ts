@@ -20,6 +20,8 @@ import {
     VNodeRef,
     TransitionHooks,
     TransitionPosition,
+    VNodeComponentClass,
+    VNodeComponentFunction,
 } from '../utils/types';
 import {
     isNullOrUndefined,
@@ -77,6 +79,29 @@ export class VNode<T extends VNodeTag = VNodeTag> implements IVNode<T> {
     }
 }
 
+// export function createVNode<
+    // T extends ComponentConstructor<U>,
+    // U extends ComponentClass<P>,
+    // P extends {}
+// >(
+    // tag: T,
+    // props?: Props<P, U> | null,
+    // children?: Children | null
+// ): VNodeComponentClass<U>;
+// export function createVNode<
+    // T extends ComponentFunction<P, R>,
+    // P extends {},
+    // R extends Element | ComponentClass
+// >(
+    // tag: T,
+    // props: Props<P, R> | null,
+    // children?: Children | null
+// ): VNodeComponentFunction<T>;
+// export function createVNode<T extends string>(
+    // tag: T,
+    // props?: Props<any, Element> | null,
+    // children?: Children | null
+// ): VNode<T>;
 export function createVNode<T extends VNodeTag>(
     tag: T,
     props?: VNodeProps<T> | null,

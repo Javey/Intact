@@ -9,8 +9,9 @@ import {
     VNode,
 } from 'intact';
 import Vue, {ComponentOptions} from 'vue';
-import {normalize, isBoolean} from './normalize';
+import {normalize, normalizeChildren, isBoolean} from './normalize';
 import {noop} from 'intact-shared';
+import {functionalWrapper} from './functionalWrapper';
 export * from 'intact';
 
 export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> implements Vue {
@@ -18,9 +19,13 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
     static cid = 'IntactVue';
     // Vue will read props from Constructor's options
     static options = {...(Vue as any).options, inheritAttrs: false};
+    // Need by devtools
+    static config = Vue.config;
 
     static $cid = 'IntactVue';
     static $doubleVNodes = false;
+    static normalize = normalizeChildren;
+    static functionalWrapper = functionalWrapper;
 
     // hack for VueConstructor
     static extend: any;
@@ -35,7 +40,6 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
     static compile: any;
     static observable: any;
     static util: any;
-    static config: any;
     static version: any;
 
     public $isVue?: boolean;
@@ -106,9 +110,15 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                 this.$init(vNode.props as Props<P, this>);
                 vNode.children = this;
                 this.$render(null, vNode, null as any, null, []);
-                // mount(vNode, null, null, false, null, [])
 
-                const element = findDomFromVNode(vNode, false) as IntactDom;
+                let element = findDomFromVNode(vNode, true) as any;
+                if ((this.constructor as typeof Component).$doubleVNodes) {
+                    const second = findDomFromVNode(vNode, false) as IntactDom;
+                    const container = document.createDocumentFragment();
+                    container.appendChild(element);
+                    container.appendChild(second);
+                    element = container;
+                }
                 const nativeCreateComment = document.createComment;
                 document.createComment = () => {
                     document.createComment = nativeCreateComment;

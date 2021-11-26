@@ -11,6 +11,7 @@ import {
     Blocks,
 } from 'intact';
 import {Wrapper} from './wrapper';
+import type {VueVNodeWithSlots} from './functionalWrapper';
 
 export type VNodeAtom = VNode | null | undefined | string | number;
 type TypeDefValue = TypePrimitive | TypePrimitive[] | TypeObject
@@ -64,7 +65,7 @@ export function normalizeChildren(vnodes: VueScopedSlotReturnValue) {
     return ret;
 }
 
-function normalizeProps(vnode: VueVNode) {
+export function normalizeProps(vnode: VueVNode) {
     const {componentOptions, data} = vnode; 
     const attrs = data!.attrs;
     const propTypes = (componentOptions!.Ctor as typeof Component).typeDefs;
@@ -89,8 +90,9 @@ function normalizeProps(vnode: VueVNode) {
 
     normalizeClassName(data, props);
     normalizeStyle(data, props);
-    normalizeSlots(componentOptions!.children, data!.scopedSlots, props);
+    normalizeSlots(vnode, componentOptions!.children, data!.scopedSlots, props);
     normalizeEvents(componentOptions!.listeners as Record<string, EventValue>, props);
+    normalizeRef(data!, vnode.context!.$refs, props);
 
     return props;
 }
@@ -196,9 +198,9 @@ function normalizeEvents(listeners: Record<string, EventValue> | undefined, prop
                 cb = changeCallback(propName);
             } else {
                 if (key.startsWith('change:')) {
-                    name = `$change:${key.substr(7)}`;
+                    name = `$change:${camelize(key.substr(7))}`;
                 } else {
-                    name = key;
+                    name = camelize(key);
                 }
                 if (_isArray) {
                     cb = (...args: any[]) => {
@@ -212,8 +214,8 @@ function normalizeEvents(listeners: Record<string, EventValue> | undefined, prop
     }
 }
 
-function normalizeSlots(children: VueVNode[] | undefined, scopedSlots: VNodeData['scopedSlots'], props: any) {
-    const slots = resolveSlots(children); 
+function normalizeSlots(vnode: VueVNodeWithSlots, children: VueVNode[] | undefined, scopedSlots: VNodeData['scopedSlots'], props: any) {
+    const slots = vnode.$slots || resolveSlots(children); 
 
     let blocks: Blocks | null = null;
     for (const key in slots) {
@@ -240,6 +242,36 @@ function normalizeSlots(children: VueVNode[] | undefined, scopedSlots: VNodeData
 
     if (blocks) {
         props.$blocks = blocks;
+    }
+}
+
+function normalizeRef(data: VNodeData, refs: Vue['$refs'], props: any) {
+    const ref = data.ref;
+    if (ref) {
+        props.ref = function(i: any, isRemove: boolean) {
+            const value = refs[ref];
+            if (!isRemove) {
+                if (data.refInFor) {
+                    if (!isArray(value)) {
+                        refs[ref] = [i];
+                    } else if (value.indexOf(i) < 0) {
+                        value.push(i);
+                    }
+                } else {
+                    refs[ref] = i;
+                }
+            } else {
+                if (isArray(value)) {
+                    var index = value.indexOf(i);
+                    if (~index) {
+                        value.splice(index, 1);
+                    }
+                } else {
+                    refs[ref] = undefined;
+                }
+            }  
+        }
+        props.ref.key = ref;
     }
 }
 

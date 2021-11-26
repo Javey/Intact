@@ -1,6 +1,13 @@
 import {Component} from '../src';
 import {isFunction} from 'intact-shared';
-import Vue, {VueConstructor, ComponentOptions} from 'vue';
+import {
+    default as Vue,
+    VueConstructor,
+    ComponentOptions,
+    CreateElement,
+    VNode as VueVNode,
+    Component as VueComponent,
+} from 'vue';
 
 export function dispatchEvent(target: Element, eventName: string, options?: Object) {
     let event;
@@ -37,8 +44,8 @@ export const WrapperComponent = createIntactComponent(`<template>{this.get('chil
 
 export let vm: Vue;
 export function render(
-    template: string | Function,
-    components: Record<string, VueConstructor | ComponentOptions<Vue>> = {},
+    template: string | ((h: CreateElement) => VueVNode | VueVNode[]),
+    components: Record<string, VueComponent<any, any, any, any>> = {},
     data: object | ((this: any, vm: any) => any) = {}, 
     methods = {},
     lifecycle = {}

@@ -361,20 +361,6 @@ describe('Intact Vue Next', () => {
             expect(click.callCount).to.eql(1);
         });
 
-        it('should not affect render Intact functional component', () => {
-            class Test extends Component {
-                static template = `const C = this.C; <C />`;
-                private C = Component.functionalWrapper(() => {
-                    return h('div', null, 'test');
-                });
-            }
-            render('<C />', {
-                C: Test 
-            });
-
-            expect(vm.$el.outerHTML).to.eql('<div>test</div>');
-        });
-
         it('render component that returns multiple vNodes', () => {
            class Test extends Component {
                 static template = `<template><div>1</div><div>2</div></template>`;
@@ -408,6 +394,20 @@ describe('Intact Vue Next', () => {
         });
 
         describe('Functional Component', () => {
+            it('should not affect render Intact functional component', () => {
+                class Test extends Component {
+                    static template = `const C = this.C; <C />`;
+                    private C = Component.functionalWrapper(() => {
+                        return h('div', null, 'test');
+                    });
+                }
+                render('<C />', {
+                    C: Test 
+                });
+
+                expect(vm.$el.outerHTML).to.eql('<div>test</div>');
+            });
+
             it('render functional component which wrap intact component', () => {
                 const Test = Component.functionalWrapper(function(props: any) {
                     return h(ChildrenIntactComponent, props);

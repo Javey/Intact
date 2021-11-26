@@ -33,7 +33,6 @@ export function functionalWrapper(Component: ComponentFunctionForVue) {
         }
     }
 
-    // Ctor.cid = cid;
     Ctor.displayName = Component.displayName || Component.name;
 
     return Ctor;

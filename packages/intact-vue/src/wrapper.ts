@@ -115,8 +115,7 @@ function getVueVNode(vNode: VNode) {
             delete data.class;
         } else if (key.substr(0, 3) === 'ev-') {
             if (!data.on) data.on = {};
-            const name = key.substr(3);
-            data.on[name.substr(3)] = value;
+            data.on[key.substr(3)] = value;
         } else {
             if (!data.attrs) data.attrs = {};
             data.attrs[key] = value;

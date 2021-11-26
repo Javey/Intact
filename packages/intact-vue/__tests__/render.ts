@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import Test from './test1.vue';
-import {Component, createVNode as h} from '../src';
+import {Component, createVNode as h, directClone, VNode} from '../src';
 import {
     dispatchEvent,
     createIntactComponent,
@@ -12,6 +12,7 @@ import {
     reset,
     nextTick,
 } from './helpers';
+import Normalize from './normalize.vue';
 
 describe('Intact Vue Legacy', () => {
     describe('Render', () => {
@@ -296,27 +297,168 @@ describe('Intact Vue Legacy', () => {
 
             expect(vm.$el.outerHTML).be.eql('<div>test</div>');
         });
-    });
 
-    it('test', () => {
-        const TestA = Vue.extend({
-            template: '<div>test</div>'
+        it('render nested array children', () => {
+            class Test extends Component {
+                static template = `<div>{this.get('content')}</div>`;
+            }
+            render(function(h) {
+                const content = Component.normalize([
+                    h('div', '1'),
+                    [
+                        h('div', '2'),
+                        h('div', '3')
+                    ]
+                ]);
+                return h(Test, {attrs: {content}});
+            });
+
+            expect(vm.$el.outerHTML).to.eql('<div><div>1</div><div>2</div><div>3</div></div>');
         });
 
-        class TestB extends Component {
-            static template() {
-                return h('div', null, 'test');
+        it('render normalize vNode with propperty', () => {
+            const consoleWarn = console.warn;
+            const warn = console.warn = sinon.spy((...args: any[]) => consoleWarn.call(console, ...args));
+
+            const C = Normalize;
+            // no [Vue warn]
+            render(function(h) {
+                return h(C);
+            });
+
+            expect(vm.$el.outerHTML).to.eql('<div><div>test</div><div></div></div>');
+            expect(warn.callCount).to.eql(0);
+            console.warn = consoleWarn;
+        });
+
+        it('render vue vNodes as children', () => {
+            render('<C :children="children" />', {
+                C: ChildrenIntactComponent
+            }, function() {
+                const h = this.$createElement;
+                return {
+                    children: Component.normalize(h('div', 'test'))
+                }
+            });
+
+            expect(vm.$el.outerHTML).to.eql('<div><div>test</div></div>');
+        });
+
+        it('render props which name is hyphenated style', () => {
+            class Test extends Component<{}, {clickComponent: []}> {
+                static template = `<div ev-click={this.click.bind(this)}>{this.get('userName')}</div>`;
+                static typeDefs = {
+                    userName: String
+                };
+                click() {
+                    this.trigger('clickComponent');
+                }
             }
-        }
+            const click = sinon.spy(() => console.log('click'));
+            render('<C user-name="Javey" @click-component="click" />', {
+                C: Test,
+            }, {}, {click});
 
-        const container = document.createElement('div');
-        document.body.appendChild(container);
+            expect(vm.$el.outerHTML).to.eql('<div>Javey</div>');
+            (vm.$el as HTMLElement).click();
+            expect(click.callCount).to.eql(1);
+        });
 
-        const app = new Vue({
-            el: container,
-            // components: {Test: TestA},
-            components: {Test: TestB},
-            template: '<Test><div>test</div></Test>'
+        it('render component that returns multiple vNodes', () => {
+           class Test extends Component {
+                static template = `<template><div>1</div><div>2</div></template>`;
+                static $doubleVNodes = true;
+            }
+
+            render('<div><Test /></div>', {Test});
+            expect(vm.$el.outerHTML).to.eql('<div><div>1</div><div>2</div></div>');
+        });
+
+        it('should render new props those are added in intact', () => {
+            const onClick = sinon.spy(() => console.log('click'));
+            class Test extends Component {
+                static template(this: Test) {
+                    const children = directClone(this.get('children') as VNode);
+                    const props = {
+                        'ev-click': onClick,
+                        className: 'test',
+                        ...children.props,
+                    };
+                    children.props = props;
+
+                    return children;
+                }
+            }
+            render('<Test><div>click</div></Test>', {Test});
+            expect(vm.$el.outerHTML).to.eql('<div class="test">click</div>');
+
+            (vm.$el as HTMLDivElement).click();
+            expect(onClick.callCount).to.eql(1);
+        });
+
+        describe('Functional Component', () => {
+            it('should not affect render Intact functional component', () => {
+                class Test extends Component {
+                    static template = `const C = this.C; <C />`;
+                    private C = Component.functionalWrapper(() => {
+                        return h('div', null, 'test');
+                    });
+                }
+                render('<C />', {
+                    C: Test 
+                });
+
+                expect(vm.$el.outerHTML).to.eql('<div>test</div>');
+            });
+
+            it('render functional component which wrap intact component', () => {
+                const Test = Component.functionalWrapper(function(props: any) {
+                    return h(ChildrenIntactComponent, props);
+                });
+                render('<C class="a" :a="1">test</C>', {
+                    C: Test 
+                });
+
+                expect(vm.$el.outerHTML).be.eql('<div class="a">test</div>');
+            });
+
+            it('render functional component which return multiple vNodes', () => {
+                const Test = Component.functionalWrapper(function(props: any) {
+                    return [
+                        h(ChildrenIntactComponent, props),
+                        h(ChildrenIntactComponent, null, 'two')
+                    ];
+                });
+                render('<div><C class="a" :a="1" ref="a" key="a">test</C></div>', {
+                    C: Test 
+                });
+
+                expect((vm.$refs.a as Vue).$el.innerHTML).to.eql('test');
+                expect(vm.$el.outerHTML).be.eql('<div><div class="a">test</div><div>two</div></div>');
+            });
+
+            it('render blocks in functional component', () => {
+                const Test = Component.functionalWrapper((props: any) => {
+                    return h(createIntactComponent(`<div><b:test /></div>`), props);
+                });
+                render('<C ref="test"><template slot="test"><span>test</span></template></C>', {
+                    C: Test 
+                }, {test: 1});
+
+                expect(vm.$el.outerHTML).be.eql('<div><span>test</span></div>');
+            });
+
+            it('render functional components as Intact component\'s children', () => {
+                const Test = Component.functionalWrapper((props: any)=> {
+                    return h(SimpleIntactComponent);
+                });
+                render('<C><Test /></C>', {
+                    C: ChildrenIntactComponent,
+                    Test,
+                });
+
+                expect(vm.$el.outerHTML).to.eql('<div><div>Intact Component</div></div>');
+            });
         });
     });
 });
