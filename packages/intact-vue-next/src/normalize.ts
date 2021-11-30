@@ -36,9 +36,9 @@ type TypeDefValue = TypePrimitive | TypePrimitive[] | TypeObject
 type VNodeChildAtom = Exclude<VNodeChild, VNodeArrayChildren | void>
 export type VNodeAtom = VNode | null | undefined | string | number;
 
-export function normalize(vnode: VNodeChildAtom): VNodeAtom {
+export function normalize(vnode: VNodeChildAtom | VNode): VNodeAtom {
     if (isInvalid(vnode)) return null;
-    if (isStringOrNumber(vnode)) return vnode;
+    if (isStringOrNumber(vnode) || isIntactVNode(vnode)) return vnode;
 
     const type = vnode.type;
     let vNode: VNode;
@@ -71,6 +71,10 @@ export function normalize(vnode: VNodeChildAtom): VNodeAtom {
 
 export function isIntactComponent(vnode: VueVNode) {
     return !!(vnode.type as IntactComponentOptions).Component;
+}
+
+function isIntactVNode(vNode: any): vNode is VNode {
+    return 'childrenType' in vNode;
 }
 
 export function normalizeChildren(vNodes: VNodeArrayChildren | VNodeChildAtom) {

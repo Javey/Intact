@@ -19,10 +19,10 @@ type EventValue = Function | Function[]
 type VueVNodeAtom = VueVNode | null | undefined | string | number | boolean;
 type VueScopedSlotReturnValue = VueVNodeAtom | VueVNodeAtom[] | VueScopedSlotReturnValue[];
 
-export function normalize(vnode: VueVNodeAtom): VNodeAtom {
+export function normalize(vnode: VueVNodeAtom | VNode): VNodeAtom {
     if (isNullOrUndefined(vnode)) return vnode;
     if (isBoolean(vnode)) return String(vnode);
-    if (isStringOrNumber(vnode)) return vnode;
+    if (isStringOrNumber(vnode) || isIntactVNode(vnode)) return vnode;
     if (vnode.text !== undefined) {
         return vnode.text;
     }
@@ -93,6 +93,7 @@ export function normalizeProps(vnode: VueVNode) {
     normalizeSlots(vnode, componentOptions!.children, data!.scopedSlots, props);
     normalizeEvents(componentOptions!.listeners as Record<string, EventValue>, props);
     normalizeRef(data!, vnode.context!.$refs, props);
+    normalizeKey(data!, vnode, props);
 
     return props;
 }
@@ -275,6 +276,14 @@ function normalizeRef(data: VNodeData, refs: Vue['$refs'], props: any) {
     }
 }
 
+function normalizeKey(data: VNodeData, vnode: VueVNode, props: any) {
+    if (!isNullOrUndefined(data.key)) {
+        props.key = data.key;
+    } else if (!isNullOrUndefined(vnode.key)) {
+        props.key = vnode.key;
+    }
+}
+
 // copy from vue/src/core/instance/render-helpers/resolve-slots.js
 function resolveSlots(children: VueVNode[] | undefined) {
     const slots: any = {}
@@ -314,6 +323,10 @@ function isIntactComponent(vnode: VueVNode) {
     const componentOptions = vnode.componentOptions;
     return componentOptions && 
         (componentOptions.Ctor as unknown as typeof Component).$cid === 'IntactVue';
+}
+
+function isIntactVNode(vNode: any): vNode is VNode {
+    return 'type' in vNode;
 }
 
 function isWhitespace(node: VueVNode) {

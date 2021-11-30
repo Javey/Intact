@@ -1,1 +1,2 @@
 import './render';
+import './update';

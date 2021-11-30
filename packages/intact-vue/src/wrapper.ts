@@ -5,7 +5,8 @@ import {
     VNode,
     IntactDom,
     removeVNodeDom,
-    createVNode
+    createVNode,
+    insertOrAppend,
 } from 'intact';
 import Vue, {
     VNode as VueVNode,
@@ -16,13 +17,15 @@ export interface WrapperProps {
     vnode: VueVNode
 }
 
+type Patch = (oldVnode: VueVNode | null, vnode: VueVNode | null, hydrating: boolean, removeOnly: boolean) => Element;
+
 const _textVNode = Vue.prototype._v('');
 const VueVNode = _textVNode.constructor;
-const patch = Vue.prototype.__patch__;
+const patch = Vue.prototype.__patch__ as Patch;
 
 export class Wrapper implements ComponentClass<WrapperProps> {
     public $inited: boolean = true;
-    public $lastInput: VNode = createVNode('div');
+    public $lastInput: VNode = createVNode('fake-div');
 
     constructor(
         public $props: Props<WrapperProps, ComponentClass<WrapperProps>>,
@@ -49,10 +52,12 @@ export class Wrapper implements ComponentClass<WrapperProps> {
 
         const vnode = getVueVNode(vNode);
         const dom = patch(null, vnode, false, false);
-        parentDom.appendChild(dom);
+        insertOrAppend(parentDom, dom, anchor);
 
         // add dom to the $lastInput for findDomFromVNode
-        this.$lastInput.dom = dom;
+        const lastInput = this.$lastInput;
+        lastInput.dom = dom;
+        lastInput.type |= 8192 /* InUse */
     }
 
     $update(
@@ -63,12 +68,12 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         // mountedQueue: Function[],
         // force: boolean
     ): void {
-        debugger;
-        // const {vnode: lastVnode} = lastVNode.props!;
-        // const nextVnode = getVueVNode(vNode);
-        // patch(lastVnode, nextVnode, parentDom, anchor, getParent(this), null, this.$SVG);
+        // debugger;
+        const {vnode: lastVnode} = lastVNode.props!;
+        const nextVnode = getVueVNode(vNode);
+        const dom = patch(lastVnode, nextVnode, false, false);
 
-        // this.$lastInput.dom = nextVnode.el;
+        this.$lastInput.dom = dom;
     }
 
     $unmount(
@@ -76,6 +81,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         nextVNode: VNodeComponentClass | null
     ): void  {
         // unmount(vNode.props!.vnode, getParent(this), null, !!nextVNode);
+        patch(vNode.props!.vnode, null, false, false);
     }
 }
 

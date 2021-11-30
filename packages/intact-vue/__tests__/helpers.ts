@@ -1,5 +1,5 @@
 import {Component} from '../src';
-import {isFunction} from 'intact-shared';
+import {isFunction, EMPTY_OBJ} from 'intact-shared';
 import {
     default as Vue,
     VueConstructor,
@@ -42,13 +42,13 @@ export const PropsIntactComponent = createIntactComponent(
 );
 export const WrapperComponent = createIntactComponent(`<template>{this.get('children')}</template>`);
 
-export let vm: Vue;
-export function render(
+export let vm: any;
+export function render<Data extends {}, Methods extends {}>(
     template: string | ((h: CreateElement) => VueVNode | VueVNode[]),
-    components: Record<string, VueComponent<any, any, any, any>> = {},
-    data: object | ((this: any, vm: any) => any) = {}, 
-    methods = {},
-    lifecycle = {}
+    components: Record<string, VueComponent<any, any, any, any>> = EMPTY_OBJ,
+    data: (Data | ((this: any, vm: Vue & Data) => Data)) = EMPTY_OBJ, // object | ((this: any, vm: any) => any) = {}, 
+    methods: Methods = EMPTY_OBJ,
+    lifecycle = EMPTY_OBJ 
 ) {
     const container = document.createElement('div');
     document.body.appendChild(container);
@@ -59,7 +59,7 @@ export function render(
         methods,
         [typeof template === 'function' ? 'render' : 'template']: template,
         ...lifecycle,
-    });
+    }) as Vue & Data & Methods;
 }
 
 export function reset() {
