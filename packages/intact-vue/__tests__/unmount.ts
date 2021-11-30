@@ -12,11 +12,10 @@ import {
     nextTick,
 } from './helpers';
 import {createVNode as h, ComponentFunction} from 'intact';
-import {h as v, ComponentPublicInstance, render as vueRender} from 'vue';
 
-describe('Intact Vue Next', () => {
+describe('Intact Vue Legacy', () => {
     describe('Unmount', () => {
-        it('should unmount functional component correctly which returns multiple vNodes that nests Intact component', () => {
+        it('should unmount functional component correctly which returns multiple vNodes that nests Intact component', async () => {
             const Test = Component.functionalWrapper(function(props: any) {
                 const [element1, element2] = props.children;
                 return [
@@ -25,17 +24,21 @@ describe('Intact Vue Next', () => {
                 ];
             });
             render(`
-                <ChildrenIntactComponent>
-                    <Test>
-                        <a>1</a>
-                        <b>2</b>
-                    </Test>
-                </ChildrenIntactComponent>
-            `, {Test, ChildrenIntactComponent});
+                <div>
+                    <ChildrenIntactComponent v-if="show">
+                        <Test><a>1</a><b>2</b></Test>
+                    </ChildrenIntactComponent>
+                </div>
+            `, {Test, ChildrenIntactComponent}, {
+                show: true,
+            });
 
             const container = vm.$el.parentNode;
-            vueRender(null, container);
-            expect(container.childNodes.length).to.eql(0);
+            expect(vm.$el.innerHTML).to.eql('<div><div><a>1</a></div><div><b>2</b></div></div>');
+
+            vm.show = false;
+            await nextTick();
+            expect(vm.$el.innerHTML).to.eql('<!---->');
         });
     });
 });

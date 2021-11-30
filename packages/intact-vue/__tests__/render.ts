@@ -254,7 +254,7 @@ describe('Intact Vue Legacy', () => {
         });
 
         it('should silent when we try to treat a default scope slot as children', () => {
-            const consoleWarn = console.warn;
+            const consoleWarn = console.error;
             const warn = console.warn = sinon.spy();
 
             render(`<C><template slot-scope="item">{{ item.a }}</template></C>`, {
@@ -263,7 +263,7 @@ describe('Intact Vue Legacy', () => {
 
             expect(vm.$el.outerHTML).to.eql('<div>1</div>');
             expect(warn.callCount).to.eql(0);
-            console.warn = consoleWarn;
+            console.error = consoleWarn;
         });
 
         it('ignore empty slot in vue, this is the default behavior of vue', () => {
@@ -316,9 +316,9 @@ describe('Intact Vue Legacy', () => {
             expect(vm.$el.outerHTML).to.eql('<div><div>1</div><div>2</div><div>3</div></div>');
         });
 
-        it('render normalize vNode with propperty', () => {
-            const consoleWarn = console.warn;
-            const warn = console.warn = sinon.spy((...args: any[]) => consoleWarn.call(console, ...args));
+        it('render normalize vNode with propperty', async () => {
+            const consoleError = console.error;
+            const error = console.error = sinon.spy((...args: any[]) => consoleError.call(console, ...args));
 
             const C = Normalize;
             // no [Vue warn]
@@ -326,9 +326,10 @@ describe('Intact Vue Legacy', () => {
                 return h(C);
             });
 
+            await nextTick();
             expect(vm.$el.outerHTML).to.eql('<div><div>test</div><div></div></div>');
-            expect(warn.callCount).to.eql(0);
-            console.warn = consoleWarn;
+            expect(error.callCount).to.eql(0);
+            console.error = consoleError;
         });
 
         it('render vue vNodes as children', () => {

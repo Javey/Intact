@@ -1,4 +1,4 @@
-import {VNode as VueVNode, VNodeData} from 'vue';
+import {default as Vue, VNode as VueVNode, VNodeData} from 'vue';
 import {isNullOrUndefined, isStringOrNumber, isArray, hasOwn} from 'intact-shared';
 import type {Component} from './';
 import {
@@ -19,6 +19,10 @@ type EventValue = Function | Function[]
 type VueVNodeAtom = VueVNode | null | undefined | string | number | boolean;
 type VueScopedSlotReturnValue = VueVNodeAtom | VueVNodeAtom[] | VueScopedSlotReturnValue[];
 
+const _testData = {};
+const _vm = new Vue({data: _testData});
+const __ob__ = (_testData as any).__ob__;
+
 export function normalize(vnode: VueVNodeAtom | VNode): VNodeAtom {
     if (isNullOrUndefined(vnode)) return vnode;
     if (isBoolean(vnode)) return String(vnode);
@@ -31,10 +35,14 @@ export function normalize(vnode: VueVNodeAtom | VNode): VNodeAtom {
     if (isIntactComponent(vnode)) {
         const Ctor = vnode.componentOptions!.Ctor as unknown as typeof Component;
         const props = normalizeProps(vnode);
-        vNode = createComponentVNode(4, Ctor, props, vnode.key as Key);
+        vNode = createComponentVNode(4, Ctor, props, vnode.key as Key, props.ref);
     } else {
         vNode = createComponentVNode(4, Wrapper, {vnode}, vnode.key as Key);
     }
+
+    // let vue don't observe it when it is used as property, ksc-fe/kpc#500
+    // we can not use `vNode._isVue = true`, because it will affect vue-devtools. ksc-fe/kpc#512
+    (vNode as any).__ob__ = __ob__;
 
     return vNode;
 }

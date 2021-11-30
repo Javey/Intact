@@ -12,7 +12,6 @@ import {
     nextTick,
 } from './helpers';
 import {createVNode as h, ComponentFunction} from 'intact';
-import Normalize from './normalize.vue';
 import {default as Vue, CreateElement, PropType} from 'vue';
 
 describe('Intact Vue Legacy', () => {
@@ -238,5 +237,163 @@ describe('Intact Vue Legacy', () => {
             vm.$refs.c.set('show', true);
         });
 
+        it('should update vNode.el of Vue if Intact component updated and return the different dom', async () => {
+            class Test extends Component<{show: boolean}, {hide: []}> {
+                static template = `
+                    const show = this.get('show');
+                    if (!show) return;
+                    <div>show</div>
+                `;
+
+                static defaults() {
+                    return {show: true}
+                }
+
+                hide() {
+                    this.set('show', false);
+                    this.trigger('hide');
+                }
+            }
+
+            render(`<div><C v-if="show" ref="c" @hide="hide" /></div>`, {C: Test}, {show: true}, {
+                hide(this: any) {
+                    this.show = false;
+                }
+            });
+
+            vm.$refs.c.hide();
+
+            await nextTick();
+            expect(vm.$el.innerHTML).to.eql('<!---->');
+        });
+
+        it('call update method on init in Intact component', async () => {
+            class Test extends Component {
+                static template = `<div>test</div>`;
+                init() {
+                    this.forceUpdate();
+                }
+            }
+            render('<C />', { C: Test });
+
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div>test</div>');
+        });
+
+        it('should call update method of vue to update Intact functional component children that created by createVNode', async () => {
+            const consoleWarn = console.warn;
+            const warn = console.warn = sinon.spy(consoleWarn);
+            const C = Component.functionalWrapper(function(props: any) {
+                return h(WrapperComponent, props);
+            });
+            const D = createIntactComponent(`const children = this.get('children'); <div>{children}{children}</div>`);
+            render(function(this: any, v: CreateElement) {
+                return v(D, [v(C, this.test)]);
+            }, undefined, {test: 1});
+
+            expect(vm.$el.outerHTML).to.eql('<div>11</div>');
+
+            vm.test = 2;
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div>22</div>');
+            expect(warn.callCount).to.eql(0);
+            console.warn = consoleWarn;
+        });
+
+        it('should update children which are Intact components of Intact component', async () => {
+            render(`<C><D v-if="show" /><D /></C>`, {
+                C: ChildrenIntactComponent,
+                D: SimpleIntactComponent,
+            }, {show: false});
+
+            vm.show = true;
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div><div>Intact Component</div><div>Intact Component</div></div>');
+
+            vm.show = false;
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div><div>Intact Component</div></div>');
+        });
+
+        it('should update children which are Intact functional components of Intact component', async () => {
+            render(`<C><D v-if="show" /><D /></C>`, {
+                C: ChildrenIntactComponent,
+                D: Component.functionalWrapper(() => {
+                    return h(SimpleIntactComponent);
+                }),
+            }, {show: false});
+
+            vm.show = true;
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div><div>Intact Component</div><div>Intact Component</div></div>');
+
+            vm.show = false;
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div><div>Intact Component</div></div>');
+        });
+
+        it('should update children of Intact component which nested in vue element', async () => {
+            render(`<div><C><div v-if="show">test</div></C></div>`, {
+                C: ChildrenIntactComponent,
+            }, {show: false});
+
+            vm.show = true;
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div><div><div>test</div></div></div>');
+
+            // (window as any).vm = vm;
+            vm.show = false;
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div><div></div></div>');
+        });
+
+        it('should update children of slot in Intact component which nested in vue element', async () => {
+            render(`<C><template v-slot:test>{{ show }}</template></C>`, {
+                C: createIntactComponent(`<div><b:test /></div>`),
+            }, {show: false});
+
+            vm.show = true;
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div>true</div>');
+        });
+
+        it('should handle ref correctly on update block in Intact component', async () => {
+            render('<C ref="c"><template slot="content"><D ref="d" v-if="show" /></template></C>', {
+                C: createIntactComponent(`<div><b:content /></div>`),
+                D: SimpleIntactComponent,
+            }, {show: true});
+
+            expect(vm.$refs.c.forceUpdate).to.be.exist;
+            expect(vm.$refs.d.forceUpdate).to.be.exist;
+
+            vm.$refs.c.forceUpdate();
+            await nextTick();
+            expect(vm.$refs.c.forceUpdate).to.be.exist;
+            expect(vm.$refs.d.forceUpdate).to.be.exist;
+
+            vm.show = false;
+            await nextTick();
+            expect(vm.$refs.c.forceUpdate).to.be.exist;
+            expect(vm.$refs.d).to.be.null;
+        });
+
+        describe('Multiple vNodes Component', () => {
+            class Test extends Component {
+                static $doubleVNodes = true;
+                static template = `<template><div>1</div><div>2</div></template>`;
+            }
+
+            it('remove component', async () => {
+                render('<div><Test v-if="show" /></div>', {Test }, {show: true});
+
+                vm.show = false;
+                await nextTick();
+                expect(vm.$el.innerHTML).to.eql('<!---->');
+
+                vm.show = true;
+                await nextTick();
+                expect(vm.$el.innerHTML).to.eql('<div>1</div><div>2</div>');
+            });
+        });
     });
 });

@@ -11,6 +11,7 @@ import Vue, {ComponentOptions, VNode as VueVNode} from 'vue';
 import {normalize, normalizeChildren, isBoolean} from './normalize';
 import {noop} from 'intact-shared';
 import {functionalWrapper} from './functionalWrapper';
+import {addMeta, rewriteDomApi} from './nodeOps';
 export * from 'intact';
 
 export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> implements Vue {
@@ -106,17 +107,18 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
             this._vnode = {} as VueVNode;
 
             this.$options = props as ComponentOptions<Vue>;
+            const isDoubleVNodes = (this.constructor as typeof Component).$doubleVNodes;
             (props as ComponentOptions<Vue>).render = h => {
                 // debugger;
                 const subTree = h();
-                const isDoubleVNodes = (this.constructor as typeof Component).$doubleVNodes;
                 subTree.data = {
                     hook: {
                         prepatch: (oldVnode: VueVNode, vnode: VueVNode) => {
                             const vNode = normalize(this.$vnode) as VNodeComponentClass<this>;
                             const lastVNode = this.$vNode;
-                            this.$update(lastVNode, vNode, this.$el.parentElement!, null, [], false, true);
+                            this.$vNode = vNode; 
                             vNode.children = this;
+                            this.$update(lastVNode, vNode, this.$el.parentElement!, null, [], false, true);
 
                             // element may have chagned
                             // only check if the component returns only one vNode
@@ -141,11 +143,13 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
 
                         let element = findDomFromVNode(vNode, true) as any;
                         if (isDoubleVNodes) {
+                            const first = element;
                             const second = findDomFromVNode(vNode, false) as IntactDom;
                             const container = document.createDocumentFragment();
-                            container.appendChild(element);
+                            container.appendChild(first);
                             container.appendChild(second);
                             element = container;
+                            addMeta(element, first, second);
                         }
 
                         document.createComment = nativeCreateComment;
@@ -160,11 +164,15 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
 
                 return subTree;
             };
-
             Vue.prototype._init.call(this, props);
 
             // force Vue update Intact component
             (this.$options as any)._renderChildren = true;
+            (this.$options as any).mounted = [() => {
+                if (isDoubleVNodes) {
+                    rewriteDomApi(this.$el as any);
+                }
+            }];
 
             // disable async component 
             this.$inited = true;
