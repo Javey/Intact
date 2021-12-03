@@ -50,14 +50,10 @@ export class Wrapper implements ComponentClass<WrapperProps> {
             parentDom = document.createDocumentFragment() as any; 
         }
 
-        const vnode = getVueVNode(vNode);
-        const dom = patch(null, vnode, false, false);
-        insertOrAppend(parentDom, dom, anchor);
+        const vnode = getVueVNode(this, vNode);
 
-        // add dom to the $lastInput for findDomFromVNode
-        const lastInput = this.$lastInput;
-        lastInput.dom = dom;
-        lastInput.type |= 8192 /* InUse */
+        const dom = this.patch(null, vnode);
+        insertOrAppend(parentDom, dom, anchor);
     }
 
     $update(
@@ -70,10 +66,8 @@ export class Wrapper implements ComponentClass<WrapperProps> {
     ): void {
         // debugger;
         const {vnode: lastVnode} = lastVNode.props!;
-        const nextVnode = getVueVNode(vNode);
-        const dom = patch(lastVnode, nextVnode, false, false);
-
-        this.$lastInput.dom = dom;
+        const nextVnode = getVueVNode(this, vNode);
+        this.patch(lastVnode, nextVnode);
     }
 
     $unmount(
@@ -83,17 +77,35 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         // unmount(vNode.props!.vnode, getParent(this), null, !!nextVNode);
         patch(vNode.props!.vnode, null, false, false);
     }
+
+    private patch(lastVnode: VueVNode | null, nextVnode: VueVNode) {
+        const dom = patch(lastVnode, nextVnode, false, false);
+        const parent = nextVnode.parent!;
+        const data = parent.data as any;
+        if (data.pendingInsert) {
+            const queue = data.queue || (data.queue = []);
+            queue.push.apply(queue, data.pendingInsert);
+            // maybe the pendingInsert has been overwrite
+            data.pendingInsert = queue.slice();
+        }
+
+        // add dom to the $lastInput for findDomFromVNode
+        const lastInput = this.$lastInput;
+        lastInput.dom = dom;
+        lastInput.type |= 8192 /* InUse */
+
+        return dom;
+    }
 }
 
-function getParent(instance: Wrapper) {
+function getParentNode(instance: Wrapper) {
     let $parent = instance.$parent as Component;
 
     do {
-        return $parent;
-        // const vueInstance = $parent.vueInstance;
-        // if (vueInstance) {
-            // return vueInstance;
-        // }
+        const $vnode = $parent.$vnode;
+        if ($vnode) {
+            return $vnode;
+        }
     } while ($parent = $parent.$parent as Component);
 
     // should not hit this
@@ -101,11 +113,11 @@ function getParent(instance: Wrapper) {
     return null
 }
 
-function getVueVNode(vNode: VNode) {
+function getVueVNode(instance: Wrapper, vNode: VNode): VueVNode {
     const props = vNode.props!;
     let vnode = props.vnode;
     // if we reuse the vNode, clone it
-    if (vnode.el) {
+    if (vnode.elm) {
         vnode = cloneVNode(vnode);
     }
     
@@ -129,6 +141,7 @@ function getVueVNode(vNode: VNode) {
     }
 
     vNode.props = {...props, vnode};
+    vnode.parent = getParentNode(instance);
 
     return vnode;
 }

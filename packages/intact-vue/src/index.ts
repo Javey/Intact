@@ -6,6 +6,7 @@ import {
     findDomFromVNode,
     IntactDom,
     VNode,
+    callAll,
 } from 'intact';
 import Vue, {ComponentOptions, VNode as VueVNode} from 'vue';
 import {normalize, normalizeChildren, isBoolean} from './normalize';
@@ -13,6 +14,8 @@ import {noop} from 'intact-shared';
 import {functionalWrapper} from './functionalWrapper';
 import {addMeta, rewriteDomApi} from './nodeOps';
 export * from 'intact';
+
+const [pushMountedQueue, popMountedQueue] = createStack<Function[]>();
 
 export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> implements Vue {
     // If cid does not exist, Vue will treat it as an async component 
@@ -45,7 +48,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
     public $isVue?: boolean;
 
     // Properties need by Vue
-    private _vnode?: VueVNode;
+    public _vnode?: VueVNode;
     public $el!: Element;
     public $options!: ComponentOptions<Vue>;
     public $root!: Vue;
@@ -63,8 +66,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
     public $attrs: any;
     public $listeners: any;
     // hack methods
-    public $forceUpdate: any;
-    public $destroy: any;
+    // public $forceUpdate: any;
     public $set: any;
     public $delete: any;
     public $watch: any;
@@ -74,8 +76,15 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
     public $emit: any;
     public $nextTick: any;
     public $createElement: any;
+
+    // methods on Vue prototype
+    public _render: any;
+
     // private properties on vue
     private _isMounted: any;
+
+    // When we call forceUpdate, $mountedQueue has inited and don't init it again
+    private isForceUpdating!: boolean;
 
     constructor(
         options: any,
@@ -100,8 +109,9 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
     ) {
         const vnode = props && (props as any)._parentVnode;
         if (vnode) {
+            $mountedQueue = pushMountedQueue([]);
             const vNode = normalize(vnode) as VNodeComponentClass<this>;
-            super(vNode.props as P, vNode, $SVG, [], $parent || null);
+            super(vNode.props as P, vNode, $SVG, $mountedQueue, $parent || null);
 
             this.$isVue = true;
             this._vnode = {} as VueVNode;
@@ -109,16 +119,25 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
             this.$options = props as ComponentOptions<Vue>;
             const isDoubleVNodes = (this.constructor as typeof Component).$doubleVNodes;
             (props as ComponentOptions<Vue>).render = h => {
-                // debugger;
+                // (this as any)._watcher.sync = true;
                 const subTree = h();
                 subTree.data = {
                     hook: {
                         prepatch: (oldVnode: VueVNode, vnode: VueVNode) => {
+                            const mountedQueue = this.isForceUpdating ? this.$mountedQueue : pushMountedQueue([]);
                             const vNode = normalize(this.$vnode) as VNodeComponentClass<this>;
                             const lastVNode = this.$vNode;
                             this.$vNode = vNode; 
                             vNode.children = this;
-                            this.$update(lastVNode, vNode, this.$el.parentElement!, null, [], false, true);
+                            this.$update(
+                                lastVNode,
+                                vNode,
+                                this.$el.parentElement!,
+                                null,
+                                mountedQueue,
+                                false,
+                                true,
+                            );
 
                             // element may have chagned
                             // only check if the component returns only one vNode
@@ -139,7 +158,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                     document.createComment = () => {
                         this.$init(vNode.props as Props<P, this>);
                         vNode.children = this;
-                        this.$render(null, vNode, null as any, null, []);
+                        this.$render(null, vNode, null as any, null, $mountedQueue);
 
                         let element = findDomFromVNode(vNode, true) as any;
                         if (isDoubleVNodes) {
@@ -159,8 +178,15 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                 } else {
                     // We have make it patchable in $mounted,
                     // set its tag as 'div' to make them to be same vnodes
-                    subTree.tag = 'div';
+                    subTree.tag = 'fake-div';
                 }
+
+                // set parent always to null, to make Vue call invokeInsertHook
+                // don't overwrite the pendingInsert array
+                Object.defineProperty(subTree, 'parent', {
+                    get() { return null },
+                    set() { }
+                });
 
                 return subTree;
             };
@@ -172,6 +198,13 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                 if (isDoubleVNodes) {
                     rewriteDomApi(this.$el as any);
                 }
+                // if Vue has called the insertedQueue, remove the queue to 
+                // avoid Intact call it again on updating 
+                this.$vnode.data.queue = null;
+                callMountedQueue();
+            }];
+            (this.$options as any).updated = [() => {
+                callMountedQueue();
             }];
 
             // disable async component 
@@ -193,7 +226,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
             // this.$el = this.$lastInput!.dom;
             Vue.prototype.$mount.call(this, lastVNode, nextVNode);
             // make it patchable to add native events and setScopeId
-            this._vnode!.tag = 'div';
+            this._vnode!.tag = 'fake-div';
 
             return this;
         } else {
@@ -211,14 +244,38 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
         fromPrepatch?: boolean,
     ) {
         if (this.$isVue && !fromPrepatch) {
-            const subTree = this.$createElement();
-            subTree.tag = 'div';
-            subTree.data = this._vnode!.data;
-            Vue.prototype._update.call(this, subTree, false); 
+            this.isForceUpdating = true;
+            this._update(this._render(), false); 
+            this.isForceUpdating = false;
         } else {
             super.$update(lastVNode, nextVNode, parentDom, anchor, mountedQueue, force);
         }
     }
+
+    $forceUpdate() {
+        this._update(this._render(), false);
+        // callMountedQueue();
+        // call updated hook
+        const updated = this.$options['updated'] as any;
+        updated.forEach((handler: any) => handler.call(this));
+    }
+
+    $destroy() {
+        Vue.prototype.$destroy.call(this);
+        this.$unmount(this.$vNode, null);
+    }
+
+    // _update(vnode: VueVNode, hydrating: boolean) {
+        // Vue.prototype._update.call(this, vnode, hydrating); 
+        // const data = this.$vnode.data;
+        // const pendingInsert = data.queue;
+        // if (pendingInsert) {
+            // pendingInsert.forEach((vnode: VueVNode) => {
+                // vnode.data!.hook!.insert(vnode);
+            // });
+            // data.queue = null;
+        // }
+    // }
 }
 
 const prototype = Component.prototype as any;
@@ -226,9 +283,38 @@ const vuePrototype = Vue.prototype;
 prototype._render = vuePrototype._render;
 prototype._update = vuePrototype._update;
 prototype.__patch__ = vuePrototype.__patch__;
-prototype.$forceUpdate = vuePrototype.$forceUpdate;
-prototype.$destroy = vuePrototype.$destroy;
+// prototype.$forceUpdate = vuePrototype.$forceUpdate;
+// prototype.$destroy = vuePrototype.$destroy;
 // mock api
 prototype.$on = noop;
 prototype.$off = noop;
+
+function createStack<T>() {
+    const stack: T[] = [];
+
+    function pushStack(item: T) {
+        stack.push(item);
+        console.log('push', stack.length);
+        return item;
+    }
+
+    function popStack() {
+        console.log('pop', stack.length);
+        return stack.pop();
+    }
+
+    return [pushStack, popStack] as const;
+}
+
+function callMountedQueue() {
+    const mountedQueue = popMountedQueue();
+    /* istanbul ignore next */
+    if (process.env.NODE_ENV !== 'production') {
+        if (!mountedQueue) {
+            throw new Error(`"mountedQueue" is undefined, maybe this is a bug of Intact-Vue`);
+        }
+    }
+
+    callAll(mountedQueue!);
+}
 
