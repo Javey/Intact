@@ -7,6 +7,8 @@ import {
     IntactDom,
     VNode,
     callAll,
+    setInstance,
+    validateProps,
 } from 'intact';
 import Vue, {ComponentOptions, VNode as VueVNode} from 'vue';
 import {normalize, normalizeChildren, isBoolean} from './normalize';
@@ -15,7 +17,11 @@ import {functionalWrapper} from './functionalWrapper';
 import {addMeta, rewriteDomApi} from './nodeOps';
 export * from 'intact';
 
-const [pushMountedQueue, popMountedQueue] = createStack<Function[]>();
+let currentInstance: Component | null = null;
+const [pushMountedQueue, popMountedQueue, mountedQueueStack] = createStack<Function[]>();
+
+// for unit test
+export {mountedQueueStack};
 
 export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> implements Vue {
     // If cid does not exist, Vue will treat it as an async component 
@@ -79,12 +85,16 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
 
     // methods on Vue prototype
     public _render: any;
+    public _update: any;
 
     // private properties on vue
     private _isMounted: any;
 
-    // When we call forceUpdate, $mountedQueue has inited and don't init it again
-    private isForceUpdating!: boolean;
+    // When we call forceUpdate, $mountedQueue has inited and don't init it again.
+    private $isForceUpdating!: boolean;
+    // The $parent property conflicts in Intact and Vue, save the real Intact $parent to $parentComponent.
+    private $parentComponent!: Component<any, any, any> | null;
+
 
     constructor(
         options: any,
@@ -111,24 +121,35 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
         if (vnode) {
             $mountedQueue = pushMountedQueue([]);
             const vNode = normalize(vnode) as VNodeComponentClass<this>;
-            super(vNode.props as P, vNode, $SVG, $mountedQueue, $parent || null);
+            const $parent = getIntactParent((props as ComponentOptions<Vue>).parent);
+            super(vNode.props as P, vNode, $SVG, $mountedQueue, $parent);
 
+            if (process.env.NODE_ENV !== 'production') {
+                validateProps(this.$vNode);
+            }
+
+            this.$parentComponent = $parent;
             this.$isVue = true;
             this._vnode = {} as VueVNode;
 
             this.$options = props as ComponentOptions<Vue>;
             const isDoubleVNodes = (this.constructor as typeof Component).$doubleVNodes;
             (props as ComponentOptions<Vue>).render = h => {
-                // (this as any)._watcher.sync = true;
                 const subTree = h();
                 subTree.data = {
                     hook: {
                         prepatch: (oldVnode: VueVNode, vnode: VueVNode) => {
-                            const mountedQueue = this.isForceUpdating ? this.$mountedQueue : pushMountedQueue([]);
+                            const mountedQueue = this.$isForceUpdating ? this.$mountedQueue : pushMountedQueue([]);
                             const vNode = normalize(this.$vnode) as VNodeComponentClass<this>;
                             const lastVNode = this.$vNode;
                             this.$vNode = vNode; 
                             vNode.children = this;
+
+                            if (process.env.NODE_ENV !== 'production') {
+                                validateProps(this.$vNode);
+                            }
+
+                            const reset = this._$setParent();
                             this.$update(
                                 lastVNode,
                                 vNode,
@@ -138,6 +159,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                                 false,
                                 true,
                             );
+                            reset();
 
                             // element may have chagned
                             // only check if the component returns only one vNode
@@ -156,9 +178,13 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                 if (!this._isMounted) {
                     const nativeCreateComment = document.createComment;
                     document.createComment = () => {
+                        document.createComment = nativeCreateComment;
+
+                        const reset = this._$setParent();
                         this.$init(vNode.props as Props<P, this>);
                         vNode.children = this;
                         this.$render(null, vNode, null as any, null, $mountedQueue);
+                        reset();
 
                         let element = findDomFromVNode(vNode, true) as any;
                         if (isDoubleVNodes) {
@@ -170,8 +196,6 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                             element = container;
                             addMeta(element, first, second);
                         }
-
-                        document.createComment = nativeCreateComment;
 
                         return element as Comment;
                     };
@@ -201,10 +225,10 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                 // if Vue has called the insertedQueue, remove the queue to 
                 // avoid Intact call it again on updating 
                 this.$vnode.data.queue = null;
-                callMountedQueue();
+                this._$callMountedQueue();
             }];
             (this.$options as any).updated = [() => {
-                callMountedQueue();
+                this._$callMountedQueue();
             }];
 
             // disable async component 
@@ -212,6 +236,18 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
         } else {
             super(props as P, $vNode, $SVG, $mountedQueue, $parent);
         }
+    }
+
+    $render(
+        lastVNode: VNodeComponentClass<this> | null,
+        nextVNode: VNodeComponentClass<this>,
+        parentDom: Element,
+        anchor: IntactDom | null,
+        mountedQueue: Function[]
+    ): void {
+        const popInstance = pushInstance(this);
+        super.$render(lastVNode, nextVNode, parentDom, anchor, mountedQueue);
+        popInstance();
     }
 
     $mount(el: Element | undefined, hydrating: boolean): this;
@@ -222,8 +258,6 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
     ) {
         if (isBoolean(nextVNode)) {
             // called by Vue
-            // this.$render(null, this.$vNode, null as any, null, this.$mountedQueue); 
-            // this.$el = this.$lastInput!.dom;
             Vue.prototype.$mount.call(this, lastVNode, nextVNode);
             // make it patchable to add native events and setScopeId
             this._vnode!.tag = 'fake-div';
@@ -244,20 +278,19 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
         fromPrepatch?: boolean,
     ) {
         if (this.$isVue && !fromPrepatch) {
-            this.isForceUpdating = true;
-            this._update(this._render(), false); 
-            this.isForceUpdating = false;
+            this.$isForceUpdating = true;
+            this._$update(); 
+            this.$isForceUpdating = false;
         } else {
+            const popInstance = pushInstance(this);
             super.$update(lastVNode, nextVNode, parentDom, anchor, mountedQueue, force);
+            popInstance();
         }
     }
 
     $forceUpdate() {
-        this._update(this._render(), false);
-        // callMountedQueue();
-        // call updated hook
-        const updated = this.$options['updated'] as any;
-        updated.forEach((handler: any) => handler.call(this));
+        this._$update();
+        this._$callMountedQueue();
     }
 
     $destroy() {
@@ -265,17 +298,33 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
         this.$unmount(this.$vNode, null);
     }
 
-    // _update(vnode: VueVNode, hydrating: boolean) {
-        // Vue.prototype._update.call(this, vnode, hydrating); 
-        // const data = this.$vnode.data;
-        // const pendingInsert = data.queue;
-        // if (pendingInsert) {
-            // pendingInsert.forEach((vnode: VueVNode) => {
-                // vnode.data!.hook!.insert(vnode);
-            // });
-            // data.queue = null;
-        // }
-    // }
+    private _$update() {
+        this._update(this._render(), false);
+        const data = this.$vnode.data;
+        const pendingInsert = data.queue;
+        if (pendingInsert) {
+            pendingInsert.forEach((vnode: VueVNode) => {
+                vnode.data!.hook!.insert(vnode);
+            });
+            data.queue = null;
+        }
+    }
+
+    private _$setParent() {
+        if (!this.$isVue) return noop;
+
+        const vueParent = this.$parent;
+        this.$parent = this.$parentComponent;
+        return () => {
+            this.$parent = vueParent;
+        }
+    }
+
+    private _$callMountedQueue() {
+        const reset = this._$setParent();
+        callMountedQueue();
+        reset();
+    }
 }
 
 const prototype = Component.prototype as any;
@@ -303,7 +352,7 @@ function createStack<T>() {
         return stack.pop();
     }
 
-    return [pushStack, popStack] as const;
+    return [pushStack, popStack, stack] as const;
 }
 
 function callMountedQueue() {
@@ -318,3 +367,27 @@ function callMountedQueue() {
     callAll(mountedQueue!);
 }
 
+const [_pushInstance, _popInstance] = createStack<Component<any, any, any>>();
+function pushInstance(instance: Component<any, any, any>) {
+    const lastIntance = currentInstance;
+    currentInstance = _pushInstance(instance);
+    return () => {
+        _popInstance();
+        currentInstance = lastIntance;
+    }
+};
+
+function getIntactParent(parent: Vue | undefined) {
+    if (currentInstance) {
+        return currentInstance;
+    }
+    // maybe we mount/update a intact component in Vue component
+    while (parent) {
+        if (parent instanceof Component) {
+            return parent;
+        }
+        parent = parent.$parent;
+    }
+
+    return null;
+}

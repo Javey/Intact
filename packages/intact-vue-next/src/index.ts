@@ -55,7 +55,6 @@ type IntactVueNextProps<P, E> =
 
 let currentInstance: Component | null = null;
 const [pushMountedQueue, popMountedQueue] = createStack<Function[]>();
-const [pushInstance, popInstance] = createStack<Component<any, any>>();
 
 export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> {
     static $cid = 'IntactVueNext';
@@ -187,7 +186,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
             },
 
             beforeUnmount() {
-                // we should get name by instance, if the name starts with '$'
+                // we should get property by instance, if the name starts with '$'
                 unmount(this.instance.$vNode, null); 
             },
         });
@@ -229,13 +228,9 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
         anchor: IntactDom | null,
         mountedQueue: Function[]
     ): void {
-        const lastIntance = currentInstance;
-        currentInstance = pushInstance(this);
-
+        const popInstance = pushInstance(this);
         super.$render(lastVNode, nextVNode, parentDom, anchor, mountedQueue);
-
         popInstance();
-        currentInstance = lastIntance;
     }
 
     $update(
@@ -246,13 +241,9 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
         mountedQueue: Function[],
         force: boolean
     ): void {
-        const lastIntance = currentInstance;
-        currentInstance = pushInstance(this);
-
+        const popInstance = pushInstance(this);
         super.$update(lastVNode, nextVNode, parentDom, anchor, mountedQueue, force);
-
         popInstance();
-        currentInstance = lastIntance;
     }
 } 
 
@@ -282,6 +273,16 @@ function callMountedQueue() {
 
     callAll(mountedQueue!);
 }
+
+const [_pushInstance, _popInstance] = createStack<Component<any, any, any>>();
+function pushInstance(instance: Component<any, any, any>) {
+    const lastIntance = currentInstance;
+    currentInstance = _pushInstance(instance);
+    return () => {
+        _popInstance();
+        currentInstance = lastIntance;
+    }
+};
 
 function getIntactParent(parent: ComponentInternalInstance | null) {
     if (currentInstance) {

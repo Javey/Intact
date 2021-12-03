@@ -1,4 +1,4 @@
-import {Component, provide, inject} from '../src';
+import {Component, provide, inject, mountedQueueStack} from '../src';
 import {
     dispatchEvent,
     createIntactComponent,
@@ -38,16 +38,19 @@ describe('Intact Vue Legacy', () => {
 
                 expect(beforeMount.callCount).be.eq(1);
                 expect(mounted.callCount).be.eql(1);
+                expect(mountedQueueStack.length).to.eql(0);
 
                 vm.a = 2;
                 await nextTick();
                 expect(beforeUpdate.callCount).be.eq(1);
                 expect(updated.callCount).be.eql(1);
+                expect(mountedQueueStack.length).to.eql(0);
 
                 vm.show = false;
                 await nextTick();
                 expect(beforeUnmount.callCount).be.eq(1);
                 expect(unmounted.callCount).be.eql(1);
+                expect(mountedQueueStack.length).to.eql(0);
             });
 
             it('lifecycle of vue in intact', async () => {
@@ -55,7 +58,7 @@ describe('Intact Vue Legacy', () => {
                 const mounted = sinon.spy(() => console.log('mounted'));
                 const updated = sinon.spy(() => console.log('updated'));
                 const destroyed = sinon.spy();
-                render('<C v-if="show" ref="a"><VueComponent :a="a"/></C>', {
+                render('<C v-if="show" ref="a"><VueComponent :a="a" ref="b" /></C>', {
                     C: ChildrenIntactComponent,
                     VueComponent: {
                         props: ['a'],
@@ -68,16 +71,19 @@ describe('Intact Vue Legacy', () => {
                 }, {show: true, a: 1});
 
                 expect(vm.$refs.a.$vnode.data.queue).to.be.null;
+                expect(mountedQueueStack.length).to.eql(0);
 
                 vm.a = 2;
                 await nextTick();
                 expect(created.callCount).be.eql(1);
                 expect(mounted.callCount).be.eql(1);
                 expect(updated.callCount).be.eql(1);
+                expect(mountedQueueStack.length).to.eql(0);
 
                 vm.show = false;
                 await nextTick();
                 expect(destroyed.callCount).be.eql(1);
+                expect(mountedQueueStack.length).to.eql(0);
             });
 
             it('lifecycle of mounted nested intact component', async () => {
@@ -113,6 +119,7 @@ describe('Intact Vue Legacy', () => {
                 expect(mounted2.callCount).be.eql(1);
                 expect(mounted2.calledBefore(mounted1)).be.true;
                 expect(mounted3.calledBefore(mounted2)).be.true;
+                expect(mountedQueueStack.length).to.eql(0);
             });
 
             it('handle mountedQueue', async () => {
@@ -134,9 +141,12 @@ describe('Intact Vue Legacy', () => {
                     }
                 }, {a: 1});
 
+                expect(mountedQueueStack.length).to.eql(0);
+                
                 vm.a = 2;
                 await nextTick();
                 expect(vm.$el.outerHTML).to.eql('<div><div>test</div>2</div>');
+                expect(mountedQueueStack.length).to.eql(0);
             });
 
             it('call method of Intact component to show nested Intact component', async () => {
@@ -195,11 +205,13 @@ describe('Intact Vue Legacy', () => {
 
                 await Test(true);
                 expect(mounted.callCount).to.eql(2);
+                expect(mountedQueueStack.length).to.eql(0);
                 // Test(false);
                 // (window as any).vm = vm;
                 await Promise.all([Test(false), vm.$refs.a.show()]);
                 expect(updated.callCount).to.eql(1);
                 expect(mounted.callCount).to.eql(4);
+                expect(mountedQueueStack.length).to.eql(0);
             });
 
             it('should call mount method when we update data in vue mounted lifecycle method', async () => {
@@ -213,7 +225,9 @@ describe('Intact Vue Legacy', () => {
                 class IntactChildrenComponent extends Component {
                     static template = `<span>{this.get('children')}</span>`;
 
-                    mounted = mounted;
+                    mounted() {
+                        mounted();
+                    }
                 };
                 const Test = {
                     template: `
@@ -235,12 +249,230 @@ describe('Intact Vue Legacy', () => {
                     IntactComponent, Test,
                 }, {show: false});
 
+                expect(mountedQueueStack.length).to.eql(0);
+
                 // (window as any).vm = vm;
                 vm.show = true;
                 await nextTick();
                 expect(mounted.callCount).to.eql(1);
                 expect(Object.isFrozen(vm.$refs.a.$mountedQueue)).to.be.true;
                 expect(Object.isFrozen(vm.$refs.c.$refs.b.$mountedQueue)).to.be.true;
+                expect(mountedQueueStack.length).to.eql(0);
+                console.log(vm.$refs.c.$parent);
+            });
+
+            it('should call mounted after all components have mounted', () => {
+                const mounted = sinon.spy(function(this: any) {
+                    expect(this.refs.element.parentNode).to.be.exist;
+                });
+                class Test extends Component {
+                    static template = `<div ref="element">test</div>`;
+                    mounted = mounted;
+                }
+                render('<div><C /><C /></div>', {C: Test});
+
+                expect(mounted.callCount).to.eql(2);
+                expect(mountedQueueStack.length).to.eql(0);
+            });
+        });
+
+        describe('vNode', () => {
+            it('should get $parent of nested component', (done) => {
+                const E = createIntactComponent('<i>{this.get("children")}</i>');
+                class Test extends Component {
+                    static template = `<span>test</span>`;
+                    mounted() {
+                        expect(this.$parent).be.instanceof(E);
+                        expect(this.$parent!.$parent).instanceof(ChildrenIntactComponent);
+                        done();
+                    }
+                }
+                render('<C><p><E><b><D /></b></E></p></C>', {
+                    C: ChildrenIntactComponent,
+                    D: Test,
+                    E,
+                });
+            });
+
+            it('should get $parent when pass intact component as children of intact component', () => {
+                const mounted = sinon.spy();
+                class A extends Component {
+                    static template = `<div>{this.get('children')}</div>`
+                }
+                class B extends Component {
+                    static template = `<div>{this.get('children')}</div>`;
+                    mounted() {
+                        mounted();
+                        expect(this.$parent).instanceof(A);
+                    }
+                }
+                class C extends Component {
+                    static template = `const A = this.A; <A>{this.get('children')}</A>`
+                    A = A;
+                }
+
+                render(`<div><C><B>test</B></C></div>`, {C, B});
+                render(`<div><C><div><B>test</B></div></C></div>`, {C, B});
+                expect(mounted.callCount).to.eql(2);
+            });
+
+            it('should get $parent after updating', async () => {
+                const C = createIntactComponent(`<div>{this.get('children')}</div>`);
+                const mounted = sinon.spy();
+                const updated = sinon.spy();
+
+                class D extends Component {
+                    static template = `<i>{this.get("children")}</i>`;
+                    mounted() {
+                        mounted();
+                        expect(this.$parent).instanceof(IntactComponent);
+                        expect(this.$parent!.$parent).instanceof(C);
+                        expect(this.$parent!.$parent!.$parent).instanceof(IntactComponent1);
+                    }
+                    updated() {
+                        updated();
+                        expect(this.$parent).instanceof(IntactComponent);
+                        expect(this.$parent!.$parent).instanceof(C);
+                        expect(this.$parent!.$parent!.$parent).instanceof(IntactComponent1);
+                    }
+                }
+
+                class IntactComponent extends Component {
+                    static template = `const {D} = this; <D>{this.get('children')}</D>`;
+                    D = D;
+                    mounted() {
+                        expect(this.$parent).instanceof(C);
+                    }
+                }
+
+                class IntactComponent1 extends Component {
+                    static template = `const {C} = this; <C>{this.get('children')}</C>`;
+                    C = C;
+                }
+
+                render(`
+                    <div>
+                        {{count}}
+                        <IntactComponent1>
+                            <p>
+                                {{count}}
+                                <IntactComponent>test{{count}}</IntactComponent>
+                            </p>
+                        </IntactComponent1>
+                    </div>
+                `, {
+                    IntactComponent1,
+                    IntactComponent,
+                }, {count: 1});
+
+                vm.count = 2;
+                await nextTick();
+                expect(mounted.callCount).to.eql(1);
+                expect(updated.callCount).to.eql(1);
+            });
+
+            it('should get $parent of inserted Component which nests in vue element in updating', (done) => {
+                let count = 0;
+                class Test extends Component {
+                    static template = `<span>test</span>`;
+                    mounted() {
+                        count++;
+                        expect(this.$parent).instanceof(ChildrenIntactComponent);
+                        if (count === 2) {
+                            done();
+                        }
+                    }
+                }
+                render('<C><div></div><div v-if="show"><D /><D /></div></C>', {
+                    C: ChildrenIntactComponent,
+                    D: Test,
+                }, {show: false});
+                vm.show = true;
+            });
+
+            it('should get $parent when mount intact component on vue component updating', (done) => {
+                // let count = 0;
+                class Test extends Component {
+                    static template = `<span>test</span>`;
+                    mounted() {
+                        // console.log(this.$parent);
+                        expect(this.$parent).instanceof(ChildrenIntactComponent);
+                        done();
+                    }
+                }
+                render('<C><VueComponent ref="i" /></C>', {
+                    C: ChildrenIntactComponent,
+                    VueComponent: {
+                        template: `<div><Test v-if="show" /></div>`,
+                        components: {Test},
+                        data() {
+                            return {show: false}
+                        },
+                        mounted() {
+                            debugger;
+                        }
+                    },
+                });
+
+                vm.$refs.i.show = true;
+            });
+        });
+
+        describe('Provide & Inject', () => {
+            it('should inject correctly', () => {
+                class A extends Component {
+                    static template = `<div>{this.get('children')}</div>`
+                    init() {
+                        provide('test', 1);
+                    }
+                }
+
+                class B extends Component {
+                    static template = `<div>{this.test}</div>`;
+                    private test = inject<number>('test')
+                }
+
+                render(`<A><div><B /></div></A>`, {
+                    A, B,
+                });
+
+                expect(vm.$el.outerHTML).to.eql('<div><div><div>1</div></div></div>');
+
+                render(`<A><B /></A>`, {
+                    A, B,
+                });
+
+                expect(vm.$el.outerHTML).to.eql('<div><div>1</div></div>');
+            });
+        });
+
+        describe('Validate', () => {
+            it('should validate props', () => {
+                const error = console.error;
+                const spyError = sinon.spy((...args: any[]) => {
+                    error.apply(console, args);
+                });
+                console.error = spyError 
+                class IntactComponent extends Component<{show?: any}> {
+                    static template = `<div>{this.get('children')}</div>`
+                    static typeDefs = {
+                        show: Boolean,
+                    }
+                }
+                class IntactComponent2 extends IntactComponent {
+
+                }
+                render(`
+                    <div>
+                        <IntactComponent show="1">
+                            <IntactComponent2 show="1" />
+                        </IntactComponent>
+                    </div>
+                `, {IntactComponent, IntactComponent2});
+
+                expect(spyError.callCount).to.eql(2);
+
+                console.error = error;
             });
         });
     });

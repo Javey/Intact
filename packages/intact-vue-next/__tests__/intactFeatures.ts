@@ -211,7 +211,7 @@ describe('Intact Vue Next', () => {
                 expect(Object.isFrozen(vm.$refs.c.$refs.b.$mountedQueue)).to.be.true;
             });
 
-            it('should call mounted after all components have mounted', async () => {
+            it('should call mounted after all components have mounted', () => {
                 const mounted = sinon.spy(function(this: any) {
                     expect(this.refs.element.parentNode).to.be.exist;
                 });
@@ -220,7 +220,6 @@ describe('Intact Vue Next', () => {
                     mounted = mounted;
                 }
                 render('<div><C /><C /></div>', {C: Test});
-                await nextTick();
                 expect(mounted.callCount).to.eql(2);
             });
         });
@@ -332,6 +331,9 @@ describe('Intact Vue Next', () => {
                         components: {Test},
                         data() {
                             return {show: false}
+                        },
+                        mounted() {
+                            debugger;
                         }
                     },
                 });
