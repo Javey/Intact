@@ -23,7 +23,7 @@ const options = require('minimist')(process.argv.slice(2), {
 const resolveRoot = path => resolve(__dirname, '../',  path);
 const plugins = [
     typescript({
-        tsconfig: resolve(__dirname, '../tsconfig.json'),
+        tsconfig: resolve(__dirname, pkgJson.name === 'intact-vue' ? '../packages/intact-vue/tsconfig.json' : '../tsconfig.json'),
         exclude: ['**/__tests__'],
         cacheRoot: resolveRoot(`node_modules/.rpt2_cache/${pkgJson.name}_${options.env}_${options.format}`),
         tsconfigOverride: {

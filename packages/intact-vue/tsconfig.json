@@ -47,30 +47,30 @@
     "baseUrl": "./",                             /* Base directory to resolve non-absolute module names. */
     // "paths": {},                                 /* A series of entries which re-map imports to lookup locations relative to the 'baseUrl'. */
     "paths": {
-      "intact-shared": [
-          "../shared/src/index.ts"
-      ],
-      "vdt": [
-          "../vdt/src/index.ts"
-      ],
-      "vdt-compiler": [
-          "../compiler/src/index.ts"
-      ],
-      "intact": [
-          "../intact/src/index.ts"
-      ],
-      "misstime": [
-          "../misstime/src/index.ts"
-      ],
-      "vue": [
-          "../../node_modules/vue-legacy"
-      ],
-      // "tslib": [
-      //     "node_modules/tslib/tslib.d.ts"
-      // ],
-      // "intact-vue-next": [
-      //     "../intact-vue-next/src/index.ts"
-      // ]
+        "intact-shared": [
+            "../shared/src/index.ts"
+        ],
+        "vdt": [
+            "../vdt/src/index.ts"
+        ],
+        "vdt-compiler": [
+            "../compiler/src/index.ts"
+        ],
+        "intact": [
+            "../intact/src/index.ts"
+        ],
+        "misstime": [
+            "../misstime/src/index.ts"
+        ],
+        "vue": [
+            "../../node_modules/vue-legacy"
+        ],
+        // "tslib": [
+        //     "node_modules/tslib/tslib.d.ts"
+        // ],
+        // "intact-vue-next": [
+        //     "../intact-vue-next/src/index.ts"
+        // ]
     },
     // "rootDirs": [],                              /* List of root folders whose combined content represents the structure of the project at runtime. */
     // "typeRoots": [],                             /* List of folders to include type definitions from. */
