@@ -331,7 +331,7 @@ describe('Intact Vue Next', () => {
                             return {show: false}
                         },
                         mounted() {
-                            expect(this.$parent).instanceof(ChildrenIntactComponent);
+                            expect(this.$parent.instance).instanceof(ChildrenIntactComponent);
                         }
                     },
                 });

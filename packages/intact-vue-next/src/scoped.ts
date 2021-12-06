@@ -7,6 +7,8 @@ export function setScopeId(
     slotScopeIds: string[] | null,
     parentComponent: ComponentInternalInstance | null
 ) {
+    if (el.nodeType !== 1) return;
+
     if (scopeId) {
         hostSetScopeId(el, scopeId);
     }

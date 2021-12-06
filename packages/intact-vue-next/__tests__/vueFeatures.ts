@@ -15,6 +15,7 @@ import {createVNode as h, ComponentFunction} from 'intact';
 import {h as v, ComponentPublicInstance, render as vueRender, getCurrentInstance, createApp} from 'vue';
 import Test1 from './test1.vue';
 import Test3 from './test3.vue';
+import Test4 from './test4.vue';
 import {createRouter, createWebHashHistory, RouteRecordRaw} from 'vue-router';
 
 describe('Intact Vue Next', () => {
@@ -150,6 +151,30 @@ describe('Intact Vue Next', () => {
                 });
 
                 expect(vm.$el.outerHTML).to.eql('<div class="test1" data-v-ec27949c=""><div class="test2" data-v-ec27949c=""><span>test2</span><i data-v-ec27949c="">test1</i><div data-v-ec27949c="">intact component in vue<b data-v-ec27949c="">test</b><div class="test3" data-v-ebef3698="" data-v-ec27949c=""><span data-v-ebef3698="">test3</span><div data-v-ec27949c="">intact component in vue<b data-v-ec27949c="">test</b></div></div></div></div><div>Intact Component</div><div><div>Intact Component</div></div></div>');
+            });
+
+            it('should set scope dd correctly even if intact has changed type of element', async () => {
+                class C extends Component<{show: boolean}> {
+                    static template = `if (!this.get('show')) return; <div>component</div>`;
+                }
+                render('<Test :show="show"><C :show="show" /></Test>', {
+                    C,
+                    Test: Test4,
+                }, {show: false});
+
+                expect(vm.$el.outerHTML).to.eql('<div class="test1" data-v-ebd30796=""></div>');
+
+                vm.show = true;
+                await nextTick();
+                expect(vm.$el.outerHTML).to.eql('<div class="test1" data-v-ebd30796=""><div data-v-ebd30796="">intact component in vue<b data-v-ebd30796="">test</b></div><div>component</div></div>');
+
+                vm.show = false;
+                await nextTick();
+                expect(vm.$el.outerHTML).to.eql('<div class="test1" data-v-ebd30796=""></div>');
+
+                vm.show = true;
+                await nextTick();
+                expect(vm.$el.outerHTML).to.eql('<div class="test1" data-v-ebd30796=""><div data-v-ebd30796="">intact component in vue<b data-v-ebd30796="">test</b></div><div>component</div></div>');
             });
         });
 
