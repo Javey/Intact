@@ -66,7 +66,7 @@ export abstract class Component<
     public $props: Props<P, this>;
     public $SVG: boolean = false;
     public $vNode: VNodeComponentClass<this>;
-    public $parent: Component<any> | null;
+    public $senior: Component<any> | null;
     public $mountedQueue: Function[];
 
     // internal properties
@@ -92,7 +92,7 @@ export abstract class Component<
         $vNode: VNodeComponentClass,
         $SVG: boolean,
         $mountedQueue: Function[],
-        $parent: ComponentClass | null,
+        $senior: ComponentClass | null,
     ) {
         super();
 
@@ -101,7 +101,7 @@ export abstract class Component<
         this.$vNode = $vNode as VNodeComponentClass<this>;
         this.$SVG = $SVG;
         this.$mountedQueue = $mountedQueue;
-        this.$parent = $parent as Component<any>;
+        this.$senior = $senior as Component<any>;
 
         const constructor = this.constructor as typeof Component;
         const template = constructor.template;
@@ -113,8 +113,8 @@ export abstract class Component<
 
         this.$props = constructor.defaults() as P;
 
-        if ($parent !== null) {
-            this.$provides = ($parent as Component<any>).$provides;
+        if ($senior !== null) {
+            this.$provides = ($senior as Component<any>).$provides;
         }
 
         if (!isNullOrUndefined(props)) {

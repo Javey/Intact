@@ -549,7 +549,7 @@ describe('Props', () => {
                 $vNode = null;
                 $lastInput: VNode | null = null;
                 $mountedQueue = null;
-                $parent = null;
+                $senior = null;
 
                 $init() { 
 

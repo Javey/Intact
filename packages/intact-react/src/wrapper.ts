@@ -24,7 +24,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         public $vNode: VNodeComponentClass<ComponentClass<WrapperProps>>,
         public $SVG: boolean,
         public $mountedQueue: Function[],
-        public $parent: ComponentClass | null,
+        public $senior: ComponentClass | null,
     ) { 
         const fakeInput = this.$lastInput = createVNode('div');
         // fakeInput.transition = $vNode.transition;
@@ -101,16 +101,16 @@ export class Wrapper implements ComponentClass<WrapperProps> {
     }
 
     private render(vNode: VNodeComponentClass<Wrapper>, parentDom: Element) {
-        const parent = this.$parent as Component;
+        const parent = this.$senior as Component;
         const parentComponent = getParent(this)!;
         const instance = this;
         const container = this.container;
 
         let vnode = getReactElement(vNode);
         /**
-         * pass the $parent as value instead of parentComponent
+         * pass the $senior as value instead of parentComponent
          * because parentComponent is the the toplevel component and
-         * not always equal to the $parent 
+         * not always equal to the $senior
          * e.g. <A><B><div><C /></div></B></A>
          */
         vnode = createElement(Context.Provider, {value: parent}, vnode);
@@ -170,13 +170,13 @@ export class Wrapper implements ComponentClass<WrapperProps> {
 }
 
 function getParent(instance: Wrapper): Component | null {
-    let $parent = instance.$parent as Component;
+    let $senior = instance.$senior as Component;
 
     do {
-        if (($parent as any)._reactInternals) {
-            return $parent;
+        if (($senior as any)._reactInternals) {
+            return $senior;
         }
-    } while ($parent = $parent.$parent as Component);
+    } while ($senior = $senior.$senior as Component);
 
     // should not hit this
     /* istanbul ignore next */

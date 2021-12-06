@@ -102,6 +102,7 @@ export function normalizeProps(vnode: VueVNode) {
     normalizeEvents(componentOptions!.listeners as Record<string, EventValue>, props);
     normalizeRef(data!, vnode.context!.$refs, props);
     normalizeKey(data!, vnode, props);
+    normalizeDirs(data!.directives, props);
 
     return props;
 }
@@ -175,28 +176,16 @@ function normalizeEvents(listeners: Record<string, EventValue> | undefined, prop
     if (listeners) {
         for (let key in listeners) {
             let name;
-            let value = listeners[key];
-            let cb = value;
-            const _isArray = isArray(value);
-            const changeCallback = (propName: string) => (v: any) => {
-                // const modifiersKey = `${propName === 'value' ? 'model' : propName}Modifiers`;
-                // const {number, trim} = props[modifiersKey] || EMPTY_OBJ;
-                // if (trim) {
-                    // v = String(v).trim();
-                // } else if (number) {
-                    // v = Number(v);
-                // }
-                if (_isArray) {
-                    (value as Function[]).forEach(value => value(v))
-                } else {
-                    (value as Function)(v);
-                }
-            };
+            const value = listeners[key];
+            const cb = isArray(value) ?
+                (v: any) => {
+                    (value as Function[]).forEach(value => value(v));
+                } :
+                value;
 
             if (key === 'input') {
                 // is a v-model directive of vue
                 name = `$model:value`;
-                cb = changeCallback('value');
             } else if (key.startsWith('update:')) {
                 // delegate update:prop(sync modifier) to $change:prop
                 // propName has been camelized by Vue, don't do this again
@@ -204,17 +193,11 @@ function normalizeEvents(listeners: Record<string, EventValue> | undefined, prop
                 const propName = key.substr(7);
                 // if (name.indexOf('-') > -1) continue;
                 name= `$model:${propName}`;
-                cb = changeCallback(propName);
             } else {
                 if (key.startsWith('change:')) {
                     name = `$change:${camelize(key.substr(7))}`;
                 } else {
                     name = camelize(key);
-                }
-                if (_isArray) {
-                    cb = (...args: any[]) => {
-                        (value as Function[]).forEach(value => value(...args))
-                    }
                 }
             }
 
@@ -282,6 +265,17 @@ function normalizeRef(data: VNodeData, refs: Vue['$refs'], props: any) {
         }
         props.ref.key = ref;
     }
+}
+
+function normalizeDirs(dirs: VNodeData['directives'], props: any) {
+    if (!dirs) return;
+
+    dirs.find(dir => {
+        if (dir.name === 'show' && !dir.value) {
+            (props.style || (props.style = {})).display = 'none';
+            return true;
+        }
+    });
 }
 
 function normalizeKey(data: VNodeData, vnode: VueVNode, props: any) {

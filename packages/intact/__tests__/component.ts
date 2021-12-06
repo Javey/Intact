@@ -90,10 +90,10 @@ describe('Component', () => {
 
             let component: Test | null;
             render(h('div', null, h(Test, {ref: i => component = i})), container);
-            expect(component!.$parent).to.be.null;
+            expect(component!.$senior).to.be.null;
 
             render(h(Test, null, h(Test, {ref: i => component = i})), container);
-            expect(component!.$parent).to.be.instanceof(Test);
+            expect(component!.$senior).to.be.instanceof(Test);
         });
 
         it('should mount component which template is string', () => {

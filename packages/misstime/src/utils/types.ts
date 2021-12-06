@@ -155,7 +155,7 @@ export interface ComponentConstructor<T extends ComponentClass = ComponentClass>
         $vNode: VNodeComponentClass,
         $SVG: boolean,
         $mountedQueue: Function[],
-        $parent: ComponentClass | null,
+        $senior: ComponentClass | null,
     ): T
     displayName?: string
     typeDefs?: TypeDefs<T extends ComponentClass<infer P> ? P : {}>
@@ -169,7 +169,7 @@ export interface ComponentClass<P = any> {
     $vNode: VNodeComponentClass<ComponentClass<P>> | null;
     $lastInput: VNode | null;
     $mountedQueue: Function[] | null;
-    $parent: ComponentClass | null;
+    $senior: ComponentClass | null;
 
     $init(props: Props<P, ComponentClass<P>> | null): void;
     $render(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null, mountedQueue: Function[]): void;

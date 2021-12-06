@@ -96,18 +96,18 @@ export class Component<
         $vNode: VNodeComponentClass,
         $SVG: boolean,
         $mountedQueue: Function[],
-        $parent: Component | null
+        $senior: Component | null
     );
     constructor(
         props: Props<P, Component<P>> | null,
         $vNodeOrContext: VNodeComponentClass | null,
         $SVG?: boolean,
         $mountedQueue?: Function[],
-        $parent?: Component | null
+        $senior?: Component | null
     ) {
         if ($vNodeOrContext && isComponentClass($vNodeOrContext)) {
             // Intact component in intact
-            super(props as Props<P, Component<P>>, $vNodeOrContext, $SVG!, $mountedQueue!, $parent!);
+            super(props as Props<P, Component<P>>, $vNodeOrContext, $SVG!, $mountedQueue!, $senior!);
         } else {
             // Intact component in React
             const normalizedProps = normalizeProps(props);
@@ -236,7 +236,7 @@ export class Component<
         this.$vNode = vNode;
 
         this.$promises.reset();
-        const mountedQueue = this.$mountedQueue = getMountedQueue(this.$parent as Component);
+        const mountedQueue = this.$mountedQueue = getMountedQueue(this.$senior as Component);
 
         this.$update(lastVNode, vNode, this.$parentElement, null, mountedQueue, false); 
 

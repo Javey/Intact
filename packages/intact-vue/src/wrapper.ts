@@ -32,7 +32,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         public $vNode: VNodeComponentClass<ComponentClass<WrapperProps>>,
         public $SVG: boolean,
         public $mountedQueue: Function[],
-        public $parent: ComponentClass | null,
+        public $senior: ComponentClass | null,
     ) { }
 
     $init(props: WrapperProps | null): void { }
@@ -99,14 +99,14 @@ export class Wrapper implements ComponentClass<WrapperProps> {
 }
 
 function getParentNode(instance: Wrapper) {
-    let $parent = instance.$parent as Component;
+    let $senior = instance.$senior as Component;
 
     do {
-        const $vnode = $parent.$vnode;
+        const $vnode = $senior.$vnode;
         if ($vnode) {
             return $vnode;
         }
-    } while ($parent = $parent.$parent as Component);
+    } while ($senior = $senior.$senior as Component);
 
     // should not hit this
     /* istanbul ignore next */

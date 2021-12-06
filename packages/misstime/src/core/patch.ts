@@ -126,7 +126,7 @@ function patchComponentClass(
 
         instance.$mountedQueue = mountedQueue;
         instance.$vNode = nextVNode;
-        instance.$parent = parentComponent;
+        instance.$senior = parentComponent;
 
         instance.$update(lastVNode, nextVNode, parentDom, anchor, mountedQueue, false);
 

@@ -92,45 +92,44 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
 
     // When we call forceUpdate, $mountedQueue has inited and don't init it again.
     private $isForceUpdating!: boolean;
-    // The $parent property conflicts in Intact and Vue, save the real Intact $parent to $parentComponent.
-    private $parentComponent!: Component<any, any, any> | null;
-
+    // The $senior property conflicts in Intact and Vue, save the real Intact $senior to $seniorComponent.
+    private $seniorComponent!: Component<any, any, any> | null;
+    private $scopeId!: string | undefined;
 
     constructor(
         options: any,
         $vNode?: VNodeComponentClass,
         $SVG?: boolean,
         $mountedQueue?: Function[],
-        $parent?: ComponentClass | null
+        $senior?: ComponentClass | null
     );
     constructor(
         props: Props<P, Component<P>> | null | undefined,
         $vNode: VNodeComponentClass,
         $SVG: boolean,
         $mountedQueue: Function[],
-        $parent: ComponentClass | null
+        $senior: ComponentClass | null
     );
     constructor(
         props: Props<P, Component<P>> | null | undefined | ComponentOptions<Vue>,
         $vNode: VNodeComponentClass,
         $SVG: boolean,
         $mountedQueue: Function[],
-        $parent: ComponentClass | null
+        $senior: ComponentClass | null
     ) {
         const vnode = props && (props as any)._parentVnode;
         if (vnode) {
             $mountedQueue = pushMountedQueue([]);
             const vNode = normalize(vnode) as VNodeComponentClass<this>;
-            const $parent = getIntactParent((props as ComponentOptions<Vue>).parent);
-            super(vNode.props as P, vNode, $SVG, $mountedQueue, $parent);
+            const $senior = getIntactParent((props as ComponentOptions<Vue>).parent);
+            super(vNode.props as P, vNode, $SVG, $mountedQueue, $senior);
+
+            this.$isVue = true;
+            this._vnode = {} as VueVNode;
 
             if (process.env.NODE_ENV !== 'production') {
                 validateProps(this.$vNode);
             }
-
-            this.$parentComponent = $parent;
-            this.$isVue = true;
-            this._vnode = {} as VueVNode;
 
             this.$options = props as ComponentOptions<Vue>;
             const isDoubleVNodes = (this.constructor as typeof Component).$doubleVNodes;
@@ -149,7 +148,6 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                                 validateProps(this.$vNode);
                             }
 
-                            const reset = this._$setParent();
                             this.$update(
                                 lastVNode,
                                 vNode,
@@ -159,7 +157,6 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                                 false,
                                 true,
                             );
-                            reset();
 
                             // element may have chagned
                             // only check if the component returns only one vNode
@@ -168,7 +165,9 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                                 if (oldVnode.elm !== element) {
                                     this.$vnode.elm = vnode.elm = oldVnode.elm = element;
                                     // set scope id
-                                    // _setScopeId(element);
+                                    if (this.$scopeId && element.nodeType === 1) {
+                                        (element as Element).setAttribute(this.$scopeId, '');
+                                    }
                                 }
                             }
                         }
@@ -180,11 +179,9 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                     document.createComment = () => {
                         document.createComment = nativeCreateComment;
 
-                        const reset = this._$setParent();
                         this.$init(vNode.props as Props<P, this>);
                         vNode.children = this;
                         this.$render(null, vNode, null as any, null, $mountedQueue);
-                        reset();
 
                         let element = findDomFromVNode(vNode, true) as any;
                         if (isDoubleVNodes) {
@@ -195,6 +192,20 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                             container.appendChild(second);
                             element = container;
                             addMeta(element, first, second);
+                        }
+
+                        // Because we make all Intact Components be patchable,
+                        // Vue will setScopeId on it, but Intact component may
+                        // create a text or comment node. We add setAttribute
+                        // method to these nodes to prevent Vue from throwing error
+                        // when set scope id on them and save the scopeId to add it
+                        // when component updated.
+                        if (element.nodeType !== 1) {
+                            Object.defineProperty(element, 'setAttribute', {
+                                value: (scopeId: string) => {
+                                    this.$scopeId = scopeId;
+                                } 
+                            });
                         }
 
                         return element as Comment;
@@ -208,16 +219,20 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                 // set parent always to null, to make Vue call invokeInsertHook
                 // don't overwrite the pendingInsert array
                 Object.defineProperty(subTree, 'parent', {
-                    get() { return null },
-                    set() { }
+                    get: () => null,
+                    set: noop,
                 });
 
                 return subTree;
             };
             Vue.prototype._init.call(this, props);
 
-            // force Vue update Intact component
-            (this.$options as any)._renderChildren = true;
+            // force Vue update Intact component, and prevent Vue from changing it 
+            Object.defineProperty(this.$options, '_renderChildren', {
+                get: () => true,
+                set: noop
+            });
+            // (this.$options as any)._renderChildren = true;
             (this.$options as any).mounted = [() => {
                 if (isDoubleVNodes) {
                     rewriteDomApi(this.$el as any);
@@ -225,16 +240,16 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                 // if Vue has called the insertedQueue, remove the queue to 
                 // avoid Intact call it again on updating 
                 this.$vnode.data.queue = null;
-                this._$callMountedQueue();
+                callMountedQueue();
             }];
             (this.$options as any).updated = [() => {
-                this._$callMountedQueue();
+                callMountedQueue();
             }];
 
             // disable async component 
             this.$inited = true;
         } else {
-            super(props as P, $vNode, $SVG, $mountedQueue, $parent);
+            super(props as P, $vNode, $SVG, $mountedQueue, $senior);
         }
     }
 
@@ -290,7 +305,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
 
     $forceUpdate() {
         this._$update();
-        this._$callMountedQueue();
+        callMountedQueue();
     }
 
     $destroy() {
@@ -308,22 +323,6 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
             });
             data.queue = null;
         }
-    }
-
-    private _$setParent() {
-        if (!this.$isVue) return noop;
-
-        const vueParent = this.$parent;
-        this.$parent = this.$parentComponent;
-        return () => {
-            this.$parent = vueParent;
-        }
-    }
-
-    private _$callMountedQueue() {
-        const reset = this._$setParent();
-        callMountedQueue();
-        reset();
     }
 }
 

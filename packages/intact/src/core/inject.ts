@@ -15,7 +15,7 @@ export function provide<T>(key: InjectionKey, value: T) {
     if (provides === null) {
         provides = currentInstance!.$provides = Object.create(null);
     } else {
-        const parent = currentInstance!.$parent;
+        const parent = currentInstance!.$senior;
         const parentProvides = parent && parent.$provides;
         if (provides === parentProvides) {
             provides = currentInstance!.$provides = Object.create(parentProvides);
@@ -34,7 +34,7 @@ export function inject<T>(key: InjectionKey, defaultValue?: T): T | undefined {
         }
     }
 
-    const parent = currentInstance!.$parent;
+    const parent = currentInstance!.$senior;
     const provides = parent && parent.$provides; 
 
     if (provides && key in provides) {

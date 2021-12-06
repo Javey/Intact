@@ -225,13 +225,13 @@ describe('Intact Vue Next', () => {
         });
 
         describe('vNode', () => {
-            it('should get $parent of nested component', (done) => {
+            it('should get $senior of nested component', (done) => {
                 const E = createIntactComponent('<i>{this.get("children")}</i>');
                 class Test extends Component {
                     static template = `<span>test</span>`;
                     mounted() {
-                        expect(this.$parent).be.instanceof(E);
-                        expect(this.$parent!.$parent).instanceof(ChildrenIntactComponent);
+                        expect(this.$senior).be.instanceof(E);
+                        expect(this.$senior!.$senior).instanceof(ChildrenIntactComponent);
                         done();
                     }
                 }
@@ -242,7 +242,7 @@ describe('Intact Vue Next', () => {
                 });
             });
 
-            it('should get $parent after updating', async () => {
+            it('should get $senior after updating', async () => {
                 const C = createIntactComponent(`<div>{this.get('children')}</div>`);
                 const mounted = sinon.spy();
                 const updated = sinon.spy();
@@ -251,15 +251,15 @@ describe('Intact Vue Next', () => {
                     static template = `<i>{this.get("children")}</i>`;
                     mounted() {
                         mounted();
-                        expect(this.$parent).instanceof(IntactComponent);
-                        expect(this.$parent!.$parent).instanceof(C);
-                        expect(this.$parent!.$parent!.$parent).instanceof(IntactComponent1);
+                        expect(this.$senior).instanceof(IntactComponent);
+                        expect(this.$senior!.$senior).instanceof(C);
+                        expect(this.$senior!.$senior!.$senior).instanceof(IntactComponent1);
                     }
                     updated() {
                         updated();
-                        expect(this.$parent).instanceof(IntactComponent);
-                        expect(this.$parent!.$parent).instanceof(C);
-                        expect(this.$parent!.$parent!.$parent).instanceof(IntactComponent1);
+                        expect(this.$senior).instanceof(IntactComponent);
+                        expect(this.$senior!.$senior).instanceof(C);
+                        expect(this.$senior!.$senior!.$senior).instanceof(IntactComponent1);
                     }
                 }
 
@@ -294,14 +294,13 @@ describe('Intact Vue Next', () => {
                 expect(updated.callCount).to.eql(1);
             });
 
-            it('should get $parent of inserted Component which nests in vue element in updating', (done) => {
+            it('should get $senior of inserted Component which nests in vue element in updating', (done) => {
                 let count = 0;
                 class Test extends Component {
                     static template = `<span>test</span>`;
                     mounted() {
                         count++;
-                        expect(this.$parent).instanceof(ChildrenIntactComponent);
-                        console.log(this.$parent);
+                        expect(this.$senior).instanceof(ChildrenIntactComponent);
                         if (count === 2) {
                             done();
                         }
@@ -314,13 +313,12 @@ describe('Intact Vue Next', () => {
                 vm.show = true;
             });
 
-            it('should get $parent when mount intact component on vue component updating', (done) => {
+            it('should get $senior when mount intact component on vue component updating', (done) => {
                 // let count = 0;
                 class Test extends Component {
                     static template = `<span>test</span>`;
                     mounted() {
-                        // console.log(this.$parent);
-                        expect(this.$parent).instanceof(ChildrenIntactComponent);
+                        expect(this.$senior).instanceof(ChildrenIntactComponent);
                         done();
                     }
                 }
@@ -333,7 +331,7 @@ describe('Intact Vue Next', () => {
                             return {show: false}
                         },
                         mounted() {
-                            debugger;
+                            expect(this.$parent).instanceof(ChildrenIntactComponent);
                         }
                     },
                 });

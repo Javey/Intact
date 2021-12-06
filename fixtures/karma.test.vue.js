@@ -1,7 +1,7 @@
 const moduleAlias = require('module-alias');
 const webpack = require('webpack');
 const path = require('path');
-const {VueLoaderPlugin} = require('vue-legacy-loader');
+const {VueLoaderPlugin} = require('@vue-loader/legacy');
 
 moduleAlias.addAliases({
     'vue': path.resolve(__dirname, '../node_modules/vue-legacy'),
@@ -46,7 +46,7 @@ module.exports = function(config) {
                     },
                     {
                         test: /\.vue$/,
-                        loader: 'vue-loader'
+                        use: require.resolve('@vue-loader/legacy'),
                     },
                 ]
             },

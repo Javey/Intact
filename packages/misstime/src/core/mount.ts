@@ -133,7 +133,7 @@ export function mountComponentClass(
     // instance.$SVG = isSVG;
     // instance.$vNode = vNode;
     // instance.$mountedQueue = mountedQueue;
-    // instance.$parent = parentComponent;
+    // instance.$senior = parentComponent;
 
     instance.$init(props);
    

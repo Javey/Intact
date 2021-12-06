@@ -317,37 +317,37 @@ describe('Intact React', () => {
         });
 
         describe('vNode', () => {
-            it('should get $parent of nested intact component', () => {
+            it('should get $senior of nested intact component', () => {
                 class C extends Component {
                     static template = `<div>{this.get('children')}</div>`;
                     mounted() {
-                        expect(this.$parent).to.be.null;
+                        expect(this.$senior).to.be.null;
                     }
                 }
                 class D extends Component {
                     static template = `<span>test</span>`;
                     mounted() {
-                        expect(this.$parent).be.instanceof(E);
-                        expect(this.$parent!.$parent).to.be.instanceof(C);
+                        expect(this.$senior).be.instanceof(E);
+                        expect(this.$senior!.$senior).to.be.instanceof(C);
                     }
                 }
                 class E extends Component {
                     static template = `<i>{this.get('children')}</i>`;
                     mounted() {
-                        expect(this.$parent).to.be.instanceof(C);
+                        expect(this.$senior).to.be.instanceof(C);
                     }
                 }
                 class F extends Component {
                     static template = `<span>f</span>`;
                     mounted() {
                         // firsthand intact component
-                        expect(this.$parent).to.be.instanceof(C);
+                        expect(this.$senior).to.be.instanceof(C);
                     }
                 }
                 class G extends Component {
                     static template = `<b>g</b>`;
                     mounted() {
-                        expect(this.$parent).to.be.instanceof(ChildrenIntactComponent);
+                        expect(this.$senior).to.be.instanceof(ChildrenIntactComponent);
                     }
                 }
 
@@ -364,14 +364,14 @@ describe('Intact React', () => {
                 });
             });
 
-            it('should get $parent which return by functional component', () => {
+            it('should get $senior which return by functional component', () => {
                 const C = Component.functionalWrapper((props) => {
                     return h(D, props);
                 });
                 class D extends Component {
                     static template = `<div>test</div>`;
                     mounted() {
-                        expect(this.$parent).to.be.instanceof(E);
+                        expect(this.$senior).to.be.instanceof(E);
                     }
                 }
                 class E extends Component {
@@ -392,7 +392,7 @@ describe('Intact React', () => {
                 });
             });
 
-            it('should get $parent which nest functional component in functional component', () => {
+            it('should get $senior which nest functional component in functional component', () => {
                 const C = Component.functionalWrapper<{className?: string}>((props) => {
                     return h(D, props);
                 });
@@ -401,10 +401,10 @@ describe('Intact React', () => {
                     static template = `<div>{this.get('children')}</div>`;
                     mounted() {
                         if (firstD) {
-                            expect(this.$parent).to.be.null;
+                            expect(this.$senior).to.be.null;
                             firstD = false;
                         } else {
-                            expect(this.$parent).to.be.instanceof(E);
+                            expect(this.$senior).to.be.instanceof(E);
                         }
                     }
                 }
@@ -414,7 +414,7 @@ describe('Intact React', () => {
                     static template = `<div>{this.get('show') ? this.get('children') : null}</div>`;
                     mounted() {
                         e = this;
-                        expect(this.$parent).to.be.instanceof(D);
+                        expect(this.$senior).to.be.instanceof(D);
                     }
                 }
 
@@ -423,9 +423,9 @@ describe('Intact React', () => {
                     mounted() {
                         // update in updating
                         e.forceUpdate();
-                        expect(this.$parent).to.be.instanceof(D);
-                        expect(this.$parent!.$parent).to.be.instanceof(E);
-                        expect(this.$parent!.$parent!.$parent).to.be.instanceof(D);
+                        expect(this.$senior).to.be.instanceof(D);
+                        expect(this.$senior!.$senior).to.be.instanceof(E);
+                        expect(this.$senior!.$senior!.$senior).to.be.instanceof(D);
                     }
                 }
 
@@ -444,7 +444,7 @@ describe('Intact React', () => {
                 e!.set('show', true);
             });
 
-            it('should get $parent in template & update', () => {
+            it('should get $senior in template & update', () => {
                 const mount = sinon.spy();
                 const update = sinon.spy();
 
@@ -455,15 +455,15 @@ describe('Intact React', () => {
                     static template = `<i>{this.get('children')}</i>`;
                     mounted() {
                         mount();
-                        expect(this.$parent).to.be.instanceof(E);
-                        expect(this.$parent!.$parent).to.be.instanceof(C);
-                        expect(this.$parent!.$parent!.$parent).to.be.instanceof(F);
+                        expect(this.$senior).to.be.instanceof(E);
+                        expect(this.$senior!.$senior).to.be.instanceof(C);
+                        expect(this.$senior!.$senior!.$senior).to.be.instanceof(F);
                     }
                     updated() {
                         update();
-                        expect(this.$parent).to.be.instanceof(E);
-                        expect(this.$parent!.$parent).to.be.instanceof(C);
-                        expect(this.$parent!.$parent!.$parent).to.be.instanceof(F);
+                        expect(this.$senior).to.be.instanceof(E);
+                        expect(this.$senior!.$senior).to.be.instanceof(C);
+                        expect(this.$senior!.$senior!.$senior).to.be.instanceof(F);
                     }
                 }
                 class E extends Component {

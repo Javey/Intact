@@ -12,17 +12,18 @@ import {
     nextTick,
 } from './helpers';
 import {createVNode as h, ComponentFunction} from 'intact';
-import {h as v, ComponentPublicInstance, render as vueRender, getCurrentInstance, createApp} from 'vue';
 import Test1 from './test1.vue';
 import Test3 from './test3.vue';
-import {createRouter, createWebHashHistory, RouteRecordRaw} from 'vue-router';
+import Test4 from './test4.vue';
+import VueRouter, {RouteRecord, RouteConfig} from 'vue-legacy-router';
+import Vue, {CreateElement} from 'vue';
 
-describe('Intact Vue Next', () => {
+describe('Intact Vue Legacy', () => {
     describe('Vue Features', () => {
         describe('v-show', () => {
             it('should render v-show on class component correctly', async () => {
                 render(`
-                    <C v-show="show">
+                    <C v-show="show" style="color: red;">
                         <div v-show="show">show</div>
                         <C v-show="show">test</C>
                         <C v-show="show" style="font-size: 12px;">font-size</C>
@@ -32,17 +33,16 @@ describe('Intact Vue Next', () => {
                     C: ChildrenIntactComponent
                 }, {show: false});
 
-                await nextTick();
-                expect(vm.$el.outerHTML).eql('<div style="display: none;"><div style="display: none;">show</div><div style="display: none;">test</div><div style="font-size: 12px; display: none;">font-size</div><div style="font-size: 12px; display: none;">fontSize</div></div>');
+                expect(vm.$el.outerHTML).eql('<div style="color: red; display: none;"><div style="display: none;">show</div> <div style="display: none;">test</div> <div style="font-size: 12px; display: none;">font-size</div> <div style="font-size: 12px; display: none;">fontSize</div></div>');
 
                 vm.show = true;
                 await nextTick();
-                expect(vm.$el.outerHTML).eql('<div><div style="">show</div><div>test</div><div style="font-size: 12px;">font-size</div><div style="font-size: 12px;">fontSize</div></div>');
+                expect(vm.$el.outerHTML).eql('<div style="color: red;"><div style="">show</div> <div>test</div> <div style="font-size: 12px;">font-size</div> <div style="font-size: 12px;">fontSize</div></div>');
             });
 
             it('should render v-show on functional component correctly', async () => {
                 render(`
-                    <C v-show="show">
+                    <C v-show="show" style="color: red;">
                         <div v-show="show">show</div>
                         <C v-show="show">test</C>
                         <C v-show="show" style="font-size: 12px;">font-size</C>
@@ -54,22 +54,12 @@ describe('Intact Vue Next', () => {
                     }),
                 }, {show: false});
 
-                await nextTick();
-                expect(vm.$el.outerHTML).eql('<div style="display: none;"><div style="display: none;">show</div><div style="display: none;">test</div><div style="font-size: 12px; display: none;">font-size</div><div style="font-size: 12px; display: none;">fontSize</div></div>');
+                expect(vm.$el.outerHTML).eql('<div style="color: red; display: none;"><div style="display: none;">show</div> <div style="display: none;">test</div> <div style="font-size: 12px; display: none;">font-size</div> <div style="font-size: 12px; display: none;">fontSize</div></div>');
 
                 vm.show = true;
                 await nextTick();
-                expect(vm.$el.outerHTML).eql('<div><div style="">show</div><div>test</div><div style="font-size: 12px;">font-size</div><div style="font-size: 12px;">fontSize</div></div>');
+                expect(vm.$el.outerHTML).eql('<div style="color: red;"><div style="">show</div> <div>test</div> <div style="font-size: 12px;">font-size</div> <div style="font-size: 12px;">fontSize</div></div>');
             });
-
-            // it('should render v-show on functional component that returns mutliple vNodes correctly', async () => {
-                // const h = Intact.Vdt.miss.h;
-                // render(`<C v-show="show"></C>`, {
-                    // C: Intact.functionalWrapper(props => {
-                        // return [h(ChildrenIntactComponent, props), h(SimpleIntactComponent)];
-                    // }),
-                // }, {show: false});
-            // });
         });
 
         describe('v-model', () => {
@@ -113,7 +103,7 @@ describe('Intact Vue Next', () => {
 
             it('with propName', () => {
                 const test = sinon.spy(function() {console.log(arguments)});
-                render('<C a="a" v-model:b="b" ref="test" @change:b="(c, v) => test(1, c, v)"/>', {
+                render('<C a="a" :b.sync="b" ref="test" @change:b="(c, v) => test(1, c, v)"/>', {
                     C: PropsIntactComponent
                 }, {b: 1}, {test});
 
@@ -130,11 +120,10 @@ describe('Intact Vue Next', () => {
                     static typeDefs = {userName: String};
                 }
                 const spy = sinon.spy();
-                render('<C ref="test" v-model:user-name="name" @change:user-name="onChange" />', {
+                render('<C ref="test" :user-name.sync="name" @change:user-name="onChange" />', {
                     C: Test,
                 }, {name: 'Javey'}, {onChange: spy});
 
-                await nextTick();
                 vm.$refs.test.set('userName', 'test');
                 expect(vm.name).eql('test');
                 expect(spy.callCount).eql(1);
@@ -149,29 +138,57 @@ describe('Intact Vue Next', () => {
                     Test1
                 });
 
-                expect(vm.$el.outerHTML).to.eql('<div class="test1" data-v-ec27949c=""><div class="test2" data-v-ec27949c=""><span>test2</span><i data-v-ec27949c="">test1</i><div data-v-ec27949c="">intact component in vue<b data-v-ec27949c="">test</b><div class="test3" data-v-ebef3698="" data-v-ec27949c=""><span data-v-ebef3698="">test3</span><div data-v-ec27949c="">intact component in vue<b data-v-ec27949c="">test</b></div></div></div></div><div>Intact Component</div><div><div>Intact Component</div></div></div>');
+                expect(vm.$el.outerHTML).to.eql('<div data-v-d6e4193c="" class="test1"><div data-v-d6e4193c="" class="test2"><span>test2</span> <i data-v-d6e4193c="">test1</i> <div data-v-d6e4193c="">intact component in vue<b data-v-d6e4193c="">test</b> <div data-v-d6abbb38="" data-v-d6e4193c="" class="test3"><span data-v-d6abbb38="">test3</span> <div data-v-d6e4193c="" data-v-d6abbb38="">intact component in vue<b data-v-d6e4193c="">test</b></div></div></div></div> <div data-v-d6e4193c="">Intact Component</div><div data-v-d6e4193c=""><div>Intact Component</div></div></div>');
+            });
+
+            it('should set scope dd correctly even if intact has changed type of element', async () => {
+                class C extends Component<{show: boolean}> {
+                    static template = `if (!this.get('show')) return; <div>component</div>`;
+                }
+                render('<Test :show="show"><C :show="show" /></Test>', {
+                    C,
+                    Test: Test4,
+                }, {show: false});
+
+                expect(vm.$el.outerHTML).to.eql('<div data-v-d68f8c36="" class="test1"> </div>');
+
+                vm.show = true;
+                await nextTick();
+                expect(vm.$el.outerHTML).to.eql('<div data-v-d68f8c36="" class="test1"><div data-v-d68f8c36="">intact component in vue<b data-v-d68f8c36="">test</b></div> <div data-v-d68f8c36="">component</div></div>');
+
+                vm.show = false;
+                await nextTick();
+                expect(vm.$el.outerHTML).to.eql('<div data-v-d68f8c36="" class="test1"> </div>');
+
+                vm.show = true;
+                await nextTick();
+                expect(vm.$el.outerHTML).to.eql('<div data-v-d68f8c36="" class="test1"><div data-v-d68f8c36="">intact component in vue<b data-v-d68f8c36="">test</b></div> <div data-v-d68f8c36="">component</div></div>');
             });
         });
 
         describe('Router', () => {
-            function render(routes: RouteRecordRaw[]) {
+            function render(routes: RouteConfig[]) {
+                Vue.use(VueRouter);
+
                 const container = document.createElement('div');
                 document.body.appendChild(container);
-                const app = createApp({
-                    template: `<router-view />`
+                const router = new VueRouter({
+                    routes
                 });
-                app.use(createRouter({
-                    history: createWebHashHistory(),
-                    routes,
-                }));
-                app.mount(container);
+                const app = new Vue({
+                    el: container,
+                    router,
+                    render(h: CreateElement) {
+                        return h('router-view');
+                    }
+                } as any);
             }
 
             function findRouter(instance: Component) {
                 do {
-                    const vueInstance = instance.vueInstance;
-                    if (vueInstance) {
-                        return vueInstance.proxy!.$router;
+                    const parent = instance.$parent;
+                    if (parent) {
+                        return parent.$router;
                     }
                 } while (instance = instance.$senior as Component);
             }
@@ -213,55 +230,6 @@ describe('Intact Vue Next', () => {
                         }
                     }},
                 ]);
-            });
-        });
-
-        describe('Vue Test', () => {
-            it('render emtpy slot', async () => {
-                render('<C><template v-slot:slot></template></C>', {
-                    C: {
-                        template: `<div><slot name="slot">test</slot></div>`
-                    }
-                });
-            });
-
-            it('keep-alive', async () => {
-                render('<keep-alive><C /></keep-alive>', {
-                    C: function() {
-                        const instance = getCurrentInstance() as any;
-                        const {p: patch} = instance.parent.ctx.renderer;
-                        console.log(patch);
-                        return v('div', null, 'test');
-                    }
-                });
-            });
-
-            it('v-show', async () => {
-                render('<C v-show="false">show</C>', {
-                    C: {
-                        template: `<div><slot /></div>`
-                    }
-                });
-            });
-
-            it('v-show with functional component that returns multiple vnodes', async () => {
-                render('<C v-show="false">show</C>', {
-                    C: function(props, context) {
-                        return [
-                            v('div', context.attrs, context.slots),
-                            v('div', null, 'test')
-                        ];
-                    }
-                });
-            });
-
-            it('scoped', async () => {
-                render('<Test3><div>test</div><Test /></Test3>', {
-                    Test3,
-                    Test: {
-                        template: `<div>component</div>`
-                    }
-                });
             });
         });
     });
