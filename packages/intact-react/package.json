@@ -1,6 +1,6 @@
 {
   "name": "intact-react",
-  "version": "3.0.0-beta.15",
+  "version": "3.0.0-beta.16",
   "description": "A compatibility layer for running intact component in React@17",
   "main": "index.js",
   "module": "dist/index.esm.js",
@@ -29,7 +29,7 @@
     "react": "^17.0.0"
   },
   "dependencies": {
-    "intact": "^3.0.0-beta.15",
+    "intact": "^3.0.0-beta.16",
     "tslib": "^2.3.1"
   }
 }
