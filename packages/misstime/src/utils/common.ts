@@ -37,7 +37,6 @@ export function insertOrAppend(parentDom: Element, newNode: IntactDom, anchor: I
 
 
 export const REFERENCE: Reference = {value: false};
-export const RENDERING: Reference = {value: false};
 
 export const Fragment: string = '$F';
 

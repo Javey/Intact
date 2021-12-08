@@ -28,9 +28,8 @@ describe('Component', () => {
             }
 
             render(h(Test, {name: '1'}), container);
-            expect(container.innerHTML).to.eql('<div>2</div>');
 
-            // await nextTick();
+            await nextTick();
             expect(template).to.have.callCount(1);
         });
     });
