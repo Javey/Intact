@@ -10,6 +10,7 @@ interface AProps {
 interface AEvents {
     a: []
     b: [number]
+    aa: [number, number]
 }
 
 // type Test = AEvents & {
@@ -69,7 +70,15 @@ class AA extends Component<AProps, AEvents> {
         this.on('a', () => { });
         this.on('b', (data) => {
             expectType<number>(data);
+            // @ts-expect-error
+            expectType<string>(data);
         });
+
+        this.on('aa', () => { });
+        this.on('aa', (a) => { });
+        this.on('aa', (a, b) => { });
+        // @ts-expect-error
+        this.on('aa', (a, b, c) => { });
     }
 }
 
@@ -139,7 +148,18 @@ class A<T extends AProps, E extends AEvents> extends Component<T, E> {
         this.on('a', () => { });
         this.on('b', (data) => {
             expectType<number>(data);
+            // @ts-expect-error
+            expectType<string>(data);
         });
+
+        this.on('aa', () => { });
+        this.on('aa', (a, b) => { });
+        // FIXME: Why is the type error?
+        // @ts-expect-error
+        this.on('aa', (a) => { });
+        this.on('aa', (a, b) => { });
+        // @ts-expect-error
+        this.on('aa', (a, b, c) => { });
     }
 }
 
@@ -179,6 +199,8 @@ export class B<T extends BProps, E extends BEvents> extends A<T, E> {
 
         this.watch('b', (v, o) => {
             expectType<number>(v); 
+            // @ts-expect-error
+            expectType<string>(v); 
             expectType<number | undefined>(o);
         });
         

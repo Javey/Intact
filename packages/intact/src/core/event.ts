@@ -31,7 +31,7 @@ export class Event<
     on<K extends keyof Props<P>>(name: `$change:${string & K}`, callback: ChangeCallback<Props<P>, K>): void;
     on<K extends keyof Props<P>>(name: `$changed:${string & K}`, callback: ChangeCallback<Props<P>, K>): void;
     // events
-    on<K extends keyof E>(name: K, callback: (...args: any[] & E[K]) => void): void;
+    on<K extends keyof E>(name: K, callback: (...args: E[K] extends any[] ? E[K] : never) => void): void;
     on<K extends keyof L>(name: K, callback: L[K]): void;
     on(name: string, callback: Function) {
         if (process.env.NODE_ENV !== 'production') {
