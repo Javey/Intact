@@ -4,7 +4,7 @@ import {directClone} from './vnode';
 import {mount} from './mount';
 import {remove} from './unmount';
 import {patch} from './patch';
-import {callAll} from '../utils/common';
+import {callAll, RENDERING} from '../utils/common';
 
 /* istanbul ignore next */
 if (process.env.NODE_ENV !== 'production') {
@@ -59,6 +59,7 @@ export function render(vNode: VNode | null | undefined, parentDom: IntactElement
     const mountedQueue: Function[] = [];
     let lastVNode = (parentDom as any).$V as VNode | null;
 
+    RENDERING.value = true;
     if (isNullOrUndefined(lastVNode)) {
         if (!isNullOrUndefined(vNode)) {
             if (vNode.type & Types.InUse) {
@@ -81,4 +82,5 @@ export function render(vNode: VNode | null | undefined, parentDom: IntactElement
     }
 
     callAll(mountedQueue);
+    RENDERING.value = true;
 }

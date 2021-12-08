@@ -11,6 +11,7 @@ import {
     findDomFromVNode,
     callAll,
     unmountComponentClass,
+    RENDERING,
 } from 'misstime';
 import {
     isNull,
@@ -282,6 +283,16 @@ export function forceUpdate<P>(component: Component<P>, callback?: Function) {
         }
     } else {
         // TODO: if QUEUE.length === 0, update immediately
+        // Maybe can only implement like React: detect running environment 
+        // if (!RENDERING.value) {
+            // if (QUEUE.length === 0) {
+                // update(component);
+                // if (isFunction(callback)) {
+                    // callback.call(component);
+                // }
+                // return;
+            // }
+        // }
         if (QUEUE.indexOf(component) === -1) {
             QUEUE.push(component);
         }
@@ -309,20 +320,28 @@ function rerender() {
 
     while (component = QUEUE.shift()) {
         if (!component.$unmounted) {
-            const mountedQueue: Function[] = component.$mountedQueue = [];
-            const vNode = component.$vNode;
-            component.$update(
-                vNode, 
-                vNode,
-                (findDomFromVNode(component.$lastInput!, true) as Element).parentNode as Element,
-                null,
-                mountedQueue,
-                true,
-            );
-            callAll(mountedQueue); 
-            callAllQueue(component);
+            update(component);
         }
     }
+}
+
+function update(component: Component<any>) {
+    // RENDERING.value = true;
+
+    const mountedQueue: Function[] = component.$mountedQueue = [];
+    const vNode = component.$vNode;
+    component.$update(
+        vNode, 
+        vNode,
+        (findDomFromVNode(component.$lastInput!, true) as Element).parentNode as Element,
+        null,
+        mountedQueue,
+        true,
+    );
+    callAll(mountedQueue); 
+    callAllQueue(component);
+
+    // RENDERING.value = false;
 }
 
 function callAllQueue(component: Component<any>) {
