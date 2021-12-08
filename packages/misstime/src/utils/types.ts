@@ -173,7 +173,7 @@ export interface ComponentClass<P = any> {
 
     $init(props: Props<P, ComponentClass<P>> | null): void;
     $render(lastVNode: VNodeComponentClass | null, vNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null, mountedQueue: Function[]): void;
-    $update(lastVNode: VNodeComponentClass , vNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null, mountedQueue: Function[], force: boolean): void;
+    $update(lastVNode: VNodeComponentClass, vNode: VNodeComponentClass, parentDom: Element, anchor: IntactDom | null, mountedQueue: Function[], force: boolean): void;
     $unmount(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null): void;
 }
 
