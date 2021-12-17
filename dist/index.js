@@ -230,7 +230,8 @@ var hooks = {
 };
 
 var config = {
-    disableDelegate: false // for using in React/Vue, disable delegate the event
+    disableDelegate: false, // for using in React/Vue, disable delegate the event
+    delegateTarget: doc
 };
 
 /** 
@@ -2453,7 +2454,7 @@ var unDelegatesEvents = {
     'wheel': true
 };
 
-// change event can not be deletegated in IE8 
+// change event can not be deletegated in IE8
 if (browser.isIE8) {
     unDelegatesEvents.change = true;
 }
@@ -2514,7 +2515,7 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
 }
 
 function dispatchEvent(event, target, items, count, isClick, eventData) {
-    // if event has cancelled bubble, return directly  
+    // if event has cancelled bubble, return directly
     // otherwise it is also triggered sometimes, e.g in React
     if (event.cancelBubble) {
         return;
@@ -2567,7 +2568,7 @@ function attachEventToDocument(name, delegatedRoots) {
             dispatchEvent(event, event.target, delegatedRoots.items, count, event.type === 'click', eventData);
         }
     };
-    addEventListener(doc, name, docEvent);
+    addEventListener(config.delegateTarget, name, docEvent);
     return docEvent;
 }
 
