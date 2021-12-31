@@ -90,6 +90,27 @@ describe('Intact React', () => {
             expect(click.callCount).to.eql(1);
         });
 
+        it('render event of react and it can stop propagation', () => {
+            const click1 = sinon.spy((event: Event) => {
+                console.log('Click in React.', event);
+                event.stopPropagation();
+            });
+            const click2 = sinon.spy(() => {
+                console.log('Click in Intact.');
+            });
+            class Test extends Component {
+                static template = `<div ev-click={this.click}>{this.get('children')}</div>`;
+                click() {
+                    click2();
+                }
+            }
+            render(<Test><span onClick={click1}>click</span></Test>);
+
+            (container.firstElementChild!.firstElementChild as HTMLElement).click();
+            expect(click1.callCount).to.eql(1);
+            expect(click2.callCount).to.eql(0);
+        });
+
         it('render nested array children', () => {
             render(
                 <ChildrenIntactComponent>

@@ -179,7 +179,12 @@ export function resolveTransitionHooks(
                 const el = findDomFromVNode(leavingVNode, true) as TransitionElement;
                 const leaveCb = el._leaveCb;
                 if (leaveCb) {
-                    leaveCb();
+                    // Maybe we are patching Fragment and treat the leaving element
+                    // as anchor. If we toggle the same key element, the element
+                    // will be removed, then the anchor is missing. So we do removing
+                    // after patching has ended.
+                    component.$mountedQueue.push(leaveCb);
+                    // leaveCb();
                 }
             }
             
@@ -187,6 +192,12 @@ export function resolveTransitionHooks(
         },
 
         enter(el) {
+            // maybe a mount enter is processing, and we enter it again by updating its `show` value 
+            if (el._enterCb) {
+                // el._enterCb(true);
+                return;
+            }
+
             let hook = onEnter;
             let afterHook = onAfterEnter;
             let cancelHook = onEnterCancelled;

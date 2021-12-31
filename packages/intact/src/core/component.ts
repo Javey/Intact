@@ -113,7 +113,7 @@ export abstract class Component<
 
         this.$props = constructor.defaults() as P;
 
-        if ($senior !== null) {
+        if (!isNullOrUndefined($senior)) {
             this.$provides = ($senior as Component<any>).$provides;
         }
 

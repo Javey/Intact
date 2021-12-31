@@ -1,6 +1,6 @@
 import {render, createVNode as h} from 'misstime';
 import {TransitionGroup} from '../src/components/transitionGroup';
-import {wait, testTransition} from '../../misstime/__tests__/utils';
+import {wait, testTransition, nextTick} from '../../misstime/__tests__/utils';
 import './transition.css';
 import {Component} from '../src/core/component';
 
@@ -107,7 +107,7 @@ describe('Component', function() {
             ]);
         });
 
-        it('should move an enter element conrrectly', async () => {
+        it('should move an enter element correctly', async () => {
             render(h(TransitionGroup, null, [
                 h('div', {key: '1'}, '1'),
             ]), container);
@@ -123,6 +123,29 @@ describe('Component', function() {
             // await Promise.all([
 
             // ]);
+        });
+
+        it('should enter a element which is leaving correctly', async () => {
+            render(h(TransitionGroup, null, [
+                h('div', {key: '1'}, '1'),
+                h('div', {key: '2'}, '2'),
+            ]), container);
+            await wait(0);
+            render(h(TransitionGroup, null, [
+                h('div', {key: '1'}, '1'),
+            ]), container);
+            await wait(0);
+            render(h(TransitionGroup, null, [
+                h('div', {key: '1'}, '1'),
+                h('div', {key: '2'}, '2'),
+                h('div', {key: '3'}, '3'),
+            ]), container);
+
+            expect(container.childElementCount).to.eql(3);
+            await Promise.all([
+                testTransition(container.children[1]!, 'enter'),
+                testTransition(container.children[2]!, 'enter'),
+            ]);
         });
     });
 });

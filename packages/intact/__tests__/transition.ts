@@ -193,6 +193,15 @@ describe('Component', function() {
                 await nextFrame();
                 expect(div.className).to.equal('b-enter-active b-enter-to');
             });
+
+            it('should show when we mount the element at the same time', async () => {
+                render(h(Transition, {show: false}), container);
+                render(h(Transition, {show: true}, h('div', null, 'show')), container);
+                const dom = container.firstElementChild!;
+
+                await testTransition(dom, 'enter');
+                expect((dom as HTMLElement).style.display).to.equal('');
+            });
         });
     });
 });
