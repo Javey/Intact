@@ -108,7 +108,7 @@ export function mountElement(
         mountProps(vNode, type, props, dom, isSVG);
     }
 
-    if (!isNullOrUndefined(transition)) {
+    if (!isNullOrUndefined(transition) && transition.show) {
         transition.beforeEnter(dom as TransitionElement); 
         mountedQueue.push(() => transition.enter(dom as TransitionElement));
     }

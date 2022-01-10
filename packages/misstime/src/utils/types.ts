@@ -26,6 +26,7 @@ export interface TransitionHooks {
     beforeEnter(el: TransitionElement): void
     enter(el: TransitionElement): void
     leave(el: TransitionElement, remove: () => void): void
+    show: boolean
 }
 
 export interface TransitionElement extends HTMLElement {

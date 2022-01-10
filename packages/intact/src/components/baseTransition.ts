@@ -268,7 +268,9 @@ export function resolveTransitionHooks(
             } else {
                 done();
             }
-        }
+        },
+
+        show: props.show!
     };
 }
 
