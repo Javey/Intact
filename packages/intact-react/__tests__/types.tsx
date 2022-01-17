@@ -1,7 +1,8 @@
 import {Component, Children} from '../src';
 
 interface Events {
-    fire: [number] 
+    fire: [number]
+    multiArgs: [number, string]
 }
 
 class A extends Component<
@@ -31,6 +32,7 @@ const h = <A value={1} onChangeValue={() => {}} onChangeA={() => {}} />
 const j = <A onClick={() => {}} />
 // @ts-expect-error
 const k = <A onEvent={() => {}} />
+const k1 = <A onMultiArgs={(a: number) => {}} />
 
 // slot
 // @ts-expect-error

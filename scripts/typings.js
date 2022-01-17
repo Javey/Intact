@@ -10,9 +10,15 @@ if (name === 'intact-vue') {
     (async () => {
         const files = await fs.readdir(join(cwd, 'dist'));
         for (const file of files) {
-            const stat = await fs.stat(join(cwd, 'dist', file));
+            const filePath = join(cwd, 'dist', file);
+            if (file === 'index.d.ts') {
+                const contents = await fs.readFile(filePath, {encoding: 'utf8'}).replace('vue-legacy', 'vue');
+                await fs.writeFile(filePath, contents);
+                continue;
+            }
+            const stat = await fs.stat(filePath);
             if (stat.isDirectory()) {
-                fs.rm(join(cwd, 'dist', file), {recursive: true, force: true});
+                fs.rm(filePath, {recursive: true, force: true});
             }
         }
     })();

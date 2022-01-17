@@ -48,7 +48,8 @@ type IntactReactProps<P, E, B> = Readonly<P> & Readonly<{
         (oldValue: P[K], newValue: P[K]) => void
 }> & Readonly<{
     [K in keyof E as `on${Capitalize<string & K>}`]?:
-        (...args: any[] & E[K]) => void
+        // @ts-ignore
+        (...args: E[K]) => void
 }> & Readonly<{
     [K in keyof B as `slot${Capitalize<string & K>}`]?: 
         B[K] extends null ?
@@ -197,7 +198,7 @@ export class Component<
 
         // we may call hooks in init lifecycle, so set instance here,
         // $init method will set it to null
-        setInstance(this);
+        setInstance(this as Component);
         this.$init(vNode.props as Props<P, this>);
 
         vNode.children = this;
