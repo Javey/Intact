@@ -38,6 +38,9 @@ import {Context} from './wrapper';
 export * from 'intact';
 
 type ValidReactNode = ReactChild | null | undefined;
+type OnEvents<E> = {
+    [K in keyof E as `on${Capitalize<string & K>}`]: E[K]
+}
 
 type IntactReactProps<P, E, B> = Readonly<P> & Readonly<{
     children?: ReactNode | undefined 
@@ -55,7 +58,15 @@ type IntactReactProps<P, E, B> = Readonly<P> & Readonly<{
         B[K] extends null ?
             ValidReactNode :
             (data: B[K]) => ValidReactNode
-}> & Readonly<Omit<HTMLAttributes<any>, keyof P | keyof E | 'style'>>
+}> & Readonly<Omit<NormalizedHTMLAttibutes, keyof P | keyof OnEvents<E> | 'style'>>
+
+type NormalizedHTMLAttibutes = {
+    [Key in keyof HTMLAttributes<any>]: 
+        Key extends `on${infer Name}` ? 
+            // @ts-ignore
+            GlobalEventHandlers[Lowercase<Key>] :
+            HTMLAttributes<any>[Key]
+}
 
 const PROMISES = '_$IntactReactPromises';
 const EMPTY_ARRAY: any[] = [];
