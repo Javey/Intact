@@ -10,6 +10,7 @@ import {
     expect,
     wait,
     renderApp,
+    getSpyError,
 } from './helpers';
 import {Component, createVNode as h, findDomFromVNode, createRef, VNode, provide, inject} from '../src';
 
@@ -529,11 +530,7 @@ describe('Intact React', () => {
 
         describe('Validate', () => {
             it('should validate props', () => {
-                const error = console.error;
-                const spyError = sinon.spy((...args: any[]) => {
-                    error.apply(console, args);
-                });
-                console.error = spyError 
+                const [spyError, resetError] = getSpyError();
                 class IntactComponent extends Component<{show?: any}> {
                     static template = `<div>{this.get('children')}</div>`
                     static typeDefs = {
@@ -552,8 +549,7 @@ describe('Intact React', () => {
                 );
 
                 expect(spyError.callCount).to.eql(2);
-
-                console.error = error;
+                resetError();
             });
         });
 

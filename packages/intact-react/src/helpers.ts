@@ -12,7 +12,7 @@ export function precacheFiberNode(node: Element, placeholder: Element): Fiber {
     }
 
     const fiber = (placeholder as any)[internalInstanceKey];
-    // (node as any)[internalInstanceKey] = fiber;
+    (node as any)[internalInstanceKey] = fiber;
 
     return fiber;
 }

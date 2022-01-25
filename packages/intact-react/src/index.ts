@@ -313,4 +313,5 @@ function handleElementOnMounted(parentElement: HTMLElement, placeholder: HTMLEle
     // otherwise its event props will be removed
     // updateFiberProps(element, placeholder);
     fiber.stateNode = element;
+    fiber.alternate.stateNode = element;
 }

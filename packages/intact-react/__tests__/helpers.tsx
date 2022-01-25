@@ -73,3 +73,12 @@ export function renderApp<P>(_render: (this: any) => ReactNode, state?: P): Reac
     return instance!;
 }
 
+export function getSpyError() {
+    const error = console.error;
+    const spyError = sinon.spy((...args: any[]) => {
+        error.apply(console, ['Spy Error:', ...args]);
+    });
+    console.error = spyError 
+
+    return [spyError, () => console.error = error];
+}
