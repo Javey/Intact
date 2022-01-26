@@ -11,7 +11,7 @@ export interface WrapperProps {
 
 export const Context = createContext<Component | null>(null);
 
-const containerComment = ' react-mount-point-unstable ';
+export const containerComment = ' react-mount-point-unstable ';
 
 export class Wrapper implements ComponentClass<WrapperProps> {
     public $inited: boolean = true;
@@ -164,8 +164,11 @@ export class Wrapper implements ComponentClass<WrapperProps> {
             );
         });
 
-        // parent.$promises.value.push(promise);
-        parentComponent.$promises.value.push(promise);
+        // if the promised has be resolved, it indicate that this render is sync.
+        // Maybe we call update in intact directly, and it is not in React's render context
+        if (!promise.resolved) {
+            parentComponent.$promises.add(promise);
+        }
     }
 }
 

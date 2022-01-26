@@ -7,6 +7,8 @@ export type ComponentFunctionForIntact<P = {}> = Pick<ComponentFunction, 'displa
      (props: Props<P, any>, isReact?: boolean): VNodeComponentClass | VNodeComponentClass[] 
 }
 
+export const cid = 'IntactReactFunctional';
+
 export function functionalWrapper<P = {}>(Component: ComponentFunctionForIntact<P>) {
     function Ctor(props: P, context?: any): ReactElement<any, any> {
         if (context) {
@@ -30,6 +32,7 @@ export function functionalWrapper<P = {}>(Component: ComponentFunctionForIntact<
     });
 
     (element as any)._$type = Ctor;
+    (element as any).$cid = cid;
 
     return element;
 }

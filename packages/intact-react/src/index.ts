@@ -33,7 +33,7 @@ import {normalizeProps, normalizeChildren} from './normalize';
 import {precacheFiberNode, updateFiberProps} from './helpers';
 import {functionalWrapper} from './functionalWrapper';
 import {FakePromise, FakePromises} from './fakePromise';
-import {Context} from './wrapper';
+import {Context, containerComment} from './wrapper';
 
 export * from 'intact';
 
@@ -213,7 +213,13 @@ export class Component<
         this.$init(vNode.props as Props<P, this>);
 
         vNode.children = this;
-        this.$render(null, vNode, parentElement, placeholder.nextElementSibling, this.$mountedQueue);
+        let sibling: any = placeholder;
+        while (sibling = sibling.nextSibling) {
+            if (sibling.nodeType !== 8 || sibling.nodeValue !== containerComment) {
+                break;
+            }
+        }
+        this.$render(null, vNode, parentElement, sibling, this.$mountedQueue);
 
         this.$done(() => {
             handleElementOnMounted(
@@ -247,12 +253,18 @@ export class Component<
         const lastVNode = this.$vNode;
         this.$vNode = vNode;
 
-        this.$promises.reset();
-        const mountedQueue = this.$mountedQueue = getMountedQueue(this.$senior as Component);
+        const promises = this.$promises;
+        if (promises.done) {
+            promises.reset();
 
-        this.$update(lastVNode, vNode, this.$parentElement, null, mountedQueue, false); 
+            const mountedQueue = this.$mountedQueue = getMountedQueue(this.$senior as Component);
+            this.$update(lastVNode, vNode, this.$parentElement, null, mountedQueue, false); 
 
-        this.$done(null);
+            this.$done(null);
+        } else {
+            this.$update(lastVNode, vNode, this.$parentElement, null, this.$mountedQueue, false); 
+
+        }
     }
 
     componentWillUnmount() {
@@ -313,5 +325,8 @@ function handleElementOnMounted(parentElement: HTMLElement, placeholder: HTMLEle
     // otherwise its event props will be removed
     // updateFiberProps(element, placeholder);
     fiber.stateNode = element;
-    fiber.alternate.stateNode = element;
+    const alternate = fiber.alternate;
+    if (alternate) {
+        alternate.stateNode = element;
+    }
 }

@@ -315,6 +315,34 @@ describe('Intact React', () => {
                 instance.setState({a: 2});
                 expect(componentWillUnmount.callCount).to.eql(1);
             });
+
+            it('update on rendering', () => {
+                const mount = sinon.spy(function(this: D) {
+                    console.log('mounted');
+                    expect(document.body.contains(this.elementRef.value)).to.be.true;
+                });
+                class C extends ReactComponent {
+                    render() {
+                        return <D onChange={() => this.forceUpdate()}>
+                            <div>test</div>
+                        </D>
+                    }
+                }
+                class D extends Component<{}, {change: []}> {
+                    static template = `<div ref={this.elementRef}>{this.get('children')}</div>`;
+                    public elementRef = createRef<HTMLElement>();
+                    init() {
+                        this.trigger('change');
+                    }
+                    mounted() {
+                        mount.call(this);
+                    }
+                }
+                const instance = renderApp(function() {
+                    return <C />
+                });
+                expect(mount.callCount).to.eql(1);
+            });
         });
 
         describe('vNode', () => {

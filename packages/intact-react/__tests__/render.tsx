@@ -220,6 +220,19 @@ describe('Intact React', () => {
             expect(onClick.callCount).to.eql(1);
         });
 
+        it('render intact component before react text node', () => {
+            render(
+                <div>
+                    <ChildrenIntactComponent>
+                        intact
+                    </ChildrenIntactComponent>
+                    text
+                </div>
+            );
+
+            expect(container.innerHTML).to.eql('<div><div>intact</div>text</div>')
+        });
+
         describe('Normalize', () => {
             it('normalize events', () => {
                 type Props = {value: number};

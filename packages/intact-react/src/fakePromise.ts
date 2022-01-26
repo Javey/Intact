@@ -41,7 +41,7 @@ export class FakePromise {
         }
     }
 
-    private resolved = false;
+    public resolved = false;
     private callbacks: Callback[] = [];
 
     constructor(executor: Executor) {
@@ -75,7 +75,7 @@ export class FakePromises {
         /* istanbul ignore next */
         if (process.env.NODE_ENV !== 'production') {
             if (this.done) {
-                throw new Error(
+                console.error(
                     'The FakePromises has done and cannot add new promise. ' +
                     'Maybe it is a bug of IntactReact'
                 );

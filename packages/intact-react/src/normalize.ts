@@ -2,6 +2,7 @@ import {createVNode as h, VNode, Block, Blocks, createComponentVNode, Ref, Child
 import {ReactNode, ReactElement, Fragment, JSXElementConstructor, Ref as ReactRef} from 'react';
 import {isNullOrUndefined, isArray, isStringOrNumber, isInvalid, isFunction, noop, isNumber, isObject} from 'intact-shared';
 import {Wrapper} from './wrapper';
+import {cid as functionalCid} from './functionalWrapper';
 import type {Component} from './';
 
 export type VNodeAtom = VNode | null | undefined | string | number;
@@ -26,12 +27,13 @@ export function normalize(vNode: ReactNode): VNodeAtom | VNodeAtom[] {
     if (isIntactComponent(vNode)) {
         const key = vNode.key;
         const props = normalizeProps(vNode.props);
+        const type = vNode.type as any;
         if (!isNullOrUndefined(key)) {
             props.key = key;
         }
         return createComponentVNode(
             4,
-            vNode.type as unknown as typeof Component,
+            type.$cid === functionalCid ? type._$type : type,
             props,
             key,
             normalizeRef((vNode as any).ref),
