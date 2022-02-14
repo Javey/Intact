@@ -17,7 +17,8 @@ import {
     isVNode,
     VNodeChild,
     vShow,
-    isRef
+    isRef,
+    Text,
 } from 'vue';
 import {Wrapper} from './wrapper';
 import type {IntactComponentOptions} from './';
@@ -55,6 +56,7 @@ export function normalize(vnode: VNodeChildAtom | VNode): VNodeAtom {
     } else {
         // ignore comment vNode
         if (type === Comment) return null;
+        if (type === Text) return vnode.children as string;
         // spread fragment
         // if (type === Fragment) {
             // return normalizeChildren(vnode.children as VNodeArrayChildren);

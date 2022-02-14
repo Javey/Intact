@@ -377,6 +377,17 @@ describe('Intact Vue Legacy', () => {
             expect(vm.$refs.d).to.be.null;
         });
 
+        it('should not discard the class and style', async () => {
+            render('<C ref="c"><C class="a" style="display: block;">test</C></C>', {
+                C: ChildrenIntactComponent,
+            });
+    
+            vm.$refs.c.forceUpdate();
+
+            await nextTick();
+            expect(vm.$el.innerHTML).to.eql('<div class="a" style="display: block;">test</div>');
+        });
+
         describe('Multiple vNodes Component', () => {
             class Test extends Component {
                 static $doubleVNodes = true;

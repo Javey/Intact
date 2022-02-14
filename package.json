@@ -6,6 +6,7 @@
   "scripts": {
     "benchmark": "karma start fixtures/karma.benchmark.js",
     "test": "karma start fixtures/karma.test.js",
+    "test:vue:lagacy": "karma start fixtures/karma.test.vue.js",
     "snapshot": "UPDATE=1 npm run test",
     "clean": "rimraf node_modules/.rpt2_cache && lerna exec -- rimraf dist",
     "prebuild": "npm run clean",

@@ -107,38 +107,49 @@ export function normalizeProps(vnode: VueVNode) {
     return props;
 }
 
-function normalizeClassName(data: VueVNode['data'], props: any) {
+function normalizeClassName(data: VueVNode['data'] & ({_staticClass?: string, _class?: any} | undefined), props: any) {
     if (data) {
-        if (data.staticClass) {
-            props.className = data.staticClass;
+        const staticClass = data.staticClass || data._staticClass;
+        if (staticClass) {
+            props.className = staticClass;
+            // Vue will merge class with parent class, so we assign it to
+            // _staticClass and delete the original staticClass to prevent from merging.
+            // So that we can use _staticClass instead when it comes here again
+            data._staticClass = staticClass;
             delete data.staticClass;
         }
-        if (data.class) {
+        const className = data.class || data._class;
+        if (className) {
             if (!props.className) {
-                props.className = stringifyClass(data.class);
+                props.className = stringifyClass(className);
             } else {
-                props.className += ' ' + stringifyClass(data.class);
+                props.className += ' ' + stringifyClass(className);
             }
+            data._class = className;
             delete data.class;
         }
     }
 }
 
-function normalizeStyle(data: VueVNode['data'], props: any) {
-    let style;
+function normalizeStyle(data: VueVNode['data'] & ({_style?: any, _staticStyle?: any} | undefined), props: any) {
+    let result;
     if (data) {
-        if (data.style) {
-            style = getStyleBinding(data.style);
+        const style = data.style || data._style;
+        if (style) {
+            result = getStyleBinding(style);
+            data._style = style;
             delete data.style;
         }
-        if (data.staticStyle) {
-            style = {...data.staticStyle, ...style};
+        const staticStyle = data.staticStyle || data._staticStyle;
+        if (staticStyle) {
+            result = {...staticStyle, ...style};
+            data._staticStyle = staticStyle;
             delete data.staticStyle;
         }
     }
 
-    if (style) {
-        props.style = style;
+    if (result) {
+        props.style = result;
     }
 }
 
