@@ -116,14 +116,26 @@ function getParentNode(instance: Wrapper) {
 function getVueVNode(instance: Wrapper, vNode: VNode): VueVNode {
     const props = vNode.props!;
     let vnode = props.vnode;
-    // if we reuse the vNode, clone it
+    // if we are reusing the vNode, clone it
+    let hasCloned = false;
     if (vnode.elm) {
         vnode = cloneVNode(vnode);
+        hasCloned = true;
     }
     
     for (let key in props) {
         if (key === 'vnode') continue;
-        if (!vnode.data) vnode.data = {};
+        // clone the vnode at first
+        if (!hasCloned) {
+            vnode = cloneVNode(vnode);
+            hasCloned = true;
+        }
+
+        if (!vnode.data) {
+            vnode.data = {};
+        } else {
+            vnode.data = {...vnode.data};
+        }
 
         const data = vnode.data;
         const value = props[key];
@@ -132,10 +144,18 @@ function getVueVNode(instance: Wrapper, vNode: VNode): VueVNode {
             data.staticClass = value;
             delete data.class;
         } else if (key.substr(0, 3) === 'ev-') {
-            if (!data.on) data.on = {};
+            if (!data.on) {
+                data.on = {};
+            } else {
+                data.on = {...data.on};
+            }
             data.on[key.substr(3)] = value;
         } else {
-            if (!data.attrs) data.attrs = {};
+            if (!data.attrs) {
+                data.attrs = {};
+            } else {
+                data.attrs = {...data.attrs};
+            }
             data.attrs[key] = value;
         }
     }

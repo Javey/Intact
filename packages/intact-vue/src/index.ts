@@ -342,12 +342,12 @@ function createStack<T>() {
 
     function pushStack(item: T) {
         stack.push(item);
-        console.log('push', stack.length);
+        // console.log('push', stack.length);
         return item;
     }
 
     function popStack() {
-        console.log('pop', stack.length);
+        // console.log('pop', stack.length);
         return stack.pop();
     }
 

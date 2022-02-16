@@ -131,14 +131,22 @@ function getParent(instance: Wrapper) {
 function getVueVNode(vNode: VNode) {
     const props = vNode.props!;
     let vnode = props.vnode;
-    // if we reuse the vNode, clone it
+    // if we are reusing the vNode, clone it
+    let hasCloned = false;
     if (vnode.el) {
         vnode = cloneVNode(vnode);
+        hasCloned = true;
     }
     
     let shouldAssign = true;
     for (let key in props) {
         if (key === 'vnode') continue;
+        // clone the vnode at first
+        if (!hasCloned) {
+            vnode = cloneVNode(vnode);
+            hasCloned = true;
+        }
+
         let _props = vnode.props;
         if (shouldAssign) {
             // props may be a EMPTY_OBJ, but we can not get its reference,
