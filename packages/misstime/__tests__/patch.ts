@@ -53,6 +53,21 @@ describe('Patch', () => {
         expect(vNode1.dom === vNode2.dom).to.be.false;
     });
 
+    it('should clone when patch the same vNode', () => {
+        const child = h('div');
+        const foo = createElementVNode(Types.CommonElement, 'div', [child, child], ChildrenTypes.HasNonKeyedChildren);
+        const bar = createElementVNode(Types.CommonElement, 'div', [child, child], ChildrenTypes.HasNonKeyedChildren);
+        render(foo);
+        render(bar);
+        expect((bar.children as VNode[])[0] === (bar.children as VNode[])[1]).to.be.false;
+
+        const foo1 = createElementVNode(Types.CommonElement, 'div', child, ChildrenTypes.HasVNodeChildren);
+        const bar1 = createElementVNode(Types.CommonElement, 'div', child, ChildrenTypes.HasVNodeChildren);
+        render(foo1);
+        render(bar1);
+        expect(foo1.children === bar1.children).to.be.false;
+    });
+
     describe('Patch the same type', () => {
         it('should patch Text', () => {
             patchTest(

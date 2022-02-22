@@ -223,12 +223,19 @@ export function patchElement(
         validateKeys(nextVNode);
     }
 
-    const nextChildren = nextVNode.children;
+    let nextChildren = nextVNode.children;
+    const nextChildrenType = nextVNode.childrenType;
+    if (nextChildrenType === ChildrenTypes.HasVNodeChildren) {
+        if ((nextChildren as VNode).type & Types.InUse) {
+            nextVNode.children = nextChildren = directClone(nextChildren as VNode);
+        }
+    }
+
     // TODO: patchContendEditableChild
     // if (nextType & )
     patchChildren(
         lastVNode.childrenType,
-        nextVNode.childrenType,
+        nextChildrenType,
         lastVNode.children,
         nextChildren,
         dom,
