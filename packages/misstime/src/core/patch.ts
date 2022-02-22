@@ -349,7 +349,9 @@ export function patchChildren(
                     remove(lastChildren as VNode, parentDom, reusing);
                     break;
                 case ChildrenTypes.HasTextChildren:
-                    unmount(lastChildren as VNode, null);
+                    if (!reusing) {
+                        unmount(lastChildren as VNode, null);
+                    }
                     setTextContent(parentDom, nextChildren as string);
                     break;
                 default:

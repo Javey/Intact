@@ -143,7 +143,7 @@ describe('Component', () => {
             );
         });
 
-        it('should reuse the dom even if it is a different component', () => {
+        it('should reuse the dom even if they are different components', () => {
             class Test2 extends Component {
                 static template = () => {
                     return [h('i', null, 3)]
