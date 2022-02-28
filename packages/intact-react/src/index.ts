@@ -36,6 +36,7 @@ import {FakePromise, FakePromises} from './fakePromise';
 import {Context, containerComment} from './wrapper';
 
 export * from 'intact';
+export {normalizeChildren as normalize};
 
 type ValidReactNode = ReactChild | null | undefined;
 type OnEvents<E> = {

@@ -28,6 +28,7 @@ import {isFunction} from 'intact-shared';
 import {setScopeId}  from './scoped';
 
 export * from 'intact';
+export {normalizeChildren as normalize};
 
 export interface IntactComponentOptions extends ComponentOptions {
     Component: typeof Component

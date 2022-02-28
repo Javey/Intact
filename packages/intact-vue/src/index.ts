@@ -15,7 +15,9 @@ import {normalize, normalizeChildren, isBoolean} from './normalize';
 import {noop} from 'intact-shared';
 import {functionalWrapper} from './functionalWrapper';
 import {addMeta, rewriteDomApi} from './nodeOps';
+
 export * from 'intact';
+export {normalizeChildren as normalize};
 
 let currentInstance: Component | null = null;
 const [pushMountedQueue, popMountedQueue, mountedQueueStack] = createStack<Function[]>();
