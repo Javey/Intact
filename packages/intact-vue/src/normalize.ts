@@ -198,17 +198,26 @@ function normalizeEvents(listeners: Record<string, EventValue> | undefined, prop
                 // is a v-model directive of vue
                 name = `$model:value`;
             } else if (key.startsWith('update:')) {
-                // delegate update:prop(sync modifier) to $change:prop
-                // propName has been camelized by Vue, don't do this again
+                // delegate update:prop(sync modifier) to $change:prop.
+                // propName has been camelized by Vue, don't do it again
                 // key = `$change:${camelize(key.substr(7))}`;
-                const propName = key.substr(7);
+                const propName = key.substring(7);
                 // if (name.indexOf('-') > -1) continue;
                 name= `$model:${propName}`;
             } else {
                 if (key.startsWith('change:')) {
-                    name = `$change:${camelize(key.substr(7))}`;
+                    name = `$change:${camelize(key.substring(7))}`;
                 } else {
-                    name = camelize(key);
+                    if (key === 'change') {
+                        name = key;
+                    } else if (key.startsWith('change')) {
+                        // e.g. @changeValue -> ev-$change:value
+                        // e.g. @changePropName -> ev-$change:propName
+                        // e.g. @change-prop-name -> ev-$change:propName
+                        name = `$change:${lowerFirst(camelize(key.substring(6)))}`;
+                    } else {
+                        name = camelize(key);
+                    }
                 }
             }
 
@@ -389,8 +398,7 @@ function stringifyObject(value: Record<string, any>) {
 function cached(fn: (str: string) => any) {
     const cache = Object.create(null);
     return function(str: string) {
-        const hit = cache[str];
-        return hit || (cache[str] = fn(str));
+        return cache[str] || (cache[str] = fn(str));
     };
 }
 
@@ -400,6 +408,10 @@ function cached(fn: (str: string) => any) {
 const camelizeRE = /-(\w)/g
 const camelize = cached((str) => {
     return str.replace(camelizeRE, (_, c) => c ? c.toUpperCase() : '');
+});
+
+const lowerFirst = cached((str: string) => {
+    return str.charAt(0).toLowerCase() + str.slice(1);
 });
 
 export function isBoolean(o: any): o is boolean {

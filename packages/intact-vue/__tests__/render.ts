@@ -142,23 +142,42 @@ describe('Intact Vue Legacy', () => {
             expect(vm.$el.outerHTML).be.eql('<div><div>click</div>2</div>');
         });
 
-        it('render change event', async () => {
-            const changeValue = sinon.spy();
-            class IntactComponent extends Component<{value: string}> {
-                static template = `<div ev-click={this.onClick.bind(this)}>{this.get('value')}</div>`;
-                onClick() {
-                    this.set('value', 'click');
+        describe('Change Event', () => {
+            async function test(name: string) {
+                const changeValue = sinon.spy();
+                class IntactComponent extends Component<{priceAmount: number}, {change: []}> {
+                    static template = `<div ev-click={this.onClick.bind(this)}>{this.get('priceAmount')}</div>`;
+                    onClick() {
+                        this.set('priceAmount', this.get('priceAmount') + 1);
+                        this.trigger('change');
+                    }
                 }
+
+                render(`<C ${name}="changeValue" :priceAmount.sync="priceAmount" />`, {
+                    C: IntactComponent 
+                }, {priceAmount: 1}, {changeValue});
+
+                dispatchEvent(vm.$el, 'click');
+                await nextTick();
+                expect(changeValue.callCount).to.eql(1);
+                expect((vm as any).priceAmount).to.eql(2);
             }
 
-            render('<C @change:value="changeValue" v-model="value" />', {
-                C: IntactComponent 
-            }, {value: "test"}, {changeValue});
+            it('name with colon', async () => {
+                await test('@change:priceAmount');
+            });
 
-            dispatchEvent(vm.$el, 'click');
-            await nextTick();
-            expect(changeValue.callCount).to.eql(1);
-            expect((vm as any).value).to.eql('click');
+            it('name without colon', async () => {
+                await test('@changePriceAmount');
+            });
+
+            it('name without hyphen', async () => {
+                await test('@change-price-amount');
+            });
+
+            it('raw change', async () => {
+                await test('@change');
+            });
         });
 
         it('render with multiple events which event names are the same', async () => {

@@ -179,7 +179,15 @@ function normalizeEvents(props: any, key: string, value: EventValue) {
         } else {
             // onClick -> ev-click
             // onChange -> ev-change
-            name = key[0].toLowerCase() + key.substring(1);
+            if (key === 'Change') {
+                name = 'change';
+            } else if (key.startsWith('Change')) {
+                // e.g. onChangeValue -> ev-$change:value
+                // e.g. onChangePropName -> ev-$change:propName
+                name = `$change:${key[6].toLowerCase() + key.substring(7)}`;
+            } else {
+                name = key[0].toLowerCase() + key.substring(1);
+            }
         }
         if (_isArray) {
             cb = (...args: any[]) => {

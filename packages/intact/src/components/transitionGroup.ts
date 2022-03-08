@@ -76,12 +76,12 @@ export class TransitionGroup<P extends TransitionGroupProps = TransitionGroupPro
                     error('The children of <TransitionGroup> must have key');
                 }
             }
-            setTransitionHooks(child, resolveTransitionHooks(child, cssTransitionProps, this));
+            setTransitionHooks(child, resolveTransitionHooks(child, cssTransitionProps, this, true));
         }
 
         for (let i = 0; i < lastChildren.length; i++) {
             const child = lastChildren[i];
-            setTransitionHooks(child, resolveTransitionHooks(child, cssTransitionProps, this));
+            setTransitionHooks(child, resolveTransitionHooks(child, cssTransitionProps, this, true));
             const dom = findDomFromVNode(child, true);
             child.position = (dom as Element).getBoundingClientRect();
         }

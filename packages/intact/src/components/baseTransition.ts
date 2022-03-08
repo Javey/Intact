@@ -68,7 +68,7 @@ export class BaseTransition<P extends BaseTransitionProps = BaseTransitionProps>
             // return null;
         // }
 
-        const enterHooks = resolveTransitionHooks(vNode, props, this);
+        const enterHooks = resolveTransitionHooks(vNode, props, this, false);
         setTransitionHooks(vNode, enterHooks);
 
         return vNode;
@@ -135,7 +135,8 @@ export class BaseTransition<P extends BaseTransitionProps = BaseTransitionProps>
 export function resolveTransitionHooks(
     vNode: VNode,
     props: Props<BaseTransitionProps, BaseTransition>,
-    component: BaseTransition
+    component: BaseTransition,
+    isTransitionGroup: boolean,
 ): TransitionHooks {
     const {
         appear,
@@ -270,7 +271,7 @@ export function resolveTransitionHooks(
             }
         },
 
-        show: props.show!
+        show: isTransitionGroup ? true : props.show!
     };
 }
 
