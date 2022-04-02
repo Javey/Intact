@@ -337,9 +337,12 @@ function removeRedundantComponentsInQueue() {
 
     const shouldRemovedIndies: number[] = [];
     for (let i = 0; i < length; i++) {
-        const queuedComponent = QUEUE[i];
-        if (QUEUE.indexOf(queuedComponent.$senior!) > -1) {
-            shouldRemovedIndies.push(i); 
+        let senior: Component | null = QUEUE[i];
+        while (senior = senior.$senior) {
+            if (QUEUE.indexOf(senior) > -1) {
+                shouldRemovedIndies.push(i); 
+                break;
+            }
         }
     }
 
