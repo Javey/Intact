@@ -281,7 +281,6 @@ export function forceUpdate<P>(component: Component<P>, callback?: Function) {
             component.$mountedQueue.push(callback);
         }
     } else {
-        // TODO: if QUEUE.length === 0, update immediately
         if (QUEUE.indexOf(component) === -1) {
             QUEUE.push(component);
         }
@@ -306,6 +305,7 @@ function triggerReceiveEvents<P>(component: Component<P>, changeTraces: ChangeTr
 function rerender() {
     let component: Component | undefined = undefined;
     microTaskPending = false;
+    removeRedundantComponentsInQueue();
 
     while (component = QUEUE.shift()) {
         if (!component.$unmounted) {
@@ -322,6 +322,30 @@ function rerender() {
             callAll(mountedQueue); 
             callAllQueue(component);
         }
+    }
+}
+
+/**
+ * Remove the unnecessary components if we find that
+ * their parents is already in the QUEUE. The parent
+ * component will update its children, so we remove
+ * all the children components.
+ */
+function removeRedundantComponentsInQueue() {
+    const length = QUEUE.length;
+    if (length < 2) return;
+
+    const shouldRemovedIndies: number[] = [];
+    for (let i = 0; i < length; i++) {
+        const queuedComponent = QUEUE[i];
+        if (QUEUE.indexOf(queuedComponent.$senior!) > -1) {
+            shouldRemovedIndies.push(i); 
+        }
+    }
+
+    for (let i = 0; i < shouldRemovedIndies.length; i++) {
+        const index = shouldRemovedIndies[i];
+        QUEUE.splice(index - i, 1);
     }
 }
 

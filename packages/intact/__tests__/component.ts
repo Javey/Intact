@@ -211,6 +211,44 @@ describe('Component', () => {
             expect(callback).to.have.callCount(1);
         });
 
+        it('should ignore sub-component update when parent component will update', async () => {
+            const callback = sinon.spy();
+            class Test1 extends Component<{count: number}> {
+                static template: Template = function(this: Test1) {
+                    callback();
+                    return h('div', null, this.$props.count);
+                };
+
+                mounted() {
+                    this.set('count', this.get('count') + 1);
+                }
+            }
+
+            class Test2 extends Component<{count: number}> {
+                static template: Template = function(this: Test2) {
+                    return h(Test1, {'ev-$change:count': this.onChange.bind(this), count: this.$props.count} as any);
+                };
+
+                onChange(count: number) {
+                    this.set({count});
+                }
+            }
+
+            class Test3 extends Component<{count: number}> {
+                static template: Template = function(this: Test2) {
+                    return h(Test2, {'ev-$change:count': this.onChange.bind(this), count: this.$props.count} as any);
+                };
+
+                onChange(count: number) {
+                    this.set({count});
+                }
+            }
+
+            render(h(Test3, {count: 1}), container);
+            await nextTick();
+            expect(callback).to.have.callCount(2);
+        });
+
         describe('Reuse dom', () => {
             it('replace component', async () => {
                 const unmounted = sinon.spy();
