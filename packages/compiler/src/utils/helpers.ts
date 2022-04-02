@@ -153,6 +153,10 @@ export function computeChildrenFlagForVIf(lastFlag: ChildrenFlags, nextFlag: Chi
 
 export function computeChildrenFlagForChildren(lastFlag: ChildrenFlags | null, nextFlag: ChildrenFlags): ChildrenFlags {
     if (isNull(lastFlag)) return nextFlag;
+    // two array children is unknown children
+    if (lastFlag === nextFlag && (lastFlag & ChildrenFlags.MultipleChildren)) {
+        return ChildrenFlags.UnknownChildren;
+    }
 
     return lastFlag & nextFlag;
 }

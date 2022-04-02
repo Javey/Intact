@@ -436,6 +436,14 @@ describe('Vdt Compiler', () => {
             test(`<div><div v-for={a}></div></div>`);
         });
 
+        it('v-for with element', () => {
+            test(`<div><div v-for={a}></div><div></div></div>`);
+        });
+
+        it('multiple v-for', () => {
+            test(`<div><div v-for={a}></div><div v-for={a}></div></div>`);
+        });
+
         it('v-for-key v-for-value', () => {
             test(`<div><div v-for={a} v-for-key="a" v-for-value="b"></div></div>`);
         });

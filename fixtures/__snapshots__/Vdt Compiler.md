@@ -1417,6 +1417,50 @@ return function($props, $blocks, $__proto__) {
 };"
 ```
 
+####   `v-for with element`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+var _$ma = Vdt.map;
+
+return function($props, $blocks, $__proto__) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', [
+        _$ma(a, function($value, $key) {
+            return _$ce(2, 'div');
+        }, $this),
+        _$ce(2, 'div')
+    ], 0 /* UnknownChildren */);
+};"
+```
+
+####   `multiple v-for`
+
+```
+"var Vdt = _$vdt;
+var _$ce = Vdt.createElementVNode;
+var _$ma = Vdt.map;
+
+return function($props, $blocks, $__proto__) {
+    $blocks || ($blocks = {});
+    $props || ($props = {});
+    var $this = this;
+    
+    return _$ce(2, 'div', [
+        _$ma(a, function($value, $key) {
+            return _$ce(2, 'div');
+        }, $this),
+        _$ma(a, function($value, $key) {
+            return _$ce(2, 'div');
+        }, $this)
+    ], 0 /* UnknownChildren */);
+};"
+```
+
 ####   `v-for-key v-for-value`
 
 ```

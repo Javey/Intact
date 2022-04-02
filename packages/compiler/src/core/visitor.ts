@@ -655,7 +655,6 @@ export class Visitor {
                     this.append(',');
                     this.newline();
                 }
-
             }
 
             this.dedent();

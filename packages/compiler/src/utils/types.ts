@@ -157,4 +157,5 @@ export const enum ChildrenFlags {
     VNodeChildren = HasKeyedVNodeChildren | HasNonKeyedVNodeChildren,
     KeydChildren = HasKeyedVNodeChildren | HasKeyedChildren,
     NonKeydChildren = HasNonKeyedVNodeChildren | HasNonKeyedChildren,
+    MultipleChildren = HasKeyedChildren | HasNonKeyedChildren,
 }
