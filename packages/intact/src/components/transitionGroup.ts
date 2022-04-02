@@ -3,7 +3,7 @@ import {
     resolveTransitionProps,
     forceReflow,
     addTransitionClass,
-    removeTransitionClass
+    removeTransitionClass,
 } from './transition';
 import {
     VNode,
@@ -23,7 +23,7 @@ import {
     isInvalidTranstionChild
 } from './baseTransition';
 import {error, isUndefined, throwError} from 'intact-shared';
-import {TransitionEvents} from './heplers';
+import {TransitionEvents, whenTransitionEnds} from './heplers';
 
 export interface TransitionGroupProps extends Omit<TransitionProps, 'show'> {
     tag?: string
@@ -143,7 +143,8 @@ export class TransitionGroup<P extends TransitionGroupProps = TransitionGroupPro
                     removeTransitionClass(el, moveClass);
                 }
             };
-            TransitionEvents.on(el, cb as EventListener);
+            // TransitionEvents.on(el, cb as EventListener);
+            whenTransitionEnds(el, cb);
         }
     }
 }
@@ -158,7 +159,7 @@ function callPendingCbs(vNode: VNode) {
     }
 
     // if we call enterCb, it will call onAfterEnter, maybe we set
-    // style in next frame, but the transition has been ended.
+    // style in the next frame, but the transition has been ended.
     // e.g.
     // onEnter(el) => {
     //     el.style.height = 0; 
