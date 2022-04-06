@@ -36,7 +36,9 @@ export const nextTick = typeof Promise !== 'undefined' ?
     (callback: Function) => window.setTimeout(callback, 0);
 let microTaskPending = false;
 
-const QUEUE: Component<any>[] = [];
+type ComponentTree = {component: Component<any>, next: ComponentTree | null};
+
+const QUEUE_MAP: Map<Component<any>, ComponentTree>= new Map();
 
 export function renderSyncComponnet<P>(
     component: Component<P>,
@@ -70,7 +72,7 @@ export function renderSyncComponnet<P>(
     component.$lastInput = vNode;
 
     mountedQueue.push(() => {
-        callAllQueue(component);
+        callAllQueue(component, '$pendingQueue');
         component.$mount(lastVNode, nextVNode);
     });
 
@@ -96,7 +98,7 @@ export function renderAsyncComponent<P>(
         mountedQueue = component.$mountedQueue = [];
         renderSyncComponnet(component, lastVNode, nextVNode, parentDom, anchor, mountedQueue);
         // call queue before mountedQueue, because queue are callbacks set in init
-        callAllQueue(component);
+        callAllQueue(component, '$pendingQueue');
         callAll(mountedQueue);
     });
 }
@@ -273,17 +275,28 @@ function callModelEvent<P>(component: Component<P>, path: string, newValue: any)
 export function forceUpdate<P>(component: Component<P>, callback?: Function) {
     if (!component.$inited) {
         if (isFunction(callback)) {
-            (component.$queue || (component.$queue = [])).push(callback);
+            (component.$pendingQueue || (component.$pendingQueue = [])).push(callback);
         }
     } else if (component.$blockRender) {
         // component is before rendering or updating
         if (isFunction(callback)) {
-            component.$mountedQueue.push(callback);
+            // append pendingQueue firstly to make the changed event order correct.
+            // @see unit test: set prop multiple times 
+            const pendingQueue = component.$pendingQueue;
+            const mountedQueue = component.$mountedQueue;
+            if (pendingQueue) {
+                mountedQueue.push(...pendingQueue);
+                component.$pendingQueue = null;
+            }
+            mountedQueue.push(callback);
         }
     } else {
-        if (QUEUE.indexOf(component) === -1) {
-            QUEUE.push(component);
+        if (!QUEUE_MAP.has(component)) {
+            QUEUE_MAP.set(component, {component, next: null});
         }
+        // if (QUEUE.indexOf(component) === -1) {
+            // QUEUE.push(component);
+        // }
         if (!microTaskPending) {
             microTaskPending = true;
             nextTick(rerender);
@@ -303,11 +316,12 @@ function triggerReceiveEvents<P>(component: Component<P>, changeTraces: ChangeTr
 }
 
 function rerender() {
-    let component: Component | undefined = undefined;
     microTaskPending = false;
-    removeRedundantComponentsInQueue();
+    const trees = getRerenderTrees();
 
-    while (component = QUEUE.shift()) {
+    let tree: ComponentTree | undefined = undefined;
+    while (tree = trees.shift()) {
+        const component = tree.component;
         if (!component.$unmounted) {
             const mountedQueue: Function[] = component.$mountedQueue = [];
             const vNode = component.$vNode;
@@ -320,45 +334,57 @@ function rerender() {
                 true,
             );
             callAll(mountedQueue); 
-            callAllQueue(component);
+            callQueueDepthFirst(tree);
         }
     }
 }
 
 /**
  * Remove the unnecessary components if we find that
- * their parents is already in the QUEUE. The parent
+ * their parents is already in the QUEUE_MAP. The parent
  * component will update its children, so we remove
  * all the children components.
  */
-function removeRedundantComponentsInQueue() {
-    const length = QUEUE.length;
-    if (length < 2) return;
+function getRerenderTrees() {
+    const trees: ComponentTree[] = [];
 
-    const shouldRemovedIndies: number[] = [];
-    for (let i = 0; i < length; i++) {
-        let senior: Component | null = QUEUE[i];
+    QUEUE_MAP.forEach((tree, component) => {
+        let senior: Component | null = component;
         while (senior = senior.$senior) {
-            if (QUEUE.indexOf(senior) > -1) {
-                shouldRemovedIndies.push(i); 
-                break;
+            const seniorTree = QUEUE_MAP.get(senior);
+            if (!isUndefined(seniorTree)) {
+                seniorTree.next = tree;
+                return;
             }
         }
-    }
 
-    for (let i = 0; i < shouldRemovedIndies.length; i++) {
-        const index = shouldRemovedIndies[i];
-        QUEUE.splice(index - i, 1);
-    }
+        trees.push(tree);
+    });
+
+    QUEUE_MAP.clear();
+
+    return trees;
 }
 
-function callAllQueue(component: Component<any>) {
-    const queue = component.$queue;
+function callQueueDepthFirst(tree: ComponentTree) {
+    const loop = (tree: ComponentTree | null) => {
+        if (!tree) return;
+
+        loop(tree.next);
+
+        callAllQueue(tree.component, '$queue');
+    };
+
+    loop(tree);
+}
+
+function callAllQueue(component: Component<any>, queueName: '$queue' | '$pendingQueue') {
+    const queue = component[queueName];
     if (queue) {
         for (let i = 0; i < queue.length; i++) {
             queue[i].call(component);
         }
-        component.$queue = null;
+        component[queueName] = null;
     }
 }
 

@@ -73,6 +73,7 @@ export abstract class Component<
     public $lastInput: VNode | null = null;
     public $blockRender: boolean = false;
     public $queue: Function[] | null = null;
+    public $pendingQueue: Function[] | null = null;
     public $provides: Record<InjectionKey, any> | null = null;
 
     // lifecyle states

@@ -2,6 +2,7 @@ import {Component} from '../src/core/component';
 import {render, createVNode as h, Fragment, VNode, RefFunction} from 'misstime';
 import {Template} from 'vdt';
 import {nextTick} from '../../misstime/__tests__/utils';
+import {createRef} from '../src';
 
 describe('Component', () => {
     let container: Element;
@@ -211,14 +212,68 @@ describe('Component', () => {
             expect(callback).to.have.callCount(1);
         });
 
+        it('should call changed event after dom has really changed', async () => {
+            const changed1 = sinon.spy(() => console.log('1'));
+            const changed2 = sinon.spy(() => console.log('2'));
+            class Test1 extends Component<{count: number}> {
+                static template: Template = function(this: Test1) {
+                    return h('div', null, this.$props.count);
+                };
+
+                init() {
+                    this.on('$changed:count', () => {
+                        changed1();
+                        expect(container.innerHTML).to.eql('<div>2</div>');
+                    });
+                }
+
+                mounted() {
+                    this.set('count', this.get('count') + 1);
+                }
+            }
+
+            class Test2 extends Component<{count: number}> {
+                static template: Template = function(this: Test2) {
+                    return h(Test1, {
+                        'ev-$change:count': this.onChange.bind(this),
+                        count: this.$props.count
+                    } as any);
+                };
+
+                init() {
+                    this.on('$changed:count', () => {
+                        changed2();
+                        expect(container.innerHTML).to.eql('<div>2</div>');
+                    });
+                }
+
+                onChange(count: number) {
+                    this.set({count});
+                }
+            }
+
+
+            render(h(Test2, {count: 1}), container);
+            await nextTick();
+            expect(changed1.callCount).to.eql(1);
+            expect(changed2.callCount).to.eql(1);
+        });
+
         describe('batch update across components', () => {
             it('should ignore nested sub-component update when parent component will update', async () => {
                 const callback = sinon.spy();
+                const changed1 = sinon.spy(() => console.log('1'));
+                const changed2 = sinon.spy(() => console.log('2'));
+                const changed3 = sinon.spy(() => console.log('3'));
                 class Test1 extends Component<{count: number}> {
                     static template: Template = function(this: Test1) {
                         callback();
                         return h('div', null, this.$props.count);
                     };
+
+                    init() {
+                        this.on('$changed:count', changed1);
+                    }
 
                     mounted() {
                         this.set('count', this.get('count') + 1);
@@ -230,6 +285,10 @@ describe('Component', () => {
                         return h(Test1, {'ev-$change:count': this.onChange.bind(this), count: this.$props.count} as any);
                     };
 
+                    init() {
+                        this.on('$changed:count', changed2);
+                    }
+
                     onChange(count: number) {
                         this.set({count});
                     }
@@ -240,6 +299,10 @@ describe('Component', () => {
                         return h(Test2, {'ev-$change:count': this.onChange.bind(this), count: this.$props.count} as any); 
                     };
 
+                    init() {
+                        this.on('$changed:count', changed3);
+                    }
+
                     onChange(count: number) {
                         this.set({count});
                     }
@@ -249,6 +312,8 @@ describe('Component', () => {
                 await nextTick();
                 expect(callback).to.have.callCount(2);
                 expect(container.innerHTML).to.equal('<div>2</div>');
+                expect(changed1).be.calledBefore(changed2);
+                expect(changed2).be.calledBefore(changed3);
             });
 
             it('should ignore tree sub-component update when parent component will update', async () => {
