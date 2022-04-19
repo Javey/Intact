@@ -1,13 +1,32 @@
 import React, {ReactElement, Component as ReactComponent, ReactNode} from 'react';
-import ReactDOM from 'react-dom';
+import {createRoot} from 'react-dom/client';
+import {act} from 'react-dom/test-utils';
 import {Component} from '../src';
 
 export let container: HTMLDivElement;
 export function render(vNode: ReactElement) {
+    (global as any).IS_REACT_ACT_ENVIRONMENT = true;
+
     container = document.createElement('div');
     document.body.appendChild(container);
-    // ReactDOM.createRoot(container).render(vNode);
-    ReactDOM.render(vNode, container);
+    const root = createRoot(container);
+    act(() => {
+        root.render(vNode);
+    });
+
+    return {
+        render: (vNode: ReactElement) => {
+            act(() => {
+                root.render(vNode);
+            });
+        },
+        unmount: () => {
+            act(() => {
+                root.unmount();
+            });
+        }
+    }
+    // ReactDOM.render(vNode, container);
 }
 
 export function createIntactComponent<P = {}, E = {}, B = {}>(template: string) {
@@ -53,12 +72,12 @@ export function wait(time: number = 0) {
     });
 }
 
-export function renderApp<P>(_render: (this: any) => ReactNode, state?: P): ReactComponent<{}, P> {
-    let instance: ReactComponent<{}, P>;
+export function renderApp<P>(_render: (this: any) => ReactNode, state?: P): ReactComponent<{}, P> & {$root: ReturnType<typeof render>} {
+    let instance: ReactComponent<{}, P> & {$root: ReturnType<typeof render>};
     class App extends ReactComponent<{}, P> {
         constructor(props: {}) {
             super(props);
-            instance = this;
+            instance = this as any;
             (window as any).vm = instance;
             if (state) {
                 this.state = state;
@@ -68,7 +87,9 @@ export function renderApp<P>(_render: (this: any) => ReactNode, state?: P): Reac
             return _render.call(this);
         }
     }
-    render(<App />);
+    const root = render(<App />);
+
+    instance!.$root = root;
 
     return instance!;
 }

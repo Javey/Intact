@@ -13,6 +13,7 @@ import {
     getSpyError,
 } from './helpers';
 import {Component, createVNode as h, findDomFromVNode, createRef, VNode, provide, inject} from '../src';
+import {act} from 'react-dom/test-utils';
 
 describe('Intact React', () => {
     describe('Intact Features', () => {
@@ -51,12 +52,16 @@ describe('Intact React', () => {
                 expect(beforeMount.calledBefore(mounted)).to.be.true;
 
                 // update
-                instance.setState({a: 1});
+                act(() => {
+                    instance.setState({a: 1});
+                });
                 test([1, 1, 1, 1, 0, 0]);
                 expect(beforeMount.calledBefore(mounted)).to.be.true;
 
                 // destroy
-                instance.setState({show: false});
+                act(() => {
+                    instance.setState({show: false});
+                });
                 test([1, 1, 1, 1, 1, 1]);
                 expect(beforeUnmount.calledBefore(unmounted)).to.be.true;
             });
@@ -104,7 +109,9 @@ describe('Intact React', () => {
                 expect(componentDidMount.callCount).to.eql(1);
 
                 // update
-                instance.setState({a: 2});
+                act(() => {
+                    instance.setState({a: 2});
+                });
                 expect(getDerivedStateFromProps.callCount).to.eql(2);
                 expect(componentDidMount.callCount).to.eql(1);
                 expect(shouldComponentUpdate.callCount).to.eql(1);
@@ -112,7 +119,9 @@ describe('Intact React', () => {
                 expect(componentDidUpdate.callCount).to.eql(1);
 
                 // destroy
-                instance.setState({a: 3});
+                act(() => {
+                    instance.setState({a: 3});
+                });
                 expect(componentWillUnmount.callCount).to.eql(1);
             });
 
@@ -221,7 +230,9 @@ describe('Intact React', () => {
                     )
                 }, {show: false});
                 expect(mount.callCount).to.eql(1);
-                instance.setState({show: true});
+                act(() => {
+                    instance.setState({show: true});
+                });
                 expect(mount.callCount).to.eql(2);
             });
 
@@ -312,7 +323,9 @@ describe('Intact React', () => {
                         }
                     </div>
                 }, {a: 1});
-                instance.setState({a: 2});
+                act(() => {
+                    instance.setState({a: 2});
+                });
                 expect(componentWillUnmount.callCount).to.eql(1);
             });
 
@@ -520,7 +533,9 @@ describe('Intact React', () => {
                     );
                 }, {count: 1});
 
-                instance.setState({count: 2});
+                act(() => {
+                    instance.setState({count: 2});
+                });
                 expect(mount.callCount).to.eql(1);
                 expect(update.callCount).to.eql(1);
             });

@@ -13,6 +13,7 @@ import {
 } from './helpers';
 import ReactDOM from 'react-dom';
 import {Component, createVNode as h, findDomFromVNode, createRef, VNode} from '../src';
+import {act} from 'react-dom/test-utils';
 
 describe('Intact React', () => {
     describe('React Features', () => {
@@ -90,9 +91,9 @@ describe('Intact React', () => {
                         </Context.Consumer>
                     );
                 }
-                render(<Parent value="a" />);
+                const root = render(<Parent value="a" />);
                 expect(container.innerHTML).to.eq('<div><div><div>a</div>#<header><div></div></header>#<div>hello</div>#</div><div></div></div>');
-                ReactDOM.render(<Parent value="b" />, container);
+                root.render(<Parent value="b" />);
                 expect(container.innerHTML).to.eq('<div><div><div>b</div>#<header><div></div></header>#<div>hello</div>#</div><div></div></div>');
                 test!.set('show', true);
                 await wait();
@@ -173,7 +174,9 @@ describe('Intact React', () => {
                         </ChildrenIntactComponent>
                     </Parent>
                 );
-                instance!.click();
+                act(() => {
+                    instance!.click();
+                });
 
                 expect(container.innerHTML).to.eq('<div><div>b</div>#</div>');
             });

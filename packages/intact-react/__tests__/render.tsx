@@ -129,7 +129,7 @@ describe('Intact React', () => {
                 return <div>test</div>
             }
 
-            render(
+            const root = render(
                 <ChildrenIntactComponent>
                     <NotNull />
                     <Null />
@@ -137,28 +137,25 @@ describe('Intact React', () => {
             );
             expect(container.innerHTML).to.eql('<div><div>test</div>##</div>');
 
-            ReactDOM.render(
+            root.render(
                 <ChildrenIntactComponent>
                     <NotNull />
-                </ChildrenIntactComponent>,
-                container
+                </ChildrenIntactComponent>
             );
             expect(container.innerHTML).to.eql('<div><div>test</div>#</div>');
 
-            ReactDOM.render(
+            root.render(
                 <ChildrenIntactComponent>
                     <Null />
                     <NotNull />
                 </ChildrenIntactComponent>,
-                container
             );
             expect(container.innerHTML).to.eql('<div>#<div>test</div>#</div>');
 
-            ReactDOM.render(
+            root.render(
                 <ChildrenIntactComponent>
                     <NotNull />
                 </ChildrenIntactComponent>,
-                container
             );
             expect(container.innerHTML).to.eql('<div><div>test</div>#</div>');
         });

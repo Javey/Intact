@@ -1,4 +1,5 @@
 import {Component as ReactComponent, ReactNode, Fragment} from 'react';
+import {act} from 'react-dom/test-utils';
 import {
     render,
     container,
@@ -20,7 +21,9 @@ describe('Intact React', () => {
             const instance = renderApp(function() {
                 return <PropsIntactComponent a={this.state.a} />
             }, {a: 1});
-            instance.setState({a: 2});
+            act(() => {
+                instance.setState({a: 2});
+            });
             expect(container.innerHTML).to.eql('<div>a: 2 b: </div>');
         });
 
@@ -32,9 +35,13 @@ describe('Intact React', () => {
                     </ChildrenIntactComponent>
                 )
             }, {a: 1});
-            instance.setState({a: 2});
+            act(() => {
+                instance.setState({a: 2});
+            });
             expect(container.innerHTML).to.eql('<div>b</div>');
-            instance.setState({a: 1});
+            act(() => {
+                instance.setState({a: 1});
+            });
             expect(container.innerHTML).to.eql('<div><div>a</div>#</div>');
         });
 
@@ -46,7 +53,9 @@ describe('Intact React', () => {
                     </ChildrenIntactComponent>
                 )
             }, {a: 1});
-            instance.setState({a: 2});
+            act(() => {
+                instance.setState({a: 2});
+            });
             expect(container.innerHTML).to.eql('<div><div>2</div>#</div>');
         });
 
@@ -62,11 +71,15 @@ describe('Intact React', () => {
                 );
             }, {list: [1, 2]});
             const node2 = container.firstElementChild!.children[1]!
-            instance.setState({list: [2]});
+            act(() => {
+                instance.setState({list: [2]});
+            });
             expect(container.innerHTML).to.eql('<div><div>2</div></div>')
             expect(container.firstElementChild!.children[0]).to.eql(node2);
 
-            instance.setState({list: [1, 2, 3]});
+            act(() => {
+                instance.setState({list: [1, 2, 3]});
+            });
             expect(container.innerHTML).to.eql('<div><div>1</div><div>2</div><div>3</div></div>')
             expect(container.firstElementChild!.children[1]).to.eql(node2);
         });
@@ -82,11 +95,15 @@ describe('Intact React', () => {
                 )
             }, {list: [1, 2]});
             const node2 = container.firstElementChild!.children[1]!
-            instance.setState({list: [2]});
+            act(() => {
+                instance.setState({list: [2]});
+            });
             expect(container.innerHTML).to.eql('<div><div>2</div>#</div>')
             expect(container.firstElementChild!.children[0]).to.eql(node2);
 
-            instance.setState({list: [1, 2, 3]});
+            act(() => {
+                instance.setState({list: [1, 2, 3]});
+            });
             expect(container.innerHTML).to.eql('<div><div>1</div>#<div>2</div>#<div>3</div>#</div>')
             expect(container.firstElementChild!.children[1]).to.eql(node2);
         });
@@ -100,7 +117,9 @@ describe('Intact React', () => {
                     </div>
                 );
             }, {show: false});
-            instance.setState({show: true});
+            act(() => {
+                instance.setState({show: true});
+            });
             expect(container.innerHTML).to.eql('<div><div>show</div><div>Intact Component</div></div>');
         });
 
@@ -118,7 +137,9 @@ describe('Intact React', () => {
                 return <Button loading={this.state.loading}><span>test</span></Button>;
             }, {loading: false});
 
-            instance.setState({loading: true});
+            act(() => {
+                instance.setState({loading: true});
+            });
             expect(container.innerHTML).to.eql('<div><div>Loading...</div><span>test</span>#</div>');
         });
 
@@ -137,7 +158,9 @@ describe('Intact React', () => {
             }, {show: false});
 
             (instance.refs.c as any).refs.c.test = true;
-            instance.setState({show: true});
+            act(() => {
+                instance.setState({show: true});
+            });
             expect((instance.refs.c as any).refs.c.test).to.be.true;
         });
 
@@ -286,9 +309,13 @@ describe('Intact React', () => {
                     <C count={this.state.count} />
                 </ChildrenIntactComponent>
             }, {count: 0});
-            instance.setState({count: 1});
+            act(() => {
+                instance.setState({count: 1});
+            });
             expect(container.innerHTML).to.eql('<div><div>0</div></div>');
-            instance.setState({count: 2});
+            act(() => {
+                instance.setState({count: 2});
+            });
             expect(container.innerHTML).to.eql('<div><div>2</div></div>');
         });
 
@@ -329,7 +356,7 @@ describe('Intact React', () => {
                 return h(DirectComponent, props);
             });
 
-            render(
+            const root = render(
                 <div>
                     <Test>
                         <span>test</span>
@@ -339,7 +366,7 @@ describe('Intact React', () => {
 
             expect(container.innerHTML).to.eql('<div><span>test</span>#</div>');
 
-            ReactDOM.render(null as any, container);
+            root.render(null as any);
             expect(container.innerHTML).to.eql('');
         });
 
@@ -352,7 +379,9 @@ describe('Intact React', () => {
                 return <div><Test show={this.state.show}><span>show</span></Test></div>
             }, {show: false});
 
-            instance.setState({show: true});
+            act(() => {
+                instance.setState({show: true});
+            });
             expect(container.innerHTML).to.eql('<div><span>show</span>#</div>');
         });
 
@@ -380,10 +409,14 @@ describe('Intact React', () => {
             let ref: D;
             render(<D ref={(i: any) => ref = i}/>);
 
-            ref!.setState({show: false});
+            act(() => {
+                ref!.setState({show: false});
+            });
             expect(container.innerHTML).to.eql('<div><div>b</div></div>');
 
-            ref!.setState({show: true});
+            act(() => {
+                ref!.setState({show: true});
+            });
             expect(container.innerHTML).to.eql('<div><div>a</div>#</div>');
         });
 
@@ -399,7 +432,7 @@ describe('Intact React', () => {
                 // }
             }
 
-            render(
+            const root = render(
                 <HocComponent>
                     <Hoc>
                         <HocComponent>
@@ -410,19 +443,17 @@ describe('Intact React', () => {
             );
             expect(container.innerHTML).to.eql('#<div>test</div>#');
 
-            ReactDOM.render(
+            root.render(
                 <HocComponent>
                     <Hoc>
                     </Hoc>
                 </HocComponent>,
-                container
             );
             expect(container.innerHTML).to.eql('#');
 
-            ReactDOM.render(
+            root.render(
                 <HocComponent>
                 </HocComponent>,
-                container
             );
             expect(container.innerHTML).to.eql('');
         });
@@ -437,7 +468,9 @@ describe('Intact React', () => {
                 </ChildrenIntactComponent>
             }, {show: true});
             
-            instance.setState({show: false});
+            act(() => {
+                instance.setState({show: false});
+            });
             expect(container.innerHTML).to.eql('<div><div>2</div>#</div>');
         });
 
@@ -452,7 +485,9 @@ describe('Intact React', () => {
                     return this.state.show ? <Test /> : null;
                 }, {show: true});;
 
-                instance.setState({show: false});
+                act(() => {
+                    instance.setState({show: false});
+                });
             });
         });
     });
