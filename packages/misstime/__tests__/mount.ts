@@ -100,8 +100,8 @@ describe('Mount', () => {
         );
         render(vNode, container);
 
-        expect(container.firstChild!.namespaceURI).to.equal('http://www.w3.org/2000/svg');
-        expect(container.firstChild!.firstChild!.namespaceURI).to.equal('http://www.w3.org/2000/svg');
+        expect(container.firstElementChild!.namespaceURI).to.equal('http://www.w3.org/2000/svg');
+        expect(container.firstElementChild!.firstElementChild!.namespaceURI).to.equal('http://www.w3.org/2000/svg');
     });
 
     it('should throw error if we mount invalid vNode', () => {

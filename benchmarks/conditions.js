@@ -1,3 +1,32 @@
+suite('if (!a) vs if (isUndefined(a))', () => {
+    const a = undefined;
+
+    benchmark('if (!a)', () => {
+        if (!a) { }
+    });
+
+    benchmark('if (isUndefined(a))', () => {
+        if (isUndefined(a)) {  }
+    });
+});
+
+suite('if (a) vs if (!(a === undefined))', () => {
+    const a = undefined;
+
+    benchmark('if (a)', () => {
+        if (a) { }
+    });
+
+    benchmark('if (!isUndefined(a))', () => {
+        if (!isUndefined(a)) {  }
+    });
+});
+
+
+function isUndefined(a) {
+    return a === void 0;
+}
+
 // suite('undefined vs void 0', () => {
     // benchmark('undefined', () => {
         // var a;
@@ -32,35 +61,6 @@
 // });
 // import 'misstime/../benchmark/vnode';
 
-suite('if (!a) vs if (isUndefined(a))', () => {
-    const a = undefined;
-
-    benchmark('if (!a)', () => {
-        if (!a) { }
-    });
-
-    benchmark('if (isUndefined(a))', () => {
-        if (isUndefined(a)) {  }
-    });
-});
-
-suite('if (a) vs if (!(a === undefined))', () => {
-    const a = undefined;
-
-    benchmark('if (a)', () => {
-        if (a) { }
-    });
-
-    benchmark('if (!isUndefined(a))', () => {
-        if (!isUndefined(a)) {  }
-    });
-});
-
-
-function isUndefined(a) {
-    return a === void 0;
-}
-
 // suite('diff two objects', () => {
     // const a = {a: 1, b: 1, c: 1};
     // const b = {a: 2, b: 1, d: 1};
@@ -93,3 +93,4 @@ function isUndefined(a) {
         // }
     // });
 // });
+

@@ -24,12 +24,12 @@ export const nodeOps = /*#__PURE__*/ (() => {
 
     if (hasDocumentAvailable) {
         raf = window.requestAnimationFrame ||
-            window.webkitRequestAnimationFrame ||
+            (window as any).webkitRequestAnimationFrame ||
             (window as any).mozRequestAnimationFrame ||
             (window as any).msRequestAnimationFrame ||
             window.setTimeout;
         caf = window.cancelAnimationFrame ||
-            window.webkitCancelAnimationFrame ||
+            (window as any).webkitCancelAnimationFrame ||
             (window as any).mozCancelRequestAnimationFrame ||
             (window as any).msAnimationFrame ||
             window.clearTimeout

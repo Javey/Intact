@@ -8,7 +8,7 @@ import {
     unmount,
     Blocks,
 } from 'misstime';
-import {SetOptions, InjectionKey, LifecycleEvents, EventCallback} from '../utils/types';
+import {SetOptions, InjectionKey, LifecycleEvents, EventCallback, ChangeCallback} from '../utils/types';
 import {
     isFunction,
     isUndefined,
@@ -310,7 +310,7 @@ export abstract class Component<
         callback: (newValue: Props<P, this>[K], oldValue: Props<P, this>[K] | undefined) => void,
         options?: WatchOptions 
     ) {
-        watch(key, callback, options, this);
+        watch(key, callback as ChangeCallback<Props<P, Component>, K>, options, this);
     }
 
     // compute<T>(getter: () => T) {
