@@ -7,33 +7,38 @@ import {normalize} from 'intact-react';
 import {createApp, h} from 'vue';
 import VueDemo from './vueDemo.vue';
 import {normalize as vueNormalize} from 'intact-vue-next';
+import {act} from 'react-dom/test-utils';
 
 export function renderIntactReact(container: HTMLElement) {
-    ReactDom.render(
-        <IntactReactDemo
-            data={data}
-            slotFirstName={(value: DataItem) => value.firstName}
-            slotLastName={(value: DataItem) => normalize(<div>{value.lastName}</div>)}
-            slotAge={(value: DataItem) => value.age}
-            slotAddress={(value: DataItem) => value.address}
-            slotAction={(value: DataItem) => normalize(<div>delete</div>)}
-        />,
-        container
-    );
+    act(() => {
+        ReactDom.render(
+            <IntactReactDemo
+                data={data}
+                slotFirstName={(value: DataItem) => value.firstName}
+                slotLastName={(value: DataItem) => normalize(<div>{value.lastName}</div>)}
+                slotAge={(value: DataItem) => value.age}
+                slotAddress={(value: DataItem) => value.address}
+                slotAction={(value: DataItem) => normalize(<div>delete</div>)}
+            />,
+            container
+        );
+    });
 }
 
 export function renderReact(container: HTMLElement) {
-    ReactDom.render(
-        <ReactDemo
-            data={data}
-            firstName={(value: DataItem) => value.firstName}
-            lastName={(value: DataItem) => <div>{value.lastName}</div>}
-            age={(value: DataItem) => value.age}
-            address={(value: DataItem) => value.address}
-            action={(value: DataItem) => <div>delete</div>}
-        />,
-        container
-    );
+    act(() => {
+        ReactDom.render(
+            <ReactDemo
+                data={data}
+                firstName={(value: DataItem) => value.firstName}
+                lastName={(value: DataItem) => <div>{value.lastName}</div>}
+                age={(value: DataItem) => value.age}
+                address={(value: DataItem) => value.address}
+                action={(value: DataItem) => <div>delete</div>}
+            />,
+            container
+        );
+    });
 }
 
 export function renderIntact(container: HTMLElement) {

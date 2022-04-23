@@ -1,6 +1,7 @@
 import ReactDom from 'react-dom';
 import {render} from 'intact';
 import {renderIntact, renderReact, renderIntactReact, renderVue, renderIntactVue} from './helpers';
+import {act} from 'react-dom/test-utils';
 
 suite('Render', () => {
     const container = document.createElement('div');
@@ -11,7 +12,9 @@ suite('Render', () => {
     }, {
         onCycle(e: any) {
             // console.log(e); 
-            ReactDom.unmountComponentAtNode(container);
+            act(() => {
+                ReactDom.unmountComponentAtNode(container);
+            });
         },
     });
 
@@ -20,7 +23,11 @@ suite('Render', () => {
     }, {
         onCycle(e: any) {
             // console.log(e); 
-            ReactDom.unmountComponentAtNode(container);
+            console.log(container.offsetHeight);
+            act(() => {
+                ReactDom.unmountComponentAtNode(container);
+            });
+            console.log(container.offsetHeight);
         },
     });
 
