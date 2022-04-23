@@ -1,6 +1,16 @@
+// import type { WrappedBenchmark } from 'karma-benchmark/dist/karma-benchmark';
+// import type {Benchmark} from 'benchmark';
+
+declare module "*.vue" {
+    import type {DefineComponent} from 'vue';
+    const component: DefineComponent<{}, {}, any>
+    export default component;
+}
+
 declare const expect: Chai.ExpectStatic
 declare const sinon: Sinon
-declare const benchmark: Benchmark
+declare const benchmark: Benchmark.benchmark
+declare const suite: WrappedBenchmark
 
 namespace Chai {
     interface Assertion {
@@ -8,11 +18,7 @@ namespace Chai {
     }
 }
 
-declare module "*.vue" {
-    import type {DefineComponent} from 'vue';
-    const component: DefineComponent<{}, {}, any>
-    export default component;
-}
+
 
 namespace JSX {
     type Element = Exclude<Element, keyof Element>

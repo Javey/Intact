@@ -88,6 +88,8 @@ export function normalizeChildren(vNodes: VNodeArrayChildren | VNodeChildAtom) {
                     ret.push(...loop(vNode) as VNodeAtom[]);
                 } else if (isVNode(vNode)) {
                     ret.push(normalize(vNode));
+                } else if (isStringOrNumber(vNode)) {
+                    ret.push(vNode);
                 }
             });
             return ret;

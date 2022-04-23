@@ -99,7 +99,7 @@
     "packages/*/src",
     "packages/*/__tests__",
     "typings/global/index.d.ts",
-    "benchmarks"
+    "benchmarks",
   ],
   "exclude": [
       "packages/intact-vue/",

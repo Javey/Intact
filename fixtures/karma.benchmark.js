@@ -1,7 +1,11 @@
 const webpack = require('webpack');
 const path = require('path');
+const {VueLoaderPlugin} = require('vue-loader');
 
-const file = path.resolve(__dirname, '../benchmarks/index.ts');
+const isMocha = !!process.env.MOCHA;
+const file = isMocha ?
+    path.resolve(__dirname, '../benchmarks/indexWithMocha.ts') :
+    path.resolve(__dirname, '../benchmarks/index.ts');
 
 module.exports = function(config) {
     config.set({
@@ -11,8 +15,8 @@ module.exports = function(config) {
             [file]: ['webpack'],
         },
         webpack: {
-            // mode: 'development',
-            mode: 'production',
+            mode: 'development',
+            // mode: isMocha ? 'development' : 'production',
             module: {
                 rules: [
                     {
@@ -22,6 +26,10 @@ module.exports = function(config) {
                             configFile: path.resolve(__dirname, '../tsconfig.json'),
                             appendTsSuffixTo: [/.vue$/],
                         }
+                    },
+                    {
+                        test: /\.vue$/,
+                        loader: 'vue-loader'
                     },
                 ]
             },
@@ -41,10 +49,12 @@ module.exports = function(config) {
                 },
             },
             devtool: 'inline-source-map',
+            plugins: [
+                new VueLoaderPlugin(),
+            ],
         },
         frameworks: [
-            'benchmark',
-            'mocha',
+            isMocha ? 'mocha' : 'benchmark',
         ],
         client: {
             mocha: {
@@ -53,8 +63,8 @@ module.exports = function(config) {
                 allowUncaught: true,
             }
         },
-        reporters: ['benchmark'],
-        // reporters: ['mocha'],
+        // reporters: ['benchmark'],
+        reporters: [isMocha ? 'mocha' : 'benchmark'],
         // browsers: ['Chrome'],
         singleRun: true,
     });

@@ -22,11 +22,6 @@
                         <div class="k-table-title-text c-ellipsis">Address</div>
                     </div>
                 </th>
-                <th title="Tags">
-                    <div class="k-table-title">
-                        <div class="k-table-title-text c-ellipsis">Tags</div>
-                    </div>
-                </th>
                 <th title="Action">
                     <div class="k-table-title">
                         <div class="k-table-title-text c-ellipsis">Action</div>
@@ -36,7 +31,11 @@
         </thead>
         <tbody>
             <tr v-for="$value in data" :key="$value.key">
-                <td v-for="(value, index) in $value" :key="index">{{ value }}</td>
+                <td><slot name="first-name" :value="$value"></slot></td>
+                <td><slot name="last-name" :value="$value"></slot></td>
+                <td><slot name="age" :value="$value"></slot></td>
+                <td><slot name="address" :value="$value"></slot></td>
+                <td><slot name="action" :value="$value"></slot></td>
             </tr>
         </tbody>
     </table>

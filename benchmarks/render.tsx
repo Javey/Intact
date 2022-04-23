@@ -1,50 +1,54 @@
 import ReactDom from 'react-dom';
-import {ReactDemo} from './reactDemo';
-import {data} from './data';
-import {IntactDemo} from './intactDemo';
-
-// describe('Render', () => {
-    // const container = document.createElement('div');
-    // document.body.appendChild(container);
-
-    // it('intact-react', () => {
-        // const now = Date.now();
-        // ReactDom.render(<IntactDemo data={data} />, container);
-        // console.log(Date.now() - now);
-    // });
-
-    // it('react', () => {
-        // const now = Date.now();
-        // ReactDom.render(<ReactDemo data={data} />, container);
-        // console.log(Date.now() - now);
-    // });
-// });
+import {render} from 'intact';
+import {renderIntact, renderReact, renderIntactReact, renderVue, renderIntactVue} from './helpers';
 
 suite('Render', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
 
     benchmark('intact-react', () => {
-        ReactDom.render(<div>
-            <IntactDemo data={data}>
-                <div>React Children</div>
-            </IntactDemo>
-        </div>, container);
+        renderIntactReact(container);
     }, {
-        onCycle() {
+        onCycle(e: any) {
+            // console.log(e); 
             ReactDom.unmountComponentAtNode(container);
         },
     });
 
     benchmark('react', () => {
-        ReactDom.render(<ReactDemo data={data} />, container);
+        renderReact(container);
     }, {
-        onCycle() {
+        onCycle(e: any) {
+            // console.log(e); 
             ReactDom.unmountComponentAtNode(container);
         },
     });
 
-    benchmark('vue', () => {
+    benchmark('intact', () => {
+        renderReact(container);
+    }, {
+        onCycle(e: any) {
+            // console.log(e); 
+            render(null, container);
+        }
+    })
 
+    let app: any;
+    benchmark('intact-vue', () => {
+        app = renderIntactVue(container);
+    }, {
+        onCycle(e: any) {
+            // console.log(e); 
+            app.unmount();
+        }
+    });
+
+    benchmark('vue', () => {
+        app = renderVue(container);
+    }, {
+        onCycle(e: any) {
+            // console.log(e); 
+            app.unmount();
+        }
     });
 });

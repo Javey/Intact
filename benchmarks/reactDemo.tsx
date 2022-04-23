@@ -2,7 +2,7 @@ import { Component as ReactComponent} from 'react';
 
 export class ReactDemo extends ReactComponent<any> {
     render() {
-        const props = this.props;
+        const {data, firstName, lastName, age, address, action} = this.props;
         return (
             <table>
                 <thead>
@@ -35,13 +35,13 @@ export class ReactDemo extends ReactComponent<any> {
                     </tr>
                 </thead>
                 <tbody>
-                    {props.data.map(($value: any) => {
+                    {data.map(($value: any) => {
                         return <tr key={$value.key}>
-                            <td>{$value.firstName}</td>
-                            <td>{$value.lastName}</td>
-                            <td>{$value.age}</td>
-                            <td>{$value.address}</td>
-                            <td>{props.children}</td>
+                            <td>{firstName($value)}</td>
+                            <td>{lastName($value)}</td>
+                            <td>{age($value)}</td>
+                            <td>{address($value)}</td>
+                            <td>{action($value)}</td>
                         </tr>
                     })}
                 </tbody>
@@ -50,3 +50,8 @@ export class ReactDemo extends ReactComponent<any> {
     }
 }
 
+export class ReactChildrenDemo extends ReactComponent {
+    render() {
+        return <div>{this.props.children}</div>
+    }
+}
