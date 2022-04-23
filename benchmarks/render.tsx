@@ -22,20 +22,16 @@ suite('Render', () => {
         renderReact(container);
     }, {
         onCycle(e: any) {
-            // console.log(e); 
-            console.log(container.offsetHeight);
             act(() => {
                 ReactDom.unmountComponentAtNode(container);
             });
-            console.log(container.offsetHeight);
         },
     });
 
     benchmark('intact', () => {
-        renderReact(container);
+        renderIntact(container);
     }, {
         onCycle(e: any) {
-            // console.log(e); 
             render(null, container);
         }
     })
@@ -58,4 +54,4 @@ suite('Render', () => {
             app.unmount();
         }
     });
-});
+}, {async: true});

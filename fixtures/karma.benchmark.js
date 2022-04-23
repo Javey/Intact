@@ -15,8 +15,8 @@ module.exports = function(config) {
             [file]: ['webpack'],
         },
         webpack: {
-            mode: 'development',
-            // mode: isMocha ? 'development' : 'production',
+            // mode: 'development',
+            mode: isMocha ? 'development' : 'production',
             module: {
                 rules: [
                     {
