@@ -1,7 +1,7 @@
-// import './render';
-// import './update';
-// import './unmount';
-// import './intactFeatures';
-// import './reactFeatures';
+import './render';
+import './update';
+import './unmount';
+import './intactFeatures';
+import './reactFeatures';
 
-import './benchmark';
+// import './benchmark';

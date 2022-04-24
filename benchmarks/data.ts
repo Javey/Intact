@@ -8,9 +8,9 @@ export type DataItem = {
 
 export const data: DataItem[] = [];
 
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 10000; i++) {
     data.push({
-        key: i++,
+        key: i,
         firstName: 'John',
         lastName: 'Brown',
         age: 32,

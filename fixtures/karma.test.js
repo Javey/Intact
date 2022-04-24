@@ -15,8 +15,8 @@ module.exports = function(config) {
             '**/__snapshots__/**/*.md': ['snapshot'],
         },
         webpack: {
-            // mode: 'development',
-            mode: 'production',
+            mode: 'development',
+            // mode: 'production',
             module: {
                 rules: [
                     {

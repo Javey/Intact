@@ -2,6 +2,7 @@
     <table>
         <thead>
             <tr>
+                <th>#</th>
                 <th title="First Name">
                     <div class="k-table-title">
                         <div class="k-table-title-text c-ellipsis">First Name</div>
@@ -30,7 +31,8 @@
             </tr>
         </thead>
         <tbody>
-            <tr v-for="$value in data" :key="$value.key">
+            <tr v-for="($value, $key) in data" :key="$value.key">
+                <td>{{ $key }}</td>
                 <td><slot name="first-name" :value="$value"></slot></td>
                 <td><slot name="last-name" :value="$value"></slot></td>
                 <td><slot name="age" :value="$value"></slot></td>

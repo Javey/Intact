@@ -1,5 +1,6 @@
 import React, {ReactElement, Component as ReactComponent, ReactNode} from 'react';
 // import {createRoot} from 'react-dom/client';
+import ReactDom from 'react-dom';
 import {act} from 'react-dom/test-utils';
 import {Component} from '../src';
 
@@ -7,8 +8,25 @@ export let container: HTMLDivElement;
 export function render(vNode: ReactElement): any {
     // (global as any).IS_REACT_ACT_ENVIRONMENT = true;
 
-    // container = document.createElement('div');
-    // document.body.appendChild(container);
+    container = document.createElement('div');
+    document.body.appendChild(container);
+
+    act(() => {
+        ReactDom.render(vNode, container);
+    });
+
+    return {
+        render(vNode: ReactElement) {
+            act(() => {
+                ReactDom.render(vNode, container);
+            });
+        },
+        unmount() {
+            act(() => {
+                ReactDom.unmountComponentAtNode(container);
+            })
+        }
+    }
     // const root = createRoot(container);
     // act(() => {
         // root.render(vNode);

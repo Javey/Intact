@@ -4,6 +4,7 @@ import {unstable_renderSubtreeIntoContainer, render, findDOMNode} from 'react-do
 import type {Component} from './';
 import {FakePromise} from './fakePromise';
 import {noop} from 'intact-shared';
+import {listeningMarker} from './helpers';
 
 export interface WrapperProps {
     vnode: ReactNode
@@ -12,6 +13,7 @@ export interface WrapperProps {
 export const Context = createContext<Component | null>(null);
 
 export const containerComment = ' react-mount-point-unstable ';
+
 
 export class Wrapper implements ComponentClass<WrapperProps> {
     public $inited: boolean = true;
@@ -221,6 +223,7 @@ function rewriteParentElementApi(parentElement: Element & {_hasRewrite?: boolean
             insertBefore.call(parentElement, child, beforeChild);
         } as any;
 
+        (parentElement as any)[listeningMarker] = true;
         parentElement._hasRewrite = true;
     }
 }

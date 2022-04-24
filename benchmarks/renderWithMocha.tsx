@@ -1,4 +1,5 @@
 import {renderIntact, renderReact, renderIntactReact, renderVue, renderIntactVue} from './helpers';
+import ReactDom from 'react-dom';
 
 describe('Render', () => {
     const container = document.createElement('div');
@@ -34,7 +35,7 @@ describe('Render', () => {
     it('vue', function() {
         this.timeout(0);
 
-        renderVue(container);
+        const app = renderVue(container);
     });
 
     it('intact-vue', function() {

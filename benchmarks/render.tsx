@@ -7,51 +7,51 @@ suite('Render', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
 
+    function clear() {
+        container.innerHTML = '';
+    }
+
     benchmark('intact-react', () => {
         renderIntactReact(container);
-    }, {
-        onCycle(e: any) {
-            // console.log(e); 
-            act(() => {
-                ReactDom.unmountComponentAtNode(container);
-            });
-        },
+        delete (container as any)._reactRootContainer;
+        clear();
     });
 
     benchmark('react', () => {
         renderReact(container);
-    }, {
-        onCycle(e: any) {
-            act(() => {
-                ReactDom.unmountComponentAtNode(container);
-            });
-        },
+        delete (container as any)._reactRootContainer;
+        clear();
+        // ReactDom.unmountComponentAtNode(container);
     });
 
     benchmark('intact', () => {
         renderIntact(container);
-    }, {
-        onCycle(e: any) {
-            render(null, container);
-        }
-    })
+        delete (container as any).$V;
+        clear();
+    });
 
     let app: any;
+
     benchmark('intact-vue', () => {
         app = renderIntactVue(container);
-    }, {
-        onCycle(e: any) {
-            // console.log(e); 
-            app.unmount();
-        }
+        delete (container as any)._vnode;
+        clear();
     });
 
     benchmark('vue', () => {
         app = renderVue(container);
-    }, {
-        onCycle(e: any) {
-            // console.log(e); 
-            app.unmount();
-        }
+        delete (container as any)._vnode;
+        clear();
     });
-}, {async: true});
+}, {
+    async: true,
+    onCycle(event: any) {
+        const suite = this;
+        const benchmark = event.target;
+        console.log("Cycle completed for " + suite.name + ": " + benchmark.name + ', hz: ' + benchmark.hz);
+    },
+    onComplete() {
+        console.log('Fastest is ' + this.filter('fastest').map('name'));
+        alert('Done');
+    }
+});

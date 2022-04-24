@@ -15,8 +15,8 @@ module.exports = function(config) {
             [file]: ['webpack'],
         },
         webpack: {
-            // mode: 'development',
-            mode: isMocha ? 'development' : 'production',
+            mode: 'development',
+            // mode: isMocha ? 'development' : 'production',
             module: {
                 rules: [
                     {
@@ -51,6 +51,9 @@ module.exports = function(config) {
             devtool: 'inline-source-map',
             plugins: [
                 new VueLoaderPlugin(),
+                new webpack.DefinePlugin({
+                    'process.env.NODE_ENV': '"production"',
+                })
             ],
         },
         frameworks: [

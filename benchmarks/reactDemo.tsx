@@ -7,6 +7,7 @@ export class ReactDemo extends ReactComponent<any> {
             <table>
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th title="First Name">
                             <div className="k-table-title">
                                 <div className="k-table-title-text c-ellipsis">First Name</div>
@@ -35,8 +36,9 @@ export class ReactDemo extends ReactComponent<any> {
                     </tr>
                 </thead>
                 <tbody>
-                    {data.map(($value: any) => {
+                    {data.map(($value: any, $key: number) => {
                         return <tr key={$value.key}>
+                            <td>{$key}</td>
                             <td>{firstName($value)}</td>
                             <td>{lastName($value)}</td>
                             <td>{age($value)}</td>

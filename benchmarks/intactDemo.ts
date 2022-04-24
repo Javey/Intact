@@ -7,6 +7,7 @@ const template = compile(`
     <table>
         <thead>
             <tr>
+                <th>#</th>
                 <th title="First Name">
                     <div className="k-table-title">
                         <div className="k-table-title-text c-ellipsis">First Name</div>
@@ -36,6 +37,7 @@ const template = compile(`
         </thead>
         <tbody>
             <tr v-for={this.get('data')} key={$value.key}>
+                <td>{$key}</td>
                 <td><b:first-name params={$value} /></td>
                 <td><b:last-name params={$value} /></td>
                 <td><b:age params={$value} /></td>

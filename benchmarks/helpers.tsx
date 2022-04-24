@@ -10,7 +10,7 @@ import {normalize as vueNormalize} from 'intact-vue-next';
 import {act} from 'react-dom/test-utils';
 
 export function renderIntactReact(container: HTMLElement) {
-    act(() => {
+    // act(() => {
         ReactDom.render(
             <IntactReactDemo
                 data={data}
@@ -22,11 +22,11 @@ export function renderIntactReact(container: HTMLElement) {
             />,
             container
         );
-    });
+    // });
 }
 
 export function renderReact(container: HTMLElement) {
-    act(() => {
+    // act(() => {
         ReactDom.render(
             <ReactDemo
                 data={data}
@@ -38,7 +38,7 @@ export function renderReact(container: HTMLElement) {
             />,
             container
         );
-    });
+    // });
 }
 
 export function renderIntact(container: HTMLElement) {
