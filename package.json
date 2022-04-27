@@ -29,7 +29,7 @@
     "types": "lerna exec -- node ../../scripts/typings.js",
     "_publish": "npm run build && lerna exec -- npm publish",
     "release": "npm run release-patch",
-    "release-patch": "lenra version patch --force-publish && npm run _publish",
+    "release-patch": "lerna version patch --force-publish && npm run _publish",
     "release-minor": "lerna version minor --force-publish && npm run _publish",
     "release-major": "lerna version major --force-publish && npm run _publish",
     "prelease": "lerna version prerelease --preid beta --force-publish && npm run _publish -- --tag=beta",
