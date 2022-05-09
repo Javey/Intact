@@ -37,7 +37,7 @@ type TypeDefValue = TypePrimitive | TypePrimitive[] | TypeObject
 type VNodeChildAtom = Exclude<VNodeChild, VNodeArrayChildren | void>
 export type VNodeAtom = VNode | null | undefined | string | number;
 
-export function normalize(vnode: VNodeChildAtom | VNode): VNodeAtom {
+export function normalize(vnode: VNodeChildAtom | VNode): VNodeAtom | VNodeAtom[] {
     if (isInvalid(vnode)) return null;
     if (isStringOrNumber(vnode) || isIntactVNode(vnode)) return vnode;
 
@@ -58,9 +58,9 @@ export function normalize(vnode: VNodeChildAtom | VNode): VNodeAtom {
         if (type === Comment) return null;
         if (type === Text) return vnode.children as string;
         // spread fragment
-        // if (type === Fragment) {
-            // return normalizeChildren(vnode.children as VNodeArrayChildren);
-        // }
+        if (type === Fragment) {
+            return normalizeChildren(vnode.children as VNodeArrayChildren);
+        }
 
         vNode = createComponentVNode(4, Wrapper, {vnode}, vnode.key as Key);
     }
@@ -87,7 +87,12 @@ export function normalizeChildren(vNodes: VNodeArrayChildren | VNodeChildAtom) {
                 if (Array.isArray(vNode)) {
                     ret.push(...loop(vNode) as VNodeAtom[]);
                 } else if (isVNode(vNode)) {
-                    ret.push(normalize(vNode));
+                    const results = normalize(vNode);
+                    if (Array.isArray(results)) {
+                        ret.push(...results);
+                    } else {
+                        ret.push(results);
+                    }
                 } else if (isStringOrNumber(vNode)) {
                     ret.push(vNode);
                 }
