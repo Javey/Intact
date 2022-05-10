@@ -101,25 +101,31 @@ export class BaseTransition<P extends BaseTransitionProps = BaseTransitionProps>
         lastVNode: VNodeComponentClass<BaseTransition<P>>,
         nextVNode: VNodeComponentClass<BaseTransition<P>>
     ) {
+        const lastInput = this.$lastInput!;
+        const transition = lastInput.transition;
+        // maybe the element has been removed
+        if (!transition) return;
+
         const lastValue = (lastVNode.props || EMPTY_OBJ).show;
         const nextValue = (nextVNode.props || EMPTY_OBJ).show;
-        if (lastValue !== nextValue) {
-            const lastInput = this.$lastInput!;
-            const transition = lastInput.transition;
-            // maybe the element has been removed
-            if (!transition) return;
+        const oldEl = this.el;
+        // maybe the element has changed
+        const el = this.el = findDomFromVNode(lastInput, true) as TransitionElement;
+        const hasChagned = el !== oldEl;
 
-            // maybe the element has changed
-            const el = this.el = findDomFromVNode(lastInput, true) as TransitionElement;
-
+        if (lastValue !== nextValue || hasChagned) {
             if (nextValue) {
                 transition.beforeEnter(el);
                 setDisplay(el, this.originalDisplay);
                 transition.enter(el);
             } else {
-                transition.leave(el, () => {
+                if (hasChagned) {
                     setDisplay(el, 'none');
-                });
+                } else {
+                    transition.leave(el, () => {
+                        setDisplay(el, 'none');
+                    });
+                }
             }
         }
     }

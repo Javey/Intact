@@ -202,6 +202,14 @@ describe('Component', function() {
                 await testTransition(dom, 'enter');
                 expect((dom as HTMLElement).style.display).to.equal('');
             });
+
+            it('show or hide changed element', async () => {
+                render(h(Transition, {show: false}), container);
+                render(h(Transition, {show: false}, h('div', null, 'show')), container);
+                const dom = container.firstElementChild!;
+
+                expect((dom as HTMLElement).style.display).to.equal('none');
+            });
         });
     });
 });
