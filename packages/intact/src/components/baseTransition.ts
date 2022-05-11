@@ -6,6 +6,7 @@ import {
     isStringOrNumber,
     throwError,
     EMPTY_OBJ,
+    isUndefined,
 } from 'intact-shared';
 import {
     VNode,
@@ -106,15 +107,16 @@ export class BaseTransition<P extends BaseTransitionProps = BaseTransitionProps>
         // maybe the element has been removed
         if (!transition) return;
 
-        const lastValue = (lastVNode.props || EMPTY_OBJ).show;
-        const nextValue = (nextVNode.props || EMPTY_OBJ).show;
+        let lastValue = (lastVNode.props || EMPTY_OBJ).show;
+        let nextValue = (nextVNode.props || EMPTY_OBJ).show;
+        
         const oldEl = this.el;
         // maybe the element has changed
         const el = this.el = findDomFromVNode(lastInput, true) as TransitionElement;
         const hasChagned = el !== oldEl;
 
         if (lastValue !== nextValue || hasChagned) {
-            if (nextValue) {
+            if (nextValue || isUndefined(nextValue)) {
                 transition.beforeEnter(el);
                 setDisplay(el, this.originalDisplay);
                 transition.enter(el);
