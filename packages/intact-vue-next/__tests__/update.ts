@@ -1,4 +1,4 @@
-import {Component} from '../src';
+import {Component, mountedQueueStack} from '../src';
 import {
     dispatchEvent,
     createIntactComponent,
@@ -12,7 +12,7 @@ import {
     nextTick,
 } from './helpers';
 import {createVNode as h, ComponentFunction} from 'intact';
-import {h as v, ComponentPublicInstance} from 'vue';
+import {h as v, ComponentPublicInstance, defineComponent} from 'vue';
 import Normalize from './normalize.vue';
 
 describe('Intact Vue Next', () => {
@@ -136,7 +136,7 @@ describe('Intact Vue Next', () => {
                 <div>
                     <C v-for="(item, index) in data"
                         :key="index"
-                        :ref="'test' + index"
+                        ref="test"
                         :index="item.value"
                     >{{ item.value }}</C>
                 </div>
@@ -153,7 +153,7 @@ describe('Intact Vue Next', () => {
             vm.data.push({value: 3});
             await nextTick();
             [0, 1, 2].forEach((index) => {
-                expect(vm.$refs['test' + index].get('index')).to.eql(index + 1);
+                expect(vm.$refs.test[index].get('index')).to.eql(index + 1);
             });
         });
 
@@ -382,6 +382,49 @@ describe('Intact Vue Next', () => {
             await nextTick();
             expect(vm.$refs.c.forceUpdate).to.be.exist;
             expect(vm.$refs.d).to.be.null;
+        });
+
+        it('should call mountedQueue correctly when update a component multiple times on one update phase', async () => {
+            render(`<App />`, {
+                App: {
+                    data() {
+                        return {a: 1};
+                    },
+                    mounted() {
+                        this.a = 3;
+                    },
+                    template: `<Foo v-model="a" />`,
+                    components: {
+                        Foo: {
+                            props: {
+                                modelValue: Number,
+                            },
+                            template: `<C><Bar :modelValue="modelValue" @update:modelValue="v => $emit('update:modelValue', v)" /></C>`,
+                            components: {
+                                C: ChildrenIntactComponent, 
+                                Bar: {
+                                    props: {
+                                        modelValue: Number,
+                                    },
+                                    watch: {
+                                        modelValue: {
+                                            immediate: true,
+                                            handler(v) {
+                                                // console.log(v);
+                                                this.$emit('update:modelValue', 2);
+                                            },
+                                        },
+                                    },
+                                    template: `<div>{{ modelValue }}</div>`
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            await nextTick();
+            expect(mountedQueueStack.length).to.eql(0);
         });
 
         describe('Multiple vNodes Component', () => {

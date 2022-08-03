@@ -30,6 +30,7 @@ export const SimpleIntactComponent = createIntactComponent(`<div>Intact Componen
 export const ChildrenIntactComponent = createIntactComponent(
     `<div class={this.get('className')} style={this.get('style')}>{this.get('children')}</div>`
 );
+(ChildrenIntactComponent as any).displayName = 'ChildrenIntactComponent';
 export const PropsIntactComponent = createIntactComponent(
     `<div>a: {this.get('a')} b: {this.get('b')}</div>`
 );

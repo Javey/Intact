@@ -52,10 +52,17 @@ type IntactVueNextProps<P, E> =
     & Readonly<{
         [K in keyof E as `on${Capitalize<string & K>}`]?:
             (...args: any[] & E[K]) => void
-    }>
+    }>;
+type MountedQueueStackItem = {
+    instance: ComponentInternalInstance,
+    queue: Function[],
+};
 
 let currentInstance: Component | null = null;
-const [pushMountedQueue, popMountedQueue] = createStack<Function[]>();
+const [pushMountedQueue, popMountedQueue, mountedQueueStack] = createStack<MountedQueueStackItem>();
+
+// for unit test
+export {mountedQueueStack};
 
 export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> {
     static $cid = 'IntactVueNext';
@@ -124,7 +131,8 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                     setScopeId(element, vnode, vnode.scopeId, (vnode as any).slotScopeIds, vueInstance.parent);
                 }
 
-                const mountedQueue = pushMountedQueue([]);
+                const stackItem = mountedQueueStack.find(item => item.instance === vueInstance);
+                const mountedQueue = (stackItem || pushMountedQueue({instance: vueInstance, queue: []})).queue;
                 const parentComponent = getIntactParent(vueInstance.parent);
                 const isSVG = parentComponent ? parentComponent.$SVG : false;
 
@@ -260,7 +268,7 @@ function createStack<T>() {
         return stack.pop();
     }
 
-    return [pushStack, popStack] as const;
+    return [pushStack, popStack, stack] as const;
 }
 
 function callMountedQueue() {
@@ -272,7 +280,7 @@ function callMountedQueue() {
         }
     }
 
-    callAll(mountedQueue!);
+    callAll(mountedQueue!.queue);
 }
 
 const [_pushInstance, _popInstance] = createStack<Component<any, any, any>>();
