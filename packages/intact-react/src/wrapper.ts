@@ -161,6 +161,16 @@ export class Wrapper implements ComponentClass<WrapperProps> {
                     (dom as any)._mountPoint = container;
                     instance.$lastInput.dom = dom;
 
+                    // console.log(rootContainer);
+                    // console.dir(container);
+                    // debugger;
+                    // getRootContainer(parentComponent);
+                    // Object.defineProperty((container as any)._reactRootContainer._internalRoot, 'containerInfo', {
+                        // get() {
+                            // return getRootContainer(parentComponent); 
+                        // }
+                    // });
+
                     resolve();
                 } 
             );
@@ -223,6 +233,7 @@ function rewriteParentElementApi(parentElement: Element & {_hasRewrite?: boolean
             insertBefore.call(parentElement, child, beforeChild);
         } as any;
 
+        // let react don't add listeners to the root container
         (parentElement as any)[listeningMarker] = true;
         parentElement._hasRewrite = true;
     }

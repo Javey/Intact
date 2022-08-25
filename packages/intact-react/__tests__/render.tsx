@@ -76,6 +76,25 @@ describe('Intact React', () => {
             expect(click.callCount).to.eql(1);
         });
 
+        it('render react element with mouseenter event', () => {
+            const fn = sinon.spy((event: Event) => {
+                console.log('mouseenter', event);
+                expect((event.target as HTMLElement).tagName).to.eql('DIV');
+            });
+            render(
+                <div>
+                    <div>
+                        <ChildrenIntactComponent>
+                            <div onMouseEnter={fn}>event</div>
+                        </ChildrenIntactComponent>
+                    </div>
+                </div>
+            );
+
+            // (container.firstElementChild!.firstElementChild! as HTMLElement).click();
+            // expect(click.callCount).to.eql(1);
+        });
+
         it('render event of react element that return by intact component directly', () => {
             const click = sinon.spy((event: Event) => {
                 console.log('click', event);

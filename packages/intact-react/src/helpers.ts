@@ -25,6 +25,9 @@ export function updateFiberProps(node: Element, placeholder: Element) {
 export let listeningMarker: string;
 
 const bind = Function.prototype.bind;
+// retrieve from react definition
+const IS_EVENT_HANDLE_NON_MANAGED_NODE = 1;
+const IS_NON_DELEGATED = 2;
 Function.prototype.bind = function(...args: any[]) {
     const [obj, domEventName, eventSystemFlags, targetContainer, ...rest] = args;
     if (obj === null && isString(domEventName) && isNumber(eventSystemFlags) && targetContainer instanceof Element) {
@@ -42,10 +45,73 @@ Function.prototype.bind = function(...args: any[]) {
             isReactListening = (targetContainer as any)[listeningMarker];
         }
 
-        if (isReactListening) {
-            return bind.call(this, null, domEventName, eventSystemFlags | 2, targetContainer, ...rest);
+        if (isReactListening && (eventSystemFlags & IS_EVENT_HANDLE_NON_MANAGED_NODE) === 0 && (eventSystemFlags & IS_NON_DELEGATED) === 0) {
+            /**
+             * Because we only add listeners to the react root container, the comment root container in Wrapper will ignore doing this.
+             * But React will check the container (isMatchingRootContainer). it will always return false since the comment parentNode is not
+             * the targetContainer. Therefore, we fake the parentNode by returning the targetContainer to skip the check in React.
+             * Eventually we restore the value after calling the function.
+             */
+            const _fn = this;
+            const fn = (name: string, eventSystemFlags: number, targetContainer: HTMLElement, event: Event, ...rest: any[]) => {
+                const targetInst = getClosestInstanceFromNode(event.target);
+                const commentRoot = getCommentRoot(targetInst);
+                let containerInfo: any;
+                if (commentRoot) {
+                    containerInfo = commentRoot.stateNode.containerInfo;
+                    commentRoot.stateNode.containerInfo = targetContainer;
+                }
+
+                const ret = _fn(name, eventSystemFlags, targetContainer, event, ...rest);
+
+                if (commentRoot) {
+                    commentRoot.stateNode.containerInfo = containerInfo; 
+                }
+
+                return ret;
+            };
+            return bind.call(fn, null, domEventName, eventSystemFlags, targetContainer, ...rest);
         }
     }
     return bind.call(this, ...(args as [any]));
 }
 
+function getClosestInstanceFromNode(targetNode: any) {
+  var targetInst = targetNode[internalInstanceKey];
+
+  if (targetInst) {
+    // Don't return HostRoot or SuspenseComponent here.
+    return targetInst;
+  } // If the direct event target isn't a React owned DOM node, we need to look
+  // to see if one of its parents is a React owned DOM node.
+
+
+  var parentNode = targetNode.parentNode;
+
+  while (parentNode) {
+    targetInst = parentNode[internalInstanceKey];
+
+    if (targetInst) {
+      return targetInst;
+    }
+
+    targetNode = parentNode;
+    parentNode = targetNode.parentNode;
+  }
+
+  return null;
+}
+
+function getCommentRoot(targetInst: any) {
+    let node = targetInst;
+    while (true) {
+        if (node === null) return;
+
+        const nodeTag = node.tag;
+        if (nodeTag === 3 /* HostRoot */) {
+            return node;
+        }
+
+        node = node.return;
+    }
+}
