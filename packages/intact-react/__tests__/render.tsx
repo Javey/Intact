@@ -11,6 +11,7 @@ import {
 import {Component, createVNode as h, findDomFromVNode, Props, VNode, directClone} from '../src';
 import {Component as ReactComponent, ReactNode, Fragment} from 'react';
 import ReactDOM from 'react-dom';
+import {dispatchEvent} from '../../misstime/__tests__/utils';
 
 describe('Intact React', () => {
     describe('Render', () => {
@@ -81,18 +82,19 @@ describe('Intact React', () => {
                 console.log('mouseenter', event);
                 expect((event.target as HTMLElement).tagName).to.eql('DIV');
             });
+            let dom: HTMLElement | null = null;
             render(
                 <div>
                     <div>
                         <ChildrenIntactComponent>
-                            <div onMouseEnter={fn}>event</div>
+                            <div onMouseEnter={fn} ref={(i: HTMLElement | null) => dom = i}>event</div>
                         </ChildrenIntactComponent>
                     </div>
                 </div>
             );
 
-            // (container.firstElementChild!.firstElementChild! as HTMLElement).click();
-            // expect(click.callCount).to.eql(1);
+            dispatchEvent(dom!, 'mouseover');
+            expect(fn.callCount).to.eql(1);
         });
 
         it('render event of react element that return by intact component directly', () => {

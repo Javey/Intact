@@ -53,13 +53,52 @@ type IntactVueNextProps<P, E> =
         [K in keyof E as `on${Capitalize<string & K>}`]?:
             (...args: any[] & E[K]) => void
     }>;
+
+enum StackPhase {
+    Mount,
+    Update,
+}
 type MountedQueueStackItem = {
     instance: ComponentInternalInstance,
     queue: Function[],
 };
 
 let currentInstance: Component | null = null;
-const [pushMountedQueue, popMountedQueue, mountedQueueStack] = createStack<MountedQueueStackItem>();
+
+// const [pushMountedQueue, popMountedQueue, mountedQueueStack] = createStack<MountedQueueStackItem>();
+const mountedQueueStack: Map<string, Function[]> = new Map();
+const pushMountedQueue = (uid: number, phase: 'update' | 'mount') => {
+    const key = `${phase}-${uid}`;
+
+    let mountedQueue = mountedQueueStack.get(key);
+    if (!mountedQueue) {
+        mountedQueue = [];
+        mountedQueueStack.set(key, mountedQueue);
+    }
+
+    return mountedQueue;
+};
+const callMountedQueue = () => {
+    const key = Array.from(mountedQueueStack.keys()).pop();
+    /* istanbul ignore next */
+    if (process.env.NODE_ENV !== 'production') {
+        if (!key) {
+            throw new Error(`"mountedQueue" is undefined, maybe this is a bug of Intact-Vue`);
+        }
+    }
+
+    const mountedQueue = mountedQueueStack.get(key!);
+    /* istanbul ignore next */
+    if (process.env.NODE_ENV !== 'production') {
+        if (!mountedQueue) {
+            throw new Error(`Cannot get "mountedQueue" through key "${key}", maybe this is a bug of Intact-Vue`);
+        }
+    }
+
+    mountedQueueStack.delete(key!);
+
+    callAll(mountedQueue!);
+};
 
 // for unit test
 export {mountedQueueStack};
@@ -131,8 +170,8 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                     setScopeId(element, vnode, vnode.scopeId, (vnode as any).slotScopeIds, vueInstance.parent);
                 }
 
-                const stackItem = mountedQueueStack.find(item => item.instance === vueInstance);
-                const mountedQueue = (stackItem || pushMountedQueue({instance: vueInstance, queue: []})).queue;
+                // const stackItem = mountedQueueStack.find(item => item.instance === vueInstance);
+                // const mountedQueue = (stackItem || pushMountedQueue({instance: vueInstance, queue: []})).queue;
                 const parentComponent = getIntactParent(vueInstance.parent);
                 const isSVG = parentComponent ? parentComponent.$SVG : false;
 
@@ -146,7 +185,8 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                     // Vue need the property on calling setScopeId
                     vueInstance.subTree = subTree;
                     vNode._vueInstance = vueInstance;
-
+                   
+                    const mountedQueue = pushMountedQueue(vueInstance.uid, 'mount');
                     mount(vNode, null, parentComponent, isSVG, null, mountedQueue);
 
                     // hack the nodeOps of Vue to create the real dom instead of a comment
@@ -168,6 +208,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                 } else {
                     const instance = setupState.instance as Component;
                     const lastVNode = instance.$vNode;
+                    const mountedQueue = pushMountedQueue(vueInstance.uid, 'update');
                     patch(lastVNode, vNode, this.$el.parentElement!, parentComponent, isSVG, null, mountedQueue, false);
 
                     // element may have chagned
@@ -269,18 +310,6 @@ function createStack<T>() {
     }
 
     return [pushStack, popStack, stack] as const;
-}
-
-function callMountedQueue() {
-    const mountedQueue = popMountedQueue();
-    /* istanbul ignore next */
-    if (process.env.NODE_ENV !== 'production') {
-        if (!mountedQueue) {
-            throw new Error(`"mountedQueue" is undefined, maybe this is a bug of Intact-Vue`);
-        }
-    }
-
-    callAll(mountedQueue!.queue);
 }
 
 const [_pushInstance, _popInstance] = createStack<Component<any, any, any>>();

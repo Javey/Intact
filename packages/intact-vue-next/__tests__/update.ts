@@ -410,7 +410,6 @@ describe('Intact Vue Next', () => {
                                         modelValue: {
                                             immediate: true,
                                             handler(v) {
-                                                // console.log(v);
                                                 this.$emit('update:modelValue', 2);
                                             },
                                         },
@@ -424,7 +423,56 @@ describe('Intact Vue Next', () => {
             });
 
             await nextTick();
-            expect(mountedQueueStack.length).to.eql(0);
+            expect(mountedQueueStack.size).to.eql(0);
+        });
+
+        it('should call mountedQueue correctly when update a component to create a new component, then update them again', async () => {
+            render(`<App />`, {
+                App: {
+                    data() {
+                        return {a: 1};
+                    },
+                    mounted() {
+                        this.a = 3;
+                    },
+                    template: `<Foo v-model="a" />`,
+                    components: {
+                        Foo: {
+                            props: {
+                                modelValue: Number,
+                            },
+                            template: `
+                                <C><Bar :modelValue="modelValue" @update:modelValue="v => $emit('update:modelValue', v)" /></C>
+                                <C v-if="modelValue === 2 || modelValue === 4"><Bar :modelValue="modelValue" @update:modelValue="v => $emit('update:modelValue', v)" /></C>
+                            `,
+                            components: {
+                                C: ChildrenIntactComponent, 
+                                Bar: {
+                                    props: {
+                                        modelValue: Number,
+                                    },
+                                    watch: {
+                                        modelValue: {
+                                            immediate: true,
+                                            handler(v) {
+                                                if (v === 2 || v === 4) {
+                                                    this.$emit('update:modelValue', 4);
+                                                } else {
+                                                    this.$emit('update:modelValue', 2);
+                                                }
+                                            },
+                                        },
+                                    },
+                                    template: `<div>{{ modelValue }}</div>`
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            await nextTick();
+            expect(mountedQueueStack.size).to.eql(0);
         });
 
         describe('Multiple vNodes Component', () => {
