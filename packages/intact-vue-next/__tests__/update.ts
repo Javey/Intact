@@ -11,7 +11,7 @@ import {
     reset,
     nextTick,
 } from './helpers';
-import {createVNode as h, ComponentFunction} from 'intact';
+import {createVNode as h, ComponentFunction, VNodeComponentClass} from 'intact';
 import {h as v, ComponentPublicInstance, defineComponent} from 'vue';
 import Normalize from './normalize.vue';
 
@@ -427,6 +427,24 @@ describe('Intact Vue Next', () => {
         });
 
         it('should call mountedQueue correctly when update a component to create a new component, then update them again', async () => {
+            const update = sinon.spy(function(children: Component) {
+                expect(children.$mounted).to.be.true;
+            });
+            const beforeUpdate = sinon.spy(function(children: Component) {
+                console.log(children.$mounted);
+                expect(children.$mounted).to.be.true;
+            });
+            class Test extends Component {
+                static template = `<div>{this.get('children')}</div>`;
+
+                beforeUpdate() {
+                    beforeUpdate(this);
+                }
+
+                updated() {
+                    update(this);
+                }
+            }
             render(`<App />`, {
                 App: {
                     data() {
@@ -443,10 +461,12 @@ describe('Intact Vue Next', () => {
                             },
                             template: `
                                 <C><Bar :modelValue="modelValue" @update:modelValue="v => $emit('update:modelValue', v)" /></C>
-                                <C v-if="modelValue === 2 || modelValue === 4"><Bar :modelValue="modelValue" @update:modelValue="v => $emit('update:modelValue', v)" /></C>
+                                <C v-if="modelValue === 2 || modelValue === 4">
+                                    <Bar :modelValue="modelValue" @update:modelValue="v => $emit('update:modelValue', v)" />
+                                </C>
                             `,
                             components: {
-                                C: ChildrenIntactComponent, 
+                                C: Test, 
                                 Bar: {
                                     props: {
                                         modelValue: Number,
@@ -465,7 +485,7 @@ describe('Intact Vue Next', () => {
                                     },
                                     template: `<div>{{ modelValue }}</div>`
                                 }
-                            }
+                            },
                         }
                     }
                 }

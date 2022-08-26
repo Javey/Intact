@@ -50,6 +50,8 @@ type NoInfer<T> = [T][T extends any ? 0 : never];
         // P[K]
 // };
 
+let uid = 0;
+
 export abstract class Component<
     P extends {} = {},
     E extends {} = {},
@@ -75,6 +77,7 @@ export abstract class Component<
     public $queue: Function[] | null = null;
     public $pendingQueue: Function[] | null = null;
     public $provides: Record<InjectionKey, any> | null = null;
+    public $uid = uid++;
 
     // lifecyle states
     public $inited: boolean = false;
