@@ -29,7 +29,7 @@ const bind = Function.prototype.bind;
 const IS_EVENT_HANDLE_NON_MANAGED_NODE = 1;
 const IS_NON_DELEGATED = 2;
 Function.prototype.bind = function(...args: any[]) {
-    const [obj, domEventName, eventSystemFlags, targetContainer, ...rest] = args;
+    const [obj, domEventName, eventSystemFlags, targetContainer, nativeEvent] = args;
     if (obj === null && isString(domEventName) && isNumber(eventSystemFlags) && targetContainer instanceof Element) {
         let isReactListening = false;
         if (!listeningMarker) {
@@ -42,7 +42,7 @@ Function.prototype.bind = function(...args: any[]) {
                 isReactListening = false;
             }
         } else {
-            isReactListening = (targetContainer as any)[listeningMarker];
+            isReactListening = (targetContainer as any)[listeningMarker] && nativeEvent instanceof Event;
         }
 
         if (isReactListening && (eventSystemFlags & IS_EVENT_HANDLE_NON_MANAGED_NODE) === 0 && (eventSystemFlags & IS_NON_DELEGATED) === 0) {
@@ -53,8 +53,8 @@ Function.prototype.bind = function(...args: any[]) {
              * Eventually we restore the value after calling the function.
              */
             const _fn = this;
-            const fn = (name: string, eventSystemFlags: number, targetContainer: HTMLElement, event: Event, ...rest: any[]) => {
-                const targetInst = getClosestInstanceFromNode(event.target);
+            const fn = (name: string, eventSystemFlags: number, targetContainer: HTMLElement, nativeEvent: Event) => {
+                const targetInst = getClosestInstanceFromNode(nativeEvent.target);
                 const commentRoot = getCommentRoot(targetInst);
                 let containerInfo: any;
                 if (commentRoot) {
@@ -62,7 +62,7 @@ Function.prototype.bind = function(...args: any[]) {
                     commentRoot.stateNode.containerInfo = targetContainer;
                 }
 
-                const ret = _fn(name, eventSystemFlags, targetContainer, event, ...rest);
+                const ret = _fn(name, eventSystemFlags, targetContainer, nativeEvent);
 
                 if (commentRoot) {
                     commentRoot.stateNode.containerInfo = containerInfo; 
@@ -70,7 +70,7 @@ Function.prototype.bind = function(...args: any[]) {
 
                 return ret;
             };
-            return bind.call(fn, null, domEventName, eventSystemFlags, targetContainer, ...rest);
+            return bind.call(fn, null, domEventName, eventSystemFlags, targetContainer, nativeEvent);
         }
     }
     return bind.call(this, ...(args as [any]));

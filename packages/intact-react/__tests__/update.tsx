@@ -370,6 +370,31 @@ describe('Intact React', () => {
             expect(container.innerHTML).to.eql('');
         });
 
+        it('should remove react element in slot', () => {
+            class Test extends Component<{data: string[]}, {}, {test: string}> {
+                static template = `<div>
+                    <div v-for={this.get('data')}>
+                        <b:test params={$value} />
+                    </div>
+                </div>`
+            }
+            const instance = renderApp(function() {
+                return <Test data={this.state.data} slotTest={(data) => {
+                    return <div onClick={remove} className="click">{data}</div>
+                }}/>
+            }, {data: [1, 2]});
+
+            function remove() {
+                act(() => {
+                    instance.setState({data: [1]});
+                });
+            }
+
+            container.querySelector<HTMLElement>('.click')!.click();
+
+            expect(container.innerHTML).to.eql('<div><div><div class="click">1</div>#</div></div>')
+        });
+
         it('update intact component that return different dom', () => {
             class Test extends Component<{show?: boolean}> {
                 static template = `if (!this.get('show')) { return null } <template>{this.get('children')}</template>`;
