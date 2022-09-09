@@ -1,5 +1,6 @@
 import {
     VNode,
+    RefFunction,
     createComponentVNode,
     TypeDefs,
     Key,
@@ -37,7 +38,7 @@ type TypeDefValue = TypePrimitive | TypePrimitive[] | TypeObject
 type VNodeChildAtom = Exclude<VNodeChild, VNodeArrayChildren | void>
 export type VNodeAtom = VNode | null | undefined | string | number;
 
-export function normalize(vnode: VNodeChildAtom | VNode): VNodeAtom | VNodeAtom[] {
+export function normalize(vnode: VNodeChildAtom | VNode, normalizeRef: boolean): VNodeAtom | VNodeAtom[] {
     if (isInvalid(vnode)) return null;
     if (isStringOrNumber(vnode) || isIntactVNode(vnode)) return vnode;
 
@@ -51,7 +52,7 @@ export function normalize(vnode: VNodeChildAtom | VNode): VNodeAtom | VNodeAtom[
             (type as IntactComponentOptions).Component,
             props,
             vnode.key as Key,
-            props.ref
+            normalizeRef ? getNormalizedRef(vnode.ref) : null
         );
     } else {
         // ignore comment vNode
@@ -59,7 +60,7 @@ export function normalize(vnode: VNodeChildAtom | VNode): VNodeAtom | VNodeAtom[
         if (type === Text) return vnode.children as string;
         // spread fragment
         if (type === Fragment) {
-            return normalizeChildren(vnode.children as VNodeArrayChildren);
+            return normalizeChildren(vnode.children as VNodeArrayChildren, normalizeRef);
         }
 
         vNode = createComponentVNode(4, Wrapper, {vnode}, vnode.key as Key);
@@ -79,7 +80,7 @@ function isIntactVNode(vNode: any): vNode is VNode {
     return 'childrenType' in vNode;
 }
 
-export function normalizeChildren(vNodes: VNodeArrayChildren | VNodeChildAtom) {
+export function normalizeChildren(vNodes: VNodeArrayChildren | VNodeChildAtom, normalizeRef: boolean = true) {
     const loop = (vNodes: VNodeArrayChildren | VNodeChildAtom): VNodeAtom[] | VNodeAtom => {
         if (Array.isArray(vNodes)) {
             const ret: VNodeAtom[] = [];
@@ -87,7 +88,7 @@ export function normalizeChildren(vNodes: VNodeArrayChildren | VNodeChildAtom) {
                 if (Array.isArray(vNode)) {
                     ret.push(...loop(vNode) as VNodeAtom[]);
                 } else if (isVNode(vNode)) {
-                    const results = normalize(vNode);
+                    const results = normalize(vNode, normalizeRef);
                     if (Array.isArray(results)) {
                         ret.push(...results);
                     } else {
@@ -99,7 +100,7 @@ export function normalizeChildren(vNodes: VNodeArrayChildren | VNodeChildAtom) {
             });
             return ret;
         }
-        return normalize(vNodes);
+        return normalize(vNodes, normalizeRef);
     }
     const ret = loop(vNodes);
     if (Array.isArray(ret)) {
@@ -146,7 +147,7 @@ export function normalizeProps(vnode: VueVNode) {
 
     normalizeSlots(slots, props);
     normalizeDirs(vnode.dirs, props);
-    normalizeRef(vnode.ref, props);
+    // normalizeRef(vnode.ref, props);
 
     return props;
 }
@@ -314,6 +315,16 @@ function normalizeDirs(dirs: VueVNode['dirs'], props: any) {
             return true;
         }
     });
+}
+
+function getNormalizedRef(rawRef: VueVNode['ref'] | null) {
+    if (isFunction(rawRef)) return rawRef as unknown as RefFunction<any>;
+    else if (rawRef) {
+        return (i: any) => {
+            setRef(rawRef, i);
+        }
+    }
+    return null;
 }
 
 function normalizeRef(rawRef: VueVNode['ref'], props: any) {

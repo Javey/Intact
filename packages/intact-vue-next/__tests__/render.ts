@@ -428,7 +428,7 @@ describe('Intact Vue Next', () => {
                 expect(vm.$el.outerHTML).to.eql('<div>test</div>');
             });
 
-            it('render functional component which wrap intact component', () => {
+            it('render functional component which returns intact component', () => {
                 const Test = Component.functionalWrapper(function(props: any) {
                     return h(ChildrenIntactComponent, props);
                 });
@@ -439,19 +439,23 @@ describe('Intact Vue Next', () => {
                 expect(vm.$el.outerHTML).be.eql('<div class="a">test</div>');
             });
 
-            it('render functional component which return multiple vNodes', () => {
+            it('render functional component which returns multiple vNodes', () => {
+                const ref = sinon.spy(function(this: any, i: typeof ChildrenIntactComponent | null) {
+                    this.a = i;
+                });
                 const Test = Component.functionalWrapper(function(props: any) {
                     return [
                         h(ChildrenIntactComponent, props),
                         h(ChildrenIntactComponent, null, 'two')
                     ];
                 });
-                render('<div><C class="a" :a="1" :forwardRef="i => a = i" key="a">test</C></div>', {
+                render('<div><C class="a" :a="1" :forwardRef="ref" key="a">test</C></div>', {
                     C: Test 
-                });
+                }, {}, { ref });
 
                 expect(vm.a.$el.innerHTML).to.eql('test');
                 expect(vm.$el.outerHTML).be.eql('<div><div class="a">test</div><div>two</div></div>');
+                expect(ref.callCount).to.eql(1);
             });
 
             it('render blocks in functional component', () => {

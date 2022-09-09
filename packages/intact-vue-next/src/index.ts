@@ -146,7 +146,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
 
             render(proxyToUse: ComponentPublicInstance, renderCache: any, props: any, setupState: SetupState) {
                 const vueInstance = proxyToUse.$;
-                const vNode = normalize(vueInstance.vnode) as VNodeComponentClassMaybeWithVueInstance;
+                const vNode = normalize(vueInstance.vnode, false) as VNodeComponentClassMaybeWithVueInstance;
 
                 const _setScopeId = (element: IntactDom) => {
                     const vnode = vueInstance.vnode;

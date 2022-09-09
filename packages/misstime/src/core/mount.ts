@@ -79,8 +79,10 @@ export function mountElement(
     let children = vNode.children;
 
     // We should mount Ref firstly, because we may get parent ref in children component
-    // on $render method, e.g. Portal of KPC
-    mountRef(vNode.ref, dom);
+    // in $render method, e.g. Portal of KPC
+    // mountRef(vNode.ref, dom);
+    // @MODIFY: we have to mount ref in mountedQueuek
+    mountRef(vNode.ref, dom, mountedQueue);
 
     if (childrenType === ChildrenTypes.HasTextChildren) {
         setTextContent(dom, children as string);
@@ -141,8 +143,7 @@ export function mountComponentClass(
 
     instance.$render(lastVNode, vNode, parentDom, anchor, mountedQueue);
 
-    mountRef(vNode.ref, instance);
-
+    mountRef(vNode.ref, instance, mountedQueue);
     // mountedQueue.push(() => instance.$mount(lastVNode, vNode))
 }
 

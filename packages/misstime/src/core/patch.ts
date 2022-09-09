@@ -134,7 +134,7 @@ function patchComponentClass(
         const nextRef = nextVNode.ref;
         if (lastRef !== nextRef) {
             unmountRef(lastRef);
-            mountRef(nextRef, instance);
+            mountRef(nextRef, instance, mountedQueue);
         }
     }
 }
@@ -253,12 +253,12 @@ export function patchElement(
 
     const nextRef = nextVNode.ref;
     if (reusing) {
-        mountRef(nextRef, dom);
+        mountRef(nextRef, dom, mountedQueue);
     } else {
         const lastRef = lastVNode.ref;
         if (lastRef !== nextRef) {
             unmountRef(lastRef);
-            mountRef(nextRef, dom);
+            mountRef(nextRef, dom, mountedQueue);
         }
     }
 }

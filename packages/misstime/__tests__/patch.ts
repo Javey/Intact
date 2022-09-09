@@ -477,6 +477,18 @@ describe('Patch', () => {
         expect(dom2!.tagName).to.equal('DIV');
     });
 
+    it('should correctly patch ref when the ref mounted and then the vNode which has the same ref is removed', () => {
+        let dom: Element | null;
+        const ref = (i: Element | null) => dom = i;
+
+        patchTest(
+            h('div', null, [h('div'), h('div', {ref})]),
+            h('div', null, [h('div', {ref})]),
+        );
+
+        expect(dom!).to.be.exist;
+    });
+
     describe('Props', () => {
         it('should patch attributes', () => {
             patchTest(

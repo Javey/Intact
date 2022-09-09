@@ -1,5 +1,5 @@
 import {normalizeProps, VNodeAtom} from './normalize';
-import {h, VNode as VueVNode} from 'vue';
+import {h, VNode as VueVNode, VNodeProps} from 'vue';
 import {ComponentFunction, NormalizedChildren, VNode, VNodeComponentClass} from 'intact';
 import {isStringOrNumber} from 'intact-shared';
 
@@ -18,8 +18,12 @@ export function functionalWrapper(Component: ComponentFunctionForVue) {
                 type: {
                     Component,
                 },
-                ref: forwardRef,
+                // ref: forwardRef,
             } as unknown as VueVNode);
+
+            if (forwardRef) {
+                _props.ref = forwardRef;
+            }
 
             // functional component of intact must return VNodeComponentClass
             const vNode = Component(_props, true /* is in vue */) as VNodeComponentClass | VNodeComponentClass[];
@@ -42,11 +46,16 @@ function toVueVNode(vNode: VNodeComponentClass | null) {
     // if (isStringOrNumber(vNode)) return vNode;
     if (vNode) {
         const props = vNode.props;
-        return h(
+        const ref = vNode.ref as unknown as VNodeProps['ref'];
+        const vnode = h(
             vNode.tag as any,
             // because Vue will normalize some styles, but the props of vNode in Intact
             // is immutable, we must clone it here.
-            props ? {...props} : null
+            props ? (ref ? {...props, ref} : {...props}) : null 
         );
+
+        vNode.ref = null;
+
+        return vnode;
     }
 }
