@@ -147,6 +147,12 @@ export function normalizeProps(vnode: VueVNode) {
 
     normalizeSlots(slots, props);
     normalizeDirs(vnode.dirs, props);
+
+    // add scopeId
+    const scopeId = vnode.scopeId;
+    if (scopeId) {
+        props[scopeId] = '';
+    }
     // normalizeRef(vnode.ref, props);
 
     return props;

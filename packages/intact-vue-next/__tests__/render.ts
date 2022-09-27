@@ -18,6 +18,7 @@ import {
 } from './helpers';
 import {h as v, DefineComponent} from 'vue';
 import Normalize from './normalize.vue';
+import Scoped from './scoped.vue';
 
 describe('Intact Vue Next', () => {
     describe('Render', () => {
@@ -298,6 +299,12 @@ describe('Intact Vue Next', () => {
             });
 
             expect(vm.$el.outerHTML).be.eql('<div class="a b" style="color: red; font-size: 12px;">test</div>');
+        });
+
+        it('render scoped style on nested intact component', () => {
+            render(`<Scoped />`, {Scoped});
+
+            expect(vm.$el.outerHTML).be.eql('<div data-v-7f3ed1cd="">intact component in vue <div class="test" data-v-7f3ed1cd="">intact component in vue <b data-v-7f3ed1cd="">test</b></div></div>');
         });
 
         it('render async intact component', () => {
