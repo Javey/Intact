@@ -82,7 +82,6 @@ export function mountElement(
     // in $render method, e.g. Portal of KPC
     // mountRef(vNode.ref, dom);
     // @MODIFY: we have to mount ref in mountedQueuek
-    mountRef(vNode.ref, dom, mountedQueue);
 
     if (childrenType === ChildrenTypes.HasTextChildren) {
         setTextContent(dom, children as string);
@@ -114,6 +113,8 @@ export function mountElement(
         transition.beforeEnter(dom as TransitionElement); 
         mountedQueue.push(() => transition.enter(dom as TransitionElement));
     }
+
+    mountRef(vNode.ref, dom, mountedQueue);
 }
 
 export function mountComponentClass(

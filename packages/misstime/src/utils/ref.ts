@@ -28,7 +28,10 @@ export function mountRef(
     mountedQueue: Function[]
 ) {
     if (ref) {
-        mountedQueue.push(() => {
+        /**
+         * We mount ref before doing anything else, so we can get the correct ref anywhere.
+         */
+        mountedQueue.unshift(() => {
             if (isFunction(ref)) {
                 ref(value);
             } else if (isRef(ref)) {
