@@ -84,6 +84,7 @@ export class Component<
     static normalize = normalizeChildren;
     static functionalWrapper = functionalWrapper;
     static contextType = Context;
+    static FakePromise = FakePromise;
     // if the flag is true, it indicate the component returns 2 vNodes,
     // only support two, becasue kpc components don't return vNodes exceed 2.
     static $doubleVNodes = false;
