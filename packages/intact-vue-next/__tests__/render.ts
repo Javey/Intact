@@ -304,7 +304,7 @@ describe('Intact Vue Next', () => {
         it('render scoped style on nested intact component', () => {
             render(`<Scoped />`, {Scoped});
 
-            expect(vm.$el.outerHTML).be.eql('<div data-v-7f3ed1cd="">intact component in vue <div class="test" data-v-7f3ed1cd="">intact component in vue <b data-v-7f3ed1cd="">test</b></div></div>');
+            expect(vm.$el.outerHTML).be.eql('<div data-v-7f3ed1cd=""><i data-v-7f3ed1cd="">intact component in vue <div class="test" data-v-7f3ed1cd=""><i data-v-7f3ed1cd="">intact component in vue <b data-v-7f3ed1cd="">test</b></i></div></i></div>');
         });
 
         it('render async intact component', () => {

@@ -214,3 +214,8 @@ export type TypeObject = {
     required?: boolean | Function,
 }
 export type TypeDefs<T> = {[key in keyof T]?: TypePrimitive | readonly TypePrimitive[] | TypeObject};
+
+export type Hooks = {
+    beforeInsert: ((dom: VNode, parent: ComponentClass | null) => void) | null;
+};
+

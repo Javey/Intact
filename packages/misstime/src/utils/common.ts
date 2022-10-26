@@ -8,6 +8,7 @@ import {
     ComponentFunction,
     ComponentClass,
     TransitionElement,
+    Hooks,
 } from './types';
 import {isNull, isNullOrUndefined} from 'intact-shared';
 
@@ -162,4 +163,8 @@ export const namespaces: Record<string, string> = {
     'xml:base': xmlNS,
     'xml:lang': xmlNS,
     'xml:space': xmlNS,
+};
+
+export const hooks: Hooks = {
+    beforeInsert: null, 
 };

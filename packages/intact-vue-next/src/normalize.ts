@@ -149,10 +149,10 @@ export function normalizeProps(vnode: VueVNode) {
     normalizeDirs(vnode.dirs, props);
 
     // add scopeId
-    const scopeId = vnode.scopeId;
-    if (scopeId) {
-        props[scopeId] = '';
-    }
+    // const scopeId = vnode.scopeId;
+    // if (scopeId) {
+        // props[scopeId] = '';
+    // }
     // normalizeRef(vnode.ref, props);
 
     return props;

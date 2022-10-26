@@ -16,8 +16,6 @@ import {remove, unmount, clearDom, removeAllChildren} from './unmount';
 import {
     replaceChild,
     setTextContent,
-    removeChild,
-    insertOrAppend,
     REFERENCE,
     findDomFromVNode,
     removeVNodeDom,

@@ -1,4 +1,21 @@
+import {hooks, VNode as IntactVNode, ComponentClass} from 'intact';
 import {RendererElement, ComponentInternalInstance, VNode} from 'vue';
+import {Component as IntactVueComponent} from './index';
+
+hooks.beforeInsert = function(vNode: IntactVNode, parent: ComponentClass | null) {
+    const dom = vNode.dom!;
+    let i;
+    while (parent) {
+        // find Intact Component which renders by Vue
+        if (i = (parent as IntactVueComponent).vueInstance) {
+            const vnode = i.vnode;
+            setScopeId(dom, vnode, vnode.scopeId, (vnode as any).slotScopeIds, i.parent);
+            break;
+        }
+
+        parent = parent.$senior;
+    }
+};
 
 export function setScopeId(
     el: RendererElement,

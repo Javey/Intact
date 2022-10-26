@@ -14,7 +14,7 @@ import {isNullOrUndefined, throwError, EMPTY_OBJ} from 'intact-shared';
 import {directClone, normalizeRoot} from './vnode';
 import {mountProps} from '../utils/props';
 import {mountRef} from '../utils/ref';
-import {setTextContent, insertOrAppend} from '../utils/common';
+import {setTextContent, insertOrAppend, hooks} from '../utils/common';
 import {validateKeys, validateProps} from '../utils/validate';
 
 export function mount(
@@ -99,6 +99,11 @@ export function mountElement(
         ) {
             mountArrayChildren(children as VNode[], vNode, dom, parentComponent, childrenIsSVG, null, mountedQueue);
         }
+    }
+
+    const beforeInsert = hooks.beforeInsert;
+    if (!isNullOrUndefined(beforeInsert)) {
+        beforeInsert(vNode, parentComponent);
     }
 
     if (!isNullOrUndefined(parentDom)) {
