@@ -60,7 +60,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
             parentDom.appendChild(container);
         }
 
-        rewriteParentElementApi(parentDom);
+        rewriteParentElementApi(parentDom, !existPortal(this));
 
         this.render(vNode, parentDom);
     }
@@ -198,7 +198,21 @@ function getParent(instance: Wrapper): Component | null {
     return null
 }
 
-function rewriteParentElementApi(parentElement: Element & {_hasRewrite?: boolean}) {
+function existPortal(instance: Wrapper) {
+    let $senior = instance.$senior as Component;
+    do {
+        if (($senior as any).$isPortal) {
+            return true;
+        }
+        if ($senior.constructor === Wrapper) {
+            return false;
+        }
+    } while ($senior = $senior.$senior as Component);
+
+    return false;
+}
+
+function rewriteParentElementApi(parentElement: Element & {_hasRewrite?: boolean}, preventListener: boolean) {
     if (!parentElement._hasRewrite) {
         const removeChild = parentElement.removeChild;
         parentElement.removeChild = function(child: Node & {_mountPoint: Node | null}) {
@@ -234,7 +248,9 @@ function rewriteParentElementApi(parentElement: Element & {_hasRewrite?: boolean
         } as any;
 
         // let react don't add listeners to the root container
-        (parentElement as any)[listeningMarker] = true;
+        if (preventListener) {
+            (parentElement as any)[listeningMarker] = true;
+        }
         parentElement._hasRewrite = true;
     }
 }

@@ -25,7 +25,7 @@ export function updateFiberProps(node: Element, placeholder: Element) {
 export let listeningMarker: string;
 
 const bind = Function.prototype.bind;
-// retrieve from react definition
+// excerpt from react definition
 const IS_EVENT_HANDLE_NON_MANAGED_NODE = 1;
 const IS_NON_DELEGATED = 2;
 Function.prototype.bind = function(...args: any[]) {
