@@ -1,8 +1,13 @@
 type Callback = () => void;
 type Executor = (resolve: () => void) => void;
+type AllReturn = {
+    then(cb: Callback): AllReturn;
+}
 
 export class FakePromise {
-    static all(promises: FakePromises) {
+    static all(promises: FakePromises): AllReturn {
+        if (promises.all) return promises.all;
+
         const callbacks: Callback[] = [];
         let resolved = false;
         let resolvedCount = 0;
@@ -29,7 +34,7 @@ export class FakePromise {
             }
         }
 
-        return {
+        return (promises.all = {
             then(cb: Callback) {
                 callbacks.push(cb); 
                 if (!promises.value.length || resolved) {
@@ -38,7 +43,7 @@ export class FakePromise {
 
                 return this;
             }
-        }
+        });
     }
 
     public resolved = false;
@@ -69,6 +74,7 @@ export class FakePromises {
     public value: FakePromise[] = [];
     public then: Callback | null = null;
     public done: boolean = false;
+    public all: AllReturn | null = null; 
     // public id = id++;
 
     public add(promise: FakePromise) {
@@ -93,5 +99,6 @@ export class FakePromises {
         this.value = [];
         this.then = null;
         this.done = false;
+        this.all = null;
     }
 }
