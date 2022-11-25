@@ -123,8 +123,11 @@ export class Component<
             // Intact component in intact
             super(props as Props<P, Component<P>>, $vNodeOrContext, $SVG!, $mountedQueue!, $senior!);
         } else {
+            // super(null, null as any, false, [], null);
+
             // Intact component in React
-            const normalizedProps = normalizeProps(props);
+            // @ts-ignore
+            const normalizedProps = normalizeProps(props, (this.constructor as any).events);
             const parent = $vNodeOrContext as Component | null;
             const mountedQueue = getMountedQueue(parent);
             super(normalizedProps, null as any, false, mountedQueue, parent);
@@ -240,7 +243,7 @@ export class Component<
     }
 
     componentDidUpdate() {
-        const normalizedProps = normalizeProps(this.props) as Omit<P, 'children'> & {children?: Children};
+        const normalizedProps = normalizeProps(this.props, (this.constructor as any).events) as Omit<P, 'children'> & {children?: Children};
         const vNode = createComponentVNode(
             4,
             this.constructor as typeof Component,

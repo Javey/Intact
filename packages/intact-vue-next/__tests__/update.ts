@@ -460,13 +460,13 @@ describe('Intact Vue Next', () => {
                                 modelValue: Number,
                             },
                             template: `
-                                <C><Bar :modelValue="modelValue" @update:modelValue="v => $emit('update:modelValue', v)" /></C>
-                                <C v-if="modelValue === 2 || modelValue === 4">
+                                <Test><Bar :modelValue="modelValue" @update:modelValue="v => $emit('update:modelValue', v)" /></Test>
+                                <Test v-if="modelValue === 2 || modelValue === 4">
                                     <Bar :modelValue="modelValue" @update:modelValue="v => $emit('update:modelValue', v)" />
-                                </C>
+                                </Test>
                             `,
                             components: {
-                                C: Test, 
+                                Test, 
                                 Bar: {
                                     props: {
                                         modelValue: Number,

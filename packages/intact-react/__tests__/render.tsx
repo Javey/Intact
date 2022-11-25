@@ -261,7 +261,13 @@ describe('Intact React', () => {
                     clickValue: []
                 }
                 class C<T extends Props> extends Component<T, Events> {
-                    static template = `<div ev-click={this.onClick.bind(this)}>click {this.get('value')}</div>`;
+                    static template = `<div ev-click={this.onClick.bind(this)}
+                        ev-mouseenter={this.get('ev-mouseenter')}
+                    >click {this.get('value')}</div>`;
+
+                    static events = {
+                        clickValue: true,
+                    };
 
                     onClick() {
                         this.set('value', this.get('value') + 1);
@@ -275,6 +281,7 @@ describe('Intact React', () => {
                 const click = sinon.spy(() => console.log('click'));
                 const changeValue = sinon.spy(() => console.log('changeValue'));
                 const change = sinon.spy(() => console.log('change'));
+                const enter = sinon.spy(() => console.log('enter'));
 
                 render(<div><C onClick={click} on$change-value={changeValue} value={0} /></div>);
                 (container.firstElementChild!.firstElementChild! as HTMLElement).click();
@@ -289,13 +296,18 @@ describe('Intact React', () => {
                             onClick-value={click}
                             onClickValue={click}
                             value={0}
+                            onMouseEnter={enter}
                         />
                     </div>
                 );
-                (container.firstElementChild!.firstElementChild! as HTMLElement).click();
+                const element = container.firstElementChild!.firstElementChild! as HTMLElement;
+                element.click();
                 expect(changeValue.callCount).to.eql(2);
                 expect(change.callCount).to.eql(1);
                 expect(click.callCount).to.eql(3);
+
+                dispatchEvent(element, 'mouseenter');
+                expect(enter.callCount).to.eql(1);
             });
 
             it('normalize blocks', () => {

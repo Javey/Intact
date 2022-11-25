@@ -12,7 +12,7 @@ import {
     nextTick,
 } from './helpers';
 import {createVNode as h, ComponentFunction} from 'intact';
-import {h as v, ComponentPublicInstance, render as vueRender, getCurrentInstance} from 'vue';
+import {h as v, ComponentPublicInstance, render as vueRender, getCurrentInstance, defineComponent} from 'vue';
 
 describe('Intact Vue Next', () => {
     describe('Intact Features', () => {
@@ -294,7 +294,7 @@ describe('Intact Vue Next', () => {
                 expect(updated.callCount).to.eql(1);
             });
 
-            it('should get $senior of inserted Component which nests in vue element in updating', (done) => {
+            it('should get $senior of inserted Component nested in vue element in updating', (done) => {
                 let count = 0;
                 class Test extends Component {
                     static template = `<span>test</span>`;
@@ -337,6 +337,35 @@ describe('Intact Vue Next', () => {
                 });
 
                 vm.$refs.i.show = true;
+            });
+
+            it('should get parent ref while it is calling mounted in sub component', () => {
+                class Foo extends Component {
+                    static template = `<div ref="div">{this.get('children')}</div>`;
+                }
+
+                class Bar extends Component {
+                    static template = `<div>{this.get('children')}</div>`;
+
+                    mounted() {
+                        console.log('Bar', this.$senior!.refs.div);
+                        Promise.resolve().then(() => {
+                            console.log('Bar', this.$senior!.refs.div);
+                        });
+                    }
+                } 
+
+                const Demo = defineComponent({
+                    template: `<Bar>demo</Bar>`,
+                    components: { Bar },
+                });
+
+                const App = defineComponent({
+                    template: `<Foo><Demo /></Foo>`,
+                    components: { Foo, Demo },
+                });
+
+                render('<App />', { App });
             });
         });
 

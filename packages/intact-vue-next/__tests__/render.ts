@@ -16,7 +16,7 @@ import {
     reset,
     nextTick,
 } from './helpers';
-import {h as v, DefineComponent} from 'vue';
+import {h as v, DefineComponent, defineComponent} from 'vue';
 import Normalize from './normalize.vue';
 import Scoped from './scoped.vue';
 

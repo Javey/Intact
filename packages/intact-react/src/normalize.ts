@@ -26,14 +26,15 @@ export function normalize(vNode: ReactNode): VNodeAtom | VNodeAtom[] {
 
     if (isIntactComponent(vNode)) {
         const key = vNode.key;
-        const props = normalizeProps(vNode.props);
         const type = vNode.type as any;
+        const tag = type.$cid === functionalCid ? type._$type : type;
+        const props = normalizeProps(vNode.props, tag.events);
         if (!isNullOrUndefined(key)) {
             props.key = key;
         }
         return createComponentVNode(
             4,
-            type.$cid === functionalCid ? type._$type : type,
+            tag,
             props,
             key,
             normalizeRef((vNode as any).ref),
@@ -73,7 +74,7 @@ export function normalizeChildren(vNodes: ReactNode) {
     return normalize(vNodes);
 }
 
-export function normalizeProps<P>(props: P): P {
+export function normalizeProps<P>(props: P, events: Record<string, boolean> | undefined): P {
     // if (!props) return null;
 
     let blocks: Blocks | null = null;
@@ -83,7 +84,7 @@ export function normalizeProps<P>(props: P): P {
         const value = props[key];
         if (key === 'children') {
             normalizedProps[key] = normalizeChildren(value) as unknown as P[typeof key];
-        } else if (tmp = getEventName(key)) {
+        } else if (tmp = getEventName(key, events)) {
             normalizedProps[tmp as keyof P] = value;
         } else if (key.startsWith('slot')) {
             if (!blocks) blocks = (normalizedProps as any).$blocks = {};
@@ -107,7 +108,7 @@ function isIntactComponent(vNode: any): vNode is ReactElement<any, JSXElementCon
     return !!type.$cid;
 }
 
-function getEventName(propName: string) {
+function getEventName(propName: string, events: Record<string, boolean> | undefined) {
     const third = propName[2];
     if (!third) return;
 
@@ -128,8 +129,14 @@ function getEventName(propName: string) {
                 // e.g. onChangeValue -> ev-$change:value
                 return `ev-$change:${lowerFirst(eventName.substring(6))}`;
             } else {
-                // e.g. onClick
-                return `ev-${lowerFirst(eventName.replace(/-/g, ':'))}`;
+                // e.g. onClick -> ev-click; onKeyPress -> ev-keypress
+                let loweredFirst = lowerFirst(eventName.replace(/-/g, ':'));
+                if (!events || !events[loweredFirst]) {
+                    // is native event
+                    loweredFirst = loweredFirst.toLowerCase(); 
+                }
+
+                return `ev-${loweredFirst}`;
             }
         }
     }

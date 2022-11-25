@@ -4,7 +4,8 @@ import {createElement, ForwardedRef, FunctionComponent, forwardRef, ReactElement
 import {isArray} from 'intact-shared';
 
 export type ComponentFunctionForIntact<P = {}> = Pick<ComponentFunction, 'displayName' | 'typeDefs'> & {
-     (props: Props<P, any>, isReact?: boolean): VNodeComponentClass | VNodeComponentClass[] 
+     (props: Props<P, any>, isReact?: boolean): VNodeComponentClass | VNodeComponentClass[],
+     events?: Record<string, boolean>,
 }
 
 export const cid = 'IntactReactFunctional';
@@ -13,7 +14,7 @@ export function functionalWrapper<P = {}>(Component: ComponentFunctionForIntact<
     function Ctor(props: P, context?: any): ReactElement<any, any> {
         if (context) {
             // invoked by React
-            const vNodes = Component(normalizeProps(props), true);
+            const vNodes = Component(normalizeProps(props, Component.events), true);
             if (isArray(vNodes)) {
                 return createElement(Fragment, null, vNodes.map((vNode, index) => {
                     return normalizeIntactVNodeToReactVNode(vNode, index);
