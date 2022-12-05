@@ -351,6 +351,10 @@ function setRef(rawRef: NonNullable<VueVNode['ref']>, value: any) {
     const refs = !Object.keys(owner.refs).length ? (owner.refs = {}) : owner.refs;
     if (isString(ref)) {
         refs[ref] = value;
+        const setupState = (owner as any).setupState;
+        if (hasOwn.call(setupState, ref)) {
+            setupState[ref] = value;
+        }
     } else if (isRef(ref)) {
         ref.value = value;
     } else if (isFunction(ref)) {

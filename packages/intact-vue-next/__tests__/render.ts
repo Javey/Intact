@@ -16,7 +16,7 @@ import {
     reset,
     nextTick,
 } from './helpers';
-import {h as v, DefineComponent, defineComponent} from 'vue';
+import {h as v, DefineComponent, defineComponent, ref, onMounted} from 'vue';
 import Normalize from './normalize.vue';
 import Scoped from './scoped.vue';
 
@@ -418,6 +418,24 @@ describe('Intact Vue Next', () => {
 
             (vm.$el as HTMLDivElement).click();
             expect(onClick.callCount).to.eql(1);
+        });
+
+        it('render ref as RefObject in nested component', () => {
+            const Demo = defineComponent({
+                template: `<C><C ref="test" /></C>`,
+                components: {
+                    C: ChildrenIntactComponent,
+                },
+                setup() {
+                    const test = ref();
+                    // onMounted(() => {
+                        // console.log(test.value);
+                    // });
+                    return {test};
+                },
+            })
+            render('<Demo ref="demo" />', {Demo});
+            expect(vm.$refs.demo.$.setupState.test.get).to.be.exist;
         });
 
         describe('Functional Component', () => {
