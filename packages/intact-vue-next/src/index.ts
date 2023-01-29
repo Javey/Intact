@@ -311,7 +311,7 @@ function getIntactParent(parent: ComponentInternalInstance | null) {
     while (parent) {
         const instance = (parent as any).setupState.instance;
         if (instance instanceof Component) {
-            return instance;
+            return (parent as any).fakeInstance || instance;
         }
         parent = parent.parent;
     }

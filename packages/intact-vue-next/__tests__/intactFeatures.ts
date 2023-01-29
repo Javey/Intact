@@ -313,6 +313,28 @@ describe('Intact Vue Next', () => {
                 vm.show = true;
             });
 
+            it('should get $senior when render intact component in a vue component and the vue component is inserted into two nested intact components', (done) => {
+                class Test extends Component {
+                    static template = `<span>test</span>`;
+                    mounted() {
+                        expect(this.$senior).instanceof(WrapperComponent);
+                        done();
+                    }
+                }
+
+                const Wrapper = defineComponent({
+                    template: `<Test v-if="show" />`,
+                    components: { Test },
+                    data() {
+                        return { show: false };
+                    },
+                });
+
+                render(`<C><D><Wrapper ref="i" /></D></C>`, { Wrapper, C: ChildrenIntactComponent, D: WrapperComponent });
+
+                vm.$refs.i.show = true;
+            });
+
             it('should get $senior when mount intact component on vue component updating', (done) => {
                 // let count = 0;
                 class Test extends Component {

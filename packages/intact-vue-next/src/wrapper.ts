@@ -114,11 +114,13 @@ export class Wrapper implements ComponentClass<WrapperProps> {
 }
 
 function getParent(instance: Wrapper) {
-    let $senior = instance.$senior as Component;
+    const senior = instance.$senior as Component;
+    let $senior = senior;
 
     do {
         const vueInstance = $senior.vueInstance;
         if (vueInstance) {
+            (vueInstance as any).fakeInstance = senior;
             return vueInstance;
         }
     } while ($senior = $senior.$senior as Component);
