@@ -103,6 +103,7 @@ export class Component<
     private $elementAlternateRef!: RefObject<HTMLElement>;
     private $isReact!: boolean;
     private $parentElement!: HTMLElement;
+    private $pendingUnmount?: Function;
 
     constructor(props: IntactReactProps<P, E, B>, context: any);
     constructor(
@@ -298,7 +299,23 @@ export class Component<
     }
 
     setState() { }
-} 
+
+    $mount(lastVNode: VNodeComponentClass<this> | null, nextVNode: VNodeComponentClass<this>) {
+        super.$mount(lastVNode, nextVNode);
+        if (this.$pendingUnmount) {
+            this.$pendingUnmount();
+            this.$pendingUnmount = undefined;
+        }
+    }
+
+    $unmount(vNode: VNodeComponentClass<this>, nextVNode: VNodeComponentClass<this> | null) {
+        if (!this.$mounted) {
+            this.$pendingUnmount = () => super.$unmount(vNode, nextVNode);
+        } else {
+            super.$unmount(vNode, nextVNode);
+        }
+    }
+}
 
 Component.prototype.isReactComponent = true;
 

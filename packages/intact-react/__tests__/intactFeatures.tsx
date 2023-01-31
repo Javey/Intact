@@ -1,4 +1,4 @@
-import {Component as ReactComponent, ReactNode, Fragment} from 'react';
+import {Component as ReactComponent, ReactNode, Fragment, useState, useEffect} from 'react';
 import {
     render,
     container,
@@ -355,6 +355,56 @@ describe('Intact React', () => {
                     return <C />
                 });
                 expect(mount.callCount).to.eql(1);
+            });
+
+            it('update in updating and there are multiple react elements nested in intact component', () => {
+                const orders: string[] = [];
+                class Drawer extends Component<{show: boolean}> {
+                    static template = `
+                        <div class="drawer">
+                            <template v-if={this.get('show')}>{this.get('children')}</template>
+                        </div>
+                    `;
+                }
+                class Foo extends Component {
+                    static template = `<div class="foo">{this.get('children')}</div>`
+                    mounted() {
+                        console.log('mounted');
+                        orders.push('mounted');
+                    }
+                    unmounted() {
+                        console.log('unmounted');
+                        orders.push('unmounted');
+                    }
+                }
+                function Test() {
+                    return <Foo id="1"><span>test</span></Foo>;
+                }
+                function Bar(props: {show: boolean}) {
+                    const [count, setCount] = useState(0);
+                    useEffect(() => {
+                        if (!props.show) return;
+                        setCount((count) => count + 1);
+                    }, [props.show]);
+
+                    return <Drawer show={props.show}>
+                        {count !== 1 && <Test />} 
+                        {count !== 1 && <Foo id="2"/>}
+                    </Drawer>
+                }
+                function App() {
+                    const [show, setShow] = useState(false);
+                    return <div>
+                        <div onClick={() => setShow(true)} id="click">click</div>
+                        <Bar show={show} />
+                    </div>
+                }
+
+                render(<App />);
+                act(() => {
+                    container.querySelector<HTMLDivElement>('#click')!.click();
+                });
+                expect(orders).to.eql(['mounted', 'unmounted', 'mounted', 'unmounted']);
             });
         });
 
