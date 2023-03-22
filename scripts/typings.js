@@ -12,7 +12,7 @@ if (name === 'intact-vue') {
         for (const file of files) {
             const filePath = join(cwd, 'dist', file);
             if (file === 'index.d.ts') {
-                const contents = await fs.readFile(filePath, {encoding: 'utf8'}).replace('vue-legacy', 'vue');
+                const contents = (await fs.readFile(filePath, {encoding: 'utf8'})).replace('vue-legacy', 'vue');
                 await fs.writeFile(filePath, contents);
                 continue;
             }

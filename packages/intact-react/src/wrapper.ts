@@ -204,7 +204,8 @@ function existPortal(instance: Wrapper) {
         if (($senior as any).$isPortal) {
             return true;
         }
-        if ($senior.constructor === Wrapper) {
+        // $senior is rendered by React
+        if (($senior as any).$isReact) {
             return false;
         }
     } while ($senior = $senior.$senior as Component);

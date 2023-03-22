@@ -132,6 +132,68 @@ describe('Intact React', () => {
             expect(click2.callCount).to.eql(0);
         });
 
+        describe('Portal', () => {
+            class Portal extends Component {
+                static template = `<template>{this.get('children')}</template>`;
+                public $isPortal = true;
+            }
+
+            it('react element is in Portal dirrectly', () => {
+                const click = sinon.spy((event: Event) => {
+                    console.log('Click in React.', event);
+                });
+                render(
+                    <div>
+                        <Portal>
+                            <span onClick={click}>click</span>
+                        </Portal>
+                    </div>
+                );
+                container.querySelector<HTMLElement>('span')!.click();
+                // Portal is a fake component, we do not really move the element to body.
+                // So callCount should eql to 2 rather than 1
+                expect(click.callCount).to.eql(2);
+            });
+
+            it('react element nested in Intact is in Portal', () => {
+                const click = sinon.spy((event: Event) => {
+                    console.log('Click in React.', event);
+                });
+                render(
+                    <div>
+                        <Portal>
+                            <ChildrenIntactComponent>
+                                <span onClick={click}>click</span>
+                            </ChildrenIntactComponent>
+                        </Portal>
+                    </div>
+                );
+                container.querySelector<HTMLElement>('span')!.click();
+                expect(click.callCount).to.eql(2);
+            });
+       
+            it('render event in Intact Portal', () => {
+                const click = sinon.spy((event: Event) => {
+                    console.log('Click in React.', event);
+                });
+                render(
+                    <div>
+                        <Portal>
+                            <div>
+                                <ChildrenIntactComponent>
+                                    <span onClick={click}>click</span>
+                                </ChildrenIntactComponent>
+                            </div>
+                        </Portal>
+                    </div>
+                );
+
+                container.querySelector<HTMLElement>('span')!.click();
+                expect(click.callCount).to.eql(2);
+            });
+
+        });
+
         it('render nested array children', () => {
             render(
                 <ChildrenIntactComponent>
