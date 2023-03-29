@@ -60,9 +60,11 @@ export class Wrapper implements ComponentClass<WrapperProps> {
             parentDom.appendChild(container);
         }
 
-        rewriteParentElementApi(parentDom, !existPortal(this));
+        const parentComponent = getParent(this);
 
-        this.render(vNode, parentDom);
+        rewriteParentElementApi(parentDom, !existPortal(this) && !!parentComponent);
+
+        this.render(vNode, parentDom, parentComponent);
     }
 
     $update(
@@ -102,9 +104,12 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         }
     }
 
-    private render(vNode: VNodeComponentClass<Wrapper>, parentDom: Element) {
+    private render(
+        vNode: VNodeComponentClass<Wrapper>,
+        parentDom: Element,
+        parentComponent: Component | null = getParent(this)
+    ) {
         const parent = this.$senior as Component;
-        const parentComponent = getParent(this)!;
         const instance = this;
         const container = this.container;
 
@@ -117,68 +122,76 @@ export class Wrapper implements ComponentClass<WrapperProps> {
          */
         vnode = createElement(Context.Provider, {value: parent}, vnode);
 
-        // if the parent component has providers, pass them to subtree
-        const providers = parentComponent.$reactProviders;
-        providers.forEach((value, provider) => {
-            vnode = createElement(provider, {value}, vnode); 
-        });
+        if (parentComponent) {
+            // if the parent component has providers, pass them to subtree
+            const providers = parentComponent.$reactProviders;
+            providers.forEach((value, provider) => {
+                vnode = createElement(provider, {value}, vnode); 
+            });
+        }
 
         this.isEmptyReactComponent = false;
         const promise = new FakePromise(resolve => {
-            unstable_renderSubtreeIntoContainer(
-                parentComponent,
-                vnode,
-                container,
-                function(this: Element | ReactComponent) {
-                    /**
-                     * add dom to the $lastInput for findDomFromVNode
-                     * the real dom will be inserted before the container
-                     * but the react component may return null,
-                     * so we can't get the previousSibling
-                     * 
-                     * We will add the real element to the container
-                     * by rewriting the parentNode.insertBefore api
-                     *
-                     * If we wrap an React component that returns Intact component directly
-                     * e.g. <A><Context.Provider><B /><Context.Provider></A>
-                     * the realElement will be the <template>
-                     */
-                    let dom = (container as any)._realElement as IntactDom | null;
-                    if (
-                        !dom ||
-                        (dom as Element).tagName === 'TEMPLATE' &&
-                        (dom as Element).getAttribute('data-intact-react') !== null
-                    ) {
-                        // maybe this react component return null,
-                        // we create a text as the dom
-                        dom = document.createTextNode('');
-                        parentDom.insertBefore(dom, container);
-                        (dom as any)._isEmpty = true;
-                    }
-                    if ((dom as any)._isEmpty) {
-                        instance.isEmptyReactComponent = true;
-                    }
-                    (dom as any)._mountPoint = container;
-                    instance.$lastInput.dom = dom;
+            const callback = function(this: Element | ReactComponent) {
+                /**
+                 * add dom to the $lastInput for findDomFromVNode
+                 * the real dom will be inserted before the container
+                 * but the react component may return null,
+                 * so we can't get the previousSibling
+                 * 
+                 * We will add the real element to the container
+                 * by rewriting the parentNode.insertBefore api
+                 *
+                 * If we wrap an React component that returns Intact component directly
+                 * e.g. <A><Context.Provider><B /><Context.Provider></A>
+                 * the realElement will be the <template>
+                 */
+                let dom = (container as any)._realElement as IntactDom | null;
+                if (
+                    !dom ||
+                    (dom as Element).tagName === 'TEMPLATE' &&
+                    (dom as Element).getAttribute('data-intact-react') !== null
+                ) {
+                    // maybe this react component return null,
+                    // we create a text as the dom
+                    dom = document.createTextNode('');
+                    parentDom.insertBefore(dom, container);
+                    (dom as any)._isEmpty = true;
+                }
+                if ((dom as any)._isEmpty) {
+                    instance.isEmptyReactComponent = true;
+                }
+                (dom as any)._mountPoint = container;
+                instance.$lastInput.dom = dom;
 
-                    // console.log(rootContainer);
-                    // console.dir(container);
-                    // debugger;
-                    // getRootContainer(parentComponent);
-                    // Object.defineProperty((container as any)._reactRootContainer._internalRoot, 'containerInfo', {
-                        // get() {
-                            // return getRootContainer(parentComponent); 
-                        // }
-                    // });
+                // console.log(rootContainer);
+                // console.dir(container);
+                // debugger;
+                // getRootContainer(parentComponent);
+                // Object.defineProperty((container as any)._reactRootContainer._internalRoot, 'containerInfo', {
+                    // get() {
+                        // return getRootContainer(parentComponent); 
+                    // }
+                // });
 
-                    resolve();
-                } 
-            );
+                resolve();
+            } 
+
+            if (!parentComponent) {
+                render(vnode, container, callback);
+            } else {
+                unstable_renderSubtreeIntoContainer(
+                    parentComponent,
+                    vnode,
+                    container,
+                    callback
+                );
+            }
         });
 
         // if the promised has be resolved, it indicate that this render is sync.
         // Maybe we call update in intact directly, and it is not in React's render context
-        if (!promise.resolved) {
+        if (!promise.resolved && parentComponent) {
             parentComponent.$promises.add(promise);
         }
     }
@@ -194,6 +207,7 @@ function getParent(instance: Wrapper): Component | null {
     } while ($senior = $senior.$senior as Component);
 
     // should not hit this
+    // maybe call static method to render react element, i.e. Dialog.info();
     /* istanbul ignore next */
     return null
 }

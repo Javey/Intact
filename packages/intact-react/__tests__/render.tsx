@@ -8,7 +8,17 @@ import {
     PropsIntactComponent,
     expect,
 } from './helpers';
-import {Component, createVNode as h, findDomFromVNode, Props, VNode, directClone} from '../src';
+import {
+    Component,
+    createVNode as h,
+    findDomFromVNode,
+    Props,
+    VNode,
+    directClone,
+    createVNode,
+    normalize,
+    render as intactRender
+} from '../src';
 import {Component as ReactComponent, ReactNode, Fragment} from 'react';
 import ReactDOM from 'react-dom';
 import {dispatchEvent} from '../../misstime/__tests__/utils';
@@ -311,6 +321,29 @@ describe('Intact React', () => {
             );
 
             expect(container.innerHTML).to.eql('<div><div>intact</div>text</div>')
+        });
+
+        it('render react element without parentComponent', async() => {
+            class Dialog extends Component<{content: any}> {
+                static template = `<div>{this.get('content')}</div>`;
+            }
+
+            const click = sinon.spy(() => {
+                console.log('click');
+            });
+
+            const vNode = createVNode(Dialog, {
+                content: normalize(<span onClick={click}>without parentComponent</span>)
+            });
+            const container = document.createElement('div');
+            document.body.appendChild(container);
+
+            render(<div><SimpleReactComponent /></div>);
+            intactRender(vNode, container);
+
+            expect(container.innerHTML).to.eql('<div><span>without parentComponent</span>#</div>');
+            container.querySelector<HTMLElement>('span')!.click();
+            expect(click.callCount).to.eql(1);
         });
 
         describe('Normalize', () => {
