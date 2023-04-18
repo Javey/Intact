@@ -153,6 +153,9 @@ export class Component<
             this.$isReact = true;
 
             const promises = this.$promises = new FakePromises();
+            if (process.env.NODE_ENV !== 'production') {
+                promises.name = this.constructor.name;
+            }
             this.$parentPromises = inject(PROMISES, null);
             provide(PROMISES, promises);
         }
@@ -258,6 +261,7 @@ export class Component<
         vNode.children = this;
         const lastVNode = this.$vNode;
         this.$vNode = vNode;
+        const lastElement = findDomFromVNode(vNode, false) as HTMLElement;
 
         const promises = this.$promises;
         if (promises.done) {
@@ -266,11 +270,17 @@ export class Component<
             const mountedQueue = this.$mountedQueue = getMountedQueue(this.$senior as Component);
             this.$update(lastVNode, vNode, this.$parentElement, null, mountedQueue, false); 
 
-            this.$done(null);
+            this.$done(() => {
+                // maybe intact has changed the element
+                const element = findDomFromVNode(vNode, false) as HTMLElement;
+                if (lastElement !== element) {
+                    updateElementOnUpdated(element, lastElement);
+                }
+            });
         } else {
             this.$update(lastVNode, vNode, this.$parentElement, null, this.$mountedQueue, false); 
-
         }
+
     }
 
     componentWillUnmount() {
@@ -340,7 +350,10 @@ function createTemplateVNode(ref: RefObject<HTMLElement>, key: string) {
 
 function handleElementOnMounted(parentElement: HTMLElement, placeholder: HTMLElement, element: HTMLElement) {
     parentElement.removeChild(placeholder);
+    updateElementOnUpdated(element, placeholder);
+}
 
+function updateElementOnUpdated(element: HTMLElement, placeholder: HTMLElement) {
     // replace some properties like React do
     const fiber = precacheFiberNode(element, placeholder);
     // if we return a React element directly, we can not replace its props by placeholder's props,

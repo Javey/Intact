@@ -1,4 +1,5 @@
-import {Component as ReactComponent, ReactNode, Fragment} from 'react';
+import {Component as ReactComponent, ReactNode, Fragment, useState, useEffect} from 'react';
+import {act} from 'react-dom/test-utils';
 import {
     render,
     container,
@@ -64,6 +65,38 @@ describe('Intact React', () => {
 
             instance.$root.unmount();
             expect(container.innerHTML).to.eql('');
+        });
+
+        it('should unmount correctly even if intact has changed type of element', async () => {
+            const [spyError, resetError] = getSpyError();
+            class C extends Component<{total: number}> {
+                static template = `if (!this.get('total')) return; <div>{this.get('children')}</div>`;
+            }
+
+            const Foo = function(props: {total: number}) {
+                return <C total={props.total}><div>test</div></C>
+            }
+
+            const Demo = function() {
+                const [total, setTotal] = useState(0);
+
+                useEffect(() => {
+                    setTotal(1);
+                }, []);
+
+                return <Foo total={total} />
+            }
+
+            const instance = renderApp(function() {
+                return this.state.show ? <Demo /> : null;
+            }, {show: true});
+
+            act(() => {
+                instance.setState({show: false});
+            });
+
+            expect(spyError.callCount).to.eql(0);
+            resetError();
         });
     });
 });

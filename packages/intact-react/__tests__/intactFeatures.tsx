@@ -12,7 +12,7 @@ import {
     renderApp,
     getSpyError,
 } from './helpers';
-import {Component, createVNode as h, findDomFromVNode, createRef, VNode, provide, inject} from '../src';
+import {Component, createVNode as h, findDomFromVNode, createRef, VNode, provide, inject, VNodeComponentClass, IntactDom} from '../src';
 import {act} from 'react-dom/test-utils';
 
 describe('Intact React', () => {
@@ -405,6 +405,59 @@ describe('Intact React', () => {
                     container.querySelector<HTMLDivElement>('#click')!.click();
                 });
                 expect(orders).to.eql(['mounted', 'unmounted', 'mounted', 'unmounted']);
+            });
+
+            it('render react component which will update in render phase', async () => {
+                class Drawer extends Component {
+                    static template = `
+                        <div class="drawer">{this.get('children')}</div>
+                    `;
+
+                    $update(
+                        lastVNode: VNodeComponentClass<this>,
+                        nextVNode: VNodeComponentClass<this>,
+                        parentDom: Element, 
+                        anchor: IntactDom | null,
+                        mountedQueue: Function[],
+                        force: boolean,
+                    ) {
+                        mountedQueue.push(() => {
+                            super.$update(lastVNode, nextVNode, parentDom, anchor, mountedQueue, force);
+                        });
+                    }
+                }
+                class Foo extends Component {
+                    static template = `<div class="foo">{this.get('children')}</div>`
+                }
+                function Bar() {
+                    return <p>
+                        <Foo id="bar"><div>bar</div></Foo>
+                        <Baz />
+                    </p>
+                }
+
+                function Baz() {
+                    const [count, setCount] = useState(0);
+                    useEffect(() => {
+                        setCount((count) => count + 1);
+                    }, [setCount]);
+
+                    return <Drawer ev-$updated={() => console.log('updated drawer')}>
+                        <Foo id="baz" ev-$updated={() => console.log('updated baz')}>
+                            <Qux count={count} />
+                        </Foo>
+                    </Drawer>
+
+                }
+                function Qux(props: {count: number}) {
+                    return <Foo id="qux"><span>{props.count}</span></Foo>;
+                }
+
+                function App() {
+                    return <Foo id="app"><Bar /></Foo>
+                }
+
+                render(<App />);
             });
         });
 

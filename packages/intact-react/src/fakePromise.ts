@@ -69,20 +69,21 @@ export class FakePromise {
     }
 }
 
-// let id = 0;
+let id = 0;
 export class FakePromises {
     public value: FakePromise[] = [];
     public then: Callback | null = null;
     public done: boolean = false;
     public all: AllReturn | null = null; 
-    // public id = id++;
+    public name?: string;
+    public id = id++;
 
     public add(promise: FakePromise) {
         /* istanbul ignore next */
         if (process.env.NODE_ENV !== 'production') {
             if (this.done) {
                 console.error(
-                    'The FakePromises has done and cannot add new promise. ' +
+                    `The FakePromises of '${this.name}' has done and cannot add new promise. ` +
                     'Maybe it is a bug of IntactReact'
                 );
             }

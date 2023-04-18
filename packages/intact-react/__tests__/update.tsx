@@ -1,4 +1,4 @@
-import {Component as ReactComponent, ReactNode, Fragment} from 'react';
+import {Component as ReactComponent, ReactNode, Fragment, useState, useEffect} from 'react';
 import {act} from 'react-dom/test-utils';
 import {
     render,
@@ -408,6 +408,11 @@ describe('Intact React', () => {
                 instance.setState({show: true});
             });
             expect(container.innerHTML).to.eql('<div><span>show</span>#</div>');
+
+            act(() => {
+                instance.setState({show: false});
+            });
+            expect(container.innerHTML).to.eql('<div></div>');
         });
 
         it('replace component that return react element directly with react element', () => {

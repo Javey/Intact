@@ -192,7 +192,12 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         // if the promised has be resolved, it indicate that this render is sync.
         // Maybe we call update in intact directly, and it is not in React's render context
         if (!promise.resolved && parentComponent) {
-            parentComponent.$promises.add(promise);
+            const promises = parentComponent.$promises;
+            // FIXME: Is it appropriate to discard the promise directly?
+            // Unit Test: render react component which will update in render phase
+            if (!promises.done) {
+                promises.add(promise);
+            }
         }
     }
 }
