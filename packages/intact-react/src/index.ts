@@ -17,6 +17,7 @@ import {
     callAll,
     validateProps,
     Blocks,
+    VNode,
 } from 'intact';
 import {
     Component as ReactComponent,
@@ -30,7 +31,7 @@ import {
     ReactChild,
 } from 'react';
 import {normalizeProps, normalizeChildren} from './normalize';
-import {precacheFiberNode, updateFiberProps} from './helpers';
+import {precacheFiberNode, updateFiberProps, preparePortalMount} from './helpers';
 import {functionalWrapper} from './functionalWrapper';
 import {FakePromise, FakePromises} from './fakePromise';
 import {Context, containerComment} from './wrapper';
@@ -315,6 +316,10 @@ export class Component<
         if (this.$pendingUnmount) {
             this.$pendingUnmount();
             this.$pendingUnmount = undefined;
+        }
+
+        if ((this as any).$isPortal) {
+            preparePortalMount(findDomFromVNode(this.get('children') as VNode, false) as HTMLElement);
         }
     }
 

@@ -1,4 +1,14 @@
-import {ComponentClass, createVNode, VNode, VNodeComponentClass, Props, removeVNodeDom, IntactDom, TransitionHooks} from 'intact';
+import {
+    ComponentClass,
+    createVNode,
+    VNode,
+    VNodeComponentClass,
+    Props,
+    removeVNodeDom,
+    IntactDom,
+    TransitionHooks,
+    findDomFromVNode,
+} from 'intact';
 import {ReactNode, ReactElement, Component as ReactComponent, createContext, createElement, cloneElement} from 'react';
 import {unstable_renderSubtreeIntoContainer, render, findDOMNode} from 'react-dom';
 import type {Component} from './';
@@ -61,8 +71,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         }
 
         const parentComponent = getParent(this);
-
-        rewriteParentElementApi(parentDom, !existPortal(this) && !!parentComponent);
+        rewriteParentElementApi(parentDom, !!parentComponent);
 
         this.render(vNode, parentDom, parentComponent);
     }
@@ -215,21 +224,6 @@ function getParent(instance: Wrapper): Component | null {
     // maybe call static method to render react element, i.e. Dialog.info();
     /* istanbul ignore next */
     return null
-}
-
-function existPortal(instance: Wrapper) {
-    let $senior = instance.$senior as Component;
-    do {
-        if (($senior as any).$isPortal) {
-            return true;
-        }
-        // $senior is rendered by React
-        if (($senior as any).$isReact) {
-            return false;
-        }
-    } while ($senior = $senior.$senior as Component);
-
-    return false;
 }
 
 function rewriteParentElementApi(parentElement: Element & {_hasRewrite?: boolean}, preventListener: boolean) {

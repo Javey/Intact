@@ -7,6 +7,7 @@ import {
     SimpleReactComponent,
     PropsIntactComponent,
     expect,
+    renderApp,
 } from './helpers';
 import {
     Component,
@@ -17,11 +18,17 @@ import {
     directClone,
     createVNode,
     normalize,
-    render as intactRender
+    render as intactRender,
+    mount,
+    VNodeComponentClass,
+    IntactDom,
+    createCommentVNode,
 } from '../src';
 import {Component as ReactComponent, ReactNode, Fragment} from 'react';
 import ReactDOM from 'react-dom';
 import {dispatchEvent} from '../../misstime/__tests__/utils';
+import {Portal} from './portal';
+import {act} from 'react-dom/test-utils';
 
 describe('Intact React', () => {
     describe('Render', () => {
@@ -143,10 +150,13 @@ describe('Intact React', () => {
         });
 
         describe('Portal', () => {
-            class Portal extends Component {
-                static template = `<template>{this.get('children')}</template>`;
-                public $isPortal = true;
+            class Dialog extends Component {
+                static template = `const Portal = this.Portal;
+                    <Portal><div class="k-dialog">{this.get('children')}</div></Portal>
+                `
+                private Portal = Portal;
             }
+
 
             it('react element is in Portal dirrectly', () => {
                 const click = sinon.spy((event: Event) => {
@@ -154,15 +164,13 @@ describe('Intact React', () => {
                 });
                 render(
                     <div>
-                        <Portal>
+                        <Dialog>
                             <span onClick={click}>click</span>
-                        </Portal>
+                        </Dialog>
                     </div>
                 );
-                container.querySelector<HTMLElement>('span')!.click();
-                // Portal is a fake component, we do not really move the element to body.
-                // So callCount should eql to 2 rather than 1
-                expect(click.callCount).to.eql(2);
+                container.nextElementSibling!.querySelector('span')!.click();
+                expect(click.callCount).to.eql(1);
             });
 
             it('react element nested in Intact is in Portal', () => {
@@ -171,37 +179,86 @@ describe('Intact React', () => {
                 });
                 render(
                     <div>
-                        <Portal>
+                        <Dialog>
                             <ChildrenIntactComponent>
                                 <span onClick={click}>click</span>
                             </ChildrenIntactComponent>
-                        </Portal>
+                        </Dialog>
                     </div>
                 );
-                container.querySelector<HTMLElement>('span')!.click();
-                expect(click.callCount).to.eql(2);
+                container.nextElementSibling!.querySelector('span')!.click();
+                expect(click.callCount).to.eql(1);
             });
        
-            it('render event in Intact Portal', () => {
+            it('render event nested in react element in Intact Portal', () => {
                 const click = sinon.spy((event: Event) => {
                     console.log('Click in React.', event);
                 });
                 render(
                     <div>
-                        <Portal>
+                        <Dialog>
                             <div>
                                 <ChildrenIntactComponent>
                                     <span onClick={click}>click</span>
                                 </ChildrenIntactComponent>
                             </div>
-                        </Portal>
+                        </Dialog>
                     </div>
                 );
 
-                container.querySelector<HTMLElement>('span')!.click();
-                expect(click.callCount).to.eql(2);
+                container.nextElementSibling!.querySelector('span')!.click();
+                expect(click.callCount).to.eql(1);
             });
 
+            it('render event in Intact Portal with sibling react element', () => {
+                const click = sinon.spy((event: Event) => {
+                    console.log('Click in React.', event);
+                });
+
+                render(
+                    <div>
+                        <Dialog>
+                            <p>test</p>
+                            <ChildrenIntactComponent>
+                                <span onClick={click}>click</span>
+                            </ChildrenIntactComponent>
+                        </Dialog>
+                    </div>
+                );
+
+                container.nextElementSibling!.querySelector('span')!.click();
+                expect(click.callCount).to.eql(1);
+            });
+
+            it('render children after mounted', () => {
+                const click = sinon.spy((event: Event) => {
+                    console.log('Click in React.', event);
+                });
+
+                const instance = renderApp(function() {
+                    return <div>
+                        <Dialog>
+                            {this.state.show ?
+                                <>
+                                    <p>test</p>
+                                    <ChildrenIntactComponent>
+                                        <span onClick={click}>click</span>
+                                    </ChildrenIntactComponent>
+                                </> :
+                                null
+                            }
+                        </Dialog>
+                    </div>
+                }, { show: false });
+
+                act(() => {
+                    instance.setState({show: true});
+                });
+
+                container.nextElementSibling!.querySelector('span')!.click();
+                expect(click.callCount).to.eql(1);
+
+            });
         });
 
         it('render nested array children', () => {

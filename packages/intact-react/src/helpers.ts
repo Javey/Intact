@@ -1,4 +1,7 @@
 import {isString, isNumber, isObject} from 'intact-shared';
+import {containerComment} from './wrapper';
+import {createElement} from 'react';
+import {render} from 'react-dom';
 
 type Fiber = any;
 
@@ -23,6 +26,18 @@ export function updateFiberProps(node: Element, placeholder: Element) {
 }
 
 export let listeningMarker: string;
+
+export function preparePortalMount(dom: HTMLElement) {
+    if (dom.parentElement !== document.body) return;
+
+    const container = document.createComment(containerComment) as unknown as HTMLElement;
+    dom.appendChild(container);
+    (dom as any)[listeningMarker] = null;
+    render(createElement('template'), container, function(this: HTMLElement) {
+        dom.removeChild(this);
+        dom.removeChild(container);
+    });
+}
 
 const bind = Function.prototype.bind;
 // excerpt from react definition
