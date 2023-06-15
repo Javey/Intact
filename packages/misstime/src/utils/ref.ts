@@ -25,19 +25,22 @@ export function createRef<T = Element>(defaultValue?: T): RefObject<T> {
 export function mountRef(
     ref: Ref<ComponentClass> | Ref<Element> | Ref<ComponentClass | Element> | null | undefined,
     value: any,
-    mountedQueue: Function[]
+    mountedQueue: Function[] & {i?: number}
 ) {
     if (ref) {
         /**
          * We mount ref before doing anything else, so that we can obtain the correct ref anywhere.
+         * 
+         * In some cases, we will mount ref when framework is calling mountedQueue. So we must add
+         * a index flag to indicate which position to insert the ref callback.
          */
-        mountedQueue.unshift(() => {
+        mountedQueue.splice(mountedQueue.i || 0, 0, () => {
             if (isFunction(ref)) {
                 ref(value);
             } else if (isRef(ref)) {
                 ref.value = value;
             }
-        });
+        })
     }
 }
 

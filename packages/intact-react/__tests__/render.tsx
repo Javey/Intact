@@ -158,7 +158,7 @@ describe('Intact React', () => {
             }
 
 
-            it('react element is in Portal dirrectly', () => {
+            it('react element is in Portal directly', () => {
                 const click = sinon.spy((event: Event) => {
                     console.log('Click in React.', event);
                 });
@@ -257,7 +257,6 @@ describe('Intact React', () => {
 
                 container.nextElementSibling!.querySelector('span')!.click();
                 expect(click.callCount).to.eql(1);
-
             });
         });
 
