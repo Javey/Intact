@@ -29,6 +29,7 @@ import {
     Provider,
     HTMLAttributes,
     ReactChild,
+    ReactElement,
 } from 'react';
 import {normalizeProps, normalizeChildren} from './normalize';
 import {precacheFiberNode, updateFiberProps, preparePortalMount} from './helpers';
@@ -168,6 +169,19 @@ export class Component<
         // in Wrapper
         const providers = this.$reactProviders = new Map();
         let returnFiber = (this as any)._reactInternals;
+
+        // let memoizedProps always change to trigger update, see beginWork function in React codes 
+        // returnFiber is not extensible
+        let memoizedProps: any;
+        Object.defineProperty(returnFiber, 'memoizedProps', {
+            get: () => {
+                return memoizedProps;
+            },
+            set: (v) => {
+                this.props = memoizedProps = {...v};
+            }
+        });
+
         while (returnFiber = returnFiber.return) {
             const tag = returnFiber.tag;
             if (tag === 10) { // is ContextProiver
@@ -182,29 +196,32 @@ export class Component<
                  * 
                  * always let hasContextChanged return true to make React update the component,
                  * even if it props has not changed
-                 * see unit test: `shuold update children when provider's children...`
+                 * see unit test: `should update children when provider's children...`
                  * issue: https://github.com/ksc-fe/kpc/issues/533
+                 * 
+                 * @Modify: we should not update all from root
+                 * https://github.com/ksc-fe/kpc/issues/845
                  **/
-                const stateNode = returnFiber.stateNode;
-                if (!stateNode.__intactReactDefinedProperty) {
-                    let context: any;
-                    Object.defineProperty(stateNode, 'pendingContext', {
-                        get() {
-                            return context || (returnFiber.context ? {...returnFiber.context} : Object.create(null));
-                        },
-                        set(v) {
-                            context = v;
-                        }
-                    });
-                    stateNode.__intactReactDefinedProperty = true;
-                }
+                // const stateNode = returnFiber.stateNode;
+                // if (!stateNode.__intactReactDefinedProperty) {
+                    // let context: any;
+                    // Object.defineProperty(stateNode, 'pendingContext', {
+                        // get() {
+                            // return context || (returnFiber.context ? {...returnFiber.context} : Object.create(null));
+                        // },
+                        // set(v) {
+                            // context = v;
+                        // }
+                    // });
+                    // stateNode.__intactReactDefinedProperty = true;
+                // }
                 break;
             }
         }
 
-        const vNode = createTemplateVNode(this.$elementRef, '1');
+        const vNode = createTemplateVNode(this.$elementRef, '1', providers);
         return (this.constructor as typeof Component).$doubleVNodes ?
-            [vNode, createTemplateVNode(this.$elementAlternateRef, '2')] :
+            [vNode, createTemplateVNode(this.$elementAlternateRef, '2', providers)] :
             vNode;
     }
 
@@ -345,12 +362,20 @@ function getMountedQueue(parent: Component | null): Function[] {
     return [];
 }
 
-function createTemplateVNode(ref: RefObject<HTMLElement>, key: string) {
-    return createElement('template', {
+function createTemplateVNode(ref: RefObject<HTMLElement>, key: string, providers: Map<Provider<unknown>, unknown>) {
+    let vnode: ReactElement = createElement('template', {
         ref,
         key,
         'data-intact-react': '',
     });
+
+    providers.forEach((value, provider) => {
+        vnode = createElement((provider as any)._context.Consumer, null, ((vnode: ReactElement) => {
+            return () => vnode;
+        })(vnode));
+    });
+
+    return vnode;
 }
 
 function handleElementOnMounted(parentElement: HTMLElement, placeholder: HTMLElement, element: HTMLElement) {

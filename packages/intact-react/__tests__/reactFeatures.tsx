@@ -1,4 +1,4 @@
-import React, {Component as ReactComponent, ReactNode, Fragment} from 'react';
+import React, {Component as ReactComponent, ReactNode, Fragment, useRef, useState} from 'react';
 import {
     render,
     container,
@@ -179,6 +179,48 @@ describe('Intact React', () => {
                 });
 
                 expect(container.innerHTML).to.eq('<div><div>b</div>#</div>');
+            });
+
+            it('should not update children from root', () => {
+                const Test = () => {
+                    const checkedKeysRef = useRef<string[]>([]);
+                    const onChangeCheckedKeys = (v: string[]) => {
+                        checkedKeysRef.current = v;
+                    }
+        
+                    return (
+                        <Foo
+                            checkedKeys={checkedKeysRef.current}
+                            onChangeCheckedKeys={onChangeCheckedKeys}
+                        />
+                    );
+                };
+        
+                const Foo: React.FC<{
+                    checkedKeys: string[],
+                    onChangeCheckedKeys: (v: string[]) => void
+                }> = ({ checkedKeys, onChangeCheckedKeys }) => {
+                    const [keys, setKeys] = useState<string[]>([]);
+                    const updateCheckedKeys = () => {
+                        const keys = ['a', 'b', 'c']
+                        onChangeCheckedKeys?.(keys);
+                        setKeys(keys);
+                    };
+        
+                    return <div>
+                        <div className="text">Selected: {checkedKeys.length}, Checked: {keys.length}</div>
+                        <ChildrenIntactComponent />
+                        <div className="click" onClick={updateCheckedKeys}>click</div>
+                    </div>
+                }
+
+                render(<Test />);
+
+                act(() => {
+                    container.querySelector<HTMLDivElement>('.click')!.click();
+                });
+
+                expect(container.querySelector<HTMLDivElement>('.text')!.innerHTML).to.eq('Selected: 0, Checked: 3');
             });
         });
     });
