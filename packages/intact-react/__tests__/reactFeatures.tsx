@@ -117,7 +117,7 @@ describe('Intact React', () => {
                         </ChildrenIntactComponent>
                     </Context.Provider>
                 );
-                expect(container.innerHTML).to.eq('<div>#<div><div>c</div>#</div></div>');
+                expect(container.innerHTML).to.eq('<div><div><div>c</div>#</div>#</div>');
             });
 
             it('should get element that element nested new context api', () => {

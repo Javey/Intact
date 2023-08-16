@@ -149,6 +149,20 @@ describe('Intact React', () => {
             expect(click2.callCount).to.eql(0);
         });
 
+        it('render React component that return intact component', () => {
+            const Test = (props: { a: string }) => {
+                return <PropsIntactComponent a={props.a} />
+            }
+            render(
+                <ChildrenIntactComponent>
+                    <Test a="1" />
+                    <Test a="2" />
+                </ChildrenIntactComponent>
+            );
+
+            expect(container.innerHTML).to.eql('<div><div>a: 1 b: </div>#<div>a: 2 b: </div>#</div>')
+        });
+
         describe('Portal', () => {
             class Dialog extends Component {
                 static template = `const Portal = this.Portal;

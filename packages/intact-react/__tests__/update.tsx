@@ -471,7 +471,7 @@ describe('Intact React', () => {
                     </Hoc>
                 </HocComponent>
             );
-            expect(container.innerHTML).to.eql('#<div>test</div>#');
+            expect(container.innerHTML).to.eql('<div>test</div>##');
 
             root.render(
                 <HocComponent>

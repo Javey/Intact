@@ -240,13 +240,17 @@ export class Component<
         this.$init(vNode.props as Props<P, this>);
 
         vNode.children = this;
-        let sibling: any = placeholder;
-        while (sibling = sibling.nextSibling) {
-            if (sibling.nodeType !== 8 || sibling.nodeValue !== containerComment) {
-                break;
-            }
-        }
-        this.$render(null, vNode, parentElement, sibling, this.$mountedQueue);
+        /**
+         * let intact element be inserted before placeholder, #834
+         */
+        // let sibling: any = placeholder.nextSibling;
+        // let sibling: any = placeholder;
+        // while (sibling = sibling.nextSibling) {
+            // if (sibling.nodeType !== 8 || sibling.nodeValue !== containerComment) {
+                // break;
+            // }
+        // }
+        this.$render(null, vNode, parentElement, placeholder, this.$mountedQueue);
 
         this.$done(() => {
             handleElementOnMounted(
