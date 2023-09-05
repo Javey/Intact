@@ -33,7 +33,7 @@ export function normalize(vNode: ReactNode): VNodeAtom | VNodeAtom[] {
             props.key = key;
         }
         return createComponentVNode(
-            4,
+            4 /* Types.ComponentKnown */,
             tag,
             props,
             key,

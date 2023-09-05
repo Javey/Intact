@@ -7,6 +7,8 @@ export type ComponentFunctionForVue = ComponentFunction & {
      (props: any, isVue?: boolean): NormalizedChildren 
 }
 
+export const cid = 'IntactVueFunctional';
+
 export function functionalWrapper(Component: ComponentFunctionForVue) {
     function Ctor(props: any, context?: any) {
         if (context) {
@@ -38,6 +40,7 @@ export function functionalWrapper(Component: ComponentFunctionForVue) {
     }
 
     Ctor.displayName = Component.displayName || Component.name;
+    Ctor.$cid = cid;
 
     return Ctor;
 }

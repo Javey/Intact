@@ -6,7 +6,8 @@ import {
     Key,
     TypePrimitive,
     TypeObject,
-    Blocks
+    Blocks,
+    ComponentFunction,
 } from 'intact';
 import {
     VNode as VueVNode,
@@ -32,6 +33,7 @@ import {
     isFunction,
     isString
 } from 'intact-shared';
+import { cid } from './functionalWrapper';
 
 type EventValue = Function | Function[]
 type TypeDefValue = TypePrimitive | TypePrimitive[] | TypeObject
@@ -48,8 +50,8 @@ export function normalize(vnode: VNodeChildAtom | VNode, normalizeRef: boolean):
     if (isIntactComponent(vnode)) {
         const props = normalizeProps(vnode);
         vNode = createComponentVNode(
-            4,
-            (type as IntactComponentOptions).Component,
+            4 /* Types.ComponentKnown */,
+            getIntactComponent(vnode),
             props,
             vnode.key as Key,
             normalizeRef ? getNormalizedRef(vnode.ref) : null
@@ -73,7 +75,13 @@ export function normalize(vnode: VNodeChildAtom | VNode, normalizeRef: boolean):
 }
 
 export function isIntactComponent(vnode: VueVNode) {
-    return !!(vnode.type as IntactComponentOptions).Component;
+    return !!(vnode.type as IntactComponentOptions).Component || (vnode.type as any).$cid === cid;
+}
+
+function getIntactComponent(vnode: VueVNode) {
+    const type = vnode.type as any;
+    if (type.$cid === cid) return type;
+    return type.Component;
 }
 
 function isIntactVNode(vNode: any): vNode is VNode {
@@ -113,7 +121,7 @@ export function normalizeChildren(vNodes: VNodeArrayChildren | VNodeChildAtom, n
 export function normalizeProps(vnode: VueVNode) {
     const attrs = vnode.props;
     const slots = vnode.children;
-    const Component = (vnode.type as IntactComponentOptions).Component;
+    const Component = getIntactComponent(vnode);
     const props: any = {};
     const propTypes = Component.typeDefs;
 

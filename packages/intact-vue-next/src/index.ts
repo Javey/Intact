@@ -191,7 +191,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                     const lastVNode = instance.$vNode;
                     patch(lastVNode, vNode, this.$el.parentElement!, parentComponent, isSVG, null, mountedQueue, false);
 
-                    // element may have chagned
+                    // element may have changed 
                     // only check if the component returns only one vNode
                     if (!Ctor.$doubleVNodes) {
                         const element = findDomFromVNode(vNode, true) as IntactDom;

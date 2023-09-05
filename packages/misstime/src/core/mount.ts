@@ -81,7 +81,7 @@ export function mountElement(
     // We should mount Ref firstly, because we may get parent ref in children component
     // in $render method, e.g. Portal of KPC
     // mountRef(vNode.ref, dom);
-    // @MODIFY: we have to mount ref in mountedQueuek
+    // @MODIFY: we have to mount ref in mountedQueue
 
     if (childrenType === ChildrenTypes.HasTextChildren) {
         setTextContent(dom, children as string);
