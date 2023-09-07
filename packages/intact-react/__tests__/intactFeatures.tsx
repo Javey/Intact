@@ -204,6 +204,42 @@ describe('Intact React', () => {
                 // test(<a>1</a>, <b>2</b>);
             // });
 
+            it('the lifecycles of sub components should be called before parent component', async () => {
+                const mount1 = sinon.spy(() => console.log('1'));
+                const mount2 = sinon.spy(() => console.log('2'));
+                const mount3 = sinon.spy(() => console.log('3'));
+                class A extends Component {
+                    static template = `<div>{this.get('children')}</div>`;
+                    $render(...args: any[]) {
+                        const mountedQueue = args[args.length - 1];
+                        mountedQueue.priority.push(mount3);
+                        (super.$render as any)(...args); 
+                    }
+                    mounted() {
+                        mount1();
+                    }
+                }
+                class B extends Component {
+                    static template = `<div>{this.get('children')}</div>`;
+                    mounted() {
+                        mount2();
+                    }
+                }
+
+                renderApp(function() {
+                    return (
+                        <A>
+                            <div>
+                                <B>test</B>
+                            </div>
+                        </A>
+                    ); 
+                });
+
+                expect(mount3.calledBefore(mount2)).to.be.true;
+                expect(mount2.calledBefore(mount1)).to.be.true;
+            });
+
             it('lifecycle of mount of existing firsthand intact component', () => {
                 const mount = sinon.spy(function() {
                     console.log('mount');
@@ -404,7 +440,7 @@ describe('Intact React', () => {
                 act(() => {
                     container.querySelector<HTMLDivElement>('#click')!.click();
                 });
-                expect(orders).to.eql(['mounted', 'unmounted', 'mounted', 'unmounted']);
+                expect(orders).to.eql(['mounted', 'mounted', 'unmounted', 'unmounted']);
             });
 
             it('render react component which will update in render phase', async () => {

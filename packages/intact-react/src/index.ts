@@ -325,7 +325,8 @@ export class Component<
             }));
         } else {
             done().then(() => {
-                callAll(this.$mountedQueue);
+                callMountedQueue(this.$mountedQueue);
+                // callAll(this.$mountedQueue);
             });
         }
     }
@@ -355,15 +356,35 @@ export class Component<
 
 Component.prototype.isReactComponent = true;
 
+type MountedQueueWithChildren = Function[] & { children?: MountedQueueWithChildren[], priority?: Function[] };
 function getMountedQueue(parent: Component | null): Function[] {
+    const queue: MountedQueueWithChildren = [];
+    queue.priority = [];
     if (parent) {
-        const mountedQueue = parent.$mountedQueue!;
+        const mountedQueue = parent.$mountedQueue! as MountedQueueWithChildren 
         const parentPromises = parent.$provides![PROMISES] as FakePromises;
         if (!parentPromises.done) {
-            return parent.$mountedQueue!;
+            const children = mountedQueue.children || (mountedQueue.children = []);
+            children.push(queue);
         }
     }
-    return [];
+    return queue;
+}
+
+function callMountedQueue(mountedQueue: MountedQueueWithChildren) {
+    const priority = mountedQueue.priority;
+    if (priority) {
+        callAll(priority);
+    }
+
+    const children = mountedQueue.children;
+    if (children) {
+        children.forEach((mountedQueue) => {
+            callMountedQueue(mountedQueue);
+        });
+    }
+
+    callAll(mountedQueue);
 }
 
 function createTemplateVNode(ref: RefObject<HTMLElement>, key: string, providers: Map<Provider<unknown>, unknown>) {
