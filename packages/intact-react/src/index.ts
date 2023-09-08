@@ -395,7 +395,7 @@ function createTemplateVNode(ref: RefObject<HTMLElement>, key: string, providers
     });
 
     providers.forEach((value, provider) => {
-        vnode = createElement((provider as any)._context.Consumer, null, ((vnode: ReactElement) => {
+        vnode = createElement((provider as any)._context.Consumer, {key}, ((vnode: ReactElement) => {
             return () => vnode;
         })(vnode));
     });
