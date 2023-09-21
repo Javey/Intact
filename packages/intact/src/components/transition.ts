@@ -3,6 +3,10 @@ import {BaseTransition, BaseTransitionProps} from './baseTransition';
 import {isUndefined} from 'intact-shared';
 import {nodeOps, nextFrame, whenTransitionEnds} from './heplers';
 
+type TransitionElementWithCancel = TransitionElement & {
+    _cancelNextFrame?: (() => void) | null
+}
+
 export interface TransitionProps extends BaseTransitionProps {
     name?: string
     // type?: 'transition' | 'animation'
@@ -83,26 +87,27 @@ export function resolveTransitionProps(props: TransitionProps): BaseTransitionPr
         onAppearCancelled = onEnterCancelled,
     } = baseProps;
 
-    let cancelNextFrame: (() => void) | null = null;
+    // let cancelNextFrame: (() => void) | null = null;
 
-    const cancelFrame = () => {
+    const cancelFrame = (el: TransitionElementWithCancel) => {
+        const cancelNextFrame = el._cancelNextFrame;
         if (cancelNextFrame) {
             cancelNextFrame();
             forceReflow();
-            cancelNextFrame = null;
+            el._cancelNextFrame = null;
         }
     }
 
-    const finishEnter = (el: TransitionElement, isAppear: boolean, done?: () => void) => {
+    const finishEnter = (el: TransitionElementWithCancel, isAppear: boolean, done?: () => void) => {
         if (isAppear) {
-            if (cancelNextFrame) {
+            if (el._cancelNextFrame) {
                 removeTransitionClass(el, appearFromClass);
             } else {
                 removeTransitionClass(el, appearToClass); 
             }
             removeTransitionClass(el, appearActiveClass);
         } else {
-            if (cancelNextFrame) {
+            if (el._cancelNextFrame) {
                 removeTransitionClass(el, enterFromClass);
             } else {
                 removeTransitionClass(el, enterToClass); 
@@ -112,8 +117,8 @@ export function resolveTransitionProps(props: TransitionProps): BaseTransitionPr
         done && done();
     };
 
-    const finishLeave = (el: TransitionElement, done?: () => void) => {
-        if (cancelNextFrame) {
+    const finishLeave = (el: TransitionElementWithCancel, done?: () => void) => {
+        if (el._cancelNextFrame) {
             removeTransitionClass(el, leaveFromClass);
         } else {
             removeTransitionClass(el, leaveToClass);
@@ -123,11 +128,11 @@ export function resolveTransitionProps(props: TransitionProps): BaseTransitionPr
     };
 
     const makeEnterHook = (isAppear: boolean) => {
-        return (el: TransitionElement, done: () => void) => {
+        return (el: TransitionElementWithCancel, done: () => void) => {
             const hook = isAppear ? onAppear : onEnter;
             const resolve = () => finishEnter(el, isAppear, done);
             hook && hook(el, resolve);
-            cancelNextFrame = nextFrame(() => {
+            el._cancelNextFrame = nextFrame(() => {
                 if(isAppear) {
                     removeTransitionClass(el, appearFromClass);
                     addTransitionClass(el, appearToClass);
@@ -138,7 +143,7 @@ export function resolveTransitionProps(props: TransitionProps): BaseTransitionPr
                 if (isUndefined(hook) || hook.length <= 1) {
                     whenTransitionEnds(el, resolve); 
                 }
-                cancelNextFrame = null;
+                el._cancelNextFrame = null;
             });
         }
     };
@@ -153,7 +158,7 @@ export function resolveTransitionProps(props: TransitionProps): BaseTransitionPr
         onEnter: makeEnterHook(false),
         onEnterCancelled(el) {
             finishEnter(el, false);
-            cancelFrame();
+            cancelFrame(el);
             onEnterCancelled && onEnterCancelled(el);
         },
 
@@ -165,28 +170,28 @@ export function resolveTransitionProps(props: TransitionProps): BaseTransitionPr
         onAppear: makeEnterHook(true),
         onAppearCancelled(el) {
             finishEnter(el, true);
-            cancelFrame();
+            cancelFrame(el);
             onAppearCancelled && onAppearCancelled(el);
         },
 
-        onLeave(el, done) {
+        onLeave(el: TransitionElementWithCancel, done) {
             const resolve = () => finishLeave(el, done);
             addTransitionClass(el, leaveFromClass);
             forceReflow();
             addTransitionClass(el, leaveActiveClass);
-            cancelNextFrame = nextFrame(() => {
+            el._cancelNextFrame = nextFrame(() => {
                 removeTransitionClass(el, leaveFromClass);
                 addTransitionClass(el, leaveToClass);
                 if (isUndefined(onLeave) || onLeave.length <= 1) {
                     whenTransitionEnds(el, resolve);
                 }
-                cancelNextFrame = null;
+                el._cancelNextFrame = null;
             });
             onLeave && onLeave(el, resolve);
         },
         onLeaveCancelled(el) {
             finishLeave(el);
-            cancelFrame();
+            cancelFrame(el);
             onLeaveCancelled && onLeaveCancelled(el);
         }
     }

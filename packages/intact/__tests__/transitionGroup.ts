@@ -125,7 +125,7 @@ describe('Component', function() {
             // ]);
         });
 
-        it('should enter a element which is leaving correctly', async () => {
+        it('should enter a element which is leaving', async () => {
             render(h(TransitionGroup, null, [
                 h('div', {key: '1'}, '1'),
                 h('div', {key: '2'}, '2'),
@@ -146,6 +146,26 @@ describe('Component', function() {
                 testTransition(container.children[1]!, 'enter'),
                 testTransition(container.children[2]!, 'enter'),
             ]);
+        });
+
+        it('should cancel the right element', async () => {
+            render(h(TransitionGroup, null, [
+                h('div', {key: '1'}, '1'),
+                h('div', {key: '2'}, '2'),
+            ]), container);
+            await wait(0);
+            render(h(TransitionGroup, null, [
+                h('div', {key: '1'}, '1'),
+                h('div', {key: '3'}, '3'),
+                h('div', {key: '4'}, '4'),
+            ]), container);
+            await wait(0);
+            render(h(TransitionGroup, null, [
+                h('div', {key: '1'}, '1'),
+                h('div', {key: '3'}, '3'),
+            ]), container);
+
+            await testTransition(container.children[2], 'enter');
         });
     });
 });

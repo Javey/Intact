@@ -115,7 +115,7 @@ export class BaseTransition<P extends BaseTransitionProps = BaseTransitionProps>
         const el = this.el = findDomFromVNode(lastInput, true) as TransitionElement;
         const hasChagned = el !== oldEl;
 
-        if (lastValue !== nextValue || hasChagned) {
+        if ((lastValue !== nextValue || hasChagned) && el.nodeType === 1) {
             if (nextValue || isUndefined(nextValue)) {
                 transition.beforeEnter(el);
                 setDisplay(el, this.originalDisplay);
