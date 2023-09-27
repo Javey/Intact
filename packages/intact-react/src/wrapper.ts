@@ -73,6 +73,12 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         const parentComponent = getParent(this);
         rewriteParentElementApi(parentDom, !!parentComponent);
 
+        // we should set dom before rendering the vNode
+        // because the real element may not be inserted after rendering
+        // and intact need the dom to insertBefore other elements
+        // @unit test: insert react array elements before react element in Intact component. ksc-fe/kpc#869
+        this.$lastInput.dom = container;
+
         this.render(vNode, parentDom, parentComponent);
     }
 
@@ -294,4 +300,7 @@ const eventsMap = {
     'ev-contextmenu': 'onContextMenu',
     'ev-mouseenter': 'onMouseEnter',
     'ev-mouseleave': 'onMouseLeave',
+    'ev-dragstart': 'onDragStart',
+    'ev-dragover': 'onDragOver',
+    'ev-dragend': 'onDragEnd',
 };

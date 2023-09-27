@@ -164,6 +164,31 @@ describe('Intact React', () => {
             expect((instance.refs.c as any).refs.c.test).to.be.true;
         });
 
+        it('insert react array elements before react element in Intact component', () => {
+            class Test extends Component {
+                static template = `
+                    <div>
+                        {this.get('children')}
+                        <div key="fix">intact</div>
+                    </div>
+                `;
+            }
+            const instance = renderApp(function() {
+                return <Test ref="c">
+                    <div>before</div>
+                    {this.state.data?.map((item: number) => {
+                        return <div key={item}>item</div>
+                    })}
+                    <div>after</div>
+                </Test>
+            }, {data: null} as any);
+
+            act(() => {
+                instance.setState({data: [1, 2]});
+            });
+            expect(container.textContent).to.eql('beforeitemitemafterintact');
+        });
+
         it('the updated lifecycle of intact should be called after all children has updated when call its update method directly', async () => {
             const updated = sinon.spy();
             class Test extends Component<{}, {}, {test: number}> {
