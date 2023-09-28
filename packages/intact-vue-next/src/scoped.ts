@@ -1,8 +1,8 @@
-import {hooks, VNode as IntactVNode, ComponentClass} from 'intact';
+import {VNode as IntactVNode, ComponentClass} from 'intact';
 import {RendererElement, ComponentInternalInstance, VNode} from 'vue';
 import {Component as IntactVueComponent} from './index';
 
-hooks.beforeInsert = function(vNode: IntactVNode, parent: ComponentClass | null) {
+export function beforeInsert(vNode: IntactVNode, parent: ComponentClass | null) {
     const dom = vNode.dom!;
     let i;
     while (parent) {

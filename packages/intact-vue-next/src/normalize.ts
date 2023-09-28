@@ -34,6 +34,7 @@ import {
     isString
 } from 'intact-shared';
 import { cid } from './functionalWrapper';
+import { beforeInsert } from './scoped';
 
 type EventValue = Function | Function[]
 type TypeDefValue = TypePrimitive | TypePrimitive[] | TypeObject
@@ -56,6 +57,12 @@ export function normalize(vnode: VNodeChildAtom | VNode, normalizeRef: boolean):
             vnode.key as Key,
             normalizeRef ? getNormalizedRef(vnode.ref) : null
         );
+        // use to add scopeId
+        if (normalizeRef) {
+            vNode.hooks = {
+                beforeInsert,
+            };
+        }
     } else {
         // ignore comment vNode
         if (type === Comment) return null;

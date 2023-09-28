@@ -14,6 +14,7 @@ export interface VNode<T extends VNodeTag = VNodeTag> {
     transition: TransitionHooks | null
     position: TransitionPosition | null
     newPosition: TransitionPosition | null
+    hooks: Hooks | null
 }
 export interface VNodeElement extends VNode<string> { }
 export interface VNodeTextElement extends VNode<null> {
@@ -216,6 +217,6 @@ export type TypeObject = {
 export type TypeDefs<T> = {[key in keyof T]?: TypePrimitive | readonly TypePrimitive[] | TypeObject};
 
 export type Hooks = {
-    beforeInsert: ((dom: VNode, parent: ComponentClass | null) => void) | null;
+    beforeInsert: ((vNode: VNode, parent: ComponentClass | null) => void) | null;
 };
 

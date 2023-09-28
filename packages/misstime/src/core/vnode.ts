@@ -22,6 +22,7 @@ import {
     TransitionPosition,
     VNodeComponentClass,
     VNodeComponentFunction,
+    Hooks,
 } from '../utils/types';
 import {
     isNullOrUndefined,
@@ -47,6 +48,7 @@ export class VNode<T extends VNodeTag = VNodeTag> implements IVNode<T> {
     public transition: TransitionHooks | null;
     public position: TransitionPosition | null;
     public newPosition: TransitionPosition | null;
+    public hooks: Hooks | null;
     constructor(
         type: Types,
         tag: T,
@@ -71,6 +73,9 @@ export class VNode<T extends VNodeTag = VNodeTag> implements IVNode<T> {
         // FIXME: Is it necessary to initialize these properties to prevent V8 from de-optimization
         this.position = null;
         this.newPosition = null;
+
+        // for setScopeId in vue
+        this.hooks = null;
 
         if (process.env.NODE_ENV !== 'production') {
             this.isValidated = false;
@@ -168,7 +173,7 @@ export function createVNode<T extends VNodeTag>(
         if (ref) newProps!.ref = ref;
     }
 
-    return createComponentVNode(type, tag as Component, newProps, key, ref as Ref<Element>) as VNode<T>;
+    return createComponentVNode(type, tag as Component, newProps, key, ref as Ref<Element>) as unknown as VNode<T>;
 }
 
 export function getTypeForVNodeElement(tag: string): Types {
@@ -361,6 +366,7 @@ export function directClone<T extends VNode>(vNode: T): T{
     }
 
     newVNode.transition = vNode.transition;
+    newVNode.hooks = vNode.hooks;
     // newVNode.newPosition = vNode.newPosition;
     // newVNode.position = vNode.position;
     
@@ -509,6 +515,11 @@ export function normalizeRoot(vNode: Children, parentVNode: VNode): VNode {
             // }
         // }
         root.transition = transition;
+    }
+
+    const hooks = parentVNode.hooks;
+    if (!isNullOrUndefined(hooks)) {
+        root.hooks = hooks;
     }
 
     return root;

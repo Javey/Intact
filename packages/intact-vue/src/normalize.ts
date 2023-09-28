@@ -12,6 +12,7 @@ import {
 } from 'intact';
 import {Wrapper} from './wrapper';
 import type {VueVNodeWithSlots} from './functionalWrapper';
+import { beforeInsert } from './scoped';
 
 export type VNodeAtom = VNode | null | undefined | string | number;
 type TypeDefValue = TypePrimitive | TypePrimitive[] | TypeObject
@@ -36,6 +37,7 @@ export function normalize(vnode: VueVNodeAtom | VNode): VNodeAtom {
         const Ctor = vnode.componentOptions!.Ctor as unknown as typeof Component;
         const props = normalizeProps(vnode);
         vNode = createComponentVNode(4, Ctor, props, vnode.key as Key, props.ref);
+        vNode.hooks = { beforeInsert };
     } else {
         vNode = createComponentVNode(4, Wrapper, {vnode}, vnode.key as Key);
     }

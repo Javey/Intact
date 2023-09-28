@@ -16,6 +16,7 @@ import {h as v, ComponentPublicInstance, render as vueRender, getCurrentInstance
 import Test1 from './test1.vue';
 import Test3 from './test3.vue';
 import Test4 from './test4.vue';
+import Scoped from './scoped.vue';
 import {createRouter, createWebHashHistory, RouteRecordRaw} from 'vue-router';
 
 describe('Intact Vue Next', () => {
@@ -175,6 +176,12 @@ describe('Intact Vue Next', () => {
                 vm.show = true;
                 await nextTick();
                 expect(vm.$el.outerHTML).to.eql('<div class="test1" data-v-ebd30796=""><div data-v-ebd30796="">intact component in vue<b data-v-ebd30796="">test</b></div><div>component</div></div>');
+            });
+
+            it('render scoped style on nested intact component', () => {
+                render(`<Scoped />`, {Scoped});
+
+                expect(vm.$el.outerHTML).be.eql('<div data-v-7f3ed1cd=""><i>intact component in vue <div class="test" data-v-7f3ed1cd=""><i>intact component in vue <b data-v-7f3ed1cd="">test</b></i></div></i></div>');
             });
         });
 

@@ -59,7 +59,7 @@ export function mountElement(
     anchor: IntactDom | null,
     mountedQueue: Function[],
 ) {
-    const {type, props, className, childrenType, tag, transition} = vNode;
+    const {type, props, className, childrenType, tag, transition, hooks} = vNode;
 
     isSVG = isSVG || (type & Types.SvgElement) > 0;
     const dom = vNode.dom = documentCreateElement(tag, isSVG);
@@ -101,9 +101,11 @@ export function mountElement(
         }
     }
 
-    const beforeInsert = hooks.beforeInsert;
-    if (!isNullOrUndefined(beforeInsert)) {
-        beforeInsert(vNode, parentComponent);
+    if (!isNullOrUndefined(hooks)) {
+        const beforeInsert = hooks.beforeInsert;
+        if (!isNullOrUndefined(beforeInsert)) {
+            beforeInsert(vNode, parentComponent);
+        }
     }
 
     if (!isNullOrUndefined(parentDom)) {

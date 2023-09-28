@@ -15,6 +15,7 @@ import {createVNode as h, ComponentFunction} from 'intact';
 import Test1 from './test1.vue';
 import Test3 from './test3.vue';
 import Test4 from './test4.vue';
+import Scoped from './scoped.vue';
 import VueRouter, {RouteRecord, RouteConfig} from 'vue-legacy-router';
 import Vue, {CreateElement} from 'vue';
 
@@ -163,6 +164,12 @@ describe('Intact Vue Legacy', () => {
                 vm.show = true;
                 await nextTick();
                 expect(vm.$el.outerHTML).to.eql('<div data-v-d68f8c36="" class="test1"><div data-v-d68f8c36="">intact component in vue<b data-v-d68f8c36="">test</b></div> <div data-v-d68f8c36="">component</div></div>');
+            });
+
+            it('render scoped style on nested intact component', () => {
+                render(`<Scoped />`, {Scoped});
+
+                expect(vm.$el.outerHTML).be.eql('<div data-v-6e566bc6=""><i>intact component in vue <div class="test" data-v-6e566bc6=""><i>intact component in vue <b data-v-6e566bc6="">test</b></i></div></i></div>');
             });
         });
 
