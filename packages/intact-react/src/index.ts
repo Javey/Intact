@@ -173,14 +173,22 @@ export class Component<
         // let memoizedProps always change to trigger update, see beginWork function in React codes 
         // returnFiber is not extensible
         let memoizedProps: any;
-        Object.defineProperty(returnFiber, 'memoizedProps', {
-            get: () => {
-                return memoizedProps;
-            },
-            set: (v) => {
-                this.props = memoizedProps = {...v};
-            }
-        });
+        const defineProperty = (obj: object) => {
+            Object.defineProperty(obj, 'memoizedProps', {
+                get: () => {
+                    return memoizedProps;
+                },
+                set: (v) => {
+                    this.props = memoizedProps = {...v};
+                }
+            });
+        };
+        defineProperty(returnFiber);
+        // should also change the alternate's memoizedProps
+        const alternate = returnFiber.alternate;
+        if (alternate) {
+            defineProperty(alternate);
+        }
 
         while (returnFiber = returnFiber.return) {
             const tag = returnFiber.tag;

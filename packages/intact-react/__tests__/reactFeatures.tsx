@@ -139,14 +139,14 @@ describe('Intact React', () => {
             });
 
             it('should update children when provider\'s children don\'t change and are wrapped by Intact component', () => {
-                const Context = React.createContext<string | null>(null);
-                const ChildContext = React.createContext<string | null>(null);
+                const Context = React.createContext<number | null>(null);
+                const ChildContext = React.createContext<number | null>(null);
                 class Parent extends ReactComponent<{children?: ReactNode}> {
                     state = {
-                        value: 'a'
+                        value: 1
                     };
                     click() {
-                        this.setState({value: 'b'});
+                        this.setState({value: this.state.value + 1});
                     }
                     render() {
                         return <Context.Provider value={this.state.value}>
@@ -178,7 +178,17 @@ describe('Intact React', () => {
                     instance!.click();
                 });
 
-                expect(container.innerHTML).to.eq('<div><div>b</div>#</div>');
+                expect(container.innerHTML).to.eq('<div><div>2</div>#</div>');
+
+                act(() => {
+                    instance!.click();
+                });
+                expect(container.innerHTML).to.eq('<div><div>3</div>#</div>');
+
+                act(() => {
+                    instance!.click();
+                });
+                expect(container.innerHTML).to.eq('<div><div>4</div>#</div>');
             });
 
             it('should not update children from root', () => {
