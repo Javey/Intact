@@ -17,6 +17,7 @@ import Test1 from './test1.vue';
 import Test3 from './test3.vue';
 import Test4 from './test4.vue';
 import Scoped from './scoped.vue';
+import ScopedRouterView from './scopedRouterView.vue';
 import {createRouter, createWebHashHistory, RouteRecordRaw} from 'vue-router';
 
 describe('Intact Vue Next', () => {
@@ -182,6 +183,11 @@ describe('Intact Vue Next', () => {
                 render(`<Scoped />`, {Scoped});
 
                 expect(vm.$el.outerHTML).be.eql('<div data-v-7f3ed1cd=""><i>intact component in vue <div class="test" data-v-7f3ed1cd=""><i>intact component in vue <b data-v-7f3ed1cd="">test</b></i></div></i></div>');
+            });
+
+            it('render intact component in router view', () => {
+                render(`<ScopedRouterView />`, { ScopedRouterView });
+                expect(vm.$el.outerHTML).to.eql(`<div data-v-b7543b8a=""><i>intact component in vue <div class="a" data-v-b7543b8a=""><i>intact component in vue <div class="b"><i>intact component in vue <i>test</i></i></div></i></div></i></div>`);
             });
         });
 

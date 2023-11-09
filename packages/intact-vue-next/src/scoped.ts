@@ -9,7 +9,7 @@ export function beforeInsert(vNode: IntactVNode, parent: ComponentClass | null) 
         // find Intact Component which renders by Vue
         if (i = (parent as IntactVueComponent).vueInstance) {
             const vnode = i.vnode;
-            setScopeId(dom, vnode, vnode.scopeId, (vnode as any).slotScopeIds, i.parent);
+            setScopeId(dom, vnode, vnode.scopeId, (vnode as any).slotScopeIds, i.parent, false);
             break;
         }
 
@@ -22,7 +22,8 @@ export function setScopeId(
     vnode: VNode,
     scopeId: string | null,
     slotScopeIds: string[] | null,
-    parentComponent: ComponentInternalInstance | null
+    parentComponent: ComponentInternalInstance | null,
+    shouldFindParent: boolean
 ) {
     if (el.nodeType !== 1) return;
 
@@ -35,7 +36,8 @@ export function setScopeId(
             hostSetScopeId(el, slotScopeIds[i]);
         }
     }
-    if (parentComponent) {
+
+    if (parentComponent && shouldFindParent) {
         let subTree = parentComponent.subTree;
         if (vnode === subTree) {
             const parentVNode = parentComponent.vnode;
@@ -45,7 +47,8 @@ export function setScopeId(
                 parentVNode.scopeId,
                 // slotScopeIds is @internal
                 (parentVNode as any).slotScopeIds,
-                parentComponent.parent
+                parentComponent.parent,
+                shouldFindParent
             );
         }
     }

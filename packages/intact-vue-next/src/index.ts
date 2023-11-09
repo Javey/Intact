@@ -150,7 +150,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
 
                 const _setScopeId = (element: IntactDom) => {
                     const vnode = vueInstance.vnode;
-                    setScopeId(element, vnode, vnode.scopeId, (vnode as any).slotScopeIds, vueInstance.parent);
+                    setScopeId(element, vnode, vnode.scopeId, (vnode as any).slotScopeIds, vueInstance.parent, true);
                 }
 
                 const mountedQueue = pushMountedQueue(vueInstance.uid);
