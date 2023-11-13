@@ -1,4 +1,4 @@
-import {createVNode as h, VNode, Block, Blocks, createComponentVNode, Ref, Children, TransitionHooks, createTextVNode} from 'intact';
+import {createVNode as h, VNode, Block, Blocks, createComponentVNode, Ref, Children, TransitionHooks, createTextVNode, nextTick} from 'intact';
 import {ReactNode, ReactElement, Fragment, JSXElementConstructor, Ref as ReactRef} from 'react';
 import {isNullOrUndefined, isArray, isStringOrNumber, isInvalid, isFunction, noop, isNumber, isObject} from 'intact-shared';
 import {Wrapper} from './wrapper';
@@ -85,7 +85,15 @@ export function normalizeProps<P>(props: P, events: Record<string, boolean> | un
         if (key === 'children') {
             normalizedProps[key] = normalizeChildren(value) as unknown as P[typeof key];
         } else if (tmp = getEventName(key, events)) {
-            normalizedProps[tmp as keyof P] = value;
+            // We have to call react event callback asynchronously, because react will update
+            // view immediately when one native event happend.
+            // @unit test: update in updating
+            // @issue: https://github.com/ksc-fe/kpc/issues/894
+            normalizedProps[tmp as keyof P] = ((...args: any[]) => {
+                nextTick(() => {
+                    (value as unknown as (...args: any[]) => void)(...args);
+                });
+            }) as unknown as P[keyof P];
         } else if (key.startsWith('slot')) {
             if (!blocks) blocks = (normalizedProps as any).$blocks = {};
             blocks[hyphenate(key.substring(4))] = normalizeBlock(value);

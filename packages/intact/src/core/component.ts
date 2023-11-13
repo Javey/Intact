@@ -299,7 +299,7 @@ export abstract class Component<
     // trigger<K extends keyof E>(name: K, ...args: E[K] extends (...args: infer P) => any ? P : never) {
     trigger<K extends keyof E>(name: K, ...args: any[] & E[K]) {
         // call event on props firstly
-        const propEvent = (this.$props as any)[`ev-${name}`];
+        const propEvent = (this.$props as any)[`ev-${name as string}`];
         if (isFunction(propEvent) && !this.$unmounted) {
             propEvent(...args);
         }

@@ -3,7 +3,7 @@ import {Props} from 'misstime';
 import {isUndefined, throwError, isFunction} from 'intact-shared';
 import {ChangeCallback, ReceiveCallback, EventCallback} from '../utils/types';
 
-type Events<P, E> = {
+type Events<P extends {}, E> = {
     [Key in keyof Props<P> as 
         | `$change:${string & Key}`
         | `$changed:${string & Key}`

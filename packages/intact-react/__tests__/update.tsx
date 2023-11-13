@@ -529,6 +529,45 @@ describe('Intact React', () => {
             expect(container.innerHTML).to.eql('<div><div>2</div>#</div>');
         });
 
+        it('update in updating', async () => {
+            class Test extends Component<{value?: number}> {
+                static template = `<div ev-click={this.onClick}>click {this.get('value')}</div>`;
+
+                static defaults() {
+                    return { value: 0 }
+                }
+
+                init() {
+                    this.onClick = this.onClick.bind(this);
+                    this.watch('value', (value) => this.set('value', value));
+                }
+
+                onClick() {
+                    this.set('value', this.get('value')! + 1);
+                }
+            }
+
+            const App = () => {
+                const [value, setValue] = useState({value: 0});
+
+                function onChange(value: number | undefined) {
+                    if (value === 1) {
+                        setValue({value: 2})
+                    } else {
+                        setValue({value: value!});
+                    }
+                }
+
+                return <Test value={value.value} onChangeValue={onChange} />
+            }
+
+            const root = render(<App />);
+
+            (container.firstElementChild as HTMLElement).click();
+            await wait();
+            expect(container.innerHTML).to.eql('<div>click 2</div>');
+        });
+
         describe('Multiple vNodes Component', () => {
             class Test extends Component {
                 static $doubleVNodes = true;

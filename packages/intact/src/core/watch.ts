@@ -8,7 +8,7 @@ export type WatchOptions = {
     presented?: boolean,
 }
 
-export function watch<P, K extends keyof Props<P, Component>> (
+export function watch<P extends {}, K extends keyof Props<P, Component>> (
     key: K,
     callback: ChangeCallback<Props<P, Component>, K>,
     options?: WatchOptions,
@@ -21,6 +21,14 @@ export function watch<P, K extends keyof Props<P, Component>> (
     }
 
     if (!options || !options.presented) {
+        // instance!.on(`$change:${key}` as `$change:${string & K}`, (newValue, oldValue) => {
+            // const realNewValue = instance!.get(key);
+            // if (realNewValue !== newValue) {
+                // oldValue = newValue
+                // newValue = realNewValue;
+            // }
+            // callback(newValue, oldValue);
+        // });
         // @ts-ignore
         instance!.on(`$change:${key}` as `$change:${string & K}`, callback);
         if (!options || !options.inited) {
