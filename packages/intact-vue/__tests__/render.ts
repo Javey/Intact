@@ -409,8 +409,8 @@ describe('Intact Vue Legacy', () => {
                     return children;
                 }
             }
-            render('<Test><div>click</div></Test>', {Test});
-            expect(vm.$el.outerHTML).to.eql('<div class="test">click</div>');
+            render(`<Test><div :class="'a'">click</div></Test>`, {Test});
+            expect(vm.$el.outerHTML).to.eql('<div class="test a">click</div>');
 
             (vm.$el as HTMLDivElement).click();
             expect(onClick.callCount).to.eql(1);

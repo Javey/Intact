@@ -142,7 +142,8 @@ function getVueVNode(instance: Wrapper, vNode: VNode): VueVNode {
 
         if (key === 'className') {
             data.staticClass = value;
-            delete data.class;
+            // should not delete the class, it is the dynamic classNames
+            // delete data.class;
         } else if (key.substr(0, 3) === 'ev-') {
             if (!data.on) {
                 data.on = {};
