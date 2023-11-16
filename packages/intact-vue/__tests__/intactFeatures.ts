@@ -275,6 +275,37 @@ describe('Intact Vue Legacy', () => {
                 expect(mounted.callCount).to.eql(2);
                 expect(mountedQueueStack.length).to.eql(0);
             });
+
+            it('update vue component nested intact component', async () => {
+                const mounted = sinon.spy();
+                class Card extends Component {
+                    static template = `<div class="card">{this.get('children')}</div>`;
+
+                    mounted() {
+                        console.log('mounted');
+                        mounted();
+                    }
+                }
+
+                const Test = Vue.extend({
+                    template: `<div><slot /></div>`,
+                });
+
+                const count = 32;
+                render(
+                    `<Card>
+                        <div v-if="show"><Card>card</Card></div>
+                        <Test v-for="(item, index) in range" :key="index"><Card>card in test</Card></Test>
+                    </Card>`,
+                    { Card, Test },
+                    { show: false, range: new Array(count).fill(0) }
+                );
+
+                vm.show = true;
+
+                await nextTick();
+                expect(mounted.callCount).to.eql(count + 2);
+            });
         });
 
         describe('vNode', () => {

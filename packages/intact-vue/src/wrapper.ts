@@ -82,11 +82,17 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         const dom = patch(lastVnode, nextVnode, false, false);
         const parent = nextVnode.parent!;
         const data = parent.data as any;
-        if (data.pendingInsert) {
+        if (data.pendingInsert && data.pendingInsert !== data.queue) {
+            /**
+             * Every time we call patch function, it will create a insertedQueue
+             * and assign it to parent.data.pendingInsert. If the parent has multiple
+             * Wrapper elements, the pendingInsert will be overwrite by next Wrapper.
+             * So will should store the queue
+             */
             const queue = data.queue || (data.queue = []);
             queue.push.apply(queue, data.pendingInsert);
             // maybe the pendingInsert has been overwrite
-            data.pendingInsert = queue.slice();
+            data.pendingInsert = queue;
         }
 
         // add dom to the $lastInput for findDomFromVNode
