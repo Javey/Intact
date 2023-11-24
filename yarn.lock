@@ -7058,6 +7058,11 @@ vue@^3.2.6:
     "@vue/server-renderer" "3.2.33"
     "@vue/shared" "3.2.33"
 
+vuex@3:
+  version "3.6.2"
+  resolved "https://registry.npmmirror.com/vuex/-/vuex-3.6.2.tgz#236bc086a870c3ae79946f107f16de59d5895e71"
+  integrity sha512-ETW44IqCgBpVomy520DT5jf8n0zoCac+sxWnn+hMe/CzaSejb/eVw2YToiXYX+Ex/AuHHia28vWTq4goAexFbw==
+
 watchpack@^2.3.1:
   version "2.3.1"
   resolved "https://registry.npmmirror.com/watchpack/-/watchpack-2.3.1.tgz#4200d9447b401156eeca7767ee610f8809bc9d25"

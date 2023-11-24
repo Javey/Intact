@@ -29,7 +29,9 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
     // If cid does not exist, Vue will treat it as an async component 
     static cid = 'IntactVue';
     // Vue will read props from Constructor's options
-    static options = {...(Vue as any).options, inheritAttrs: false};
+    // static options = {...(Vue as any).options, inheritAttrs: false};
+    // Some libraries will extend Vue.options, so we have to use getter to get options
+    static get options() { return { ...(Vue as any).options, inheritAttrs: false }; };
     // Need by devtools
     static config = Vue.config;
 

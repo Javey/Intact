@@ -18,6 +18,7 @@ import Test4 from './test4.vue';
 import Scoped from './scoped.vue';
 import VueRouter, {RouteRecord, RouteConfig} from 'vue-legacy-router';
 import Vue, {CreateElement} from 'vue';
+import Vuex from 'vuex';
 
 describe('Intact Vue Legacy', () => {
     describe('Vue Features', () => {
@@ -237,6 +238,43 @@ describe('Intact Vue Legacy', () => {
                         }
                     }},
                 ]);
+            });
+        });
+
+        describe('Vuex', () => {
+            Vue.use(Vuex);
+
+            const store = new Vuex.Store({
+                state: {
+                    count: 0,
+                },
+                mutations: {
+                    increment(state) {
+                        state.count++;
+                    }
+                }
+            });
+
+            it('should get store', async () => {
+                const Test = {
+                    template: `<div>{{ count }}</div>`,
+                    computed:{
+                        ...Vuex.mapState(['count']),
+                    }
+                }
+                render(
+                    '<ChildrenIntactComponent><Test /></ChildrenIntactComponent>',
+                    {ChildrenIntactComponent, Test},
+                    undefined,
+                    undefined,
+                    { store }
+                );
+
+                expect(vm.$el.outerHTML).to.eql('<div><div>0</div></div>');
+
+                store.commit('increment');
+                await nextTick();
+                expect(vm.$el.outerHTML).to.eql('<div><div>1</div></div>');
             });
         });
     });
