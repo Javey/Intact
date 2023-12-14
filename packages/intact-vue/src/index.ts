@@ -142,7 +142,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                 subTree.data = {
                     hook: {
                         prepatch: (oldVnode: VueVNode, vnode: VueVNode) => {
-                            const mountedQueue = this.$isForceUpdating ? this.$mountedQueue : pushMountedQueue([]);
+                            const mountedQueue = this.$isForceUpdating ? this.$mountedQueue : (this.$mountedQueue = pushMountedQueue([]));
                             const vNode = normalize(this.$vnode) as VNodeComponentClass<this>;
                             const lastVNode = this.$vNode;
                             this.$vNode = vNode; 

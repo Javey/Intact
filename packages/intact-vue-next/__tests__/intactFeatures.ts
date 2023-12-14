@@ -116,11 +116,12 @@ describe('Intact Vue Next', () => {
             });
 
             it('handle mountedQueue', async () => {
+                const callback = sinon.spy(() => console.log('updated'));
                 class Test extends Component<{a: number}> {
                     static template = '<div>test</div>';
                     init() {
                         this.on('$receive:a', () => {
-                            this.forceUpdate();
+                            this.forceUpdate(callback);
                         });
                     }
                 }
@@ -137,6 +138,7 @@ describe('Intact Vue Next', () => {
                 vm.a = 2;
                 await nextTick();
                 expect(vm.$el.outerHTML).to.eql('<div><div>test</div>2</div>');
+                expect(callback.callCount).to.eql(2);
             });
 
             it('call method of Intact component to show nested Intact component', async () => {
