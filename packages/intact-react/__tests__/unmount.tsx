@@ -1,4 +1,4 @@
-import {Component as ReactComponent, ReactNode, Fragment, useState, useEffect} from 'react';
+import {Component as ReactComponent, ReactNode, Fragment, useState, useEffect, createRef} from 'react';
 import {act} from 'react-dom/test-utils';
 import {
     render,
@@ -97,6 +97,30 @@ describe('Intact React', () => {
 
             expect(spyError.callCount).to.eql(0);
             resetError();
+        });
+
+        it('should preserve the dom that will be removed by parent element', async () => {
+            class A extends Component<{show?: boolean}> {
+                static template = `<div ev-click={this.onClick.bind(this)}>
+                    <div v-if={this.get('show')} ref="wrapper">{this.get('children')}</div>
+                </div>`;
+                static defaults() {
+                    return {
+                        show: true
+                    }
+                }
+
+                onClick() {
+                    this.set('show', !this.get('show'));
+                }
+            }
+
+            const ref = createRef<A>();
+            render(<A ref={ref}><div>children</div></A>);
+            const wrapper = ref.current!.refs.wrapper
+            wrapper.click();
+            await wait();
+            expect(wrapper.innerHTML).to.eql(`<div>children</div>#`);
         });
     });
 });

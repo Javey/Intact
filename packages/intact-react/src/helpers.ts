@@ -34,7 +34,7 @@ export function preparePortalMount(dom: HTMLElement) {
     dom.appendChild(container);
     (dom as any)[listeningMarker] = null;
     render(createElement('template'), container, function(this: HTMLElement) {
-        dom.removeChild(this);
+        // dom.removeChild(this);
         dom.removeChild(container);
     });
 }

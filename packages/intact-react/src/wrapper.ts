@@ -235,27 +235,50 @@ function getParent(instance: Wrapper): Component | null {
 function rewriteParentElementApi(parentElement: Element & {_hasRewrite?: boolean}, preventListener: boolean) {
     if (!parentElement._hasRewrite) {
         const removeChild = parentElement.removeChild;
-        parentElement.removeChild = function(child: Node & {_mountPoint: Node | null}) {
-            if (child.parentNode) {
+        parentElement.removeChild = function(child: Node & {_mountPoint: Node | null, _realElement?: Node | null, _deleted?: boolean}, directly: boolean) {
+            if (child.nodeType === 8 && child.nodeValue === containerComment) {
+                removeChild.call(parentElement, child._realElement!);
                 removeChild.call(parentElement, child);
-                const realElement = (child as any)._realElement
-                if (realElement) {
-                    (child as any)._realElement = null;
-                    realElement._mountPoint = null;
-                }
-            } else {
-                /* istanbul ignore next */
-                if (process.env.NODE_ENV !== 'production') {
-                    if (!child._mountPoint) {
-                        throw new Error('Cannot remove the node. Maybe it is a bug of intact-react.');
-                    }
-                }
-                // if the node has been removed, then remove the mount point
-                const container = child._mountPoint!;
-                removeChild.call(parentElement, container);
-                child._mountPoint = null;
-                (container as any)._realElement = null;
+                child._realElement = null;
+                return;
             }
+            if (directly || !child._mountPoint) {
+                removeChild.call(parentElement, child);
+                return;
+            }
+            if (!child.parentNode) {
+                // if the node has been removed, then remove the mount point
+                removeChild.call(parentElement, child._mountPoint!);
+                child._mountPoint = null;
+                return;
+            }
+            if (child._deleted) {
+                removeChild.call(parentElement, child._mountPoint!);
+                removeChild.call(parentElement, child);
+                child._mountPoint = null;
+                return;
+            }
+            child._deleted = true;
+            
+            // if (child.parentNode) {
+                // removeChild.call(parentElement, child);
+                // const realElement = (child as any)._realElement
+                // if (realElement) {
+                    // (child as any)._realElement = null;
+                    // realElement._mountPoint = null;
+                // }
+            // } else {
+                // if (process.env.NODE_ENV !== 'production') {
+                    // if (!child._mountPoint) {
+                        // throw new Error('Cannot remove the node. Maybe it is a bug of intact-react.');
+                    // }
+                // }
+                // // if the node has been removed, then remove the mount point
+                // const container = child._mountPoint!;
+                // removeChild.call(parentElement, container);
+                // child._mountPoint = null;
+                // (container as any)._realElement = null;
+            // }
         } as any;
 
         const insertBefore = parentElement.insertBefore;
