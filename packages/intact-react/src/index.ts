@@ -412,7 +412,7 @@ function createTemplateVNode(ref: RefObject<HTMLElement>, key: string, providers
 }
 
 function handleElementOnMounted(parentElement: HTMLElement, placeholder: HTMLElement, element: HTMLElement) {
-    parentElement.removeChild(placeholder);
+    (parentElement as any).removeChild(placeholder, true);
     updateElementOnUpdated(element, placeholder);
 }
 

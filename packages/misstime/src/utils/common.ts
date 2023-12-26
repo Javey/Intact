@@ -25,7 +25,7 @@ export function setTextContent(dom: Element, children: string) {
 }
 
 export function removeChild(parentDom: Element, dom: IntactDom) {
-    parentDom.removeChild(dom);
+    (parentDom as any).removeChild(dom, true);
 }
 
 export function insertOrAppend(parentDom: Element, newNode: IntactDom, anchor: IntactDom | null) {
