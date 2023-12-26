@@ -274,24 +274,34 @@ describe('Intact React', () => {
             });
 
             it('remove portal before call mounted', () => {
+                const unmounted = sinon.spy(() => console.log('unmounted'));
+                class Child extends Component {
+                    static template = `<div>child</div>`;
+                    mounted() {
+                        console.log('mounted');
+                    }
+                    unmounted() {
+                        unmounted();
+                    }
+                }
                 function Foo({change}: {change: (v: number) => void}) {
                     const [state, setState] = useState(1);
                     useEffect(() => {
                         change(state); 
                     }, [state]);
 
-                    return <div id="foo">foo</div>
+                    return <div className="foo">foo</div>
                 }
                 function Baz() {
-                    return <Dialog />
+                    return <Dialog><Child /></Dialog>
                 }
                 function Qux() {
-                    return <ChildrenIntactComponent><div>test</div></ChildrenIntactComponent>
+                    return <ChildrenIntactComponent><div className="qux">test</div></ChildrenIntactComponent>
                 }
                 function Bar() {
                     const [count, setCount] = useState(0);
 
-                    return <div>
+                    return <div className="bar">
                         <ChildrenIntactComponent>
                             <Foo change={setCount} />
                             <Qux />
@@ -306,6 +316,8 @@ describe('Intact React', () => {
                 }
 
                 render(<App />);
+
+                expect(unmounted.callCount).to.eql(1);
             });
         });
 

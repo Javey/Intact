@@ -9,6 +9,8 @@ import {
     remove,
     TypeDefs,
     inject,
+    unmount,
+    removeVNodeDom,
 } from 'intact';
 import {isString} from 'intact-shared';
 import {Component} from '../src';
@@ -53,6 +55,7 @@ export class Portal<T extends PortalProps = PortalProps> extends Component<T> {
 
         mountedQueue.push(() => {
             const parentDom = this.$lastInput!.dom!.parentElement!;
+            if (!parentDom) return;
             this.initContainer(nextProps.container, parentDom, anchor);
             this.container!.appendChild(fakeContainer);
         });
@@ -123,8 +126,12 @@ export class Portal<T extends PortalProps = PortalProps> extends Component<T> {
     }
 
     $unmount(vNode: VNodeComponentClass<this>, nextVNode: VNodeComponentClass<this> | null) {
-        remove(vNode.props!.children as VNode, this.container!, false);
-        // removeVNodeDom(vNode.props!.children as VNode, this.container!);
+        // maybe the <!-- portal --> has been removed by react
+        unmount(vNode.props!.children as VNode, null);
+        if (this.container) {
+            // remove(vNode.props!.children as VNode, this.container, false);
+            removeVNodeDom(vNode.props!.children as VNode, this.container!);
+        }
         super.$unmount(vNode, nextVNode);
     }
 
