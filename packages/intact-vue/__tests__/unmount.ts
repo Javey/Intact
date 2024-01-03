@@ -15,6 +15,24 @@ import {createVNode as h, ComponentFunction} from 'intact';
 
 describe('Intact Vue Legacy', () => {
     describe('Unmount', () => {
+        it('should unmount vnode that rendered by intact', async () => {
+            render(`<Main><Layout class="layout" ref="layout"><A  v-if="show" /></Layout></Main>`, {
+                Main: {
+                    template: `<div class="main"><slot /></div>`,
+                },
+                Layout: ChildrenIntactComponent,
+                A: {
+                    template: `<div class="a">a</div>`
+                },
+            }, { show: true });
+
+            vm.$refs.layout.forceUpdate();
+            await nextTick();
+            vm.show = false;
+            await nextTick();
+            expect(vm.$el.innerHTML).to.eql('<div class="layout"></div>');
+        });
+
         it('should unmount functional component correctly which returns multiple vNodes that nests Intact component', async () => {
             const Test = Component.functionalWrapper(function(props: any) {
                 const [element1, element2] = props.children;

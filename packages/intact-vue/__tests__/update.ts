@@ -388,6 +388,31 @@ describe('Intact Vue Legacy', () => {
             expect(vm.$el.innerHTML).to.eql('<div class="a" style="display: block;">test</div>');
         });
 
+        it('update vue element with different tag', async () => {
+            render(`<Main><Layout class="layout" v-if="show === 'a'"><A /></Layout><Layout class="layout" v-else-if="show === 'b'"><B /></Layout><C v-else /></Main>`, {
+                Main: {
+                    template: `<div class="main"><slot /></div>`,
+                },
+                Layout: ChildrenIntactComponent,
+                A: {
+                    template: `<div class="a">a</div>`
+                },
+                B: {
+                    template: `<div class="b">b</div>`
+                },
+                C: {
+                    template: `<div class="c">c</div>`
+                },
+            }, { show: 'a'});
+
+            vm.show = 'b';
+            await nextTick();
+
+            vm.show = 'c';
+            await nextTick();
+            expect(vm.$el.innerHTML).to.eql('<div class="c">c</div>');
+        });
+
         describe('Multiple vNodes Component', () => {
             class Test extends Component {
                 static $doubleVNodes = true;

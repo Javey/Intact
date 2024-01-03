@@ -79,7 +79,16 @@ export class Wrapper implements ComponentClass<WrapperProps> {
     }
 
     private patch(lastVnode: VueVNode | null, nextVnode: VueVNode) {
-        const dom = patch(lastVnode, nextVnode, false, false);
+        const realNextVnode = nextVnode;
+        if (lastVnode) {
+            // fake a parent vnode to let vue patch the children
+            const realLastVnode = lastVnode;
+            lastVnode = new VueVNode('div', null, [realLastVnode], null, lastVnode.elm!.parentElement);
+            lastVnode!.parent = realLastVnode.parent; 
+            nextVnode = new VueVNode('div', null, [realNextVnode]);
+            nextVnode.parent = realNextVnode.parent;
+        }
+        patch(lastVnode, nextVnode, false, false);
         const parent = nextVnode.parent!;
         const data = parent.data as any;
         if (data.pendingInsert && data.pendingInsert !== data.queue) {
@@ -97,6 +106,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
 
         // add dom to the $lastInput for findDomFromVNode
         const lastInput = this.$lastInput;
+        const dom = realNextVnode.elm as Element;
         lastInput.dom = dom;
         lastInput.type |= 8192 /* InUse */
 
@@ -184,7 +194,8 @@ function cloneVNode(vnode: VueVNode) {
         // a child.
         vnode.children && vnode.children.slice(),
         vnode.text,
-        vnode.elm,
+        // vnode.elm,
+        null,
         vnode.context,
         vnode.componentOptions,
         (vnode as any).asyncFactory
