@@ -135,23 +135,25 @@ function patchStyle(lastValue: any, nextValue: any, dom: Element) {
     if (isNullOrUndefined(nextValue)) {
         dom.removeAttribute('style');
     } else {
-        const domStyle = (dom as HTMLElement).style as any;
+        // In most cases, we need not read dom.style
+        // const domStyle = (dom as HTMLElement).style as any;
         if (isString(nextValue)) {
-            domStyle.cssText = nextValue; 
+            (dom as HTMLElement).style.cssText = nextValue; 
         } else {
             let style;
             let value;
+            let domStyle: any;
             const hasLastValue = !isNullOrUndefined(lastValue);
             if (hasLastValue && !isString(lastValue)) {
                 for (style in nextValue) {
                     value = nextValue[style];
                     if (value !== lastValue[style]) {
-                        domStyle[style] = value;
+                        (domStyle || (domStyle = (dom as HTMLElement).style))[style] = value;
                     }
                 }
                 for (style in lastValue) {
                     if (isNullOrUndefined(nextValue[style])) {
-                        domStyle[style] = ''
+                        (domStyle || (domStyle = (dom as HTMLElement).style))[style] = '';
                     }
                 }
             } else {
@@ -161,7 +163,7 @@ function patchStyle(lastValue: any, nextValue: any, dom: Element) {
                 }
                 for (style in nextValue) {
                     value = nextValue[style];
-                    domStyle[style] = value;
+                    (domStyle || (domStyle = (dom as HTMLElement).style))[style] = value;
                 }
             }
         }
