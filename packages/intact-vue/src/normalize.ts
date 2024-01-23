@@ -30,9 +30,9 @@ export function normalize(vnode: VueVNodeAtom | VNode): VNodeAtom {
     if (isNullOrUndefined(vnode) || isStringOrNumber(vnode)) return vnode;
     if (isBoolean(vnode)) return String(vnode);
     if (isIntactVNode(vnode)) {
-        if (vnode.type & Types.InUse) {
-            return directClone(vnode);
-        }
+        // if (vnode.type & Types.InUse) {
+            // return directClone(vnode);
+        // }
         return vnode;
     }
     if (vnode.text !== undefined) {

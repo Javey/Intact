@@ -11,6 +11,7 @@ import {
     inject,
     unmount,
     removeVNodeDom,
+    directClone,
 } from 'intact';
 import {isString} from 'intact-shared';
 import {Component} from '../src';
@@ -82,7 +83,7 @@ export class Portal<T extends PortalProps = PortalProps> extends Component<T> {
     ) {
         // update container if it has changed
         const lastProps = lastVNode.props!;
-        const nextProps = nextVNode.props!;
+        const nextProps = nextVNode.props = {...nextVNode.props, children: directClone(nextVNode.props!.children as VNode)} as any;
         const update = () => {
             const lastContainer = this.container!;
 

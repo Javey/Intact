@@ -11,7 +11,7 @@ import {
     reset,
     nextTick,
 } from './helpers';
-import {createVNode as h, ComponentFunction} from 'intact';
+import {createVNode as h, ComponentFunction, directClone} from 'intact';
 import {default as Vue, CreateElement, PropType} from 'vue';
 import { Portal } from './portal';
 
@@ -351,39 +351,40 @@ describe('Intact Vue Legacy', () => {
                 
                 getChildren() {
                     const { children, show } = this.get();
+                    const vNodes = children as VNode[];
                     if (show) {
-                        return children;
+                        return vNodes; 
                     }
-                    return (children as VNode[])[1];
+                    return [vNodes[1]];
                 }
             }
 
             class Tooltip extends Component {
                 static template = function(this: Tooltip) {
-                    return [h('div', null, 'trigger'), h(Portal, { children: this.get('children') })]
+                    const vNode = this.get('children') as VNode;
+                    return [h('div', null, 'trigger'), h(Portal, null, vNode)]
                 }
             }
 
-            render(`<Test ref="test"><D /><D /></Test>`, {
+            render(`<ChildrenIntactComponent><Test ref="test"><D /><D /></Test></ChildrenIntactComponent>`, {
                 Test,
                 D: Component.functionalWrapper(() => {
                     return h(Tooltip, {children: h(SimpleIntactComponent)});
                 }),
+                ChildrenIntactComponent,
             });
 
+            vm.$refs.test.onClick();
             await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div><div>click<div>trigger</div><!--portal--></div></div>');
 
             vm.$refs.test.onClick();
             await nextTick();
-            expect(vm.$el.outerHTML).to.eql('<div>click<div>trigger</div><!--portal--></div>');
+            expect(vm.$el.outerHTML).to.eql('<div><div>click<div>trigger</div><!--portal--><div>trigger</div><!--portal--></div></div>');
 
             vm.$refs.test.onClick();
             await nextTick();
-            expect(vm.$el.outerHTML).to.eql('<div>click<div>trigger</div><!--portal--><div>trigger</div><!--portal--></div>');
-
-            vm.$refs.test.onClick();
-            await nextTick();
-            expect(vm.$el.outerHTML).to.eql('<div>click<div>trigger</div><!--portal--></div>');
+            expect(vm.$el.outerHTML).to.eql('<div><div>click<div>trigger</div><!--portal--></div></div>');
         });
 
 

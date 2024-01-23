@@ -371,26 +371,27 @@ describe('Intact Vue Next', () => {
                 }
             }
 
-            render(`<Test ref="test"><D /><D /></Test>`, {
+            render(`<ChildrenIntactComponent><Test ref="test"><D /><D /></Test></ChildrenIntactComponent>`, {
                 Test,
                 D: Component.functionalWrapper(() => {
                     return h(Tooltip, null, h(SimpleIntactComponent));
                 }),
+                ChildrenIntactComponent,
             });
 
             await nextTick();
 
             vm.$refs.test.onClick();
             await nextTick();
-            expect(vm.$el.outerHTML).to.eql('<div>click<div>trigger</div><!--portal--></div>');
+            expect(vm.$el.outerHTML).to.eql('<div><div>click<div>trigger</div><!--portal--></div></div>');
 
             vm.$refs.test.onClick();
             await nextTick();
-            expect(vm.$el.outerHTML).to.eql('<div>click<div>trigger</div><!--portal--><div>trigger</div><!--portal--></div>');
+            expect(vm.$el.outerHTML).to.eql('<div><div>click<div>trigger</div><!--portal--><div>trigger</div><!--portal--></div></div>');
 
             vm.$refs.test.onClick();
             await nextTick();
-            expect(vm.$el.outerHTML).to.eql('<div>click<div>trigger</div><!--portal--></div>');
+            expect(vm.$el.outerHTML).to.eql('<div><div>click<div>trigger</div><!--portal--></div></div>');
         });
 
 
