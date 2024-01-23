@@ -9,6 +9,8 @@ import {
     TypePrimitive,
     TypeObject,
     Blocks,
+    directClone,
+    Types,
 } from 'intact';
 import {Wrapper} from './wrapper';
 import type {VueVNodeWithSlots} from './functionalWrapper';
@@ -25,9 +27,14 @@ const _vm = new Vue({data: _testData});
 const __ob__ = (_testData as any).__ob__;
 
 export function normalize(vnode: VueVNodeAtom | VNode): VNodeAtom {
-    if (isNullOrUndefined(vnode)) return vnode;
+    if (isNullOrUndefined(vnode) || isStringOrNumber(vnode)) return vnode;
     if (isBoolean(vnode)) return String(vnode);
-    if (isStringOrNumber(vnode) || isIntactVNode(vnode)) return vnode;
+    if (isIntactVNode(vnode)) {
+        if (vnode.type & Types.InUse) {
+            return directClone(vnode);
+        }
+        return vnode;
+    }
     if (vnode.text !== undefined) {
         return vnode.text;
     }
@@ -36,10 +43,10 @@ export function normalize(vnode: VueVNodeAtom | VNode): VNodeAtom {
     if (isIntactComponent(vnode)) {
         const Ctor = vnode.componentOptions!.Ctor as unknown as typeof Component;
         const props = normalizeProps(vnode);
-        vNode = createComponentVNode(4, Ctor, props, vnode.key as Key, props.ref);
+        vNode = createComponentVNode(Types.ComponentClass, Ctor, props, vnode.key as Key, props.ref);
         vNode.hooks = { beforeInsert };
     } else {
-        vNode = createComponentVNode(4, Wrapper, {vnode}, vnode.key as Key);
+        vNode = createComponentVNode(Types.ComponentClass, Wrapper, {vnode}, vnode.key as Key);
     }
 
     // let vue don't observe it when it is used as property, ksc-fe/kpc#500

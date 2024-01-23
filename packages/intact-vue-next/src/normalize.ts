@@ -8,6 +8,7 @@ import {
     TypeObject,
     Blocks,
     ComponentFunction,
+    Types,
 } from 'intact';
 import {
     VNode as VueVNode,
@@ -51,7 +52,7 @@ export function normalize(vnode: VNodeChildAtom | VNode, normalizeRef: boolean):
     if (isIntactComponent(vnode)) {
         const props = normalizeProps(vnode);
         vNode = createComponentVNode(
-            4 /* Types.ComponentKnown */,
+            Types.ComponentUnknown,
             getIntactComponent(vnode),
             props,
             vnode.key as Key,
@@ -72,7 +73,7 @@ export function normalize(vnode: VNodeChildAtom | VNode, normalizeRef: boolean):
             return normalizeChildren(vnode.children as VNodeArrayChildren, normalizeRef);
         }
 
-        vNode = createComponentVNode(4, Wrapper, {vnode}, vnode.key as Key);
+        vNode = createComponentVNode(Types.ComponentClass, Wrapper, {vnode}, vnode.key as Key);
     }
 
     // tell Vue that this is a read only object, and don't make it reactive
