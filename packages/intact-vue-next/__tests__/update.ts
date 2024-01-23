@@ -11,9 +11,10 @@ import {
     reset,
     nextTick,
 } from './helpers';
-import {createVNode as h, ComponentFunction, VNodeComponentClass} from 'intact';
+import {createVNode as h, ComponentFunction, VNodeComponentClass, VNode} from 'intact';
 import {h as v, ComponentPublicInstance, defineComponent} from 'vue';
 import Normalize from './normalize.vue';
+import { Portal } from './portal';
 
 describe('Intact Vue Next', () => {
     describe('Update', () => {
@@ -338,6 +339,60 @@ describe('Intact Vue Next', () => {
             await nextTick();
             expect(vm.$el.outerHTML).to.eql('<div><div>Intact Component</div></div>');
         });
+
+        it('update component in intact and the children are intact functional component', async () => {
+            class Test extends Component<{show?: boolean}> {
+                static template = `<div ev-click={this.onClick}>click{this.getChildren()}</div>`;
+                static defaults() {
+                    return { show: true };
+                }
+
+                init() {
+                    this.getChildren = this.getChildren.bind(this);
+                    this.onClick = this.onClick.bind(this);
+                }
+
+                onClick() {
+                    this.set('show', !this.get('show'));
+                }
+                
+                getChildren() {
+                    const { children, show } = this.get();
+                    if (show) {
+                        return children;
+                    }
+                    return (children as VNode[])[1];
+                }
+            }
+
+            class Tooltip extends Component {
+                static template = function(this: Tooltip) {
+                    return [h('div', null, 'trigger'), h(Portal, { children: this.get('children') })]
+                }
+            }
+
+            render(`<Test ref="test"><D /><D /></Test>`, {
+                Test,
+                D: Component.functionalWrapper(() => {
+                    return h(Tooltip, null, h(SimpleIntactComponent));
+                }),
+            });
+
+            await nextTick();
+
+            vm.$refs.test.onClick();
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div>click<div>trigger</div><!--portal--></div>');
+
+            vm.$refs.test.onClick();
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div>click<div>trigger</div><!--portal--><div>trigger</div><!--portal--></div>');
+
+            vm.$refs.test.onClick();
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div>click<div>trigger</div><!--portal--></div>');
+        });
+
 
         it('should update children of Intact component which nested in vue element', async () => {
             render(`<div><C><div v-if="show">test</div></C></div>`, {
