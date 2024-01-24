@@ -7,6 +7,7 @@ import {
     removeVNodeDom,
     createVNode,
     insertOrAppend,
+    findDomFromVNode,
 } from 'intact';
 import Vue, {
     VNode as VueVNode,
@@ -45,6 +46,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         // mountedQueue: Function[]
     ): void {
         if (lastVNode) {
+            anchor = findDomFromVNode(lastVNode, true)!.nextSibling as IntactDom;
             removeVNodeDom(lastVNode, parentDom);
         } else if (!parentDom) {
             parentDom = document.createDocumentFragment() as any; 

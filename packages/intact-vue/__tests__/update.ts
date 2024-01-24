@@ -469,6 +469,19 @@ describe('Intact Vue Legacy', () => {
             expect(vm.$el.innerHTML).to.eql('<div class="c">c</div>');
         });
 
+        it('update template with v-if', async () => {
+            render('<C><template v-if="show"><C>a</C><div>placeholder</div></template><template v-if="!show"><C>1</C><C>2</C></template></C>', {
+                C: ChildrenIntactComponent,
+            }, { show: false});
+
+            vm.show = true;
+            await nextTick();
+
+            vm.show = false;
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div><div>1</div><div>2</div></div>');
+        });
+
         describe('Multiple vNodes Component', () => {
             class Test extends Component {
                 static $doubleVNodes = true;

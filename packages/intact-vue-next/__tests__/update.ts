@@ -440,6 +440,19 @@ describe('Intact Vue Next', () => {
             expect(vm.$refs.d).to.be.null;
         });
 
+        it('update template with v-if', async () => {
+            render('<C><template v-if="show"><C>a</C><div>placeholder</div></template><template v-if="!show"><C>1</C><C>2</C></template></C>', {
+                C: ChildrenIntactComponent,
+            }, { show: false});
+
+            vm.show = true;
+            await nextTick();
+
+            vm.show = false;
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql('<div><div>1</div><div>2</div></div>');
+        });
+
         it('should call mountedQueue correctly when update a component multiple times on one update phase', async () => {
             render(`<App />`, {
                 App: {
