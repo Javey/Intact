@@ -20,15 +20,24 @@ export interface WrapperProps {
     vnode: ReactNode
 }
 
+type ChildNode = Node & {
+    _mountPoint?: ContainerNode | null,
+    _realElement?: Node | null,
+    _deleted?: boolean
+}
+
+type ContainerNode = HTMLElement & {
+    _isUpdate?: boolean
+} 
+
 export const Context = createContext<Component | null>(null);
 
 export const containerComment = ' react-mount-point-unstable ';
 
-
 export class Wrapper implements ComponentClass<WrapperProps> {
     public $inited: boolean = true;
     public $lastInput: VNode;
-    private container = document.createComment(containerComment) as unknown as HTMLElement;
+    private container = document.createComment(containerComment) as unknown as ContainerNode;
     private isEmptyReactComponent = false;
 
     constructor(
@@ -90,6 +99,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         // mountedQueue: Function[],
         // force: boolean
     ): void {
+        this.container._isUpdate = true;
         this.render(vNode, parentDom);
     }
 
@@ -98,6 +108,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         nextVNode: VNodeComponentClass | null
     ): void {
         const container = this.container;
+        container._isUpdate = false;
         /**
          * If we update intact component lead to this unmountion,
          * the dom will be removed by react immediately,
@@ -235,14 +246,15 @@ function getParent(instance: Wrapper): Component | null {
 function rewriteParentElementApi(parentElement: Element & {_hasRewrite?: boolean}, preventListener: boolean) {
     if (!parentElement._hasRewrite) {
         const removeChild = parentElement.removeChild;
-        parentElement.removeChild = function(child: Node & {_mountPoint: Node | null, _realElement?: Node | null, _deleted?: boolean}, directly: boolean) {
+        parentElement.removeChild = function(child: ChildNode, directly: boolean) {
             if (child.nodeType === 8 && child.nodeValue === containerComment) {
                 removeChild.call(parentElement, child._realElement!);
                 removeChild.call(parentElement, child);
                 child._realElement = null;
                 return;
             }
-            if (directly || !child._mountPoint) {
+            const mountPoint = child._mountPoint;
+            if (directly || !mountPoint || mountPoint._isUpdate) {
                 removeChild.call(parentElement, child);
                 return;
             }
@@ -282,7 +294,7 @@ function rewriteParentElementApi(parentElement: Element & {_hasRewrite?: boolean
         } as any;
 
         const insertBefore = parentElement.insertBefore;
-        parentElement.insertBefore = function(child: Node, beforeChild: Node & {_realElement?: Node}) {
+        parentElement.insertBefore = function(child: Node, beforeChild: ChildNode) {
             if (beforeChild.nodeType === 8 && beforeChild.nodeValue === containerComment) {
                 // it's the wrapper container, we add the real element to it
                 beforeChild._realElement = child;

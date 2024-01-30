@@ -288,11 +288,13 @@ describe('Intact React', () => {
             d.set('show', true);
             await wait();
             expect(container.innerHTML).to.eql('<div>#</div>');
+            expect(container.firstElementChild!.childNodes.length).to.eql(2);
 
             // destroy
             d.set('show', false);
             await wait();
             expect(container.innerHTML).to.eql('<div></div>');
+            expect(container.firstElementChild!.childNodes.length).to.eql(0);
         });
 
         it('update block', async () => {
@@ -566,6 +568,69 @@ describe('Intact React', () => {
             (container.firstElementChild as HTMLElement).click();
             await wait();
             expect(container.innerHTML).to.eql('<div>click 2</div>');
+        });
+
+        it('replace react element as intact children', async () => {
+            const App = () => {
+                const [show, setShow] = useState(true);
+
+                return (
+                    <div onClick={() => setShow(!show)}>
+                        click
+                        <ChildrenIntactComponent>
+                            {show ? <div>a</div> : <span>b</span>}
+                        </ChildrenIntactComponent>
+                    </div>
+                );
+            };
+
+            const root = render(<App />);
+            
+            (container.firstElementChild as HTMLElement).click();
+            await wait();
+            expect(container.innerHTML).to.eql('<div>click<div><span>b</span>#</div></div>');
+
+            (container.firstElementChild as HTMLElement).click();
+            await wait();
+            expect(container.innerHTML).to.eql('<div>click<div><div>a</div>#</div></div>');
+        });
+
+        it('replace react element which returns multipe nodes as intact children', async () => {
+            const A = () => {
+                return <>
+                    <div>a1</div>
+                    <div>a2</div>
+                </>
+            };
+            const B = () => {
+                return <>
+                    <span>b1</span>
+                    <span>b2</span>
+                </>
+            };
+
+            const App = () => {
+                const [show, setShow] = useState(true);
+
+                return (
+                    <div onClick={() => setShow(!show)}>
+                        click
+                        <ChildrenIntactComponent>
+                            {show ? <A /> : <B />}
+                        </ChildrenIntactComponent>
+                    </div>
+                );
+            };
+
+            const root = render(<App />);
+
+            (container.firstElementChild as HTMLElement).click();
+            await wait();
+            expect(container.innerHTML).to.eql('<div>click<div><span>b1</span><span>b2</span>#</div></div>');
+
+            (container.firstElementChild as HTMLElement).click();
+            await wait();
+            expect(container.innerHTML).to.eql('<div>click<div><div>a1</div><div>a2</div>#</div></div>');
         });
 
         describe('Multiple vNodes Component', () => {
