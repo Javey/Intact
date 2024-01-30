@@ -14,7 +14,7 @@ import {unstable_renderSubtreeIntoContainer, render, findDOMNode} from 'react-do
 import type {Component} from './';
 import {FakePromise} from './fakePromise';
 import {noop} from 'intact-shared';
-import {listeningMarker} from './helpers';
+import {listeningMarker, connectFiber} from './helpers';
 
 export interface WrapperProps {
     vnode: ReactNode
@@ -189,6 +189,19 @@ export class Wrapper implements ComponentClass<WrapperProps> {
                 }
                 (dom as any)._mountPoint = container;
                 instance.$lastInput.dom = dom;
+
+                /**
+                 * React find event props until the root fiber return null
+                 * If we have event props outeside the root container, it will be ignored.
+                 * So we must connect the fiber's return prop to outer element
+                 * @UnitTest: outer react element should receive event
+                 */
+                const rootFiber = (container as any)._reactRootContainer._internalRoot.current;
+                Object.defineProperty(rootFiber, 'return', {
+                    get() {
+                        return connectFiber && parentComponent ? (parentComponent as any)._reactInternals : null;
+                    }
+                });
 
                 // console.log(rootContainer);
                 // console.dir(container);

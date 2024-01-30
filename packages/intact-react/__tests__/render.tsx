@@ -163,6 +163,24 @@ describe('Intact React', () => {
             expect(container.innerHTML).to.eql('<div><div>a: 1 b: </div>#<div>a: 2 b: </div>#</div>')
         });
 
+        it('outer react element should receive event', () => {
+            const click = sinon.spy((event: Event) => {
+                console.log('Click in React.', event);
+            });
+
+            render(
+                <div onClick={click}>
+                    <ChildrenIntactComponent>
+                        <span onClick={click}>click</span>
+                    </ChildrenIntactComponent>
+                </div>
+            );
+
+            const trigger = container.querySelector('span') as HTMLSpanElement;
+            trigger.click();
+            expect(click.callCount).to.eql(2);
+        });
+
         describe('Portal', () => {
             class Dialog extends Component {
                 static template = `const Portal = this.Portal;

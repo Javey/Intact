@@ -43,6 +43,7 @@ const bind = Function.prototype.bind;
 // excerpt from react definition
 const IS_EVENT_HANDLE_NON_MANAGED_NODE = 1;
 const IS_NON_DELEGATED = 2;
+export let connectFiber = false;
 Function.prototype.bind = function(...args: any[]) {
     const [obj, domEventName, eventSystemFlags, targetContainer, nativeEvent] = args;
     if (obj === null && isString(domEventName) && isNumber(eventSystemFlags) && targetContainer instanceof Element) {
@@ -75,12 +76,14 @@ Function.prototype.bind = function(...args: any[]) {
                 if (commentRoot) {
                     containerInfo = commentRoot.stateNode.containerInfo;
                     commentRoot.stateNode.containerInfo = targetContainer;
+                    connectFiber = true;
                 }
 
                 const ret = _fn(name, eventSystemFlags, targetContainer, nativeEvent);
 
                 if (commentRoot) {
                     commentRoot.stateNode.containerInfo = containerInfo; 
+                    connectFiber = false;
                 }
 
                 return ret;
