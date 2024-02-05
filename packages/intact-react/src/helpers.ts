@@ -1,7 +1,7 @@
 import {isString, isNumber, isObject} from 'intact-shared';
 import {containerComment} from './wrapper';
 import {createElement} from 'react';
-import {render} from 'react-dom';
+import {render, unstable_batchedUpdates} from 'react-dom';
 
 type Fiber = any;
 
@@ -30,11 +30,14 @@ export let listeningMarker: string;
 export function preparePortalMount(dom: HTMLElement) {
     if (dom.parentElement !== document.body) return;
 
-    const container = document.createComment(containerComment) as unknown as HTMLElement;
+    const container = document.createComment(containerComment) as unknown as HTMLElement ;
     dom.appendChild(container);
     (dom as any)[listeningMarker] = null;
     render(createElement('template'), container, function(this: HTMLElement) {
-        // dom.removeChild(this);
+        // maybe we have not rewrite parent element api yet 
+        if (!(container as any)._realElement) {
+            dom.removeChild(this);
+        }
         dom.removeChild(container);
     });
 }
@@ -72,19 +75,23 @@ Function.prototype.bind = function(...args: any[]) {
             const fn = (name: string, eventSystemFlags: number, targetContainer: HTMLElement, nativeEvent: Event) => {
                 const targetInst = getClosestInstanceFromNode(nativeEvent.target);
                 const commentRoot = getCommentRoot(targetInst);
-                let containerInfo: any;
-                if (commentRoot) {
-                    containerInfo = commentRoot.stateNode.containerInfo;
-                    commentRoot.stateNode.containerInfo = targetContainer;
-                    connectFiber = true;
-                }
+                
+                let ret;
+                unstable_batchedUpdates(() => {
+                    let containerInfo: any;
+                    if (commentRoot) {
+                        containerInfo = commentRoot.stateNode.containerInfo;
+                        commentRoot.stateNode.containerInfo = targetContainer;
+                        connectFiber = true;
+                    }
 
-                const ret = _fn(name, eventSystemFlags, targetContainer, nativeEvent);
+                    ret = _fn(name, eventSystemFlags, targetContainer, nativeEvent);
 
-                if (commentRoot) {
-                    commentRoot.stateNode.containerInfo = containerInfo; 
-                    connectFiber = false;
-                }
+                    if (commentRoot) {
+                        commentRoot.stateNode.containerInfo = containerInfo; 
+                        connectFiber = false;
+                    }
+                });
 
                 return ret;
             };

@@ -199,6 +199,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
                 const rootFiber = (container as any)._reactRootContainer._internalRoot.current;
                 Object.defineProperty(rootFiber, 'return', {
                     get() {
+                        // if (connectFiber) debugger;
                         return connectFiber && parentComponent ? (parentComponent as any)._reactInternals : null;
                     }
                 });

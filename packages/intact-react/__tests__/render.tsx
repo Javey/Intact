@@ -181,11 +181,36 @@ describe('Intact React', () => {
             expect(click.callCount).to.eql(2);
         });
 
+        it('bind onMouseLeave event on react element rendered in intact component and update state', () => {
+            const App = function() {
+                const [count, setCount] = useState(0);
+
+                return (
+                    <div onMouseEnter={() => setCount(count + 1)}>
+                        <ChildrenIntactComponent>
+                            <div onMouseLeave={() => setCount(count + 1)} className="trigger">{count}</div>
+                        </ChildrenIntactComponent>
+                    </div>
+                );
+            };
+
+            render(<App />);
+
+            const dom = container.querySelector('.trigger') as HTMLDivElement;
+            dispatchEvent(dom, 'mouseover');
+            dispatchEvent(dom, 'mouseout');
+            expect(container.innerHTML).to.eql('<div><div><div class="trigger">2</div>#</div></div>');
+        });
+
         describe('Portal', () => {
-            class Dialog extends Component {
+            class Dialog extends Component<{show?: boolean}> {
                 static template = `const Portal = this.Portal;
-                    <Portal><div class="k-dialog">{this.get('children')}</div></Portal>
+                    <Portal><div class="k-dialog">{this.get('show') ? this.get('children') : null}</div></Portal>
                 `
+                static defaults() {
+                    return { show: true };
+                }
+
                 private Portal = Portal;
             }
 
@@ -336,6 +361,11 @@ describe('Intact React', () => {
                 render(<App />);
 
                 expect(unmounted.callCount).to.eql(1);
+            });
+
+            it('should remove prepared element if we do not render any react element', () => {
+                render(<Dialog />);
+                expect(container.nextElementSibling!.innerHTML).to.eql('');
             });
         });
 
