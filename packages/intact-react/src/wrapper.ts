@@ -268,7 +268,7 @@ function rewriteParentElementApi(parentElement: Element & {_hasRewrite?: boolean
                 return;
             }
             const mountPoint = child._mountPoint;
-            if (directly || !mountPoint || mountPoint._isUpdate) {
+            if (directly || !mountPoint || mountPoint._isUpdate !== false /* maybe react update itself */) {
                 removeChild.call(parentElement, child);
                 return;
             }

@@ -122,5 +122,23 @@ describe('Intact React', () => {
             await wait();
             expect(wrapper.innerHTML).to.eql(`<div>children</div>#`);
         });
+
+        it('should unmount react element removed by react itself', async () => {
+            function Demo() {
+                const [show, setShow] = useState(true);
+                useEffect(() => {
+                    setShow(false);
+                }, []);
+                if (show) {
+                    return <span>show</span>
+                }
+                return <SimpleIntactComponent />
+            }
+
+            render(<ChildrenIntactComponent><Demo /></ChildrenIntactComponent>);
+
+            await wait();
+            expect(container.innerHTML).to.eql(`<div><div>Intact Component</div>#</div>`)
+        });
     });
 });
