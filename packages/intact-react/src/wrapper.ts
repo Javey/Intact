@@ -14,7 +14,7 @@ import {unstable_renderSubtreeIntoContainer, render, findDOMNode} from 'react-do
 import type {Component} from './';
 import {FakePromise} from './fakePromise';
 import {noop} from 'intact-shared';
-import {listeningMarker, connectFiber} from './helpers';
+import {listeningMarker, connectFiber, getReactInternals} from './helpers';
 
 export interface WrapperProps {
     vnode: ReactNode
@@ -200,7 +200,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
                 Object.defineProperty(rootFiber, 'return', {
                     get() {
                         // if (connectFiber) debugger;
-                        return connectFiber && parentComponent ? (parentComponent as any)._reactInternals : null;
+                        return connectFiber && parentComponent ? getReactInternals(parentComponent) : null;
                     }
                 });
 
@@ -246,7 +246,7 @@ function getParent(instance: Wrapper): Component | null {
     let $senior = instance.$senior as Component;
 
     do {
-        if (($senior as any)._reactInternals) {
+        if (getReactInternals($senior)) {
             return $senior;
         }
     } while ($senior = $senior.$senior as Component);
@@ -317,7 +317,7 @@ function rewriteParentElementApi(parentElement: Element & {_hasRewrite?: boolean
         } as any;
 
         // let react don't add listeners to the root container
-        if (preventListener) {
+        if (preventListener && listeningMarker /* react 16 does not have it */) {
             (parentElement as any)[listeningMarker] = true;
         }
         parentElement._hasRewrite = true;

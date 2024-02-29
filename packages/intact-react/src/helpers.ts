@@ -1,9 +1,11 @@
-import {isString, isNumber, isObject} from 'intact-shared';
+import {isString, isNumber, isObject, noop} from 'intact-shared';
 import {containerComment} from './wrapper';
-import {createElement} from 'react';
+import {createElement, version} from 'react';
 import {render, unstable_batchedUpdates} from 'react-dom';
 
 type Fiber = any;
+
+const isReact16 = /^16\./.test(version);
 
 let internalInstanceKey: string;
 let internalPropsKey: string;
@@ -46,59 +48,97 @@ const bind = Function.prototype.bind;
 // excerpt from react definition
 const IS_EVENT_HANDLE_NON_MANAGED_NODE = 1;
 const IS_NON_DELEGATED = 2;
+const PLUGIN_EVENT_SYSTEM = 1; // react16
 export let connectFiber = false;
-Function.prototype.bind = function(...args: any[]) {
-    const [obj, domEventName, eventSystemFlags, targetContainer, nativeEvent] = args;
-    if (obj === null && isString(domEventName) && isNumber(eventSystemFlags) && targetContainer instanceof Element) {
-        let isReactListening = false;
-        if (!listeningMarker) {
-            const keys = Object.keys(targetContainer);
-            const key = keys.find(key => key.startsWith('_reactListening'));
-            if (key) {
-                listeningMarker = key;
-                isReactListening = true;
+if (!isReact16) {
+    Function.prototype.bind = function(...args: any[]) {
+        const [obj, domEventName, eventSystemFlags, targetContainer, nativeEvent] = args;
+        if (obj === null && isString(domEventName) && isNumber(eventSystemFlags) && targetContainer instanceof Element) {
+            let isReactListening = false;
+            if (!listeningMarker) {
+                const keys = Object.keys(targetContainer);
+                const key = keys.find(key => key.startsWith('_reactListening'));
+                if (key) {
+                    listeningMarker = key;
+                    isReactListening = true;
+                } else {
+                    isReactListening = false;
+                }
             } else {
-                isReactListening = false;
+                isReactListening = (targetContainer as any)[listeningMarker] && nativeEvent instanceof Event;
             }
-        } else {
-            isReactListening = (targetContainer as any)[listeningMarker] && nativeEvent instanceof Event;
-        }
 
-        if (isReactListening && (eventSystemFlags & IS_EVENT_HANDLE_NON_MANAGED_NODE) === 0 && (eventSystemFlags & IS_NON_DELEGATED) === 0) {
-            /**
-             * Because we only add listeners to the react root container, the comment root container in Wrapper will ignore doing this.
-             * But React will check the container (isMatchingRootContainer). it will always return false since the comment parentNode is not
-             * the targetContainer. Therefore, we fake the parentNode by returning the targetContainer to skip the check in React.
-             * Eventually we restore the value after calling the function.
-             */
+            if (isReactListening && (eventSystemFlags & IS_EVENT_HANDLE_NON_MANAGED_NODE) === 0 && (eventSystemFlags & IS_NON_DELEGATED) === 0) {
+                /**
+                 * Because we only add listeners to the react root container, the comment root container in Wrapper will ignore doing this.
+                 * But React will check the container (isMatchingRootContainer). it will always return false since the comment parentNode is not
+                 * the targetContainer. Therefore, we fake the parentNode by returning the targetContainer to skip the check in React.
+                 * Eventually we restore the value after calling the function.
+                 */
+                const _fn = this;
+                const fn = (name: string, eventSystemFlags: number, targetContainer: HTMLElement, nativeEvent: Event) => {
+                    const targetInst = getClosestInstanceFromNode(nativeEvent.target);
+                    const commentRoot = getCommentRoot(targetInst);
+                    
+                    let ret;
+                    unstable_batchedUpdates(() => {
+                        let containerInfo: any;
+                        if (commentRoot) {
+                            containerInfo = commentRoot.stateNode.containerInfo;
+                            commentRoot.stateNode.containerInfo = targetContainer;
+                            connectFiber = true;
+                        }
+
+                        ret = _fn(name, eventSystemFlags, targetContainer, nativeEvent);
+
+                        if (commentRoot) {
+                            commentRoot.stateNode.containerInfo = containerInfo; 
+                            connectFiber = false;
+                        }
+                    });
+
+                    return ret;
+                };
+                return bind.call(fn, null, domEventName, eventSystemFlags, targetContainer, nativeEvent);
+            }
+        }
+        return bind.call(this, ...(args as [any]));
+    }
+} else {
+    Function.prototype.bind = function(...args: any[]) {
+        const [obj, domEventName, eventSystemFlags, targetContainer, nativeEvent] = args;
+        if (
+            obj === null &&
+            isString(domEventName) &&
+            eventSystemFlags === PLUGIN_EVENT_SYSTEM &&
+            targetContainer === document &&
+            nativeEvent instanceof Event
+        ) {
             const _fn = this;
             const fn = (name: string, eventSystemFlags: number, targetContainer: HTMLElement, nativeEvent: Event) => {
-                const targetInst = getClosestInstanceFromNode(nativeEvent.target);
-                const commentRoot = getCommentRoot(targetInst);
-                
                 let ret;
                 unstable_batchedUpdates(() => {
-                    let containerInfo: any;
-                    if (commentRoot) {
-                        containerInfo = commentRoot.stateNode.containerInfo;
-                        commentRoot.stateNode.containerInfo = targetContainer;
-                        connectFiber = true;
-                    }
-
+                    connectFiber = true;
                     ret = _fn(name, eventSystemFlags, targetContainer, nativeEvent);
-
-                    if (commentRoot) {
-                        commentRoot.stateNode.containerInfo = containerInfo; 
-                        connectFiber = false;
-                    }
+                    connectFiber = false;
                 });
 
                 return ret;
             };
             return bind.call(fn, null, domEventName, eventSystemFlags, targetContainer, nativeEvent);
         }
+        return bind.call(this, ...(args as [any]));
     }
-    return bind.call(this, ...(args as [any]));
+
+    /**
+     * In React 16, we must let react addEventListener to document firstly.
+     * We onl support click here
+     */
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    render(createElement('div', {onClick: noop}, 'test'), root, () => {
+        document.body.removeChild(root);
+    });
 }
 
 function getClosestInstanceFromNode(targetNode: any) {
@@ -139,4 +179,8 @@ function getCommentRoot(targetInst: any) {
 
         node = node.return;
     }
+}
+
+export function getReactInternals(component: any) {
+    return component._reactInternals || component._reactInternalFiber;
 }

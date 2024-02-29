@@ -32,7 +32,7 @@ import {
     ReactElement,
 } from 'react';
 import {normalizeProps, normalizeChildren} from './normalize';
-import {precacheFiberNode, updateFiberProps, preparePortalMount} from './helpers';
+import {precacheFiberNode, updateFiberProps, preparePortalMount, getReactInternals} from './helpers';
 import {functionalWrapper} from './functionalWrapper';
 import {FakePromise, FakePromises} from './fakePromise';
 import {Context, containerComment} from './wrapper';
@@ -168,7 +168,7 @@ export class Component<
         // on commit phase, and we cannot get it when we render react element
         // in Wrapper
         const providers = this.$reactProviders = new Map();
-        let returnFiber = (this as any)._reactInternals;
+        let returnFiber = getReactInternals(this);
 
         // let memoizedProps always change to trigger update, see beginWork function in React codes 
         // returnFiber is not extensible

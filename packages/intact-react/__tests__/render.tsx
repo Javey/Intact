@@ -132,6 +132,7 @@ describe('Intact React', () => {
             const click1 = sinon.spy((event: Event) => {
                 console.log('Click in React.', event);
                 event.stopPropagation();
+                (event as any).nativeEvent.stopImmediatePropagation();
             });
             const click2 = sinon.spy(() => {
                 console.log('Click in Intact.');
