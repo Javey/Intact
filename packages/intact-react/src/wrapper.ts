@@ -1,6 +1,5 @@
 import {
     ComponentClass,
-    createVNode,
     VNode,
     VNodeComponentClass,
     Props,
@@ -8,6 +7,8 @@ import {
     IntactDom,
     TransitionHooks,
     findDomFromVNode,
+    Types,
+    createCommentVNode,
 } from 'intact';
 import {ReactNode, ReactElement, Component as ReactComponent, createContext, createElement, cloneElement} from 'react';
 import {unstable_renderSubtreeIntoContainer, render, findDOMNode} from 'react-dom';
@@ -47,7 +48,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         public $mountedQueue: Function[],
         public $senior: ComponentClass | null,
     ) { 
-        const fakeInput = this.$lastInput = createVNode('div');
+        this.$lastInput = createCommentVNode('fake')
         // fakeInput.transition = $vNode.transition;
         // fakeInput.transition = {
             // // only need leave hook to prevent Intact from removing the real dom,
@@ -87,6 +88,8 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         // and intact need the dom to insertBefore other elements
         // @unit test: insert react array elements before react element in Intact component. ksc-fe/kpc#869
         this.$lastInput.dom = container;
+        // enable intact to replace this component
+        this.$lastInput.type |= Types.InUse;
 
         this.render(vNode, parentDom, parentComponent);
     }

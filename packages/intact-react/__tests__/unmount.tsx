@@ -140,5 +140,31 @@ describe('Intact React', () => {
             await wait();
             expect(container.innerHTML).to.eql(`<div><div>Intact Component</div>#</div>`)
         });
+
+        it('should remove react element replaced by intact component', async () => {
+            class Demo extends Component {
+                static template = `
+                    const { SimpleIntactComponent } = this;
+                    const { children, isEditing } = this.get();
+                    <div>
+                        <SimpleIntactComponent v-if={isEditing} />
+                        <template v-else>{children}</template>
+                    </div>
+                `;
+
+                SimpleIntactComponent = SimpleIntactComponent;
+
+                edit() {
+                    this.set<boolean>('isEditing', true);
+                }
+            }
+
+            let demo: Demo;
+            render(<Demo ref={(i: Demo) => demo = i}><a>link</a></Demo>);
+
+            demo!.edit();
+            await wait();
+            expect(container.innerHTML).to.eql(`<div><div>Intact Component</div></div>`);
+        });
     });
 });
