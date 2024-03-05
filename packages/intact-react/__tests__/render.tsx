@@ -150,6 +150,63 @@ describe('Intact React', () => {
             expect(click2.callCount).to.eql(0);
         });
 
+        it('should stop propagation when bind event to intact component', () => {
+            class Test extends Component<{}, { click: [Event] }> {
+                static template = `<div ev-click={this.click.bind(this)}>{this.get('children')}</div>`;
+
+                click(e: Event) {
+                    this.trigger('click', e);
+                }
+            }
+
+            const outer = sinon.spy(() => {
+                console.log('click outer');
+            });
+            const inner = sinon.spy((e: Event) => {
+                e.stopPropagation();
+                console.log('click inner')
+            });
+            render(
+                <Test onClick={outer}>
+                    <Test onClick={inner}>
+                        click
+                    </Test>
+                </Test>
+            );
+
+
+            (container.firstElementChild!.firstElementChild as HTMLElement).click();
+            expect(inner.callCount).to.eql(1);
+            expect(outer.callCount).to.eql(0);
+        });
+
+        it('should not affect intact component when parent react element stopPropagation', () => {
+            const outer = sinon.spy((e: Event) => {
+                e.stopPropagation();
+                console.log('click outer');
+            });
+            const inner = sinon.spy((e: Event) => {
+                console.log('click inner')
+            });
+
+            class Test extends Component<{}, { click: [Event] }> {
+                static template = `<div ev-click={this.click.bind(this)}>{this.get('children')}</div>`;
+
+                click(e: Event) {
+                    inner();
+                }
+            }
+
+            render(
+                <div onClick={outer}>
+                    <Test>
+                        click
+                    </Test>
+                </div>
+            );
+
+        });
+
         it('render React component that return intact component', () => {
             const Test = (props: { a: string }) => {
                 return <PropsIntactComponent a={props.a} />

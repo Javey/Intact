@@ -30,7 +30,13 @@ export function watch<P extends {}, K extends keyof Props<P, Component>> (
             // callback(newValue, oldValue);
         // });
         // @ts-ignore
-        instance!.on(`$change:${key}` as `$change:${string & K}`, callback);
+        instance!.on(`$change:${key}` as `$change:${string & K}`, (newValue, oldValue) => {
+            /**
+             * maybe the newValue has been changed, see intact-react unit test: update in updating
+             */
+            newValue = instance!.get(key);
+            callback(newValue, oldValue);
+        });
         if (!options || !options.inited) {
             // @ts-ignore
             instance!.on(`$receive:${key}` as `$receive:${string & K}`, callback);
@@ -44,7 +50,10 @@ export function watch<P extends {}, K extends keyof Props<P, Component>> (
         }
     } else {
         // @ts-ignore
-        instance!.on(`$changed:${key}` as `$changed:${string & K}`, callback);
+        instance!.on(`$changed:${key}` as `$changed:${string & K}`, (newValue, oldValue) => {
+            newValue = instance!.get(key);
+            callback(newValue, oldValue);
+        });
         if (!options.inited) {
             // @ts-ignore
             instance!.on(`$receive:${key}` as `$receive:${string & K}`, (newValue, oldValue, init) => {

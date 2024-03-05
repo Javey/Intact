@@ -141,13 +141,14 @@ export function getComponentName(tag: ComponentConstructor | ComponentFunction) 
     return tag.name || tag.displayName; // || tag.constructor.name || (tag.toString().match(/^function\s*([^\s(]+)/) || [])[1];
 }
 
-export function callAll(mountedQueue: Function[] & {i?: number}) {
+export function callAll(mountedQueue: Function[] & {i?: number, done?: boolean}) {
     // add a mountedQueue.i property, see mountRef function
     for (let i = mountedQueue.i = 0; i < mountedQueue.length; i++) {
         mountedQueue.i++;
         mountedQueue[i]();
     }
     if (process.env.NODE_ENV !== 'production') {
+        mountedQueue.done = true;
         Object.freeze(mountedQueue);
     }
 }

@@ -549,6 +549,13 @@ describe('Intact React', () => {
                 }
             }
 
+            // const Test = (props: any) => {
+                // function onClick() {
+                    // props.onChangeValue(1);
+                // }
+                // return <div onClick={onClick}>click { props.value }</div>
+            // }
+
             const App = () => {
                 const [value, setValue] = useState({value: 0});
 

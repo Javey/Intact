@@ -85,14 +85,19 @@ export function normalizeProps<P>(props: P, events: Record<string, boolean> | un
         if (key === 'children') {
             normalizedProps[key] = normalizeChildren(value) as unknown as P[typeof key];
         } else if (tmp = getEventName(key, events)) {
-            // We have to call react event callback asynchronously, because react will update
-            // view immediately when one native event happend.
-            // @unit test: update in updating
-            // @issue: https://github.com/ksc-fe/kpc/issues/894
+            /**
+             * We have to call react event callback asynchronously, because react will update
+             * view immediately when one native event happend.
+             * @unit test: update in updating
+             * @issue: https://github.com/ksc-fe/kpc/issues/894
+             *
+             * @Modify: nextTick will affect event stopPropagation
+             * @issue: #973
+             */
             normalizedProps[tmp as keyof P] = ((...args: any[]) => {
-                nextTick(() => {
+                // nextTick(() => {
                     (value as unknown as (...args: any[]) => void)(...args);
-                });
+                // });
             }) as unknown as P[keyof P];
         } else if (key.startsWith('slot')) {
             if (!blocks) blocks = (normalizedProps as any).$blocks = {};
