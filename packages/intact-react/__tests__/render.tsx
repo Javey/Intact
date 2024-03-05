@@ -181,6 +181,7 @@ describe('Intact React', () => {
         });
 
         it('should not affect intact component when parent react element stopPropagation', () => {
+            // TODO
             const outer = sinon.spy((e: Event) => {
                 e.stopPropagation();
                 console.log('click outer');
@@ -189,7 +190,7 @@ describe('Intact React', () => {
                 console.log('click inner')
             });
 
-            class Test extends Component<{}, { click: [Event] }> {
+            class Test extends Component {
                 static template = `<div ev-click={this.click.bind(this)}>{this.get('children')}</div>`;
 
                 click(e: Event) {
@@ -204,7 +205,6 @@ describe('Intact React', () => {
                     </Test>
                 </div>
             );
-
         });
 
         it('render React component that return intact component', () => {
