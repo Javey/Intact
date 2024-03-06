@@ -303,6 +303,15 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
         } else {
             const popInstance = pushInstance(this);
             super.$update(lastVNode, nextVNode, parentDom, anchor, mountedQueue, force);
+            if (force) {
+                let senior: Component<any, any, any> | null = this;
+                while (senior = senior.$senior as Component) {
+                    if (senior.$isVue) {
+                        callInsertQueue(senior.$vnode);
+                        break;
+                    }
+                }
+            }
             popInstance();
         }
     }
@@ -319,14 +328,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
 
     private _$update() {
         this._update(this._render(), false);
-        const data = this.$vnode.data;
-        const pendingInsert = data.queue;
-        if (pendingInsert) {
-            pendingInsert.forEach((vnode: VueVNode) => {
-                vnode.data!.hook!.insert(vnode);
-            });
-            data.queue = null;
-        }
+        callInsertQueue(this.$vnode);
     }
 }
 
@@ -393,4 +395,15 @@ function getIntactParent(parent: Vue | undefined) {
     }
 
     return null;
+}
+
+function callInsertQueue(vnode: any) {
+    const data = vnode.data;
+    const pendingInsert = data.queue;
+    if (pendingInsert) {
+        pendingInsert.forEach((vnode: VueVNode) => {
+            vnode.data!.hook!.insert(vnode);
+        });
+        data.queue = null;
+    }
 }

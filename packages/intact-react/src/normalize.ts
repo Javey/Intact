@@ -84,7 +84,7 @@ export function normalizeProps<P>(props: P, events: Record<string, boolean> | un
         const value = props[key];
         if (key === 'children') {
             normalizedProps[key] = normalizeChildren(value) as unknown as P[typeof key];
-        } else if (tmp = getEventName(key, events)) {
+        } else if (tmp = getEventName(key, events) as keyof P) {
             /**
              * We have to call react event callback asynchronously, because react will update
              * view immediately when one native event happend.
@@ -94,11 +94,12 @@ export function normalizeProps<P>(props: P, events: Record<string, boolean> | un
              * @Modify: nextTick will affect event stopPropagation
              * @issue: #973
              */
-            normalizedProps[tmp as keyof P] = ((...args: any[]) => {
+            // normalizedProps[tmp as keyof P] = ((...args: any[]) => {
                 // nextTick(() => {
-                    (value as unknown as (...args: any[]) => void)(...args);
+                    // (value as unknown as (...args: any[]) => void)(...args);
                 // });
-            }) as unknown as P[keyof P];
+            // }) as unknown as P[keyof P];
+            normalizedProps[tmp] = value;
         } else if (key.startsWith('slot')) {
             if (!blocks) blocks = (normalizedProps as any).$blocks = {};
             blocks[hyphenate(key.substring(4))] = normalizeBlock(value);

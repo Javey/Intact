@@ -482,6 +482,43 @@ describe('Intact Vue Legacy', () => {
             expect(vm.$el.outerHTML).to.eql('<div><div>1</div><div>2</div></div>');
         });
 
+        it('intact component which has parent intact component updates to remove and recreate intact component wrapped by vue element', async () => {
+            class Test extends Component<{show?: boolean}> {
+                static template = `
+                    <div>
+                        <div ev-click={this.onClick.bind(this)}>click</div>
+                        <div v-if={this.get('show')}>{this.get('children')}</div>
+                    </div>
+                `;
+                static defaults() {
+                    return { show: true }
+                };
+
+                onClick() {
+                    this.set('show', !this.get('show'));
+                }
+            }
+
+            render(`
+                <ChildrenIntactComponent>
+                    <Test>
+                        <div>
+                            <SimpleIntactComponent />
+                            <div>{{ value }}</div>
+                        </div>
+                    </Test>
+                </ChildrenIntactComponent>
+            `, {
+                ChildrenIntactComponent,
+                Test,
+                SimpleIntactComponent,
+            }, { value: 1 });
+
+            vm.value = 2;
+            await nextTick();
+            expect(vm.$el.outerHTML).to.eql(`<div><div><div>click</div><div><div><div>Intact Component</div> <div>2</div></div></div></div></div>`);
+        });
+
         describe('Multiple vNodes Component', () => {
             class Test extends Component {
                 static $doubleVNodes = true;
