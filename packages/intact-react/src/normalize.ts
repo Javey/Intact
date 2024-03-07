@@ -4,6 +4,7 @@ import {isNullOrUndefined, isArray, isStringOrNumber, isInvalid, isFunction, noo
 import {Wrapper} from './wrapper';
 import {cid as functionalCid} from './functionalWrapper';
 import type {Component} from './';
+import { unstable_batchedUpdates } from 'react-dom';
 
 export type VNodeAtom = VNode | null | undefined | string | number;
 
@@ -94,12 +95,14 @@ export function normalizeProps<P>(props: P, events: Record<string, boolean> | un
              * @Modify: nextTick will affect event stopPropagation
              * @issue: #973
              */
-            // normalizedProps[tmp as keyof P] = ((...args: any[]) => {
+            normalizedProps[tmp as keyof P] = ((...args: any[]) => {
                 // nextTick(() => {
-                    // (value as unknown as (...args: any[]) => void)(...args);
+                unstable_batchedUpdates(() => {
+                    (value as unknown as (...args: any[]) => void)(...args);
+                });
                 // });
-            // }) as unknown as P[keyof P];
-            normalizedProps[tmp] = value;
+            }) as unknown as P[keyof P];
+            // normalizedProps[tmp] = value;
         } else if (key.startsWith('slot')) {
             if (!blocks) blocks = (normalizedProps as any).$blocks = {};
             blocks[hyphenate(key.substring(4))] = normalizeBlock(value);

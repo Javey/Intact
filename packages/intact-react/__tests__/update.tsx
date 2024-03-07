@@ -577,6 +577,50 @@ describe('Intact React', () => {
             expect(container.innerHTML).to.eql('<div>click 2</div>');
         });
 
+        it('should batch update in event listener', async () => {
+            const updated = sinon.spy(() => console.log('updated'));
+
+            type Props = { value: number, limit: number };
+            class Test extends Component<Props, { change: [Props] }> {
+                static template = `
+                    const { value, limit } = this.get();
+                    <div ev-click={this.onClick.bind(this)}>click { value } { limit }</div>
+                `;
+
+                static defaults() {
+                    return { value: 1, limit: 10 }
+                }
+
+                onClick() {
+                    const value = { value: 2, limit: 20 };
+                    this.set(value);
+                    this.trigger('change', value);
+                }
+
+                updated() {
+                    updated();
+                }
+            }
+
+            const App = () => {
+                const [value, setValue] = useState(1);
+                const [limit, setLimit] = useState(10);
+
+                function onChange(v: Props) {
+                    setValue(v.value);
+                    setLimit(v.limit);
+                }
+
+                return <Test value={value} limit={limit} onChange={onChange} />
+            }
+
+            render(<App />);
+
+            (container.firstElementChild as HTMLElement).click();
+            await wait();
+            expect(updated.callCount).to.eql(2);
+        });
+
         it('replace react element as intact children', async () => {
             const App = () => {
                 const [show, setShow] = useState(true);
