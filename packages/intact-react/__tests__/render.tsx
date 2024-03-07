@@ -29,6 +29,7 @@ import ReactDOM from 'react-dom';
 import {dispatchEvent} from '../../misstime/__tests__/utils';
 import {Portal} from './portal';
 import {act} from 'react-dom/test-utils';
+import { View } from './view';
 
 describe('Intact React', () => {
     describe('Render', () => {
@@ -181,13 +182,15 @@ describe('Intact React', () => {
         });
 
         it('should not affect intact component when parent react element stopPropagation', () => {
-            // TODO
             const outer = sinon.spy((e: Event) => {
                 e.stopPropagation();
                 console.log('click outer');
             });
             const inner = sinon.spy((e: Event) => {
                 console.log('click inner')
+            });
+            const top = sinon.spy(() => {
+                console.log('click top');
             });
 
             class Test extends Component {
@@ -199,12 +202,19 @@ describe('Intact React', () => {
             }
 
             render(
-                <div onClick={outer}>
-                    <Test>
-                        click
-                    </Test>
-                </div>
+                <View onClick={top} className="a">
+                    <View onClick={outer}>
+                        <Test>
+                            click
+                        </Test>
+                    </View>
+                </View>
             );
+
+            (container.firstElementChild!.firstElementChild!.firstElementChild as HTMLElement).click();
+            expect(inner.callCount).to.eql(1);
+            expect(outer.callCount).to.eql(1);
+            expect(top.callCount).to.eql(0);
         });
 
         it('render React component that return intact component', () => {
