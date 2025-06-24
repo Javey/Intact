@@ -20,7 +20,7 @@ import {
     cloneVNode,
 } from 'vue';
 import type {Component} from './';
-import { noop } from 'intact-shared';
+import { noop, hasDocumentAvailable } from 'intact-shared';
 
 type PatchFn = (
     n1: VueVNode | null, // null means this is a mount
@@ -44,7 +44,7 @@ type UnmountFn = (
 
 // we must use this hack method to get patch function
 let internals: {p: PatchFn, um: UnmountFn} = { p: noop, um: noop };
-if (typeof window !== 'undefined') {
+if (hasDocumentAvailable) {
     createApp({
         render() {
             return h(KeepAlive, null, h(function() {
