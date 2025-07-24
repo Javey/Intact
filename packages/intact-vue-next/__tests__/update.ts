@@ -620,6 +620,54 @@ describe('Intact Vue Next', () => {
             expect(vm.$el.textContent).to.eql('click3');
         });
 
+        it('update in Intact component to add ReactiveEffect and trigger by vue', async () => {
+            class A extends Component<{items: number[], count?: number}> {
+                static template = `<div>
+                    <div>{this.get('count')}</div>
+                    <div>{JSON.stringify(this.get('items'))}</div>
+                    <div>{this.get('children')}</div>
+                </div>`;
+                static defaults() {
+                    return { count: 1 }
+                }
+
+                mounted() {
+                    this.set('count', 2);
+                }
+
+                beforeUpdate() {
+                    console.log('A beforeUpdate');
+                }
+
+                updated() {
+                    console.log('A updated');
+                }
+            } 
+
+            class B extends Component {
+                static template = `<b>{this.get('children')}</b>`;
+
+                beforeUpdate() {
+                    console.log('B beforeUpdate');
+                }
+
+                updated() {
+                    console.log('B updated')
+                }
+            }
+
+            render(`<A :items="items" ref="test"><div><B>b</B></div></A>`, {
+                A, B
+            }, {
+                items: [1]
+            });
+
+            await nextTick();
+            vm.items.push(2);
+            await nextTick();
+            expect(vm.$el.innerHTML).to.eql('<div>2</div><div>[1,2]</div><div><div><b>b</b></div></div>');
+        });
+
         describe('Multiple vNodes Component', () => {
             class Test extends Component {
                 static $doubleVNodes = true;

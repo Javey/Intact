@@ -12,6 +12,7 @@ import {
     isFragment,
     VNode as IntactVNode,
     findDomsFromVNode,
+    nextTick,
 } from 'intact';
 import {
     ComponentOptions,
@@ -294,11 +295,17 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
             // effect.stop();
         }
         if (force) {
-            const effect = this.$effect = new ReactiveEffect(() => {
-                const mountedQueue = this.$mountedQueue = [];
-                fn(mountedQueue);
-                callAll(mountedQueue);
-            });
+            if (this.$effect) this.$effect.stop();
+            const effect = this.$effect = new ReactiveEffect(
+                () => {
+                    const mountedQueue = this.$mountedQueue = [];
+                    fn(mountedQueue);
+                    callAll(mountedQueue);
+                },
+                // we should call run in nextTick when the callback called by vue on changing data
+                // see unit test 'update.ts@update in Intact component to add ReactiveEffect and trigger by vue'
+                () => nextTick(() => effect.run())
+            );
             effect.run();
         } else {
             fn(mountedQueue);
