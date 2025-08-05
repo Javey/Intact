@@ -656,7 +656,7 @@ describe('Intact Vue Next', () => {
                 }
             }
 
-            render(`<A :items="items" ref="test"><div><B>b</B></div></A>`, {
+            render(`<A :items="items"><div><B>b</B></div></A>`, {
                 A, B
             }, {
                 items: [1]

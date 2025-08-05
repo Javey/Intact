@@ -180,7 +180,7 @@ describe('Intact Vue Next', () => {
                 class IntactComponent extends Component {
                     static template = `<div>{this.get('value') ? this.get('children') : null}</div>`;
                 };
-                const mounted = sinon.spy(() => console.log('mount'));
+                const mounted = sinon.spy(() => console.log('mounted'));
                 class IntactChildrenComponent extends Component {
                     static template = `<span>{this.get('children')}</span>`;
 

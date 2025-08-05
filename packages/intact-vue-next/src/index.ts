@@ -171,8 +171,11 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                     setScopeId(element, vnode, vnode.scopeId, (vnode as any).slotScopeIds, vueInstance.parent, true);
                 }
 
-                const mountedQueue = pushMountedQueue(vueInstance.uid);
                 const parentComponent = getIntactParent(vueInstance.parent);
+                let tmp;
+                const mountedQueue = parentComponent && (tmp = parentComponent.$mountedQueue) && !(tmp as any).done ?
+                    tmp :
+                    pushMountedQueue(vueInstance.uid);
                 const isSVG = parentComponent ? parentComponent.$SVG : false;
 
                 const subTree = createVNode(Comment);
@@ -343,7 +346,7 @@ function pushInstance(instance: Component<any, any, any>) {
     }
 };
 
-function getIntactParent(parent: ComponentInternalInstance | null) {
+function getIntactParent(parent: ComponentInternalInstance | null): Component | null {
     if (currentInstance) {
         return currentInstance;
     }
