@@ -115,7 +115,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
     private _isMounted: any;
 
     // When we call forceUpdate, $mountedQueue has inited and don't init it again.
-    private $isForceUpdating!: boolean;
+    private $isForceUpdating: boolean = false;
     // The $senior property conflicts in Intact and Vue, save the real Intact $senior to $seniorComponent.
     private $seniorComponent!: Component<any, any, any> | null;
     private $scopeId!: string | undefined;
@@ -178,7 +178,8 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                                 this.$el.parentElement!,
                                 null,
                                 mountedQueue,
-                                false,
+                                // false,
+                                this.$isForceUpdating,
                                 true,
                             );
 

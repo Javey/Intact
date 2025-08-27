@@ -519,6 +519,37 @@ describe('Intact Vue Legacy', () => {
             expect(vm.$el.outerHTML).to.eql(`<div><div><div>click</div><div><div><div>Intact Component</div> <div>2</div></div></div></div></div>`);
         });
 
+        it('internal state change to trigger update should not trigger receive event', async () => {
+            class Test extends Component<{value: number[], innerValue: number}> {
+                static template = `<div ev-click={this.onClick}>{this.get('value')[0]} {this.get('innerValue')}</div>`,
+
+                static defaults() {
+                    return {
+                        value: [1],
+                        innerValue: 1,
+                    }
+                }
+
+                init() {
+                    this.on('$receive:value', (v) => {
+                        this.set('value', v.slice()); 
+                    });
+                }
+
+                onClick = () => {
+                    this.set('innerValue', this.get('innerValue') + 1);
+                    this.set('value', [this.get('value')[0] + 1])
+                }
+            } 
+
+            render(`<Test v-model="value" />`, { Test }, { value: [1] });
+            vm.$el.click();
+            await nextTick();
+            vm.$el.click();
+            await nextTick();
+            expect(vm.$el.innerHTML).to.eql('3 3');
+        })
+
         describe('Multiple vNodes Component', () => {
             class Test extends Component {
                 static $doubleVNodes = true;
