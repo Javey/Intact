@@ -313,7 +313,7 @@ export abstract class Component<
         callback: (newValue: Props<P, this>[K], oldValue: Props<P, this>[K] | undefined) => void,
         options?: WatchOptions 
     ) {
-        watch(key, callback as ChangeCallback<Props<P, Component>, K>, options, this);
+        watch(key, callback as ChangeCallback<Props<P>, K>, options, this);
     }
 
     // compute<T>(getter: () => T) {

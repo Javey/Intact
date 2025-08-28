@@ -146,6 +146,7 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
             $mountedQueue = pushMountedQueue([]);
             const vNode = normalize(vnode) as VNodeComponentClass<this>;
             const $senior = getIntactParent((props as ComponentOptions<Vue>).parent);
+            // @ts-ignore
             super(vNode.props as P, vNode, $SVG, $mountedQueue, $senior);
 
             this.$isVue = true;

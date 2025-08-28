@@ -8,9 +8,9 @@ export type WatchOptions = {
     presented?: boolean,
 }
 
-export function watch<P extends {}, K extends keyof Props<P, Component>> (
+export function watch<P extends {}, K extends keyof Props<P>> (
     key: K,
-    callback: ChangeCallback<Props<P, Component>, K>,
+    callback: ChangeCallback<Props<P>, K>,
     options?: WatchOptions,
     instance: Component<P> | null = currentInstance 
 ) {
