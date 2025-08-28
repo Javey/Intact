@@ -41,6 +41,13 @@ export function preparePortalMount(dom: HTMLElement) {
             dom.removeChild(this);
         }
         dom.removeChild(container);
+
+        // set react16 unit test
+        if (isReact16) {
+            Object.defineProperty(container, 'parentNode', {
+                value: dom,
+            });
+        }
     });
 }
 
