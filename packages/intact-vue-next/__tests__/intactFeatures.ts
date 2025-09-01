@@ -12,7 +12,8 @@ import {
     nextTick,
 } from './helpers';
 import {createVNode as h, ComponentFunction} from 'intact';
-import {h as v, ComponentPublicInstance, render as vueRender, getCurrentInstance, defineComponent} from 'vue';
+import {h as v, ComponentPublicInstance, render as vueRender, getCurrentInstance, defineComponent, ref} from 'vue';
+import { Portal } from './portal';
 
 describe('Intact Vue Next', () => {
     describe('Intact Features', () => {
@@ -418,6 +419,70 @@ describe('Intact Vue Next', () => {
                 });
 
                 expect(vm.$el.outerHTML).to.eql('<div><div>1</div></div>');
+            });
+
+            it('inject parent that container component has slot with vue element', (done) => {
+                class Dialog extends Component {
+                    static template = `
+                        const { Portal } = this;
+                        <Portal>
+                            <div class="k-dialog">
+                                <div class="k-dialog-body">
+                                    {this.get('children')}
+                                </div>
+                                <div class="k-dialog-footer">
+                                    <b:footer>
+                                        footer
+                                    </b:footer>
+                                </div>
+                            </div>
+                        </Portal>
+                    ` 
+                    private Portal = Portal;
+                }
+
+                class Form extends Component {
+                    static template = `<div>{this.get('children')}</div>`
+                    init() {
+                        provide('form', 1);
+                    }
+                }
+
+                class FormItem extends Component {
+                    static template = `<div>{this.test}</div>`;
+                    private form = inject<number>('form');
+
+                    mounted() {
+                        expect(this.form).to.eql(1);
+                        done();
+                    }
+                }
+
+                const Password = defineComponent({
+                    template: `<FormItem v-if="isShow" />`,
+                    components: { FormItem },
+                    setup() {
+                        const isShow = ref(false);
+                        setTimeout(() => {
+                            isShow.value = true;
+                        });
+
+                        return { isShow };
+                    }
+                });
+
+                render(`
+                    <Dialog>
+                        <Form>
+                            <Password />
+                        </Form>
+                        <template #footer>
+                            <div>custom footer</div>
+                        </template>
+                    </Dialog>
+                `, {
+                    Dialog, Form, Password,
+                });
             });
         });
 

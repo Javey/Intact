@@ -353,10 +353,14 @@ function getIntactParent(parent: ComponentInternalInstance | null): Component | 
     // maybe we mount/update a intact component in Vue component
     // let parent: ComponentInternalInstance | null = instance;
     while (parent) {
-        const instance = (parent as any).setupState.instance;
-        if (instance instanceof Component) {
-            return (parent as any).fakeInstance || instance;
+        const instance = (parent.vnode as any).seniorIntactInstance;
+        if (instance) {
+            return instance;
         }
+        // const instance = (parent as any).setupState.instance;
+        // if (instance instanceof Component) {
+            // return (parent as any).fakeInstance || instance;
+        // }
         parent = parent.parent;
     }
 

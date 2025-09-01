@@ -87,6 +87,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
             parentDom = document.createDocumentFragment() as any; 
         }
         const vnode = getVueVNode(vNode);
+        vnode.seniorIntactInstance = this.$senior;
         patch(null, vnode, parentDom, anchor, getParent(this), null, this.$SVG);
 
         // add dom to the $lastInput for findDomFromVNode
@@ -103,6 +104,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
     ): void {
         const {vnode: lastVnode} = lastVNode.props!;
         const nextVnode = getVueVNode(vNode);
+        nextVnode.seniorIntactInstance = this.$senior;
         patch(lastVnode, nextVnode, parentDom, anchor, getParent(this), null, this.$SVG);
 
         this.$lastInput.dom = nextVnode.el;
@@ -123,7 +125,7 @@ function getParent(instance: Wrapper) {
     do {
         const vueInstance = $senior.vueInstance;
         if (vueInstance) {
-            (vueInstance as any).fakeInstance = senior;
+            // (vueInstance as any).fakeInstance = senior;
             return vueInstance;
         }
     } while ($senior = $senior.$senior as Component);
