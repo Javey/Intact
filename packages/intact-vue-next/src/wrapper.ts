@@ -107,7 +107,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         patch(null, vnode, parentDom, anchor, getParent(this), null, this.$SVG);
 
         // add dom to the $lastInput for findDomFromVNode
-        this.$lastInput.dom = vnode.el;
+        this.$lastInput.dom = vnode.el as IntactDom;
     }
 
     $update(
@@ -122,7 +122,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         const nextVnode = getVueVNode(vNode, this);
         patch(lastVnode, nextVnode, parentDom, anchor, getParent(this), null, this.$SVG);
 
-        this.$lastInput.dom = nextVnode.el;
+        this.$lastInput.dom = nextVnode.el as IntactDom;
     }
 
     $unmount(
