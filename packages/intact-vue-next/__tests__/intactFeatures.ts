@@ -356,7 +356,7 @@ describe('Intact Vue Next', () => {
                             return {show: false}
                         },
                         mounted() {
-                            expect(this.$parent.instance).instanceof(ChildrenIntactComponent);
+                            expect(this.$parent.$parent.instance).instanceof(ChildrenIntactComponent);
                         }
                     },
                 });
@@ -453,6 +453,7 @@ describe('Intact Vue Next', () => {
                     private form = inject<number>('form');
 
                     mounted() {
+                        console.log(this.form);
                         expect(this.form).to.eql(1);
                         done();
                     }
@@ -474,7 +475,9 @@ describe('Intact Vue Next', () => {
                 render(`
                     <Dialog>
                         <Form>
-                            <Password />
+                            <div>
+                                <Password />
+                            </div>
                         </Form>
                         <template #footer>
                             <div>custom footer</div>

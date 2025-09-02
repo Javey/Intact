@@ -18,6 +18,9 @@ import {
     ComponentInternalInstance,
     SuspenseBoundary,
     cloneVNode,
+    defineComponent,
+    provide,
+    createVNode as createVueVNode,
 } from 'vue';
 import type {Component} from './';
 import { noop, hasDocumentAvailable } from 'intact-shared';
@@ -60,6 +63,20 @@ export interface WrapperProps {
     vnode: VueVNode
 }
 
+export const INTACT_PARENT_KEY = '$intactParent' + Math.random();
+
+const Provider = defineComponent({
+    setup(props, { slots }) {
+        provide(INTACT_PARENT_KEY, props.value);
+
+        return () => props.vnode; 
+    },
+    props: {
+        value: { required: true },
+        vnode: { required: true },
+    },
+});
+
 export class Wrapper implements ComponentClass<WrapperProps> {
     public $inited: boolean = true;
     public $lastInput: VNode = createVNode('div');
@@ -86,8 +103,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         } else if (!parentDom) {
             parentDom = document.createDocumentFragment() as any; 
         }
-        const vnode = getVueVNode(vNode);
-        vnode.seniorIntactInstance = this.$senior;
+        const vnode = getVueVNode(vNode, this);
         patch(null, vnode, parentDom, anchor, getParent(this), null, this.$SVG);
 
         // add dom to the $lastInput for findDomFromVNode
@@ -102,9 +118,8 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         // mountedQueue: Function[],
         // force: boolean
     ): void {
-        const {vnode: lastVnode} = lastVNode.props!;
-        const nextVnode = getVueVNode(vNode);
-        nextVnode.seniorIntactInstance = this.$senior;
+        const {providerVnode: lastVnode} = lastVNode.props!;
+        const nextVnode = getVueVNode(vNode, this);
         patch(lastVnode, nextVnode, parentDom, anchor, getParent(this), null, this.$SVG);
 
         this.$lastInput.dom = nextVnode.el;
@@ -114,7 +129,7 @@ export class Wrapper implements ComponentClass<WrapperProps> {
         vNode: VNodeComponentClass,
         nextVNode: VNodeComponentClass | null
     ): void  {
-        unmount(vNode.props!.vnode, getParent(this), null, !!nextVNode);
+        unmount(vNode.props!.providerVnode, getParent(this), null, !!nextVNode);
     }
 }
 
@@ -135,7 +150,7 @@ function getParent(instance: Wrapper) {
     return null
 }
 
-function getVueVNode(vNode: VNode) {
+function getVueVNode(vNode: VNode, instance: Wrapper) {
     const props = vNode.props!;
     let vnode = props.vnode;
     // if we are reusing the vNode, clone it
@@ -147,7 +162,7 @@ function getVueVNode(vNode: VNode) {
     
     let shouldAssign = true;
     for (let key in props) {
-        if (key === 'vnode') continue;
+        if (key === 'vnode' || key === 'providerVnode') continue;
         // clone the vnode at first
         if (!hasCloned) {
             vnode = cloneVNode(vnode);
@@ -177,7 +192,9 @@ function getVueVNode(vNode: VNode) {
         }
     }
 
-    vNode.props = {...props, vnode};
+    const providerVnode = createVueVNode(Provider, { value: instance.$senior, vnode });
+    vNode.props = {...props, vnode, providerVnode};
 
-    return vnode;
+    // return h(Provider, { value: instance.$senior }, vnode);
+    return providerVnode;
 }

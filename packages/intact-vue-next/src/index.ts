@@ -24,11 +24,13 @@ import {
     VNode,
     Fragment,
     ReactiveEffect,
+    inject,
 } from 'vue';
 import {normalize, normalizeChildren} from './normalize';
 import {functionalWrapper} from './functionalWrapper';
 import {isFunction, proxyFragment, proxyFragmentParent, isFragmentDom} from 'intact-shared';
 import {setScopeId}  from './scoped';
+import { INTACT_PARENT_KEY } from './wrapper';
 
 export * from 'intact';
 export {normalizeChildren as normalize};
@@ -171,7 +173,8 @@ export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> 
                     setScopeId(element, vnode, vnode.scopeId, (vnode as any).slotScopeIds, vueInstance.parent, true);
                 }
 
-                const parentComponent = getIntactParent(vueInstance.parent);
+                // const parentComponent = getIntactParent(vueInstance.parent);
+                const parentComponent = inject(INTACT_PARENT_KEY, null) as Component | null;
                 let tmp;
                 const mountedQueue = parentComponent && (tmp = parentComponent.$mountedQueue) && !(tmp as any).done ?
                     tmp :
@@ -346,23 +349,23 @@ function pushInstance(instance: Component<any, any, any>) {
     }
 };
 
-function getIntactParent(parent: ComponentInternalInstance | null): Component | null {
-    if (currentInstance) {
-        return currentInstance;
-    }
-    // maybe we mount/update a intact component in Vue component
-    // let parent: ComponentInternalInstance | null = instance;
-    while (parent) {
-        const instance = (parent.vnode as any).seniorIntactInstance;
-        if (instance) {
-            return instance;
-        }
-        // const instance = (parent as any).setupState.instance;
-        // if (instance instanceof Component) {
-            // return (parent as any).fakeInstance || instance;
+// function getIntactParent(parent: ComponentInternalInstance | null): Component | null | undefined {
+    // if (currentInstance) {
+        // return currentInstance;
+    // }
+    // // maybe we mount/update a intact component in Vue component
+    // // let parent: ComponentInternalInstance | null = instance;
+    // while (parent) {
+        // const instance = (parent.vnode as any).seniorIntactInstance;
+        // if (instance) {
+            // return instance;
         // }
-        parent = parent.parent;
-    }
+        // // const instance = (parent as any).setupState.instance;
+        // // if (instance instanceof Component) {
+            // // return (parent as any).fakeInstance || instance;
+        // // }
+        // parent = parent.parent;
+    // }
 
-    return null;
-}
+    // return null;
+// }

@@ -274,7 +274,7 @@ describe('Intact Vue Next', () => {
 
         it('should silent when we try to treat a default scope slot as children', () => {
             const consoleWarn = console.warn;
-            const warn = console.warn = sinon.spy();
+            const warn = console.warn = sinon.spy((...args) => console.log(args));
 
             render(`<C><template v-slot="item">{{ item.a }}</template></C>`, {
                 C: createIntactComponent(`<div><b:default params={{a: 1}} /></div>`)
@@ -335,7 +335,7 @@ describe('Intact Vue Next', () => {
             expect(vm.$el.outerHTML).to.eql('<div><div>1</div><div>2</div><div>3</div></div>');
         });
 
-        it('render normalize vNode with propperty', () => {
+        it('render normalize vNode with property', () => {
             const consoleWarn = console.warn;
             const warn = console.warn = sinon.spy((...args: any[]) => consoleWarn.call(console, ...args));
 

@@ -228,7 +228,7 @@ describe('Intact Vue Next', () => {
                 V: {
                     template: `<div>test</div>`,
                     beforeCreate() {
-                        expect(this.$parent.$parent === vm).to.be.true;
+                        expect(this.$parent.$parent.$parent === vm).to.be.true;
                         done();
                     }
                 }
