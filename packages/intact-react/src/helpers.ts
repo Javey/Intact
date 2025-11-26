@@ -10,13 +10,17 @@ const isReact16 = /^16\./.test(version);
 let internalInstanceKey: string;
 let internalPropsKey: string;
 
-export function precacheFiberNode(node: Element, placeholder: Element): Fiber {
+const div = document.createElement('div');
+render(createElement('div'), div);
+initInternalKeys(div.firstElementChild as Element);
+function initInternalKeys(elem: Element) {
     if (!internalInstanceKey) {
-        const keys = Object.keys(placeholder);
+        const keys = Object.keys(elem);
         internalInstanceKey = keys[0]; 
         internalPropsKey = keys[1];
     }
-
+}
+export function precacheFiberNode(node: Element, placeholder: Element): Fiber {
     const fiber = (placeholder as any)[internalInstanceKey];
     (node as any)[internalInstanceKey] = fiber;
 
@@ -57,6 +61,7 @@ const IS_EVENT_HANDLE_NON_MANAGED_NODE = 1;
 const IS_NON_DELEGATED = 2;
 const PLUGIN_EVENT_SYSTEM = 1; // react16
 export let connectFiber = false;
+let dispatchEvent: Function;
 if (!isReact16) {
     Function.prototype.bind = function(...args: any[]) {
         const [obj, domEventName, eventSystemFlags, targetContainer, nativeEvent] = args;
@@ -83,12 +88,16 @@ if (!isReact16) {
                  * Eventually we restore the value after calling the function.
                  */
                 const _fn = this;
+                if (!dispatchEvent) {
+                    dispatchEvent = _fn;
+                }
                 const fn = (name: string, eventSystemFlags: number, targetContainer: HTMLElement, nativeEvent: Event) => {
                     const targetInst = getClosestInstanceFromNode(nativeEvent.target);
                     const commentRoot = getCommentRoot(targetInst);
                     
                     let ret;
-                    unstable_batchedUpdates(() => {
+
+                    const invoke = () => {
                         let containerInfo: any;
                         if (commentRoot) {
                             containerInfo = commentRoot.stateNode.containerInfo;
@@ -102,7 +111,30 @@ if (!isReact16) {
                             commentRoot.stateNode.containerInfo = containerInfo; 
                             connectFiber = false;
                         }
+                    };
+
+                    /**
+                     * React doesn't export batchedEventUpdates, but it calls this function internally
+                     * when dispatching events. To simulate this process, we inject an object. When 
+                     * React accesses the properties of the stateNode, it will trigger our function (the invoke method). 
+                     */
+                    const stateNode = {containerInfo: {}};
+                    Object.defineProperty(stateNode, internalPropsKey, {
+                        get() {
+                            invoke();
+                        }
                     });
+                    const target = {
+                        [internalInstanceKey]: {
+                            tag: 5,
+                            stateNode, 
+                            return: {
+                                tag: 3,
+                                return: null,
+                            }, 
+                        },
+                    };
+                    dispatchEvent('click', 2, null, {target});
 
                     return ret;
                 };
@@ -139,7 +171,7 @@ if (!isReact16) {
 
     /**
      * In React 16, we must let react addEventListener to document firstly.
-     * We onl support click here
+     * We only support click here
      */
     const root = document.createElement('div');
     document.body.appendChild(root);

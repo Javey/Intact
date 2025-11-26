@@ -1,4 +1,4 @@
-import { Component, createVNode as h, TypeDefs } from '../';
+import { Component, createVNode as h, TypeDefs } from '../src';
 
 export interface ViewProps {
     tag?: string,

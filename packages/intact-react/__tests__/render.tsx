@@ -270,6 +270,41 @@ describe('Intact React', () => {
             expect(container.innerHTML).to.eql('<div><div><div class="trigger">2</div>#</div></div>');
         });
 
+        it('render controlled react input', () => {
+            const Input = function(props: any) {
+                return <input value={props.value} onChange={props.onChange} />
+            }
+
+            const App = function() {
+                const [value, setValue] = useState('a');
+
+                return <div>
+                    <Input value={value} onChange={(e: any) => setValue(e.target.value)} />
+                    {value}
+                </div>
+            }
+
+            render(<App />);
+
+            const input = container.querySelector('input') as HTMLInputElement;
+            input.focus();
+            input.setSelectionRange(0, 0);
+            input.value = 'ba'; // will call react tracker setValue
+            // (input as any)._valueTracker.getValue = () => 'a';
+            // let value = 'a';
+            // Object.defineProperty(input, 'value', {
+                // get() {
+                    // return value;
+                // },
+                // set(v) {
+                    // value = v;
+                    // console.log('set', v);
+                // }
+            // })
+            // FIXME: cannot simulate
+            dispatchEvent(input, 'input', { data: 'b' });
+        });
+
         describe('Portal', () => {
             class Dialog extends Component<{show?: boolean}> {
                 static template = `const Portal = this.Portal;
