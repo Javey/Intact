@@ -163,7 +163,7 @@ export interface ComponentConstructor<T extends ComponentClass = ComponentClass>
     typeDefs?: TypeDefs<T extends ComponentClass<infer P> ? P : {}>
 }
 
-export interface ComponentClass<P = any> {
+export interface ComponentClass<P extends {} = {}> {
     $props: Props<P, ComponentClass<P>>;
 
     $inited: boolean;
@@ -179,7 +179,7 @@ export interface ComponentClass<P = any> {
     $unmount(vNode: VNodeComponentClass, nextVNode: VNodeComponentClass | null): void;
 }
 
-export interface ComponentFunction<P = any, R extends Element | ComponentClass = Element | ComponentClass> {
+export interface ComponentFunction<P extends {} = {}, R extends Element | ComponentClass = Element | ComponentClass> {
     (props: Props<P, R>): Children;
     displayName?: string
     typeDefs?: TypeDefs<P>

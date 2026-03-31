@@ -85,9 +85,9 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export class Component<
-    P = {},
-    E = {},
-    B = {},
+    P extends {} = {},
+    E extends {} = {},
+    B extends {} = {},
 > extends IntactComponent<P, E, B> implements ReactComponent {
     static $cid = 'IntactReact';
     static normalize = normalizeChildren;
