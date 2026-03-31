@@ -45,11 +45,15 @@ type SetupState = {
 
 type VNodeComponentClassMaybeWithVueInstance = 
     & VNodeComponentClass<ComponentClass>
-    & {_vueInstance?: ComponentInternalInstance}
+    & {_vueInstance?: ComponentInternalInstance};
+
+type IntactVueOnEventKeys<E> = keyof {
+    [K in keyof E as `on${Capitalize<string & K>}`]: unknown
+};
 
 type IntactVueNextProps<P, E> = 
     & Readonly<P>
-    & Readonly<Omit<HTMLAttributes, keyof P>>
+    & Readonly<Omit<HTMLAttributes, keyof P | IntactVueOnEventKeys<E>>>
     & Readonly<{
         [K in keyof P as `onChange:${string & K}`]?:
             (oldValue: P[K], newValue: P[K]) => void
