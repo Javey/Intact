@@ -126,10 +126,10 @@ export function createVNode<T extends VNodeTag>(
             throwError(`createVNode expects to get a string or function, but get a type: "${JSON.stringify(tag)}"`);
     }
 
-    let key: Key | undefined;
-    let ref: VNodeRef<T> | undefined;
+    let key: Key | null = null;
+    let ref: VNodeRef<T> | null = null;
     let newProps: VNodeProps<T> | null = null;
-    let className: string | undefined;
+    let className: string | null = null;
 
     if (!isNullOrUndefined(props)) {
         for (const prop in props) {
@@ -138,12 +138,12 @@ export function createVNode<T extends VNodeTag>(
             } else if (prop === 'key') {
                 key = props.key;
             } else if (prop === 'ref') {
-                ref = props.ref as VNodeRef<T>;
+                ref = props.ref;
             } else if (prop === 'children') {
                 children = props.children;
             } else {
                 if (isNullOrUndefined(newProps)) newProps = {} as any;
-                newProps![prop] = props[prop] as any;
+                newProps![prop] = props[prop];
             }
         }
     }
