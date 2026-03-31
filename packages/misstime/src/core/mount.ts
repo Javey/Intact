@@ -137,7 +137,7 @@ export function mountComponentClass(
         validateProps(vNode);
     }
 
-    const props = vNode.props;
+    const props = vNode.props!;
     const instance = new vNode.tag(props, vNode, isSVG, mountedQueue, parentComponent);
 
     // instance.$SVG = isSVG;

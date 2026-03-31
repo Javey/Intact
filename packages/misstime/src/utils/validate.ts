@@ -185,8 +185,8 @@ export function validateProps(vNode: VNodeComponentClass | VNodeComponentFunctio
     if (isNullOrUndefined(props) || isNullOrUndefined(typeDefs)) return;
 
     for (let prop in {...props, ...typeDefs}) {
-        const value = props[prop];
-        let expectedType = typeDefs[prop] as TypeObject;
+        const value = props[prop as keyof typeof props];
+        let expectedType = typeDefs[prop as keyof typeof typeDefs] as TypeObject;
 
         if (!isPlainObject(expectedType)) {
             expectedType = {type: expectedType};
