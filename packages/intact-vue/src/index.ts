@@ -45,12 +45,7 @@ const callMountedQueue = () => {
 // for unit test
 export {globalMountedQueue};
 
-export class Component<
-    P extends {} = {}, 
-    E extends {} = {}, 
-    B extends {} = {},
-    S extends {} = {}
-> extends IntactComponent<P, E, B, S> implements Vue {
+export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> implements Vue {
     // If cid does not exist, Vue will treat it as an async component 
     static cid = 'IntactVue';
     // Vue will read props from Constructor's options

@@ -47,13 +47,9 @@ type VNodeComponentClassMaybeWithVueInstance =
     & VNodeComponentClass<ComponentClass>
     & {_vueInstance?: ComponentInternalInstance}
 
-type IntactVueOnEventKeys<E> = keyof {
-    [K in keyof E as `on${Capitalize<string & K>}`]: unknown
-};
-
 type IntactVueNextProps<P, E> = 
     & Readonly<P>
-    & Readonly<Omit<HTMLAttributes, keyof P | IntactVueOnEventKeys<E>>>
+    & Readonly<Omit<HTMLAttributes, keyof P>>
     & Readonly<{
         [K in keyof P as `onChange:${string & K}`]?:
             (oldValue: P[K], newValue: P[K]) => void
@@ -110,12 +106,7 @@ const resetMoutedQueue = () => {
 // for unit test
 export {globalMountedQueue};
 
-export class Component<
-    P extends {} = {}, 
-    E extends {} = {}, 
-    B extends {} = {},
-    S extends {} = {}
-> extends IntactComponent<P, E, B, S> {
+export class Component<P = {}, E = {}, B = {}> extends IntactComponent<P, E, B> {
     static $cid = 'IntactVueNext';
     static $doubleVNodes = false;
     static __cache: IntactComponentOptions | null = null;
@@ -264,13 +255,13 @@ export class Component<
 
 
     constructor(
-        props: Props<P, ComponentClass<P>> | null | undefined,
+        props: Props<P, Component<P>> | null | undefined,
         $vNode: VNodeComponentClassMaybeWithVueInstance,
         $SVG: boolean,
         $mountedQueue: Function[],
         $parent: ComponentClass | null
     ) {
-        super(props as any, $vNode, $SVG, $mountedQueue, $parent);
+        super(props, $vNode, $SVG, $mountedQueue, $parent);
         const vuePublicInstance = $vNode._vueInstance;
         this.vueInstance = vuePublicInstance;
         if (vuePublicInstance) {
@@ -284,20 +275,20 @@ export class Component<
     }
 
     $render(
-        lastVNode: VNodeComponentClass<IntactComponent<P, E, B, S>> | null,
-        nextVNode: VNodeComponentClass<IntactComponent<P, E, B, S>>,
+        lastVNode: VNodeComponentClass<this> | null,
+        nextVNode: VNodeComponentClass<this>,
         parentDom: Element,
         anchor: IntactDom | null,
         mountedQueue: Function[]
     ): void {
         const popInstance = pushInstance(this);
-        super.$render(lastVNode as any, nextVNode as any, parentDom, anchor, mountedQueue);
+        super.$render(lastVNode, nextVNode, parentDom, anchor, mountedQueue);
         popInstance();
     }
 
     $update(
-        lastVNode: VNodeComponentClass<IntactComponent<P, E, B, S>>,
-        nextVNode: VNodeComponentClass<IntactComponent<P, E, B, S>>,
+        lastVNode: VNodeComponentClass<this>,
+        nextVNode: VNodeComponentClass<this>,
         parentDom: Element,
         anchor: IntactDom | null,
         mountedQueue: Function[],
@@ -305,7 +296,7 @@ export class Component<
     ): void {
         const fn = (mountedQueue: Function[]) => {
             const popInstance = pushInstance(this);
-            super.$update(lastVNode as any, nextVNode as any, parentDom, anchor, mountedQueue, force);
+            super.$update(lastVNode, nextVNode, parentDom, anchor, mountedQueue, force);
             popInstance();
             // effect.stop();
         }
@@ -327,12 +318,9 @@ export class Component<
         }
     }
 
-    $unmount(
-        vNode: VNodeComponentClass<IntactComponent<P, E, B, S>>,
-        nextVNode: VNodeComponentClass<IntactComponent<P, E, B, S>> | null,
-    ) {
+    $unmount(vNode: VNodeComponentClass<this>, nextVNode: VNodeComponentClass<this> | null) {
         if (this.$effect) this.$effect.stop();
-        super.$unmount(vNode as any, nextVNode as any);
+        super.$unmount(vNode, nextVNode);
     }
 } 
 
